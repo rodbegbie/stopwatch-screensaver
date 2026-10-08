@@ -1,0 +1,5 @@
+Lovely.  Let's not worry about posting the table to the issues.  #23 first seems like a good idea.  Feel free to test with other hacks in addition to Pyro to measure the impact.
+
+---
+
+TBH, some of the details of your design are a bit over my head, but I'm happy for you to try it!  Carry on!
