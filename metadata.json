@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4CXMA79JYYNW5C841TKBEAA",
+  "strategy": "manual-commit",
+  "branch": "feature/step1-batch2",
+  "checkpoints_count": 6,
+  "files_touched": [
+    "firmware/src/main.cpp"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 4,
+    "cache_creation_tokens": 4891,
+    "cache_read_tokens": 902801,
+    "output_tokens": 2759,
+    "api_call_count": 2
+  }
+}
