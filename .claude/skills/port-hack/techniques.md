@@ -101,6 +101,14 @@ window in `init`, so a "starts black" test through Pyro passed with the runner
 deliberately broken. Test shared runner behaviour with stub hacks
 (`test_runner_xsft.c`) and mutate the code to see the test fail.
 
+A check can also be true before the hack has run. "At least 20 non-black
+pixels" proved a hack drew, until Substrate started on a white canvas and
+passed without drawing at all. Compare with the canvas as the hack started, and
+keep a stub hack that draws nothing, on the colour that fooled the old check, to
+show the test can fail. When a change alters what every hack starts with (the
+background colour, an initial canvas), re-read the older tests that assume the
+old start.
+
 ## Background colour
 
 The runner paints the canvas in the hack's `background` resource before `init`,
