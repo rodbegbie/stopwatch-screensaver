@@ -1,0 +1,25 @@
+OK, let's start flashing with a pinned hack build.  Make it start on CloudLife.
+
+---
+
+Looks good to me!  OK, flash the random-start build and I'll test it.
+
+---
+
+Confirmed!  Spheres then Vines then Flame.
+
+---
+
+Trail 8 is approved and can be merged to main.
+
+---
+
+Yeah, do the force push.
+
+---
+
+Trail 9 is approved.  Merge it
+
+---
+
+OK, let's do #3! We're plowing through these!
