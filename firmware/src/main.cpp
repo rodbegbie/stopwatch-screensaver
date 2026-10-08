@@ -7,6 +7,7 @@ extern "C" {
 #include "runner/button_latch.h"
 #include "runner/hack_runner.h"
 #include "runner/overlay.h"
+#include "runner/start_pick.h"
 }
 
 /* Hacks run on loopTask, whose 8 KB default stack is too small: Rorschach
@@ -15,6 +16,14 @@ SET_LOOP_TASK_STACK_SIZE(16 * 1024);
 
 static const int kSize = 466;
 static const uint32_t kSliceUs = 10000;
+/* Build with -DSTART_HACK=\"galaxy\" (see AGENTS.md) to always start on one
+ * hack; otherwise boot picks one at random. */
+#ifdef START_HACK
+static const char *const kForcedStart = START_HACK;
+#else
+static const char *const kForcedStart = nullptr;
+#endif
+
 static const uint32_t kStatsEveryMs = 5000;
 static const uint32_t kNameShownMs = 5000;
 static const int kNameY = kSize / 2;
@@ -179,7 +188,12 @@ void setup() {
   fpsPatch.saved = (uint16_t *)ps_malloc(kSize * kPatchMaxH * sizeof(uint16_t));
   if (!namePatch.saved || !fpsPatch.saved) halt("PSRAM alloc failed");
   runner = runner_create(&canvas);
-  if (!runner || runner_start(runner, 0) != 0) halt("hack start failed");
+  if (!runner) halt("hack start failed");
+  int first = start_pick_index(g_hacks, g_hack_count, kForcedStart, esp_random());
+  if (kForcedStart && start_find_hack(g_hacks, g_hack_count, kForcedStart) < 0)
+    Serial.printf("START_HACK \"%s\" not found, starting at random\n",
+                  kForcedStart);
+  if (runner_start(runner, first) != 0) halt("hack start failed");
   overlay_init(&overlay, kNameShownMs);
   overlay_hack_started(&overlay, millis());
   printStats("boot");

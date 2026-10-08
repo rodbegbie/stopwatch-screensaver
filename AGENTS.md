@@ -33,6 +33,10 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
 
 - `pio test -e native`: host tests (Unity, AddressSanitizer). Run these first.
 - `pio run -e stopwatch`: build for the device. Add `-t upload` to flash.
+  The device starts on a random hack; to pin one while examining it, prefix
+  `PLATFORMIO_BUILD_FLAGS='-DSTART_HACK=\"galaxy\"'` (a name from `g_hacks[]`,
+  any case; an unknown name falls back to random and logs it). Rebuild without
+  it afterwards, since the define sticks to the build.
 - `pio run -e dump`, then `.pio/build/dump/program <index> <frames> out.raw`,
   then `uv run tools/rgb565_to_png.py out.raw 466 466 out.png` to see a frame.
   The index is the hack's 0-based position in `g_hacks[]` in
