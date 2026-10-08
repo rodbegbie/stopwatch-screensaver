@@ -4,6 +4,7 @@
 extern "C" {
 #include "core/canvas.h"
 #include "hacks/registry.h"
+#include "runner/button_latch.h"
 #include "runner/hack_runner.h"
 }
 
@@ -14,6 +15,27 @@ SET_LOOP_TASK_STACK_SIZE(16 * 1024);
 static const int kSize = 466;
 static const uint32_t kSliceUs = 10000;
 static const uint32_t kStatsEveryMs = 5000;
+
+/* M5Unified reads the buttons as active-low GPIOs, and only inside
+ * M5.update(), so a press during a long hack step would go unseen. A small
+ * task on the otherwise idle core 0 samples both pins every few milliseconds
+ * (it preempts nothing the hacks run on) and a latch keeps the presses. The
+ * pin must hold its new level for the settle time, which rejects bounce. */
+static const gpio_num_t kPinButtonA = GPIO_NUM_2;
+static const gpio_num_t kPinButtonB = GPIO_NUM_1;
+static const uint32_t kButtonPollMs = 5;
+static const uint32_t kButtonSettleMs = 30;
+
+static ButtonLatch latchA, latchB;
+
+static void buttonTask(void *) {
+  for (;;) {
+    uint32_t now = millis();
+    button_latch_sample(&latchA, gpio_get_level(kPinButtonA) == 0, now);
+    button_latch_sample(&latchB, gpio_get_level(kPinButtonB) == 0, now);
+    vTaskDelay(pdMS_TO_TICKS(kButtonPollMs));
+  }
+}
 
 static Canvas canvas;
 static HackRunner *runner;
@@ -51,17 +73,19 @@ static void printStats(const char *tag) {
 /* Returns true if a button switched hacks (which also resets the stats). */
 static bool pollButtons() {
   bool switched = false;
-  if (M5.BtnA.wasPressed()) {
+  uint32_t pressedAt = 0;
+  if (button_latch_take(&latchA, &pressedAt)) {
     runner_next(runner);
     switched = true;
   }
-  if (M5.BtnB.wasPressed()) {
+  if (button_latch_take(&latchB, &pressedAt)) {
     runner_prev(runner);
     switched = true;
   }
   if (switched) {
-    Serial.printf("switch -> %s heap=%u psram=%u\n",
+    Serial.printf("switch -> %s press_waited=%ums heap=%u psram=%u\n",
                   g_hacks[runner_index(runner)]->name,
+                  (unsigned)(millis() - pressedAt),
                   (unsigned)ESP.getFreeHeap(),
                   (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
     resetStats();
@@ -74,6 +98,10 @@ void setup() {
   M5.begin(cfg);
   Serial.begin(115200);
   M5.Display.setSwapBytes(false);
+
+  button_latch_init(&latchA, kButtonSettleMs);
+  button_latch_init(&latchB, kButtonSettleMs);
+  xTaskCreatePinnedToCore(buttonTask, "buttons", 2048, nullptr, 2, nullptr, 0);
 
   if (canvas_init(&canvas, kSize, kSize, ps_malloc) != 0)
     halt("PSRAM alloc failed");

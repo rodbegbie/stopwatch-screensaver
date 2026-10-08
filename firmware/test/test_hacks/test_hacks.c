@@ -20,9 +20,12 @@ static int non_black(void) {
 void test_registry_lists_hacks_in_order(void) {
   static const char *const expected[] = {"Pyro", "HyperCube", "XSpirograph",
                                          "Petri", "Helix",
-                                         "Rorschach", "Pedal"};
-  TEST_ASSERT_EQUAL_INT(7, g_hack_count);
-  for (int i = 0; i < 7; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
+                                         "Rorschach", "Pedal", "Coral",
+                                         "Squiral", "Critical", "CloudLife",
+                                         "WhirlWindWarp", "Flame"};
+  const int n = sizeof(expected) / sizeof(expected[0]);
+  TEST_ASSERT_EQUAL_INT(n, g_hack_count);
+  for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
 }
 
 void test_every_hack_draws_something_within_2000_frames(void) {

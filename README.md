@@ -4,11 +4,13 @@ xscreensaver "hacks" running on the M5Stack StopWatch (SKU C152, ESP32-S3,
 466×466 round AMOLED), through a small X11 shim. A learning project in
 embedded development.
 
-Right now it runs seven hacks, unmodified from xscreensaver 6.16: **Pyro**
+Right now it runs thirteen hacks, unmodified from xscreensaver 6.16: **Pyro**
 (fireworks), **HyperCube**, **XSpirograph**, **Petri** (mould growth),
-**Helix**, **Rorschach** and **Pedal**. Frame rates run from under 1 to about
-30 fps, mostly set by the delay each hack asks for (some hold each finished
-picture for seconds); pushing a frame to the display costs 31 ms. The
+**Helix**, **Rorschach**, **Pedal**, **Coral**, **Squiral**, **Critical**,
+**CloudLife**, **WhirlWindWarp** and **Flame**. Frame rates run from under 1
+to about 30 fps, mostly set by the delay each hack asks for (some hold each
+finished picture for seconds, and Flame, which does its maths in double
+precision, manages 2 to 7); pushing a frame to the display costs 31 ms. The
 [porting assessment](docs/porting-assessment.md) rates every other hack by
 porting effort and lists the measurements.
 
@@ -22,7 +24,8 @@ porting effort and lists the measurements.
   unmodified against the shim's own `screenhack.h`.
 - `firmware/src/runner/` starts, steps and switches hacks.
 - `firmware/src/main.cpp` pushes the canvas to the display each frame and
-  handles the buttons.
+  handles the buttons. A small task on core 0 watches both buttons, so a
+  press made while a hack is in a long draw step is kept, not lost.
 
 The same code builds natively on the Mac, which is how the tests run and how
 frames are dumped to PNG without any hardware.
@@ -63,7 +66,12 @@ cd .. && uv run tools/rgb565_to_png.py /tmp/pyro.raw 466 466 /tmp/pyro.png
 ## Controls
 
 Button A starts the next hack and button B the previous one, wrapping
-around at either end. The order is Pyro, HyperCube, XSpirograph, Petri, Helix.
+around at either end. The order is Pyro, HyperCube, XSpirograph, Petri, Helix,
+Rorschach, Pedal, Coral, Squiral, Critical, CloudLife, WhirlWindWarp, Flame.
+
+A press made during a long draw step takes effect when the step ends (up to
+about half a second on Flame). Extra presses in that wait count as one, and
+holding a button does not repeat.
 
 ## Restoring the original firmware
 

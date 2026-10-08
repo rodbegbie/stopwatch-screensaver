@@ -106,10 +106,17 @@ void xshim_close_display(Display *dpy);
 GC XCreateGC(Display *, Drawable, unsigned long mask, XGCValues *);
 int XFreeGC(Display *, GC);
 int XSetForeground(Display *, GC, unsigned long pixel);
+/* Only GCForeground is honoured; the rest of the mask is ignored. */
+int XChangeGC(Display *, GC, unsigned long mask, XGCValues *);
 Status XGetWindowAttributes(Display *, Window, XWindowAttributes *);
 int XClearWindow(Display *, Window);
 int XDrawPoint(Display *, Drawable, GC, int x, int y);
+/* Only CoordModeOrigin is supported. */
+int XDrawPoints(Display *, Drawable, GC, XPoint *pts, int n, int mode);
 int XDrawLine(Display *, Drawable, GC, int x1, int y1, int x2, int y2);
+/* Outlines a (w + 1) by (h + 1) box, as Xlib does. */
+int XDrawRectangle(Display *, Drawable, GC, int x, int y, unsigned int w,
+                   unsigned int h);
 int XDrawLines(Display *, Drawable, GC, XPoint *pts, int n, int mode);
 int XFillRectangle(Display *, Drawable, GC, int x, int y, unsigned int w,
                    unsigned int h);

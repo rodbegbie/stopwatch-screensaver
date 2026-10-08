@@ -288,8 +288,115 @@ void test_event_helper_reports_button_press_only(void) {
   TEST_ASSERT_FALSE(screenhack_event_helper(dpy, win, &e));
 }
 
+void test_draw_points_plots_each_point_in_the_gc_colour(void) {
+  XGCValues v;
+  v.foreground = 0xF800;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XPoint pts[3] = {{1, 1}, {5, 2}, {15, 15}};
+  XDrawPoints(dpy, win, gc, pts, 3, CoordModeOrigin);
+  TEST_ASSERT_EQUAL_INT(3, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xF800, at(5, 2));
+  XFreeGC(dpy, gc);
+}
+
+void test_draw_points_with_zero_count_draws_nothing(void) {
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XPoint p = {3, 3};
+  XDrawPoints(dpy, win, gc, &p, 0, CoordModeOrigin);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XFreeGC(dpy, gc);
+}
+
+void test_change_gc_sets_foreground_only_when_masked(void) {
+  XGCValues v;
+  v.foreground = 0x07E0;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  v.foreground = 0x001F;
+  XChangeGC(dpy, gc, GCFunction, &v);
+  XDrawPoint(dpy, win, gc, 1, 1);
+  TEST_ASSERT_EQUAL_HEX16(0x07E0, at(1, 1));
+  v.foreground = 0xF800;
+  XChangeGC(dpy, gc, GCForeground, &v);
+  XDrawPoint(dpy, win, gc, 2, 2);
+  TEST_ASSERT_EQUAL_HEX16(0xF800, at(2, 2));
+  XFreeGC(dpy, gc);
+}
+
+void test_draw_rectangle_outlines_a_w_plus_1_by_h_plus_1_box(void) {
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XDrawRectangle(dpy, win, gc, 2, 3, 4, 2);
+  TEST_ASSERT_EQUAL_INT(12, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(2, 3));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(6, 5));
+  TEST_ASSERT_EQUAL_HEX16(0x0000, at(4, 4));
+  XFreeGC(dpy, gc);
+}
+
+static int distinct_pixels(const XColor *c, int n) {
+  int distinct = 0;
+  for (int i = 0; i < n; i++) {
+    int seen = 0;
+    for (int j = 0; j < i; j++) seen |= c[j].pixel == c[i].pixel;
+    distinct += !seen;
+  }
+  return distinct;
+}
+
+void test_make_uniform_colormap_gives_distinct_rgb565_colours(void) {
+  XColor colors[12];
+  memset(colors, 0, sizeof(colors));
+  int n = 12;
+  Bool writable = True;
+  make_uniform_colormap(NULL, NULL, 1, colors, &n, True, &writable, False);
+  TEST_ASSERT_EQUAL_INT(12, n);
+  TEST_ASSERT_FALSE(writable);
+  for (int i = 0; i < n; i++)
+    TEST_ASSERT_EQUAL_HEX(rgb565_from16(colors[i].red, colors[i].green, colors[i].blue),
+                          colors[i].pixel);
+  TEST_ASSERT_EQUAL_INT(12, distinct_pixels(colors, n));
+}
+
+void test_make_smooth_colormap_loops_without_jumps(void) {
+  for (int trial = 0; trial < 20; trial++) {
+    XColor colors[64];
+    memset(colors, 0, sizeof(colors));
+    int n = 64;
+    Bool writable = True;
+    make_smooth_colormap(NULL, NULL, 1, colors, &n, True, &writable, False);
+    TEST_ASSERT_EQUAL_INT(64, n);
+    TEST_ASSERT_FALSE(writable);
+    for (int i = 0; i < n; i++) {
+      const XColor *a = &colors[i], *b = &colors[(i + 1) % n];
+      TEST_ASSERT_EQUAL_HEX(rgb565_from16(a->red, a->green, a->blue), a->pixel);
+      TEST_ASSERT_TRUE(abs((int)a->red - (int)b->red) < 0x4000);
+      TEST_ASSERT_TRUE(abs((int)a->green - (int)b->green) < 0x4000);
+      TEST_ASSERT_TRUE(abs((int)a->blue - (int)b->blue) < 0x4000);
+    }
+    TEST_ASSERT_TRUE(distinct_pixels(colors, n) >= 16);
+  }
+}
+
+void test_free_colors_accepts_a_colormap_from_the_helpers(void) {
+  XColor colors[4];
+  memset(colors, 0, sizeof(colors));
+  int n = 4;
+  make_uniform_colormap(NULL, NULL, 1, colors, &n, True, NULL, False);
+  free_colors(NULL, 1, colors, n);
+}
+
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_draw_points_plots_each_point_in_the_gc_colour);
+  RUN_TEST(test_draw_points_with_zero_count_draws_nothing);
+  RUN_TEST(test_change_gc_sets_foreground_only_when_masked);
+  RUN_TEST(test_draw_rectangle_outlines_a_w_plus_1_by_h_plus_1_box);
+  RUN_TEST(test_make_uniform_colormap_gives_distinct_rgb565_colours);
+  RUN_TEST(test_make_smooth_colormap_loops_without_jumps);
+  RUN_TEST(test_free_colors_accepts_a_colormap_from_the_helpers);
   RUN_TEST(test_fill_rectangles_fills_each_rectangle_in_the_gc_colour);
   RUN_TEST(test_fill_rectangles_with_zero_count_draws_nothing);
   RUN_TEST(test_gc_accepts_background_field_and_mask);

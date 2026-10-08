@@ -1,6 +1,6 @@
 ## Measured on the device
 
-Seven hacks have been run so far (default settings, 466×466 canvas pushed to
+Thirteen hacks have been run so far (default settings, 466×466 canvas pushed to
 the display every frame, canvas held in PSRAM). The firmware times each frame
 in three parts, averaged over 5 seconds: **step** is the hack's own draw call,
 **push** is sending the canvas to the display, and **wait** is what is left of
@@ -18,6 +18,12 @@ holds, so its frame rate will now be lower than shown.
 | Helix | 16.6-23.6 | 0.9-2.1 ms | 31.3 ms | 9-26 ms | none measurable |
 | Rorschach | 3.0 | 0.6-1.7 ms | 31.1-31.2 ms | 367 ms | none measurable |
 | Pedal | 0.2-0.4 | 126-519 ms | 31.4-31.5 ms | 3290-5507 ms | none measurable |
+| Coral | 15.0-21.2 | 15-25 ms | 31.2 ms | 0-10 ms | about 240 KB |
+| Squiral | 30.6-31.0 | 0.1-0.3 ms | 31.1 ms | 0 ms | about 850 KB |
+| Critical | 30.4 | 0.7 ms | 31.1 ms | 0 ms | about 15 KB |
+| CloudLife | 24.2 | 8.8-8.9 ms | 31.4 ms | 0 ms | about 260 KB |
+| WhirlWindWarp | 17.0-24.8 | 6.2-26.4 ms | 31.3 ms | 0 ms | about 410 KB |
+| Flame | 1.8-7.4 | 76-592 ms | 31.4 ms | 0-72 ms | none measurable |
 
 Free heap and free PSRAM return to exactly the same values every time a
 hack is switched back to, so switching does not leak.
@@ -36,9 +42,28 @@ hack is switched back to, so switching does not leak.
 - Rorschach and Pedal draw a picture and then hold it for the 5 seconds they
   ask for, so their frame rates (3.0 and 0.2-0.4) measure the holds, not the
   speed. Rorschach draws a picture in about 15 frames over half a second.
-- XSpirograph is the only measured hack that is slow at drawing: 54-56 ms a
-  frame for 1000 lines. Whether that is the PSRAM pixel writes or its
-  double-precision maths has not been separated.
+- XSpirograph is the slowest at drawing: 54-56 ms a frame for 1000 lines.
+  Whether that is the PSRAM pixel writes or its double-precision maths has
+  not been separated. Coral (15-25 ms), CloudLife (about 9 ms) and
+  WhirlWindWarp (about 6 ms) are the next most expensive; Squiral and
+  Critical draw in under a millisecond and run at the push ceiling.
+- Coral's step time falls as the picture fills in (15.0 fps, then 21.2).
+- Flame is the slowest hack so far. A frame takes about 76-80 ms for the
+  cheap pictures and up to about 590 ms (1.8 fps) for the expensive ones,
+  depending on the random flame it draws. Its source is all `double`, with
+  `sin`, `cos` and `sqrt` in a recursive per-point loop, and the ESP32-S3 has
+  only a single-precision FPU. Double-precision maths in software is the
+  likely cause, but it has not been profiled. The scorer's `float-heavy` flag
+  missed it, because it counts call sites in the source, not how often loops
+  run it. A press made during such a step is kept and handled when the step
+  ends (see Buttons below).
+- WhirlWindWarp's step time sits on plateaus that change over time: about 6,
+  8, 10, 19-20 and 25-26 ms across restarts, and it shifted within a single
+  run (19.1, then 20.4, then 26.4 ms). It switches around 16 forcefields on
+  and off at random, which fits, but which ones are expensive has not been
+  identified.
+- Free heap and PSRAM showed a single reading per hack across five restarts
+  each of Flame and WhirlWindWarp, so repeated starts do not leak.
 - Hacks that draw many primitives per frame are the ones to profile first.
 
 ## Other notes
@@ -48,6 +73,32 @@ loop task's default 8 KB stack and rebooted the device on the first frame. The
 firmware now sets a 16 KB loop stack (about 8 KB less free heap). Any hack with
 large local arrays can hit the same limit.
 
+Pyro's `init` builds two 6284-entry sine and cosine tables in double
+precision, so restarting it dips to about 17 fps for a few seconds.
+
+## Buttons
+
+M5Unified reads the StopWatch buttons (GPIO2 for A and GPIO1 for B, active
+low) only inside `M5.update()` and keeps no edge, so a press that began and
+ended during one long hack step was never seen. The firmware now samples both
+pins every 5 ms from a small task on core 0, and a latch counts a press once
+the pin has held its new level for 30 ms. Repeated presses while a step runs
+count as one, and holding a button does not repeat.
+
+The serial switch line reports `press_waited`, the time from the press to the
+switch. On the device it was usually 45-100 ms (the 30 ms settle plus one loop
+period). Presses made during long steps waited for them: about 0.4 s on Flame
+and 0.5-1.3 s around Pedal and Rorschach. About 90 switches, including bursts
+of roughly four presses a second, showed no lost press, no reset and no
+memory change.
+
+A first version used GPIO interrupts and read the pin level when each ran.
+The button bounced on release, the rising-edge interrupt saw the line low, and
+the release was logged as a second press, so one click switched two hacks. The
+polling design replaced it.
+
+## Pedal
+
 Pedal picks up to 1000 points per picture. The shim used to skip polygons
 over 256 points, and the canvas dropped scanline crossings past 64, so half of
 Pedal's pictures drew nothing. Both limits are gone. Sorting the crossings
@@ -55,6 +106,3 @@ with insertion sort then cost 2.6 million steps per picture on average and
 21.6 million on the worst, which took about 4-5 seconds on the device; with
 `qsort` above 16 crossings the step means are 126-519 ms. Pedal remains the
 second most expensive hack to draw after Flame.
-
-Pyro's `init` builds two 6284-entry sine and cosine tables in double
-precision, so restarting it dips to about 17 fps for a few seconds.
