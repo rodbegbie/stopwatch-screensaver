@@ -1,0 +1,5 @@
+Let's carry on with this project and try porting some more hacks. From your progress so far, and with the info you gathered in your porting-assessment.md file, what makes sense to do next?
+
+---
+
+Yeah, that plan sounds grand. Go for it.
