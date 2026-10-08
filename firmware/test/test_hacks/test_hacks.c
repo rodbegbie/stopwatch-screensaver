@@ -34,7 +34,8 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Galaxy",
                                          "Drift",
                                          "Lightning",
-                                         "Maze"};
+                                         "Maze",
+                                         "Blaster"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);

@@ -74,6 +74,12 @@ typedef struct {
   unsigned short width, height;
 } XRectangle;
 
+typedef struct {
+  short x, y;
+  unsigned short width, height;
+  short angle1, angle2;
+} XArc;
+
 typedef union {
   int type;
   struct {
@@ -142,6 +148,8 @@ int XFillRectangles(Display *, Drawable, GC, XRectangle *rects, int n);
 /* Only full ellipses (angle2 >= 360*64) are drawn; partial arcs are ignored. */
 int XFillArc(Display *, Drawable, GC, int x, int y, unsigned int w,
              unsigned int h, int angle1, int angle2);
+/* Each arc goes through XFillArc, so the same full-ellipse limit applies. */
+int XFillArcs(Display *, Drawable, GC, XArc *arcs, int n);
 int XFillPolygon(Display *, Drawable, GC, XPoint *pts, int n, int shape,
                  int mode);
 

@@ -112,6 +112,23 @@ void test_fill_arc_full_circle_draws_partial_arc_does_not(void) {
   XFreeGC(dpy, gc);
 }
 
+void test_fill_arcs_fills_each_full_arc_in_the_gc_colour(void) {
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XArc arcs[2] = {{2, 2, 5, 5, 0, 360 * 64}, {9, 9, 5, 5, 0, 360 * 64}};
+  XFillArcs(dpy, win, gc, arcs, 1);
+  int one = count_set();
+  XClearWindow(dpy, win);
+  XFillArcs(dpy, win, gc, arcs, 2);
+  TEST_ASSERT_TRUE(one > 10);
+  TEST_ASSERT_EQUAL_INT(2 * one, count_set());
+  XClearWindow(dpy, win);
+  XFillArcs(dpy, win, gc, arcs, 0);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XFreeGC(dpy, gc);
+}
+
 void test_fill_polygon_fills_triangle(void) {
   XGCValues v;
   v.foreground = 0xFFFF;
@@ -803,6 +820,7 @@ int main(void) {
   RUN_TEST(test_clear_window_uses_black_background);
   RUN_TEST(test_draw_line_and_lines_connect_points);
   RUN_TEST(test_fill_arc_full_circle_draws_partial_arc_does_not);
+  RUN_TEST(test_fill_arcs_fills_each_full_arc_in_the_gc_colour);
   RUN_TEST(test_fill_polygon_fills_triangle);
   RUN_TEST(test_fill_polygon_draws_with_1000_points);
   RUN_TEST(test_resources_parse_star_and_dot_prefixes_and_tabs);

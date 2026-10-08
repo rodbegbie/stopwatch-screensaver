@@ -143,6 +143,13 @@ int XFillArc(Display *dpy, Drawable d, GC gc, int x, int y, unsigned int w,
   return 0;
 }
 
+int XFillArcs(Display *dpy, Drawable d, GC gc, XArc *arcs, int n) {
+  for (int i = 0; i < n; i++)
+    XFillArc(dpy, d, gc, arcs[i].x, arcs[i].y, arcs[i].width, arcs[i].height,
+             arcs[i].angle1, arcs[i].angle2);
+  return 0;
+}
+
 int XFillPolygon(Display *dpy, Drawable d, GC gc, XPoint *pts, int n,
                  int shape, int mode) {
   (void)d;

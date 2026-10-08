@@ -22,6 +22,7 @@ extern const HackEntry rorschach_hack;
 extern const HackEntry pedal_hack;
 extern const HackEntry coral_hack;
 extern const HackEntry squiral_hack;
+extern const HackEntry blaster_hack;
 extern const HackEntry critical_hack;
 extern const HackEntry cloudlife_hack;
 extern const HackEntry whirlwindwarp_hack;
@@ -54,5 +55,6 @@ const HackEntry *const g_hacks[] = {
     &galaxy_hack,
     &drift_hack,
     &lightning_hack,
-    &maze_hack};
+    &maze_hack,
+    &blaster_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);
