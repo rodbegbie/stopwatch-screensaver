@@ -6,10 +6,11 @@ embedded development.
 
 Right now it runs seven hacks, unmodified from xscreensaver 6.16: **Pyro**
 (fireworks), **HyperCube**, **XSpirograph**, **Petri** (mould growth),
-**Helix**, **Rorschach** and **Pedal**. Frame rates run from 1 to about 30 fps,
-mostly set by the delay each hack asks for; pushing a frame to the display
-costs 31 ms. The [porting assessment](docs/porting-assessment.md) rates every
-other hack by porting effort and lists the measurements.
+**Helix**, **Rorschach** and **Pedal**. Frame rates run from under 1 to about
+30 fps, mostly set by the delay each hack asks for (some hold each finished
+picture for seconds); pushing a frame to the display costs 31 ms. The
+[porting assessment](docs/porting-assessment.md) rates every other hack by
+porting effort and lists the measurements.
 
 ## How it works
 
