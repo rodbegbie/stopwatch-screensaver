@@ -25,7 +25,7 @@ typedef struct {
   char kind;
   int y, x0, x1;
 } Event;
-static Event events[H + 4];
+static Event events[3 * H + 4];
 static int nevents;
 
 static void on_begin(void *ctx) { (void)ctx; events[nevents++] = (Event){'b', 0, 0, 0}; }
@@ -88,12 +88,60 @@ void test_a_full_width_row_alone_is_still_rows(void) {
 
 void test_many_nearly_full_rows_fall_back_to_a_full_push(void) {
   int count = 0;
-  canvas_fill_rect(&cv, 0, 0, 438, H, C1);
+  canvas_fill_rect(&cv, 0, 0, 460, H, C1);
   TEST_ASSERT_EQUAL_INT(PUSH_ALL, push_plan(&cv, rows, &count));
   TEST_ASSERT_EQUAL_INT(0, count);
-  canvas_fill_rect(&cv, 0, 0, 430, H, C1);
+  canvas_fill_rect(&cv, 0, 0, 300, H, C1);
   TEST_ASSERT_EQUAL_INT(PUSH_ROWS, push_plan(&cv, rows, &count));
   TEST_ASSERT_EQUAL_INT(H, count);
+}
+
+/* The panel flushes one bounding box per batch, so two distant pixels in one
+ * batch cost a full-screen flush (11.7 ms on the device) but 0.1 ms apart. */
+void test_two_corner_pixels_are_two_groups_not_one_big_box(void) {
+  int count = 0;
+  canvas_point(&cv, 0, 0, C1);
+  canvas_point(&cv, W - 1, H - 1, C1);
+  TEST_ASSERT_EQUAL_INT(PUSH_ROWS, push_plan(&cv, rows, &count));
+  TEST_ASSERT_EQUAL_INT(2, count);
+  TEST_ASSERT_TRUE(rows[0].end_of_group);
+  TEST_ASSERT_TRUE(rows[1].end_of_group);
+}
+
+void test_adjacent_rows_share_a_group(void) {
+  int count = 0;
+  canvas_fill_rect(&cv, 200, 100, 40, 20, C1);
+  TEST_ASSERT_EQUAL_INT(PUSH_ROWS, push_plan(&cv, rows, &count));
+  TEST_ASSERT_EQUAL_INT(20, count);
+  for (int i = 0; i < 19; i++) TEST_ASSERT_FALSE(rows[i].end_of_group);
+  TEST_ASSERT_TRUE(rows[19].end_of_group);
+}
+
+void test_narrow_rows_with_a_small_gap_share_a_group(void) {
+  int count = 0;
+  canvas_fill_rect(&cv, 200, 100, 40, 1, C1);
+  canvas_fill_rect(&cv, 200, 103, 40, 1, C1);
+  TEST_ASSERT_EQUAL_INT(PUSH_ROWS, push_plan(&cv, rows, &count));
+  TEST_ASSERT_EQUAL_INT(2, count);
+  TEST_ASSERT_FALSE(rows[0].end_of_group);
+  TEST_ASSERT_TRUE(rows[1].end_of_group);
+}
+
+void test_distant_narrow_rows_do_not_share_a_group(void) {
+  int count = 0;
+  canvas_fill_rect(&cv, 200, 10, 40, 1, C1);
+  canvas_fill_rect(&cv, 200, 400, 40, 1, C1);
+  TEST_ASSERT_EQUAL_INT(PUSH_ROWS, push_plan(&cv, rows, &count));
+  TEST_ASSERT_EQUAL_INT(2, count);
+  TEST_ASSERT_TRUE(rows[0].end_of_group);
+  TEST_ASSERT_TRUE(rows[1].end_of_group);
+}
+
+void test_the_last_row_always_ends_a_group(void) {
+  int count = 0;
+  canvas_point(&cv, 5, 7, C1);
+  push_plan(&cv, rows, &count);
+  TEST_ASSERT_TRUE(rows[count - 1].end_of_group);
 }
 
 void test_present_calls_nothing_when_nothing_is_dirty(void) {
@@ -104,19 +152,29 @@ void test_present_calls_nothing_when_nothing_is_dirty(void) {
 
 void test_present_runs_begin_rows_end_in_order(void) {
   nevents = 0;
-  canvas_point(&cv, 9, 40, C1);
-  canvas_point(&cv, 4, 20, C1);
-  canvas_point(&cv, 8, 20, C1);
+  canvas_point(&cv, 9, 41, C1);
+  canvas_point(&cv, 4, 40, C1);
+  canvas_point(&cv, 8, 40, C1);
   TEST_ASSERT_EQUAL_INT(2, push_present(&cv, rows, &sink));
   TEST_ASSERT_EQUAL_INT(4, nevents);
   TEST_ASSERT_EQUAL_INT('b', events[0].kind);
   TEST_ASSERT_EQUAL_INT('r', events[1].kind);
-  TEST_ASSERT_EQUAL_INT(20, events[1].y);
+  TEST_ASSERT_EQUAL_INT(40, events[1].y);
   TEST_ASSERT_EQUAL_INT(4, events[1].x0);
   TEST_ASSERT_EQUAL_INT(8, events[1].x1);
   TEST_ASSERT_EQUAL_INT('r', events[2].kind);
-  TEST_ASSERT_EQUAL_INT(40, events[2].y);
+  TEST_ASSERT_EQUAL_INT(41, events[2].y);
   TEST_ASSERT_EQUAL_INT('e', events[3].kind);
+}
+
+void test_present_wraps_each_group_in_its_own_begin_and_end(void) {
+  nevents = 0;
+  canvas_point(&cv, 0, 0, C1);
+  canvas_point(&cv, W - 1, H - 1, C1);
+  TEST_ASSERT_EQUAL_INT(2, push_present(&cv, rows, &sink));
+  TEST_ASSERT_EQUAL_INT(6, nevents);
+  const char want[] = {'b', 'r', 'e', 'b', 'r', 'e'};
+  for (int i = 0; i < 6; i++) TEST_ASSERT_EQUAL_INT(want[i], events[i].kind);
 }
 
 void test_present_pushes_all_with_a_single_all_call(void) {
@@ -136,8 +194,14 @@ int main(void) {
   RUN_TEST(test_planning_clears_the_spans);
   RUN_TEST(test_a_full_width_row_alone_is_still_rows);
   RUN_TEST(test_many_nearly_full_rows_fall_back_to_a_full_push);
+  RUN_TEST(test_two_corner_pixels_are_two_groups_not_one_big_box);
+  RUN_TEST(test_adjacent_rows_share_a_group);
+  RUN_TEST(test_narrow_rows_with_a_small_gap_share_a_group);
+  RUN_TEST(test_distant_narrow_rows_do_not_share_a_group);
+  RUN_TEST(test_the_last_row_always_ends_a_group);
   RUN_TEST(test_present_calls_nothing_when_nothing_is_dirty);
   RUN_TEST(test_present_runs_begin_rows_end_in_order);
+  RUN_TEST(test_present_wraps_each_group_in_its_own_begin_and_end);
   RUN_TEST(test_present_pushes_all_with_a_single_all_call);
   return UNITY_END();
 }

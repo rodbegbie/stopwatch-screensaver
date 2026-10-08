@@ -44,6 +44,12 @@ void test_px_swap_converts_between_display_and_native_order(void) {
   TEST_ASSERT_EQUAL_HEX16(0x1234, px_swap(px_swap(0x1234)));
 }
 
+void test_a_canvas_too_big_for_int16_spans_is_refused(void) {
+  Canvas big;
+  TEST_ASSERT_EQUAL_INT(-1, canvas_init(&big, 40000, 8, malloc));
+  TEST_ASSERT_EQUAL_INT(-1, canvas_init(&big, 8, 40000, malloc));
+}
+
 void test_init_failing_alloc_returns_minus_one(void) {
   Canvas bad;
   TEST_ASSERT_EQUAL_INT(-1, canvas_init(&bad, 8, 8, failing_alloc));
@@ -563,6 +569,7 @@ int main(void) {
   RUN_TEST(test_rgb565_white_black_red);
   RUN_TEST(test_rgb565_from16_matches_8bit);
   RUN_TEST(test_px_swap_converts_between_display_and_native_order);
+  RUN_TEST(test_a_canvas_too_big_for_int16_spans_is_refused);
   RUN_TEST(test_init_failing_alloc_returns_minus_one);
   RUN_TEST(test_point_inside_sets_pixel);
   RUN_TEST(test_point_outside_is_ignored);

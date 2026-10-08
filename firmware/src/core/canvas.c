@@ -24,7 +24,10 @@ static inline void mark_span(Canvas *c, wide_t x0, wide_t x1, wide_t y) {
 int canvas_init(Canvas *c, int w, int h, void *(*alloc)(size_t)) {
   c->w = w;
   c->h = h;
+  c->px = NULL;
   c->dirty_x0 = c->dirty_x1 = NULL;
+  /* The dirty spans are int16_t. */
+  if (w <= 0 || h <= 0 || w > INT16_MAX || h > INT16_MAX) return -1;
   c->px = (uint16_t *)alloc((size_t)w * (size_t)h * sizeof(uint16_t));
   if (!c->px) return -1;
   memset(c->px, 0, (size_t)w * (size_t)h * sizeof(uint16_t));
