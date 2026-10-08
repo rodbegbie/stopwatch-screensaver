@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4CSPET352EKSGX60BN9R266",
+  "strategy": "manual-commit",
+  "branch": "feature/step1-batch2",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "THIRD_PARTY_NOTICES.md",
+    "firmware/src/hacks/registry.c",
+    "firmware/test/test_hacks/test_hacks.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 208,
+    "cache_creation_tokens": 204288,
+    "cache_read_tokens": 15989065,
+    "output_tokens": 82395,
+    "api_call_count": 104
+  }
+}
