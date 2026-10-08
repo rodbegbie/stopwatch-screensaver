@@ -2,6 +2,9 @@
 
 #include <stdlib.h>
 
+#include "fps.h"
+#include "yarandom.h"
+
 Bool mono_p = False;
 const char *progname = "stopwatch-screensaver";
 
@@ -48,6 +51,7 @@ Status XGetWindowAttributes(Display *dpy, Window w, XWindowAttributes *a) {
   a->visual = NULL;
   a->screen = NULL;
   a->colormap = 1;
+  a->your_event_mask = 0;
   return 1;
 }
 
@@ -173,3 +177,24 @@ int XFreeColors(Display *dpy, Colormap cmap, unsigned long *pixels, int n,
   (void)planes;
   return 0;
 }
+
+int XSelectInput(Display *dpy, Window w, long mask) {
+  (void)dpy;
+  (void)w;
+  (void)mask;
+  return 0;
+}
+
+void ya_rand_init(unsigned int seed) {
+  if (seed) srandom(seed);
+}
+
+void fps_compute(fps_state *st, unsigned long polys, double depth) {
+  (void)st;
+  (void)polys;
+  (void)depth;
+}
+
+void fps_draw(fps_state *st) { (void)st; }
+
+void fps_free(fps_state *st) { (void)st; }

@@ -53,6 +53,7 @@ typedef struct {
   Visual *visual;
   Screen *screen;
   Colormap colormap;
+  long your_event_mask;
 } XWindowAttributes;
 
 typedef struct {
@@ -73,8 +74,8 @@ typedef union {
 } XEvent;
 
 typedef struct {
-  const char *option;
-  const char *specifier;
+  char *option;
+  char *specifier;
   int argKind;
   void *value;
 } XrmOptionDescRec;
@@ -94,6 +95,12 @@ enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
 #define Complex 0
 
 #define DefaultScreen(dpy) ((void)(dpy), 0)
+
+/* The runner has one window, number 1, whatever screen it is asked about. */
+#define RootWindowOfScreen(screen) ((void)(screen), (Window)1)
+#define PointerMotionMask (1L << 6)
+/* Events never arrive, so selecting them does nothing. */
+int XSelectInput(Display *, Window, long mask);
 #define WhitePixel(dpy, scr) ((void)(dpy), (void)(scr), 0xFFFFUL)
 #define BlackPixel(dpy, scr) ((void)(dpy), (void)(scr), 0x0000UL)
 

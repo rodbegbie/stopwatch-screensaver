@@ -11,6 +11,7 @@
 
 #include "erase.h"
 #include "fps.h"
+#include "yarandom.h"
 #include "x11shim/xshim.h"
 
 struct xscreensaver_function_table {

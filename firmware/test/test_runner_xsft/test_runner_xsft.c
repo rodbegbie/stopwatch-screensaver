@@ -125,10 +125,17 @@ void test_plain_hack_with_null_xsft_still_runs(void) {
   TEST_ASSERT_EQUAL_INT(0, setup_calls);
 }
 
+void test_screenhackI_h_alone_provides_the_random_macros(void) {
+  ya_rand_init(7);
+  TEST_ASSERT_TRUE(NRAND(3) < 3);
+  TEST_ASSERT_TRUE((double)LRAND() < MAXRAND);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_setup_runs_once_across_100_starts);
   RUN_TEST(test_framework_and_hack_defaults_both_resolve);
   RUN_TEST(test_plain_hack_with_null_xsft_still_runs);
+  RUN_TEST(test_screenhackI_h_alone_provides_the_random_macros);
   return UNITY_END();
 }
