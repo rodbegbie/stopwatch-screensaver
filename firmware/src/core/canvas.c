@@ -130,6 +130,15 @@ void canvas_fill_ellipse(Canvas *c, int x, int y, int w, int h,
   }
 }
 
+/* Insertion sort is quadratic, and with software doubles a 1000-point Pedal
+ * picture spent seconds in it. Past a handful of crossings qsort wins. */
+#define SORT_INSERTION_MAX 16
+
+static int compare_doubles(const void *a, const void *b) {
+  double x = *(const double *)a, y = *(const double *)b;
+  return (x > y) - (x < y);
+}
+
 void canvas_fill_polygon(Canvas *c, const int *xy, int n, uint16_t color) {
   if (n < 3) return;
   /* An edge crosses a scanline at most once, so n slots always suffice. The
@@ -157,12 +166,16 @@ void canvas_fill_polygon(Canvas *c, const int *xy, int n, uint16_t color) {
         xs[nx++] = xy[2 * i] + t * (xy[2 * j] - xy[2 * i]);
       }
     }
-    for (int a = 1; a < nx; a++)
-      for (int b = a; b > 0 && xs[b - 1] > xs[b]; b--) {
-        double tmp = xs[b];
-        xs[b] = xs[b - 1];
-        xs[b - 1] = tmp;
-      }
+    if (nx > SORT_INSERTION_MAX) {
+      qsort(xs, (size_t)nx, sizeof(double), compare_doubles);
+    } else {
+      for (int a = 1; a < nx; a++)
+        for (int b = a; b > 0 && xs[b - 1] > xs[b]; b--) {
+          double tmp = xs[b];
+          xs[b] = xs[b - 1];
+          xs[b - 1] = tmp;
+        }
+    }
     for (int k = 0; k + 1 < nx; k += 2)
       hspan(c, (wide_t)ceil(xs[k] - 0.5), (wide_t)ceil(xs[k + 1] - 0.5) - 1, yy,
             color);

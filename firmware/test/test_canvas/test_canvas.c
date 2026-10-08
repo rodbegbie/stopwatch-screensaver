@@ -1,4 +1,6 @@
 #include <limits.h>
+#include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unity.h>
 
@@ -198,8 +200,81 @@ void test_polygon_keeps_every_crossing_when_a_scanline_has_over_64(void) {
   canvas_free(&wide);
 }
 
+/* The original scanline fill with a plain insertion sort, kept as a reference
+ * so changes to the sort can be checked for identical output. */
+static void reference_fill_polygon(Canvas *cv, const int *xy, int n,
+                                   uint16_t color) {
+  if (n < 3) return;
+  long ymin = xy[1], ymax = xy[1];
+  for (int i = 1; i < n; i++) {
+    if (xy[2 * i + 1] < ymin) ymin = xy[2 * i + 1];
+    if (xy[2 * i + 1] > ymax) ymax = xy[2 * i + 1];
+  }
+  if (ymin < 0) ymin = 0;
+  if (ymax >= cv->h) ymax = cv->h - 1;
+  double *xs = malloc((size_t)n * sizeof(double));
+  for (long yy = ymin; yy <= ymax; yy++) {
+    int nx = 0;
+    double sy = yy + 0.5;
+    for (int i = 0, j = n - 1; i < n; j = i++) {
+      double yi = xy[2 * i + 1], yj = xy[2 * j + 1];
+      if ((yi <= sy && yj > sy) || (yj <= sy && yi > sy)) {
+        double t = (sy - yi) / (yj - yi);
+        xs[nx++] = xy[2 * i] + t * (xy[2 * j] - xy[2 * i]);
+      }
+    }
+    for (int a = 1; a < nx; a++)
+      for (int b = a; b > 0 && xs[b - 1] > xs[b]; b--) {
+        double tmp = xs[b];
+        xs[b] = xs[b - 1];
+        xs[b - 1] = tmp;
+      }
+    for (int k = 0; k + 1 < nx; k += 2) {
+      long xa = (long)ceil(xs[k] - 0.5), xb = (long)ceil(xs[k + 1] - 0.5) - 1;
+      if (xa < 0) xa = 0;
+      if (xb >= cv->w) xb = cv->w - 1;
+      for (long x = xa; x <= xb; x++) cv->px[yy * cv->w + x] = color;
+    }
+  }
+  free(xs);
+}
+
+void test_polygon_fill_matches_the_reference_on_random_polygons(void) {
+  enum { W = 120, H = 100, MAXN = 1000 };
+  static int xy[MAXN * 2];
+  Canvas got, want;
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&got, W, H, malloc));
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&want, W, H, malloc));
+  unsigned long seed = 12345;
+  const int sizes[] = {3, 4, 5, 7, 12, 30, 64, 65, 100, 250, 500, 1000};
+  for (int round = 0; round < 3; round++) {
+    for (unsigned s = 0; s < sizeof(sizes) / sizeof(sizes[0]); s++) {
+      int n = sizes[s];
+      for (int i = 0; i < n * 2; i += 2) {
+        seed = seed * 1103515245UL + 12345UL;
+        xy[i] = (int)((seed >> 8) % (W + 60)) - 30;
+        seed = seed * 1103515245UL + 12345UL;
+        xy[i + 1] = (int)((seed >> 8) % (H + 60)) - 30;
+      }
+      canvas_clear(&got, 0);
+      canvas_clear(&want, 0);
+      canvas_fill_polygon(&got, xy, n, C1);
+      reference_fill_polygon(&want, xy, n, C1);
+      for (int p = 0; p < W * H; p++)
+        if (got.px[p] != want.px[p]) {
+          char msg[64];
+          snprintf(msg, sizeof(msg), "n=%d first difference at pixel %d", n, p);
+          TEST_FAIL_MESSAGE(msg);
+        }
+    }
+  }
+  canvas_free(&got);
+  canvas_free(&want);
+}
+
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_polygon_fill_matches_the_reference_on_random_polygons);
   RUN_TEST(test_polygon_keeps_every_crossing_when_a_scanline_has_over_64);
   RUN_TEST(test_rgb565_white_black_red);
   RUN_TEST(test_rgb565_from16_matches_8bit);
