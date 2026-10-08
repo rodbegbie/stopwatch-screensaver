@@ -42,6 +42,18 @@ def test_mit_style_notice_passes(tmp_path):
     assert cn.check(src, md) == []
 
 
+def test_notice_wrapped_across_comment_lines_passes(tmp_path):
+    wrapped = """/*
+ *  Copyright (c) 1994, by Carnegie Mellon University.  Permission to use,
+ *  copy, modify, distribute, and sell this software and its documentation
+ *  for any purpose is hereby granted without fee.
+ */
+int x;
+"""
+    src, md = setup(tmp_path, {"pedal/pedal.c": wrapped}, "| pedal.c | x | y |")
+    assert cn.check(src, md) == []
+
+
 def test_file_without_notice_is_reported(tmp_path):
     src, md = setup(tmp_path, {"pyro/pyro.c": "int x;\n"}, "pyro")
     problems = cn.check(src, md)

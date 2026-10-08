@@ -91,6 +91,10 @@ Set `NO_COLOR=1` on `pio` output you parse.
   breaks `pio run`. Native tests need `test_build_src = yes`.
 - Quoted includes resolve beside the including file first, so compile hack
   copies from a temp dir when checking them against the shim.
+- Hacks run on the Arduino `loopTask`, now set to a 16 KB stack in `main.cpp`.
+  A hack with big local arrays can still overflow it (Rorschach's 9.6 KB did
+  at 8 KB): the device reboots on that hack's first frame, and host tests
+  cannot see it. Check the serial log for "Stack canary".
 - jwz.org returns 403 to Python's default User-Agent.
 - `esptool` reads of the 16 MB flash need `--baud 921600` (about 3.5 minutes)
   and show no progress when piped.

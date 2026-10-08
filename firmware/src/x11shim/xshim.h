@@ -30,10 +30,11 @@ typedef struct XshimGC {
 typedef struct XshimScreen Screen;
 typedef struct XshimVisual Visual;
 
-/* function and line_width are accepted but ignored: drawing is always
- * GXcopy with 1-pixel lines. */
+/* background, function and line_width are accepted but ignored: drawing is
+ * always GXcopy with 1-pixel lines. */
 typedef struct {
   unsigned long foreground;
+  unsigned long background;
   int function;
   int line_width;
 } XGCValues;
@@ -82,6 +83,7 @@ enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
 
 #define GCFunction (1L << 0)
 #define GCForeground (1L << 2)
+#define GCBackground (1L << 3)
 #define GCLineWidth (1L << 4)
 #define GXcopy 0x3
 #define ButtonPress 4
@@ -111,6 +113,7 @@ int XDrawLine(Display *, Drawable, GC, int x1, int y1, int x2, int y2);
 int XDrawLines(Display *, Drawable, GC, XPoint *pts, int n, int mode);
 int XFillRectangle(Display *, Drawable, GC, int x, int y, unsigned int w,
                    unsigned int h);
+int XFillRectangles(Display *, Drawable, GC, XRectangle *rects, int n);
 /* Only full ellipses (angle2 >= 360*64) are drawn; partial arcs are ignored. */
 int XFillArc(Display *, Drawable, GC, int x, int y, unsigned int w,
              unsigned int h, int angle1, int angle2);
@@ -119,6 +122,10 @@ int XFillPolygon(Display *, Drawable, GC, XPoint *pts, int n, int shape,
 Status XAllocColor(Display *, Colormap, XColor *);
 int XFreeColors(Display *, Colormap, unsigned long *pixels, int n,
                 unsigned long planes);
+
+/* True when the event should end the hack's current picture (a button press).
+ * The device has no events yet, so the runner never calls this. */
+Bool screenhack_event_helper(Display *, Window, XEvent *);
 
 /* Resources come from the running hack's defaults table. */
 void xshim_set_defaults(const char *const *defaults); /* NULL-terminated */

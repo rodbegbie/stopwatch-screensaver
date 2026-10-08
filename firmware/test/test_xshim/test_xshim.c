@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unity.h>
@@ -108,6 +109,23 @@ void test_fill_polygon_fills_triangle(void) {
   XFillPolygon(dpy, win, gc, pts, 3, Complex, CoordModeOrigin);
   TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(1, 1));
   TEST_ASSERT_EQUAL_HEX16(0, at(7, 7));
+  XFreeGC(dpy, gc);
+}
+
+void test_fill_polygon_draws_with_1000_points(void) {
+  enum { N = 1000 };
+  static XPoint pts[N];
+  for (int i = 0; i < N; i++) {
+    double a = 2 * 3.14159265358979 * i / N;
+    pts[i].x = (short)(8 + (int)(6 * cos(a) + 0.5));
+    pts[i].y = (short)(8 + (int)(6 * sin(a) + 0.5));
+  }
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XFillPolygon(dpy, win, gc, pts, N, Complex, CoordModeOrigin);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(8, 8));
+  TEST_ASSERT_EQUAL_HEX16(0, at(0, 0));
   XFreeGC(dpy, gc);
 }
 
@@ -228,8 +246,54 @@ void test_make_random_colormap_fills_colours_in_rgb565(void) {
   TEST_ASSERT_TRUE(distinct >= 2);
 }
 
+void test_fill_rectangles_fills_each_rectangle_in_the_gc_colour(void) {
+  XGCValues v;
+  v.foreground = 0xF800;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XRectangle rs[2] = {{1, 1, 2, 2}, {10, 12, 3, 1}};
+  XFillRectangles(dpy, win, gc, rs, 2);
+  TEST_ASSERT_EQUAL_INT(7, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xF800, at(2, 2));
+  TEST_ASSERT_EQUAL_HEX16(0xF800, at(12, 12));
+  XFreeGC(dpy, gc);
+}
+
+void test_fill_rectangles_with_zero_count_draws_nothing(void) {
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XRectangle r = {0, 0, 4, 4};
+  XFillRectangles(dpy, win, gc, &r, 0);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XFreeGC(dpy, gc);
+}
+
+void test_gc_accepts_background_field_and_mask(void) {
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  v.background = 0x0000;
+  GC gc = XCreateGC(dpy, win, GCForeground | GCBackground | GCFunction, &v);
+  TEST_ASSERT_NOT_NULL(gc);
+  XFillRectangle(dpy, win, gc, 0, 0, 2, 2);
+  TEST_ASSERT_EQUAL_INT(4, count_set());
+  XFreeGC(dpy, gc);
+}
+
+void test_event_helper_reports_button_press_only(void) {
+  XEvent e;
+  memset(&e, 0, sizeof(e));
+  e.type = ButtonPress;
+  TEST_ASSERT_TRUE(screenhack_event_helper(dpy, win, &e));
+  e.type = 0;
+  TEST_ASSERT_FALSE(screenhack_event_helper(dpy, win, &e));
+}
+
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_fill_rectangles_fills_each_rectangle_in_the_gc_colour);
+  RUN_TEST(test_fill_rectangles_with_zero_count_draws_nothing);
+  RUN_TEST(test_gc_accepts_background_field_and_mask);
+  RUN_TEST(test_event_helper_reports_button_press_only);
   RUN_TEST(test_white_and_black_pixel);
   RUN_TEST(test_alloc_color_red_gives_f800_and_white_gives_ffff);
   RUN_TEST(test_foreground_via_gc_used_by_fill_rectangle);
@@ -238,6 +302,7 @@ int main(void) {
   RUN_TEST(test_draw_line_and_lines_connect_points);
   RUN_TEST(test_fill_arc_full_circle_draws_partial_arc_does_not);
   RUN_TEST(test_fill_polygon_fills_triangle);
+  RUN_TEST(test_fill_polygon_draws_with_1000_points);
   RUN_TEST(test_resources_parse_star_and_dot_prefixes_and_tabs);
   RUN_TEST(test_resources_missing_integer_returns_zero);
   RUN_TEST(test_pixel_resource_black_white_hex);
