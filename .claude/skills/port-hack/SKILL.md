@@ -23,6 +23,7 @@ before copying it, and look for:
 | An allocation of 100 KB or more, or `exit()` on failure | Large allocations (Substrate) |
 | Pixmaps, clip masks, a logo image | Images (Maze) |
 | A hack that restarts itself | Restart leak test (Maze, Substrate) |
+| A `free` that relies on state `draw` sets up (a lazy `initted`) | Stopping before the first draw (Blaster) |
 | Threads, GL, Xft, shared memory | Skipping a hack |
 | A licence header | Read it; add a notices section only if it differs from jwz's |
 

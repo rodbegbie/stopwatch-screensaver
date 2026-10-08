@@ -77,6 +77,23 @@ On the device, work out how long a restart takes: cycles times the frame time.
 Substrate's 10,000 cycles at about 160 ms is 27 minutes, and the restart showed
 at about 25. Capture that long, with `-DROTATE_SECONDS=0`.
 
+## Stopping before the first draw
+
+When: the hack allocates on its first `draw` (look for a lazy `initted` flag)
+but sizes its `free` from values set in `init`. Two quick button presses, or a
+press with the 90 s rotation, free a hack before it has drawn once. Blaster
+sets `NUM_ROBOTS` in init, allocates `robots` in draw, and its free loops over
+`robots[i].lasers`, so freeing it first dereferenced NULL. The dump tool with 0
+frames exited 139.
+
+- `test_every_hack_can_be_stopped_before_its_first_frame` starts and stops every
+  hack with no frame, so a new port that has this problem fails the host suite.
+- To fix it without editing the hack, write a wrapper that includes the
+  unmodified source with `XSCREENSAVER_MODULE` emptied and registers the hack
+  itself, with a `free` that makes the loop safe (`hacks/blaster_safe.c`).
+- A real press is rarely handled in that window: Rod's presses on the device
+  all landed after the first step. Rely on the test, not on pressing buttons.
+
 ## Tests that cannot be fooled
 
 A test that runs a real hack can pass for the wrong reason. Pyro clears its own
