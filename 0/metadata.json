@@ -3,7 +3,7 @@
   "checkpoint_id": "01M4DX16ARH5GM1RATQHEX4J8H",
   "session_id": "7818bbd0-37b3-4a75-bc5a-3c69d7ab38a5",
   "strategy": "manual-commit",
-  "created_at": "2026-10-08T14:00:20.383838Z",
+  "created_at": "2026-10-08T14:00:47.472189Z",
   "branch": "feature/xlockmore-batch-1",
   "checkpoints_count": 2,
   "files_touched": [
@@ -13,15 +13,15 @@
   "agent": "Claude Code",
   "model": "claude-sonnet-5-5",
   "turn_id": "dcb40ba453e0",
-  "checkpoint_transcript_start": 1870,
-  "transcript_lines_at_start": 1870,
-  "compact_transcript_start": 242,
+  "checkpoint_transcript_start": 1904,
+  "transcript_lines_at_start": 1904,
+  "compact_transcript_start": 248,
   "token_usage": {
-    "input_tokens": 8,
-    "cache_creation_tokens": 2145,
-    "cache_read_tokens": 564944,
-    "output_tokens": 1810,
-    "api_call_count": 4
+    "input_tokens": 6,
+    "cache_creation_tokens": 2154,
+    "cache_read_tokens": 431608,
+    "output_tokens": 1148,
+    "api_call_count": 3
   },
   "skill_events_version": 1,
   "skill_events": [
@@ -185,28 +185,15 @@
     "turn_count": 22
   },
   "initial_attribution": {
-    "calculated_at": "2026-10-08T14:00:20.295073Z",
-    "agent_lines": 26,
-    "agent_removed": 14,
+    "calculated_at": "2026-10-08T14:00:47.351475Z",
+    "agent_lines": 10,
+    "agent_removed": 10,
     "human_added": 0,
     "human_modified": 0,
     "human_removed": 0,
-    "total_committed": 26,
-    "total_lines_changed": 40,
+    "total_committed": 10,
+    "total_lines_changed": 20,
     "agent_percentage": 100,
     "metric_version": 2
-  },
-  "prompt_attributions": [
-    {
-      "checkpoint_number": 1,
-      "user_lines_added": 16,
-      "user_lines_removed": 0,
-      "agent_lines_added": 0,
-      "agent_lines_removed": 0,
-      "user_added_per_file": {
-        ".private-journal/2026-10-07/19-59-30-000000-79f41e20.md": 8,
-        ".private-journal/2026-10-07/22-51-53-000000-2f0b9ece.md": 8
-      }
-    }
-  ]
+  }
 }
