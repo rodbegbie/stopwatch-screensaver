@@ -73,8 +73,8 @@ holds, so its frame rate will now be lower than shown.
 | Squiral | 30.6-31.0 | 0.1-0.3 ms | 31.1 ms | 0 ms | about 850 KB |
 | Critical | 30.4 | 0.7 ms | 31.1 ms | 0 ms | about 15 KB |
 | CloudLife | 24.2 | 8.8-8.9 ms | 31.4 ms | 0 ms | about 260 KB |
-| WhirlWindWarp | 17.4-25.8 | 6.2-25.2 ms | 31.3 ms | 0 ms | about 410 KB |
-| Flame | 3.4-7.4 | 78-271 ms | 31.4 ms | 0-70 ms | none measurable |
+| WhirlWindWarp | 17.0-24.8 | 6.2-26.4 ms | 31.3 ms | 0 ms | about 410 KB |
+| Flame | 1.8-7.4 | 76-592 ms | 31.4 ms | 0-72 ms | none measurable |
 
 Free heap and free PSRAM return to exactly the same values every time a
 hack is switched back to, so switching does not leak.
@@ -99,15 +99,22 @@ hack is switched back to, so switching does not leak.
   WhirlWindWarp (about 6 ms) are the next most expensive; Squiral and
   Critical draw in under a millisecond and run at the push ceiling.
 - Coral's step time falls as the picture fills in (15.0 fps, then 21.2).
-- Flame is the slowest hack so far, at 78-271 ms a frame, and it varies from
-  picture to picture. Its source is all `double`, with `sin`, `cos` and
-  `sqrt` in a recursive per-point loop, and the ESP32-S3 has only a
-  single-precision FPU. Double-precision maths in software is the likely
-  cause, but it has not been profiled. The scorer's `float-heavy` flag missed
-  it, because it counts call sites in the source, not how often loops run it.
-- WhirlWindWarp ran at 6.2-6.4 ms a frame in one session and a steady 25.2 ms
-  in another. It switches around 16 forcefields on and off at random, so cost
-  may depend on which are active, but that has not been confirmed.
+- Flame is the slowest hack so far. A frame takes about 76-80 ms for the
+  cheap pictures and up to about 590 ms (1.8 fps) for the expensive ones,
+  depending on the random flame it draws. Its source is all `double`, with
+  `sin`, `cos` and `sqrt` in a recursive per-point loop, and the ESP32-S3 has
+  only a single-precision FPU. Double-precision maths in software is the
+  likely cause, but it has not been profiled. The scorer's `float-heavy` flag
+  missed it, because it counts call sites in the source, not how often loops
+  run it. A 590 ms frame also delays button presses by up to that long, since
+  buttons are polled between frames.
+- WhirlWindWarp's step time sits on plateaus that change over time: about 6,
+  8, 10, 19-20 and 25-26 ms across restarts, and it shifted within a single
+  run (19.1, then 20.4, then 26.4 ms). It switches around 16 forcefields on
+  and off at random, which fits, but which ones are expensive has not been
+  identified.
+- Free heap and PSRAM showed a single reading per hack across five restarts
+  each of Flame and WhirlWindWarp, so repeated starts do not leak.
 - Hacks that draw many primitives per frame are the ones to profile first.
 
 ## Other notes
