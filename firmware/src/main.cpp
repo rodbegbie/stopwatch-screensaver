@@ -3,6 +3,7 @@
 
 extern "C" {
 #include "core/canvas.h"
+#include "hacks/registry.h"
 #include "runner/hack_runner.h"
 }
 
@@ -25,9 +26,30 @@ static void halt(const char *msg) {
 }
 
 static void printStats(const char *tag) {
-  Serial.printf("%s fps=%.1f heap=%u psram=%u\n", tag,
+  Serial.printf("%s %s fps=%.1f heap=%u psram=%u\n", tag,
+                g_hacks[runner_index(runner)]->name,
                 frames * 1000.0f / kStatsEveryMs, (unsigned)ESP.getFreeHeap(),
                 (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+}
+
+static void pollButtons() {
+  bool switched = false;
+  if (M5.BtnA.wasPressed()) {
+    runner_next(runner);
+    switched = true;
+  }
+  if (M5.BtnB.wasPressed()) {
+    runner_prev(runner);
+    switched = true;
+  }
+  if (switched) {
+    Serial.printf("switch -> %s heap=%u psram=%u\n",
+                  g_hacks[runner_index(runner)]->name,
+                  (unsigned)ESP.getFreeHeap(),
+                  (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+    frames = 0;
+    statsAt = millis();
+  }
 }
 
 void setup() {
@@ -46,8 +68,7 @@ void setup() {
 
 void loop() {
   M5.update();
-  if (M5.BtnA.wasPressed()) runner_next(runner);
-  if (M5.BtnB.wasPressed()) runner_prev(runner);
+  pollButtons();
 
   unsigned long delayUs = runner_step(runner);
   M5.Display.pushImage(0, 0, kSize, kSize, canvas.px);
@@ -59,8 +80,7 @@ void loop() {
     delayMicroseconds(slice);
     waitedUs += slice;
     M5.update();
-    if (M5.BtnA.wasPressed()) runner_next(runner);
-    if (M5.BtnB.wasPressed()) runner_prev(runner);
+    pollButtons();
   }
 
   if (millis() - statsAt >= kStatsEveryMs) {
