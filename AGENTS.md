@@ -96,9 +96,10 @@ Set `NO_COLOR=1` on `pio` output you parse.
 6. Regenerate the assessment and add measurements to
    `tools/assessment_measured.md`.
 7. If a hack is slow and `double`-heavy (many `double`s, `sqrt`, `sin`/`cos`,
-   `pow`), try a single-precision wrapper like `hacks/galaxy_single.c`
-   (candidates in issue #13). A resource override can skip a hack's restart
-   cleanup: Galaxy leaked at `count: 2`, so leak-test any override.
+   `pow`), try a single-precision wrapper like `hacks/galaxy_single.c`, and
+   compare double and float frames at several frame counts. A resource
+   override can skip a hack's restart cleanup: Galaxy leaked at `count: 2`, so
+   leak-test any override.
 
 ## Delivering a branch
 
@@ -150,10 +151,11 @@ Set `NO_COLOR=1` on `pio` output you parse.
   `x11shim/resources.c`. A `HackEntry`'s `overrides` list beats the hack's own
   defaults (Galaxy runs with `count: -3`, at most three galaxies; a count of
   -2 or above skips the hack's restart cleanup and leaks); register it with
-  `XLOCKMORE_HACK_WITH`. Galaxy is built through `hacks/galaxy_single.c`, which
-  includes the unmodified `galaxy.c` with `double` redefined as `float` (the
-  S3's FPU is single-precision only); `galaxy.c` is excluded from each env's
-  `build_src_filter`.
+  `XLOCKMORE_HACK_WITH`. Galaxy, Drift, Discrete and Flame are built through
+  `hacks/<name>_single.c`, which includes the framework headers, then
+  `hacks/single_precision.h` (`double` and the libm calls become `float` and
+  the `f` versions; the S3's FPU is single-precision only), then the unmodified
+  hack; the original `.c` is excluded from each env's `build_src_filter`.
 - Don't declare `xrealloc` or `xmalloc` in the shim: cloudlife defines its own
   static `xrealloc`, which would clash.
 - `score_hacks.py` rates hacks by call sites, not loop trips: Flame (all
