@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4DWD3XKRXTZX5W8SMKTK2H2",
+  "strategy": "manual-commit",
+  "branch": "feature/xlockmore-batch-1",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "docs/porting-assessment.md",
+    "tools/assessment_measured.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 26,
+    "cache_creation_tokens": 75006,
+    "cache_read_tokens": 1121757,
+    "output_tokens": 6243,
+    "api_call_count": 13
+  }
+}
