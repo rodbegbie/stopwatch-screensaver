@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4CKNNYP16YRAJS0NHRKB51B",
+  "strategy": "manual-commit",
+  "branch": "feature/pyro-m5-stopwatch",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "THIRD_PARTY_NOTICES.md",
+    "firmware/native/dump_main.c",
+    "firmware/platformio.ini",
+    "firmware/src/hacks/pyro/pyro.c",
+    "firmware/src/hacks/registry.c",
+    "firmware/src/hacks/registry.h",
+    "firmware/src/runner/hack_runner.c",
+    "firmware/src/runner/hack_runner.h",
+    "firmware/src/xs_support/hsv.c",
+    "firmware/test/test_pyro/test_pyro.c",
+    "tools/rgb565_to_png.py",
+    "tools/tests/test_png.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 42,
+    "cache_creation_tokens": 24787,
+    "cache_read_tokens": 4649390,
+    "output_tokens": 18350,
+    "api_call_count": 21
+  }
+}
