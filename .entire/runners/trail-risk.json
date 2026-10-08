@@ -1,0 +1,37 @@
+{
+  "id": "trail-risk",
+  "display_name": "Risk Eval",
+  "enabled": true,
+  "scope": "trail",
+  "runtime": {
+    "kind": "prompt_runner",
+    "agent": "claude",
+    "timeout_ms": 300000,
+    "sandbox": {
+      "base_template": "claude",
+      "repo_token": "read"
+    }
+  },
+  "automation": {
+    "kind": "trail_prompt"
+  },
+  "prompt": {
+    "template": "You are a risk evaluator. Analyze the changes on branch \"{{branch}}\" compared to \"{{base_branch}}\".\n\nRun `git diff origin/{{base_branch}}...HEAD` to see the changes, then score **risk** from 0 to 100 (higher = more potential damage if something is wrong).\n\nThis is a hobby embedded project (ESP32-S3 round display running xscreensaver hacks via an X11 shim). Damage is mostly to the device and to correctness, not to users or data. Weigh:\n- Device safety: anything that flashes, erases, or writes the device, changes the partition scheme (`app3M_fat9M_16MB`), touches `ffat`, or alters serial-port/upload config. The original firmware backup is a single copy, so risk here is highest.\n- Memory and overflow: clip/pixel arithmetic not using `int64_t` (32-bit `long` on target), canvas out-of-bounds writes, PSRAM/heap exhaustion or leaks across hack switches, which can crash or hang the device.\n- Shared core: changes to `core/canvas.c`, `x11shim/xshim.c`, `resources.c`, `runner/`, or `main.cpp` affect every hack; changes to a single hack's registry entry affect one.\n- Licensing/integrity: edits to copied hacks (must stay byte-identical), missing licence headers or notices rows.\n- Display/format: RGB565 vs RGB888 handling and byte swapping errors that corrupt all output.\n- Tooling and docs-only changes (Python scripts, generated assessment, Markdown) are low risk unless they break the notices check or tests.\n\nScore bands: 0-15 = docs, comments, or tooling only; 16-40 = isolated tool or single-hack registry change with tests; 41-70 = shared shim/canvas/runner logic changes or new memory allocation, with partial test coverage; 71-100 = flash/partition/erase changes, unchecked arithmetic in core drawing paths, or edits to copied hacks.\n\nOutput ONLY this JSON object as the very last line of your response:\n\n{\"value\": <number 0-100>, \"rationale\": \"<1-2 sentence explanation>\"}"
+  },
+  "select": {
+    "trigger_types": [
+      "api",
+      "push"
+    ]
+  },
+  "output": {
+    "adapter": "last_json_line",
+    "result_type": "trail_monitor",
+    "trail_monitor": {
+      "key": "risk",
+      "label": "Risk",
+      "value_type": "percent",
+      "polarity": "lower_is_better"
+    }
+  }
+}

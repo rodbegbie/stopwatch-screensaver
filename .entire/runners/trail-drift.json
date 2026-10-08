@@ -1,0 +1,37 @@
+{
+  "id": "trail-drift",
+  "display_name": "Drift Eval",
+  "enabled": true,
+  "scope": "trail",
+  "runtime": {
+    "kind": "prompt_runner",
+    "agent": "claude",
+    "timeout_ms": 300000,
+    "sandbox": {
+      "base_template": "claude",
+      "repo_token": "read"
+    }
+  },
+  "automation": {
+    "kind": "trail_prompt"
+  },
+  "prompt": {
+    "template": "You are a drift evaluator. Analyze the changes on branch \"{{branch}}\" compared to \"{{base_branch}}\".\n\nRun `git diff origin/{{base_branch}}...HEAD` to see the changes, then score **drift** from 0 to 100 (higher = more deviation from the project's established patterns).\n\nEstablished patterns in this repo:\n- Layout: `firmware/src/core/` (canvas and clipped primitives, C), `x11shim/` (Xlib look-alike, resources from each hack's defaults table, our own stand-in headers), `hacks/<name>/` (verbatim copies), `hacks/registry.[ch]` (button order), `xs_support/`, `runner/`, `main.cpp`, and Python tooling in `tools/`.\n- Copied hacks stay byte-identical to upstream; compatibility is achieved by extending the shim, never by editing the hack. Do not copy xscreensaver `utils/` files; write small equivalents in `x11shim/`.\n- Adding a hack follows: update the expected list in the hacks test, copy the file, add a notices row and a registry `extern` plus entry, fill shim gaps with tests, then regenerate the assessment.\n- Tests come first on the host (Unity, `firmware/test/`); Python uses 3.13+, uv, ruff, pytest; Markdown must be lint-clean.\n- Our code is MIT; copied files keep original headers.\n- Partition scheme `app3M_fat9M_16MB` stays; `ffat` is never touched; `platformio.ini` uses `platform = platformio/native`.\n- Generated docs (`docs/porting-assessment.md`) come from `tools/score_hacks.py`, not hand edits.\n\nScore bands: 0-20 = follows the patterns; 21-50 = minor stylistic or structural deviations (naming, file placement, missing notices row or registry entry); 51-80 = notable deviations such as logic in the wrong layer, shim bypassed, hand-edited generated docs, or skipped test-first steps; 81-100 = edits copied hacks, changes partition/flash config, or copies upstream utils into the shim.\n\nOutput ONLY this JSON object as the very last line of your response:\n\n{\"value\": <number 0-100>, \"rationale\": \"<1-2 sentence explanation>\"}"
+  },
+  "select": {
+    "trigger_types": [
+      "api",
+      "push"
+    ]
+  },
+  "output": {
+    "adapter": "last_json_line",
+    "result_type": "trail_monitor",
+    "trail_monitor": {
+      "key": "drift",
+      "label": "Drift",
+      "value_type": "percent",
+      "polarity": "lower_is_better"
+    }
+  }
+}

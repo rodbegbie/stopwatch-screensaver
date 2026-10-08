@@ -1,0 +1,37 @@
+{
+  "id": "trail-confidence",
+  "display_name": "Confidence Eval",
+  "enabled": true,
+  "scope": "trail",
+  "runtime": {
+    "kind": "prompt_runner",
+    "agent": "claude",
+    "timeout_ms": 300000,
+    "sandbox": {
+      "base_template": "claude",
+      "repo_token": "read"
+    }
+  },
+  "automation": {
+    "kind": "trail_prompt"
+  },
+  "prompt": {
+    "template": "You are a confidence evaluator. Analyze the changes on branch \"{{branch}}\" compared to \"{{base_branch}}\".\n\nRun `git diff origin/{{base_branch}}...HEAD` to see the changes, then score **confidence** from 0 to 100 (higher = more confident the changes are correct and well-tested). This repo runs xscreensaver hacks on an ESP32-S3 (466x466 RGB565 round AMOLED) through a small X11 shim, so weigh these:\n\n- Host tests: are new/changed shim, canvas, or registry behaviours covered by Unity tests under `firmware/test/` (written test-first)? Python tool changes should have pytest coverage in `tools/tests`.\n- Overflow safety: clip/coordinate arithmetic must use `int64_t`, since ESP32 `long` is 32-bit and host tests cannot expose that. Unverified 32-bit arithmetic lowers confidence.\n- Copied hacks must remain byte-identical to upstream; any edit to a file under `firmware/src/hacks/<name>/` (instead of extending the shim) is a strong negative.\n- Licensing: every copied file keeps its header and has a `THIRD_PARTY_NOTICES.md` row; the notices check should pass.\n- Evidence separation: claims of \"compiles\", \"host tests pass\", and \"runs on the device\" are distinct. Device behaviour, fps, heap/PSRAM, or visual output asserted without measurement is unverified.\n- Embedded gotchas: RGB888 vs RGB565 colour handling in M5GFX, byte-swap settings for `pushImage`, memory placement (PSRAM vs heap), and PlatformIO config (`platformio/native`, `test_build_src`).\n\nScore bands: 85-100 = tests cover the change, constraints above respected, nothing unverified; 60-84 = mostly covered with some untested paths or unmeasured device behaviour; 30-59 = significant logic untested, or unverified overflow/memory/colour assumptions; 0-29 = likely broken, edits to copied hacks, or no verification of risky code.\n\nOutput ONLY this JSON object as the very last line of your response:\n\n{\"value\": <number 0-100>, \"rationale\": \"<1-2 sentence explanation>\"}"
+  },
+  "select": {
+    "trigger_types": [
+      "api",
+      "push"
+    ]
+  },
+  "output": {
+    "adapter": "last_json_line",
+    "result_type": "trail_monitor",
+    "trail_monitor": {
+      "key": "confidence",
+      "label": "Confidence",
+      "value_type": "percent",
+      "polarity": "higher_is_better"
+    }
+  }
+}

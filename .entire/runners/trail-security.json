@@ -1,0 +1,37 @@
+{
+  "id": "trail-security",
+  "display_name": "Security Review",
+  "enabled": true,
+  "scope": "trail",
+  "runtime": {
+    "kind": "prompt_runner",
+    "agent": "claude",
+    "timeout_ms": 300000,
+    "sandbox": {
+      "base_template": "claude",
+      "repo_token": "read"
+    }
+  },
+  "automation": {
+    "kind": "trail_prompt"
+  },
+  "prompt": {
+    "template": "You are a security risk evaluator. Analyze the changes on branch \"{{branch}}\" compared to \"{{base_branch}}\".\n\nRun `git diff origin/{{base_branch}}...HEAD` to see the changes, then score **security risk** from 0 to 100 (review adversarially; higher = more suspicious or insecure).\n\nThis repo is firmware for a standalone ESP32-S3 display device (no network service by default) plus Python tools that download and process third-party code. Focus on:\n- Memory safety in C: buffer overruns, out-of-bounds canvas/pixel writes, integer overflow in clip or size arithmetic (32-bit `long` on target), unchecked allocation results, unbounded string/format use in the shim's resource lookups.\n- Supply chain: `tools/fetch_xscreensaver.py` and similar downloads should pin versions, avoid executing fetched content, and validate paths when extracting archives (path traversal); new vendored or copied code needs a licence header and notices row.\n- Subprocess/shell use in Python tools with unsanitised paths or arguments.\n- Device write access: code that flashes, erases, or overwrites flash/partitions (including `ffat` or the backed-up firmware), or adds Wi-Fi/Bluetooth/OTA/serial command handling that accepts external input.\n- Secrets: credentials, tokens, or personal data committed to the repo or printed over serial.\n\nScore bands: 0-15 = no security-relevant surface touched; 16-40 = minor hygiene issues in tooling; 41-70 = plausible memory-safety bug or unsafe download/extract handling; 71-100 = exploitable overflow, unvalidated external input, or code that can erase/overwrite device flash or leak secrets.\n\nOutput ONLY this JSON object as the very last line of your response:\n\n{\"value\": <number 0-100>, \"rationale\": \"<1-2 sentence explanation>\"}"
+  },
+  "select": {
+    "trigger_types": [
+      "api",
+      "push"
+    ]
+  },
+  "output": {
+    "adapter": "last_json_line",
+    "result_type": "trail_monitor",
+    "trail_monitor": {
+      "key": "security",
+      "label": "Security",
+      "value_type": "percent",
+      "polarity": "lower_is_better"
+    }
+  }
+}
