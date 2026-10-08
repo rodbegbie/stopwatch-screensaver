@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4CM13NJ6ZZ3VP4XXBZ9B28J",
+  "strategy": "manual-commit",
+  "branch": "feature/pyro-m5-stopwatch",
+  "checkpoints_count": 2,
+  "files_touched": [
+    ".markdownlint.json",
+    "docs/porting-assessment.md",
+    "tools/assessment_intro.md",
+    "tools/assessment_measured.md",
+    "tools/score_hacks.py",
+    "tools/tests/test_score.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 16,
+    "cache_creation_tokens": 13555,
+    "cache_read_tokens": 2016948,
+    "output_tokens": 11762,
+    "api_call_count": 8
+  }
+}
