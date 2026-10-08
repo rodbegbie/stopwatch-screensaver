@@ -27,6 +27,7 @@ XLOCKMORE_HACK(fadeplot, "FadePlot");
 XLOCKMORE_HACK(thornbird, "Thornbird");
 XLOCKMORE_HACK(spiral, "Spiral");
 XLOCKMORE_HACK(sphere, "Sphere");
+XLOCKMORE_HACK(discrete, "Discrete");
 
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
@@ -38,5 +39,6 @@ const HackEntry *const g_hacks[] = {
     &fadeplot_hack,
     &thornbird_hack,
     &spiral_hack,
-    &sphere_hack};
+    &sphere_hack,
+    &discrete_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);
