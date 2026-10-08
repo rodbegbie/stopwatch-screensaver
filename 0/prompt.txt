@@ -1,0 +1,1 @@
+Change the scorer to filter out helpers, thanks!
