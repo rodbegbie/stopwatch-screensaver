@@ -26,6 +26,9 @@ embedded-specific choices as you make them. See `README.md` for setup and
 - `tools/`: fetch, notices check, assessment scorer, PNG converter (Python).
   `tools/failed_ports.txt` lists abandoned ports (`name: reason`); the scorer
   marks them ❌, and ✅ comes from `g_hacks[]` in `registry.c`.
+- `.claude/skills/port-hack/`: the order of work for porting a hack, and a
+  recipe per trap (`techniques.md`). Use it when porting or fixing a ported
+  hack. `m5stack-stopwatch/` is the board guide.
 - `vendor/`, `backups/`, `.venv/`, `.platformio/` are git-ignored and local.
 
 ## Commands
@@ -40,14 +43,18 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
   any case; an unknown name falls back to random and logs it). Rebuild without
   it afterwards, since the define sticks to the build.
   It rotates to the next hack every 90 s (a button press restarts the count);
-  `-DROTATE_SECONDS=5` shortens that for leak testing and `=0` turns it off.
+  `-DROTATE_SECONDS=5` shortens that for leak testing and `=0` turns it off. A
+  pinned build still rotates, so add `=0` to measure one hack.
   The log prints `rotate -> <hack> heap= psram=` at each change. Combine flags
   in one `PLATFORMIO_BUILD_FLAGS` string.
 - `pio run -e dump`, then `.pio/build/dump/program <index> <frames> out.raw`,
   then `uv run tools/rgb565_to_png.py out.raw 466 466 out.png` to see a frame.
   The index is the hack's 0-based position in `g_hacks[]` in
-  `hacks/registry.c` (Hopalong is 13, Galaxy 21, Drift 22): look it up, and
-  check the dumped hack by name before trusting a comparison.
+  `hacks/registry.c` (Hopalong is 13, Galaxy 21, Drift 22, Maze 24, Blaster
+  25, Substrate 26): look it up, and check the dumped hack by name before
+  trusting a comparison. With 0 frames it starts and stops the hack, which
+  shows at once whether one survives being freed before its first draw (an
+  exit code of 139 is a crash).
 - To compare frames side by side, write a small `uv run` script with an inline
   `pillow` dependency; the system Python has no PIL.
 - Serial log: read `/dev/cu.usbmodem112401` at 115200 for N seconds into a file
@@ -57,8 +64,9 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
   and the wait) and `switch -> <hack> press_waited=`.
 - Flash with `pio run -e stopwatch -t upload > file 2>&1`, never piped through
   `head`, and check for "Hash of data verified". The button steps backwards
-  (Pyro, then Lightning, then Drift...), and a hack that restarts every ~70 s
-  needs a capture of 150 s or more to show a restart.
+  (Pyro, then Lightning, then Drift...). Work out how long a restart takes
+  from the hack's cycle count times its frame time (Substrate: 10,000 cycles
+  at about 160 ms is 27 minutes) and capture that long, with rotation off.
 - `cc -O1 -fstack-usage -c src/hacks/<n>/<n>.c` (with `-Isrc
   -Isrc/x11shim/include -Isrc/xs_support -DXSHIM_NATIVE -DSTANDALONE`) lists
   stack frames; keep each well under the 16 KB loop stack.
@@ -69,7 +77,8 @@ From the repo root:
   logo converter's tests are skipped, not run)
 - `uv run tools/check_notices.py`
 - `uv run tools/score_hacks.py` regenerates `docs/porting-assessment.md`.
-- `markdownlint <files>` (config in `.markdownlint.json`).
+- `markdownlint <files>` (config in `.markdownlint.json`). Run it from here:
+  from `firmware/` it misses the config and reports line-length errors.
 
 Set `NO_COLOR=1` on `pio` output you parse.
 
@@ -88,6 +97,15 @@ Set `NO_COLOR=1` on `pio` output you parse.
   `long` is 32 bits, so host tests cannot see 32-bit overflow.
 - Mutation-check new tests: break the rule under test and watch the test fail.
   Race fixes need a failing two-thread stress test first (see `test_buttons`).
+  A test can pass for the wrong reason: through Pyro, "starts black" passed
+  with the runner broken (Pyro clears its own window), and "20 non-black
+  pixels" passed on Substrate's white canvas before it drew. Test shared
+  behaviour with stub hacks, and compare with the canvas the hack started on.
+- Changing what every hack sees (the runner, a default, a shared helper) is not
+  filling a shim gap: ask Rod first.
+- Verify a delegated port yourself: `cmp` the hack, run the full suite, build
+  for the device. Agents' reports have been wrong (a test count; "orange looks
+  orange in a host frame" taken as proof of byte order).
 - **Never flash, erase or write the device without asking Rod.** The
   conference firmware was backed up to `backups/` (git-ignored, one copy).
   Keep the `app3M_fat9M_16MB` partition scheme and never touch `ffat`. Serial
@@ -99,6 +117,9 @@ Set `NO_COLOR=1` on `pio` output you parse.
   Use named paths with `git add`, never `-A`.
 
 ## Adding a hack
+
+The `port-hack` skill orders this work, says what to read for before copying a
+hack, and holds a recipe per trap. The steps:
 
 1. Check its row in `docs/porting-assessment.md` and read its licence header.
 2. Update the expected list in `firmware/test/test_hacks/test_hacks.c` and see
@@ -112,8 +133,10 @@ Set `NO_COLOR=1` on `pio` output you parse.
 6. Regenerate the assessment and add measurements to
    `tools/assessment_measured.md`.
 7. If a hack is slow and `double`-heavy (many `double`s, `sqrt`, `sin`/`cos`,
-   `pow`), try a single-precision wrapper like `hacks/galaxy_single.c`, and
-   compare double and float frames at several frame counts. A resource
+   `pow`), try a single-precision wrapper like `hacks/galaxy_single.c` (for a
+   plain screenhack, `hacks/substrate_single.c`; the recipe is in the skill's
+   `techniques.md`), and compare double and float frames at several frame
+   counts. A resource
    override can skip a hack's restart cleanup: Galaxy leaked at `count: 2`, so
    leak-test any override.
 
@@ -124,7 +147,14 @@ Set `NO_COLOR=1` on `pio` output you parse.
   both (`entire trail update --body`, `gh pr edit N --body-file`). Put
   `Fixes #N` in the body.
 - Rod approves and merges (merge commit). Afterwards delete the merged branch
-  (remote and local) without asking and fast-forward `main`.
+  (remote and local) without asking and fast-forward `main`. Confirm the merge
+  after a fresh `git fetch`: a stale `origin/main` says "not merged". Remove
+  the branch's worktree first (a checked-out branch cannot be deleted), and
+  note that `git branch -d` refuses while local `main` is behind, so check
+  `git merge-base --is-ancestor <tip> origin/main` and then use `-D`. `main` is
+  usually checked out in Rod's main checkout, so `git fetch origin main:main`
+  is refused there: run `git merge --ff-only origin/main` in it, only if
+  `git status` shows no tracked changes.
 - Merge with `gh pr merge N --merge` once Rod approves. His approval is
   enough: do not wait for the Entire Gates check to finish.
 - `gh pr edit N --body-file` replaces the whole body, including the
@@ -142,6 +172,19 @@ Set `NO_COLOR=1` on `pio` output you parse.
   `--force-with-lease`: ask Rod first.
 - `docs/porting-assessment.md` conflicts on rebase: `git checkout --theirs`
   it to continue, then rerun `tools/score_hacks.py` and amend the result in.
+- Two ports in flight both append to `g_hacks[]`, so whichever merges second
+  conflicts in `registry.c`, the expected list in `test_hacks.c`,
+  `THIRD_PARTY_NOTICES.md`, `tools/assessment_measured.md` (rows, paragraphs and
+  the hack count) and the three `build_src_filter` lines in `platformio.ini`,
+  as well as the generated assessment. Keep both sides, put the newer hack
+  last, and regenerate the assessment. A rebased published branch needs
+  `--force-with-lease` (ask Rod), and GitHub can reject that push once too.
+- A finding that says the code "does not exist" can be stale after a rebase
+  (the skill PR was reviewed before the Blaster and Substrate code it referred
+  to had landed). Check it against `main` before dismissing, and put the
+  evidence in the dismissal. Entire's approvals gate once showed "no reviewers
+  have approved" right after a force push, though Rod had approved; his word is
+  enough, so say so and go ahead.
 
 ## Gotchas
 
@@ -150,7 +193,10 @@ Set `NO_COLOR=1` on `pio` output you parse.
   `setSwapBytes(true)`. It was `false` until Maze: a hue-sweeping palette
   stays a rainbow with its bytes swapped (red, green and blue rotate), so no
   earlier hack showed the fault. Only pure black and white, or a colour you
-  know (Maze's red flame, its green solving path), expose a swap.
+  know (Maze's red flame, its green solving path), expose a swap. Host frames
+  cannot show one, since it happens in the push to the display. Pushes went
+  from 31 ms to 41-45 ms on every hack about then (#23): the swap is the
+  suspect, but that is untested.
 - In `platformio.ini` use `platform = platformio/native`; plain `native`
   breaks `pio run`. Native tests need `test_build_src = yes`.
 - Quoted includes resolve beside the including file first, so compile hack
@@ -164,8 +210,18 @@ Set `NO_COLOR=1` on `pio` output you parse.
   on core 0 into `button_latch`, which needs the pin to hold a level for 30 ms.
   Reading the pin level inside a GPIO interrupt did not work: the release
   bounced and was counted as a second press. Check `press_waited` in the log.
-- The runner caps a hack's delay at 10 s, and the loop credits only the 31 ms
-  push against it, because a hack's delay is its pause after drawing.
+- The runner caps a hack's delay at 10 s, and the loop credits only the push
+  (31 ms originally, 41-45 ms now, #23) against it, because a hack's delay is
+  its pause after drawing. Compare device numbers with a baseline from the same
+  build, not with old rows: Pyro fell from 30 to 23 fps with no change to Pyro.
+- `runner_start` paints the canvas in the hack's `background` resource before
+  `init`, as `screenhack.c` paints the window, or black if it has none.
+  Substrate is white; every other hack asks for black or nothing.
+- `unsigned long` is 4 bytes on the device and 8 on the host, so a hack that
+  allocates arrays of it (Substrate's two 466 by 466 buffers) is twice the size
+  on the host, and host leak numbers are twice the device's. On the device,
+  plain `malloc`/`realloc` of about 868 KB reached PSRAM (free PSRAM fell by
+  1.74 MB) and came back on restart; internal heap barely moved.
 - xlockmore hacks (the 40 that include `xlockmore.h`) need `-DSTANDALONE`,
   which every PlatformIO env and `score_hacks.py` set; without it they
   include `xlock.h` instead. The envs also define `HAVE_MOBILE`, because
@@ -226,11 +282,16 @@ Set `NO_COLOR=1` on `pio` output you parse.
 - `pio test` hides `printf` and stderr from tests. To see two values, assert
   `TEST_ASSERT_EQUAL_UINT64(a, b)` temporarily: the failure line prints both.
 - In a git worktree the ignored `vendor/`, `.venv/` and `.platformio/` are
-  missing. Symlink them from the main checkout and add the three names to
-  `.git/info/exclude` (`.gitignore`'s trailing slashes don't match symlinks).
+  missing. Symlink them from the main checkout. `.gitignore`'s trailing slashes
+  don't match symlinks, so they would show as untracked, but the shared
+  `.git/info/exclude` already lists the three names. That file is shared by
+  every worktree: ask Rod before adding to it.
   The harness refuses `source tools/env.sh` and a computed `PATH` there: run
   `PLATFORMIO_CORE_DIR=<worktree>/.platformio ../.venv/bin/pio ...` instead,
-  and keep commands plain (no scripts or loops that name `$VAR` paths).
+  and keep commands plain (no scripts, loops, `$VAR` in a command or `&&`
+  chains with a computed path). A worktree an agent works in (`isolation:
+  "worktree"`) starts from `origin/main`, not from your branch, and has no
+  vendor or toolchain until you link them.
 - zsh does not word-split `$var`: loop over file lists with `bash -c`.
 - jwz.org returns 403 to Python's default User-Agent.
 - `esptool` reads of the 16 MB flash need `--baud 921600` (about 3.5 minutes)
