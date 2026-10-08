@@ -23,3 +23,5 @@ implied warranty.
 
 | File | Copyright | Licence |
 | --- | --- | --- |
+| `firmware/src/hacks/pyro/pyro.c` | Copyright (c) 1992-2008 Jamie Zawinski; inspired by TI Explorer Lisp code by John S. Pezaris | jwz permission notice (above) |
+| `firmware/src/xs_support/hsv.c` | Copyright (c) 1992, 1997 Jamie Zawinski | jwz permission notice (above) |
