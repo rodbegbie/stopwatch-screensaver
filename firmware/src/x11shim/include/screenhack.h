@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "colors.h"
 #include "hsv.h"
 #include "runner/hack_entry.h"
 #include "utils.h"

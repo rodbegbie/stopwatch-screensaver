@@ -28,7 +28,7 @@ static const HackEntry huge_hack = {"huge", NULL, stub_init, huge_draw, stub_fre
 static const HackEntry *const stubs[] = {&zero_hack, &huge_hack};
 
 void test_pyro_is_registered(void) {
-  TEST_ASSERT_EQUAL_INT(1, g_hack_count);
+  TEST_ASSERT_TRUE(g_hack_count >= 1);
   TEST_ASSERT_EQUAL_STRING("Pyro", g_hacks[0]->name);
 }
 
@@ -69,7 +69,7 @@ void test_switching_100_times_is_asan_clean(void) {
   runner_start(r, 0);
   for (int i = 0; i < 100; i++) {
     for (int s = 0; s < 5; s++) runner_step(r);
-    TEST_ASSERT_EQUAL_INT(0, runner_next(r));
+    TEST_ASSERT_EQUAL_INT((i + 1) % g_hack_count, runner_next(r));
   }
   runner_destroy(r);
 }
