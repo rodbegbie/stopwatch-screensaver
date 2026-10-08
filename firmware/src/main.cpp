@@ -6,6 +6,7 @@ extern "C" {
 #include "hacks/registry.h"
 #include "runner/button_latch.h"
 #include "runner/hack_runner.h"
+#include "runner/overlay.h"
 }
 
 /* Hacks run on loopTask, whose 8 KB default stack is too small: Rorschach
@@ -15,6 +16,9 @@ SET_LOOP_TASK_STACK_SIZE(16 * 1024);
 static const int kSize = 466;
 static const uint32_t kSliceUs = 10000;
 static const uint32_t kStatsEveryMs = 5000;
+static const uint32_t kNameShownMs = 5000;
+static const int kNameY = kSize / 2;
+static const int kFpsY = kSize - 40;
 
 /* M5Unified reads the buttons as active-low GPIOs, and only inside
  * M5.update(), so a press during a long hack step would go unseen. A small
@@ -39,6 +43,7 @@ static void buttonTask(void *) {
 
 static Canvas canvas;
 static HackRunner *runner;
+static Overlay overlay;
 static uint32_t frames;
 static uint32_t statsAt;
 static uint32_t stepUs, pushUs, waitUs;
@@ -70,6 +75,39 @@ static void printStats(const char *tag) {
       (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
 }
 
+/* Text goes straight to the display after each pushImage rather than into the
+ * canvas: hacks draw incrementally, so anything stamped into the canvas would
+ * stay there. A black outline keeps white text readable on bright hacks. */
+static void drawOutlinedText(const char *text, int x, int y,
+                             const lgfx::IFont *font) {
+  M5.Display.setFont(font);
+  M5.Display.setTextDatum(middle_center);
+  M5.Display.setTextColor(0x000000);
+  for (int dy = -1; dy <= 1; dy++)
+    for (int dx = -1; dx <= 1; dx++)
+      if (dx || dy) M5.Display.drawString(text, x + dx, y + dy);
+  M5.Display.setTextColor(0xFFFFFF);
+  M5.Display.drawString(text, x, y);
+}
+
+static void paintOverlay() {
+  uint32_t now = millis();
+  if (overlay_name_visible(&overlay, now))
+    drawOutlinedText(g_hacks[runner_index(runner)]->name, kSize / 2, kNameY,
+                     &fonts::DejaVu24);
+  if (overlay_fps_visible(&overlay)) {
+    char text[16];
+    overlay_fps_text(&overlay, text, sizeof text);
+    drawOutlinedText(text, kSize / 2, kFpsY, &fonts::DejaVu18);
+  }
+  overlay_drawn(&overlay, now);
+}
+
+static void present() {
+  M5.Display.pushImage(0, 0, kSize, kSize, canvas.px);
+  paintOverlay();
+}
+
 /* Returns true if a button switched hacks (which also resets the stats). */
 static bool pollButtons() {
   bool switched = false;
@@ -88,9 +126,16 @@ static bool pollButtons() {
                   (unsigned)(millis() - pressedAt),
                   (unsigned)ESP.getFreeHeap(),
                   (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+    overlay_hack_started(&overlay, millis());
     resetStats();
   }
   return switched;
+}
+
+/* A tap anywhere toggles the fps readout. Call right after M5.update(), which
+ * is the only place the touch edge is recorded. */
+static void pollTouch() {
+  if (M5.Touch.getDetail().wasPressed()) overlay_toggle_fps(&overlay);
 }
 
 void setup() {
@@ -107,6 +152,8 @@ void setup() {
     halt("PSRAM alloc failed");
   runner = runner_create(&canvas);
   if (!runner || runner_start(runner, 0) != 0) halt("hack start failed");
+  overlay_init(&overlay, kNameShownMs);
+  overlay_hack_started(&overlay, millis());
   printStats("boot");
   resetStats();
 }
@@ -114,13 +161,15 @@ void setup() {
 void loop() {
   M5.update();
   pollButtons();
+  pollTouch();
 
   uint32_t t0 = micros();
   unsigned long delayUs = runner_step(runner);
   uint32_t t1 = micros();
-  M5.Display.pushImage(0, 0, kSize, kSize, canvas.px);
+  present();
   uint32_t t2 = micros();
   frames++;
+  overlay_frame(&overlay, millis());
   stepUs += t1 - t0;
   pushUs += t2 - t1;
 
@@ -137,6 +186,8 @@ void loop() {
     waitedUs += slice;
     M5.update();
     switched = pollButtons();
+    if (!switched) pollTouch();
+    if (!switched && overlay_wants_redraw(&overlay, millis())) present();
   }
   if (!switched) waitUs += micros() - t2;
 
