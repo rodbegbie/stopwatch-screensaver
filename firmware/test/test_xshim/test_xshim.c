@@ -228,8 +228,54 @@ void test_make_random_colormap_fills_colours_in_rgb565(void) {
   TEST_ASSERT_TRUE(distinct >= 2);
 }
 
+void test_fill_rectangles_fills_each_rectangle_in_the_gc_colour(void) {
+  XGCValues v;
+  v.foreground = 0xF800;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XRectangle rs[2] = {{1, 1, 2, 2}, {10, 12, 3, 1}};
+  XFillRectangles(dpy, win, gc, rs, 2);
+  TEST_ASSERT_EQUAL_INT(7, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xF800, at(2, 2));
+  TEST_ASSERT_EQUAL_HEX16(0xF800, at(12, 12));
+  XFreeGC(dpy, gc);
+}
+
+void test_fill_rectangles_with_zero_count_draws_nothing(void) {
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XRectangle r = {0, 0, 4, 4};
+  XFillRectangles(dpy, win, gc, &r, 0);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XFreeGC(dpy, gc);
+}
+
+void test_gc_accepts_background_field_and_mask(void) {
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  v.background = 0x0000;
+  GC gc = XCreateGC(dpy, win, GCForeground | GCBackground | GCFunction, &v);
+  TEST_ASSERT_NOT_NULL(gc);
+  XFillRectangle(dpy, win, gc, 0, 0, 2, 2);
+  TEST_ASSERT_EQUAL_INT(4, count_set());
+  XFreeGC(dpy, gc);
+}
+
+void test_event_helper_reports_button_press_only(void) {
+  XEvent e;
+  memset(&e, 0, sizeof(e));
+  e.type = ButtonPress;
+  TEST_ASSERT_TRUE(screenhack_event_helper(dpy, win, &e));
+  e.type = 0;
+  TEST_ASSERT_FALSE(screenhack_event_helper(dpy, win, &e));
+}
+
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_fill_rectangles_fills_each_rectangle_in_the_gc_colour);
+  RUN_TEST(test_fill_rectangles_with_zero_count_draws_nothing);
+  RUN_TEST(test_gc_accepts_background_field_and_mask);
+  RUN_TEST(test_event_helper_reports_button_press_only);
   RUN_TEST(test_white_and_black_pixel);
   RUN_TEST(test_alloc_color_red_gives_f800_and_white_gives_ffff);
   RUN_TEST(test_foreground_via_gc_used_by_fill_rectangle);

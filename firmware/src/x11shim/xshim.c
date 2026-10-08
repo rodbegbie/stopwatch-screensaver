@@ -80,6 +80,20 @@ int XFillRectangle(Display *dpy, Drawable d, GC gc, int x, int y,
   return 0;
 }
 
+int XFillRectangles(Display *dpy, Drawable d, GC gc, XRectangle *rects,
+                    int n) {
+  for (int i = 0; i < n; i++)
+    XFillRectangle(dpy, d, gc, rects[i].x, rects[i].y, rects[i].width,
+                   rects[i].height);
+  return 0;
+}
+
+Bool screenhack_event_helper(Display *dpy, Window w, XEvent *event) {
+  (void)dpy;
+  (void)w;
+  return event->type == ButtonPress;
+}
+
 int XFillArc(Display *dpy, Drawable d, GC gc, int x, int y, unsigned int w,
              unsigned int h, int angle1, int angle2) {
   (void)d;

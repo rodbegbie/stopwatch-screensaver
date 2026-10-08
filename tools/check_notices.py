@@ -19,7 +19,8 @@ NOTICE_PHRASES = (
 
 
 def has_notice(text: str) -> bool:
-    head = "\n".join(text.splitlines()[:HEADER_LINES]).lower()
+    lines = (line.lstrip(" \t/*") for line in text.splitlines()[:HEADER_LINES])
+    head = " ".join(" ".join(lines).split()).lower()
     return "copyright" in head and any(p in head for p in NOTICE_PHRASES)
 
 
