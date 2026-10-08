@@ -34,10 +34,21 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Galaxy",
                                          "Drift",
                                          "Lightning",
-                                         "Maze"};
+                                         "Maze",
+                                         "Blaster"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
+}
+
+/* Two quick button presses (or a press with the 90 s rotation) switch away
+ * from a hack before it has drawn once. */
+void test_every_hack_can_be_stopped_before_its_first_frame(void) {
+  for (int i = 0; i < g_hack_count; i++) {
+    HackRunner *r = runner_create(&cv);
+    TEST_ASSERT_EQUAL_INT(0, runner_start(r, i));
+    runner_destroy(r);
+  }
 }
 
 void test_every_hack_draws_something_within_2000_frames(void) {
@@ -140,6 +151,7 @@ void test_prev_from_first_wraps_to_last_hack(void) {
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
+  RUN_TEST(test_every_hack_can_be_stopped_before_its_first_frame);
   RUN_TEST(test_every_hack_draws_something_within_2000_frames);
   RUN_TEST(test_every_hack_runs_3000_frames_cleanly_with_sane_delays);
   RUN_TEST(test_cycling_through_all_hacks_100_times_is_asan_clean);

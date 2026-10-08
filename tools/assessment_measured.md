@@ -1,6 +1,6 @@
 ## Measured on the device
 
-Twenty-five hacks have been run so far (default settings, 466×466 canvas
+Twenty-six hacks have been run so far (default settings, 466×466 canvas
 pushed to the display every frame, canvas held in PSRAM). The firmware times
 each frame in three parts, averaged over 5 seconds: **step** is the hack's own
 draw call, **push** is sending the canvas to the display, and **wait** is what
@@ -36,6 +36,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Drift | 22.0-23.0 | 11-13 ms | 31.5 ms | 0 ms | about 16 KB |
 | Lightning | 29.4 | 1.8-1.9 ms | 31.2 ms | 0 ms | none measurable |
 | Maze | 6.0-28.8 | 0.1-1.3 ms | 31.2-33.4 ms | 0-256 ms | not measured |
+| Blaster | 20.4-20.8 | 3.6-4.0 ms | 43.4-44.4 ms | 0 ms | not measured |
 
 Maze's row is 26 five-second readings over 160 seconds, taken on a build that
 includes the overlay stamping. Its steps are cheap, and its frame rate is set
@@ -46,6 +47,15 @@ before and after solving), so it is mostly waiting. Free heap held at
 is no PSRAM baseline for this build yet, so its roughly 125 KB of state is
 not split out, and the log does not show whether the allocator put it in PSRAM
 or in internal heap.
+
+Blaster's row is 32 five-second readings over 160 seconds. It is limited by
+the push, not by the hack: its step is 4 ms and its wait is 0. Its push is
+about 12 ms slower than the 31 ms of the earlier rows, and that has not been
+investigated, so the cause is unknown. Free heap held between 338,352 and
+338,440 bytes and free PSRAM at 7,424,155 throughout, and no stack canary,
+panic or reboot appeared. There is no PSRAM baseline for this build, so its
+extra PSRAM is not split out. This run used a build with the byte-order fix,
+which was applied locally before it reached `main`.
 
 Free heap and free PSRAM return to exactly the same values every time a
 hack is switched back to, so switching does not leak.

@@ -207,6 +207,12 @@ Set `NO_COLOR=1` on `pio` output you parse.
   fall outside the round display's visible circle.
 - `check_notices.py` reads 100 lines of header: Maze's licence follows a long
   modification history.
+- A hack can be freed before its first draw: two quick presses, or a press
+  with the 90 s rotation. `test_every_hack_can_be_stopped_before_its_first_frame`
+  runs every hack through it. Blaster's free dereferenced NULL (it sizes a loop
+  in init but allocates in draw), so `hacks/blaster_safe.c` includes the
+  unmodified hack with `XSCREENSAVER_MODULE` emptied and registers it with a
+  free that zeroes `NUM_ROBOTS` when `robots` is NULL.
 - Don't declare `xrealloc` or `xmalloc` in the shim: cloudlife defines its own
   static `xrealloc`, which would clash.
 - `score_hacks.py` rates hacks by call sites, not loop trips: Flame (all
