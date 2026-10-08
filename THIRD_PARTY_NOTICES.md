@@ -30,6 +30,11 @@ implied warranty.
 | `firmware/src/hacks/petri/petri.c` | Copyright (c) 1992-1999 Dan Bornstein, with help from Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/helix/helix.c` | Copyright (c) 1992-2008 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/rorschach/rorschach.c` | Copyright (c) 1992-2014 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/coral/coral.c` | Frederick G.M. Roeber, 1997 (no copyright line; the header names him as author) | jwz permission notice (above) |
+| `firmware/src/hacks/squiral/squiral.c` | Jeff Epler, 1999 (no copyright line; the header names him as author) | jwz permission notice (above) |
+| `firmware/src/hacks/critical/critical.c` | Copyright (C) 1998, 1999, 2000 Martin Pool | jwz permission notice (above), reflowed in the file |
+| `firmware/src/hacks/cloudlife/cloudlife.c` | Don Marti; based on xscreensaver, Copyright (c) 1997, 1998, 2002 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/whirlwindwarp/whirlwindwarp.c` | Copyright (c) 2000 Paul "Joey" Clark | jwz permission notice (above) |
 | `firmware/src/hacks/pedal/pedal.c` | Copyright (c) 1994 Carnegie Mellon University; X version by Dale Moore | CMU permission notice (below) |
 
 Each copied file keeps its own header unchanged; the notice text above is
