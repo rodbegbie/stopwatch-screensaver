@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "hacks/registry.h"
+#include "screenhackI.h"
 #include "x11shim/xshim.h"
 
 #define RUNNER_WINDOW ((Window)1)
@@ -36,9 +37,25 @@ HackRunner *runner_create(Canvas *canvas) {
   return runner_create_with(canvas, g_hacks, g_hack_count);
 }
 
+typedef struct {
+  const char *const *defaults;
+  void *(*init)(Display *, Window);
+  unsigned long (*draw)(Display *, Window, void *);
+  void (*free)(Display *, Window, void *);
+} Callbacks;
+
+/* An xlockmore hack's table is empty until its setup_cb has run, and that
+ * allocates, so run it once rather than on every button press. */
+static Callbacks callbacks_for(const HackEntry *e) {
+  struct xscreensaver_function_table *t = e->xsft;
+  if (!t) return (Callbacks){e->defaults, e->init, e->draw, e->free};
+  if (!t->init_cb && t->setup_cb) t->setup_cb(t, t->setup_arg);
+  return (Callbacks){t->defaults, t->init_cb, t->draw_cb, t->free_cb};
+}
+
 static void stop(HackRunner *r) {
   if (!r->running) return;
-  r->hacks[r->index]->free(r->dpy, RUNNER_WINDOW, r->closure);
+  callbacks_for(r->hacks[r->index]).free(r->dpy, RUNNER_WINDOW, r->closure);
   r->closure = NULL;
   r->running = 0;
 }
@@ -55,15 +72,17 @@ int runner_start(HackRunner *r, int index) {
   stop(r);
   r->index = index;
   canvas_clear(r->canvas, 0);
-  xshim_set_defaults(r->hacks[index]->defaults);
-  r->closure = r->hacks[index]->init(r->dpy, RUNNER_WINDOW);
+  const Callbacks cb = callbacks_for(r->hacks[index]);
+  xshim_set_defaults(cb.defaults);
+  r->closure = cb.init(r->dpy, RUNNER_WINDOW);
   r->running = 1;
   return 0;
 }
 
 unsigned long runner_step(HackRunner *r) {
   if (!r->running) return RUNNER_MAX_DELAY_US;
-  unsigned long d = r->hacks[r->index]->draw(r->dpy, RUNNER_WINDOW, r->closure);
+  unsigned long d =
+      callbacks_for(r->hacks[r->index]).draw(r->dpy, RUNNER_WINDOW, r->closure);
   if (d < RUNNER_MIN_DELAY_US) return RUNNER_MIN_DELAY_US;
   if (d > RUNNER_MAX_DELAY_US) return RUNNER_MAX_DELAY_US;
   return d;
