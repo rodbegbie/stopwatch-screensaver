@@ -1,0 +1,5 @@
+I've approved the trail. Merge it, and clean up the branch.
+
+---
+
+Create an AGENTS.md for this repo.
