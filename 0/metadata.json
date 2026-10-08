@@ -1,0 +1,131 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4E7MGKTY69FK5KVB6T5B14A",
+  "session_id": "71812269-372f-4699-85c6-af4b5c587e38",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-08T17:05:39.203146Z",
+  "branch": "worktree-port-maze",
+  "checkpoints_count": 6,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "e62a319d4c92",
+  "checkpoint_transcript_start": 1026,
+  "transcript_lines_at_start": 1026,
+  "compact_transcript_start": 107,
+  "token_usage": {
+    "input_tokens": 60,
+    "cache_creation_tokens": 22579,
+    "cache_read_tokens": 6600874,
+    "output_tokens": 12452,
+    "api_call_count": 29
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01RNx5LfhjF9HrR7jW4FakzH",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:using-git-worktrees"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "49cb3a2628b9",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 33,
+        "end": 34,
+        "entry_ids": [
+          "93ea5309-b942-4020-863d-664d9d026a77"
+        ],
+        "tool_use_id": "toolu_01RNx5LfhjF9HrR7jW4FakzH"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01RNx5LfhjF9HrR7jW4FakzH"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:using-git-worktrees",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_013cLJDxHWuxksGE2fntXKkW",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:test-driven-development"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "49cb3a2628b9",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 210,
+        "end": 211,
+        "entry_ids": [
+          "c4b25f3c-213a-4fc0-8768-046c5f087dee"
+        ],
+        "tool_use_id": "toolu_013cLJDxHWuxksGE2fntXKkW"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_013cLJDxHWuxksGE2fntXKkW"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:test-driven-development",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_016u1EkRG6eBVDfpqcNg9AAW",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "49cb3a2628b9",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 353,
+        "end": 354,
+        "entry_ids": [
+          "b0ac4927-f294-4174-a240-2141748f02ea"
+        ],
+        "tool_use_id": "toolu_016u1EkRG6eBVDfpqcNg9AAW"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_016u1EkRG6eBVDfpqcNg9AAW"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 8
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
