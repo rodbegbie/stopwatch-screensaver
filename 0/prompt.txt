@@ -1,0 +1,20 @@
+Might as well do any remaining S hacks before we wrap up and open a PR.
+
+---
+
+<task-notification>
+<task-id>bycp3drv9</task-id>
+<tool-use-id>toolu_01MZxwppi2QK3g9fSE7nJepo</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/9ff4d289-e3e5-47fe-8d32-0ed03bdf959a/tasks/bycp3drv9.output</output-file>
+<status>completed</status>
+<summary>Background command "source ../tools/env.sh &amp;&amp; NO_COLOR=1 pio run -e stopwatch -t upload 2&gt;&amp;1 | grep -E 'Hash of data|FAILED|rror' | tail -2; sleep 3; SC=/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/9ff4d289-e3e5-47fe-8d32-0ed03bdf959a/scratchpad; (../.venv/bin/python -W ignore - &gt; $SC/serial-helix.log 2&gt;&amp;1 &lt;&lt;'EOF'
+import serial, time
+s = serial.Serial("/dev/cu.usbmodem112401", 115200, timeout=1)
+end = time.time() + 40
+while time.time() &lt; end:
+    l = s.readline()
+    if l: print(time.strftime("%H:%M:%S"), l.decode(errors="replace").rstrip(), flush=True)
+EOF
+) &amp;
+sleep 1; echo capture-started" completed (exit code 0)</summary>
+</task-notification>
