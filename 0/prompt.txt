@@ -1,0 +1,1 @@
+Let's flash and test on device so we know more before carrying onto the next hacks.
