@@ -19,6 +19,7 @@ static Canvas canvas;
 static HackRunner *runner;
 static uint32_t frames;
 static uint32_t statsAt;
+static uint32_t stepUs, pushUs, waitUs;
 
 static void halt(const char *msg) {
   Serial.println(msg);
@@ -29,11 +30,21 @@ static void halt(const char *msg) {
   for (;;) delay(1000);
 }
 
+static void resetStats() {
+  frames = stepUs = pushUs = waitUs = 0;
+  statsAt = millis();
+}
+
+/* step/push/wait are mean milliseconds per frame spent in the hack, in
+ * pushImage, and in the hack-requested delay (including button polling). */
 static void printStats(const char *tag) {
-  Serial.printf("%s %s fps=%.1f heap=%u psram=%u\n", tag,
-                g_hacks[runner_index(runner)]->name,
-                frames * 1000.0f / kStatsEveryMs, (unsigned)ESP.getFreeHeap(),
-                (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+  float n = frames ? (float)frames : 1.0f;
+  Serial.printf(
+      "%s %s fps=%.1f step=%.1fms push=%.1fms wait=%.1fms heap=%u psram=%u\n",
+      tag, g_hacks[runner_index(runner)]->name,
+      frames * 1000.0f / kStatsEveryMs, stepUs / n / 1000.0f,
+      pushUs / n / 1000.0f, waitUs / n / 1000.0f, (unsigned)ESP.getFreeHeap(),
+      (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
 }
 
 static void pollButtons() {
@@ -51,8 +62,7 @@ static void pollButtons() {
                   g_hacks[runner_index(runner)]->name,
                   (unsigned)ESP.getFreeHeap(),
                   (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
-    frames = 0;
-    statsAt = millis();
+    resetStats();
   }
 }
 
@@ -67,16 +77,21 @@ void setup() {
   runner = runner_create(&canvas);
   if (!runner || runner_start(runner, 0) != 0) halt("hack start failed");
   printStats("boot");
-  statsAt = millis();
+  resetStats();
 }
 
 void loop() {
   M5.update();
   pollButtons();
 
+  uint32_t t0 = micros();
   unsigned long delayUs = runner_step(runner);
+  uint32_t t1 = micros();
   M5.Display.pushImage(0, 0, kSize, kSize, canvas.px);
+  uint32_t t2 = micros();
   frames++;
+  stepUs += t1 - t0;
+  pushUs += t2 - t1;
 
   uint32_t waitedUs = 0;
   while (waitedUs < delayUs) {
@@ -86,10 +101,10 @@ void loop() {
     M5.update();
     pollButtons();
   }
+  waitUs += micros() - t2;
 
   if (millis() - statsAt >= kStatsEveryMs) {
     printStats("run");
-    frames = 0;
-    statsAt = millis();
+    resetStats();
   }
 }

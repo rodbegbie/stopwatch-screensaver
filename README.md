@@ -4,11 +4,12 @@ xscreensaver "hacks" running on the M5Stack StopWatch (SKU C152, ESP32-S3,
 466×466 round AMOLED), through a small X11 shim. A learning project in
 embedded development.
 
-Right now it runs five hacks, unmodified from xscreensaver 6.16: **Pyro**
-(fireworks), **HyperCube**, **XSpirograph**, **Petri** (mould growth) and
-**Helix**, at about 22 fps (the line-heavy ones about 10). The
-[porting assessment](docs/porting-assessment.md) rates every other hack by
-porting effort.
+Right now it runs seven hacks, unmodified from xscreensaver 6.16: **Pyro**
+(fireworks), **HyperCube**, **XSpirograph**, **Petri** (mould growth),
+**Helix**, **Rorschach** and **Pedal**. Frame rates run from 1 to about 23 fps,
+mostly set by the delay each hack asks for; pushing a frame to the display
+costs 31 ms. The [porting assessment](docs/porting-assessment.md) rates every
+other hack by porting effort and lists the measurements.
 
 ## How it works
 

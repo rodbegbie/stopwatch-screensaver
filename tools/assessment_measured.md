@@ -1,32 +1,40 @@
 ## Measured on the device
 
 Seven hacks have been run so far (default settings, 466×466 canvas pushed to
-the display every frame, canvas held in PSRAM).
+the display every frame, canvas held in PSRAM). The firmware times each frame
+in three parts, averaged over 5 seconds: **step** is the hack's own draw call,
+**push** is sending the canvas to the display, and **wait** is the delay the
+hack asked for (the runner clamps it to 1 second).
 
-| Hack | Frame rate | Extra PSRAM while running |
-| --- | --- | --- |
-| Pyro | about 23 fps | about 80 KB |
-| HyperCube | about 22 fps | none measurable |
-| Petri | about 22-24 fps | about 1.3 MB |
-| XSpirograph | about 9.6 fps | none measurable |
-| Helix | about 10-15 fps | none measurable |
-| Rorschach | about 9 fps | none measurable |
-| Pedal | 1 fps by design (not a speed limit) | none measurable |
+| Hack | fps | step | push | wait | Extra PSRAM |
+| --- | --- | --- | --- | --- | --- |
+| Pyro | 23.5 | 0.4-1.5 ms | 31 ms | 11 ms | about 80 KB |
+| HyperCube | 22.0 | 2.8 ms | 31.5 ms | 11 ms | none measurable |
+| Petri | 23.5 | 0.1-0.4 ms | 31 ms | 11-12 ms | about 1.3 MB |
+| XSpirograph | 9.2 | 56.5 ms | 31.4 ms | 22 ms | none measurable |
+| Helix | 11.6-15 | 0.8-2.8 ms | 31.3 ms | 37-59 ms | none measurable |
+| Rorschach | 9.0 | 1.3-1.7 ms | 31.1 ms | 95 ms | none measurable |
+| Pedal | 1.0 | 17-56 ms | 31.3 ms | 1108-1389 ms | none measurable |
 
 Free heap and free PSRAM return to exactly the same values every time a
 hack is switched back to, so switching does not leak.
 
-Pushing the 434 KB canvas to the display takes most of a frame, so about 23
-fps is the ceiling for any hack today. XSpirograph is the exception that
-proves it: it draws 1000 lines per frame, and writing those pixels into the
-PSRAM canvas is slow, which halves its frame rate. Helix, another line-heavy
-hack, behaves the same way. Hacks that draw many primitives per frame are the
-ones to profile first.
+## What limits the frame rate
 
-Pedal asks the runner for a one-second delay after each picture, so its
-frame rate says nothing about speed. Rorschach asks for 20 ms between frames
-and holds each finished picture for 5 seconds; its 9 fps is below the ceiling
-and has not been profiled.
+- Pushing the 434 KB canvas costs a steady 31 ms whatever the hack draws, so
+  about 32 fps is the real ceiling today.
+- Most hacks sit below it because of the delay they request. Pyro, HyperCube
+  and Petri ask for 10 ms and the wait loop adds about 1.2 ms, which gives
+  roughly 23 fps. This is their own pacing, not a hardware limit.
+- Helix and Rorschach draw in under 3 ms a frame. Their low frame rates come
+  from 20 ms delays plus a 1-second hold between pictures (Rorschach asks for
+  5 seconds, clamped to 1). Pedal likewise holds each picture for a second.
+- XSpirograph is the only measured hack that is slow at drawing: 56.5 ms a
+  frame for 1000 lines. Whether that is the PSRAM pixel writes or its
+  double-precision maths has not been separated.
+- Hacks that draw many primitives per frame are the ones to profile first.
+
+## Other notes
 
 Rorschach keeps a 9.6 KB array on the stack, which overflowed the Arduino
 loop task's default 8 KB stack and rebooted the device on the first frame. The
