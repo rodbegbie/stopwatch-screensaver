@@ -24,6 +24,8 @@ embedded-specific choices as you make them. See `README.md` for setup and
 - `firmware/src/runner/` and `main.cpp`: start, step and switch hacks; the
   device loop. `firmware/native/dump_main.c` renders frames on the Mac.
 - `tools/`: fetch, notices check, assessment scorer, PNG converter (Python).
+  `tools/failed_ports.txt` lists abandoned ports (`name: reason`); the scorer
+  marks them ❌, and ✅ comes from `g_hacks[]` in `registry.c`.
 - `vendor/`, `backups/`, `.venv/`, `.platformio/` are git-ignored and local.
 
 ## Commands
@@ -132,6 +134,14 @@ Set `NO_COLOR=1` on `pio` output you parse.
   Bot reviews can lag about 20 minutes. `N` is the trail number (PR #12 was
   trail 6), not the PR number. For a false positive or upstream behaviour in a
   byte-identical hack, use `entire trail finding dismiss N <id> -m "<reason>"`.
+- `entire trail update --body` takes no number and acts on the current
+  branch (`entire trail update 8` errors).
+- Stacked PR: `entire trail create --base <parent-branch>`. When the parent
+  merges, `gh pr edit N --base main` before deleting its branch, then
+  `git rebase --onto origin/main <old parent tip>`. The rebased push needs
+  `--force-with-lease`: ask Rod first.
+- `docs/porting-assessment.md` conflicts on rebase: `git checkout --theirs`
+  it to continue, then rerun `tools/score_hacks.py` and amend the result in.
 
 ## Gotchas
 
@@ -221,5 +231,14 @@ Set `NO_COLOR=1` on `pio` output you parse.
   and show no progress when piped.
 - A push to GitHub is sometimes rejected once and succeeds on an immediate
   retry; never force-push for this.
+- Overlay text (`main.cpp`) is stamped into the canvas, pushed, then the
+  pixels under it are restored. Drawing on the display after `pushImage`
+  flickered badly, because the next push erases it. The canvas must end each
+  frame exactly as the hack left it.
+- Leak-testing with `-DROTATE_SECONDS=5`: internal heap falls about 26 KB
+  during the first lap and then stays flat. Compare lap 2 with lap 3, not
+  with lap 1. PSRAM should match exactly on every visit.
+- Mutation-checking wrap-around code: a mutation that just reorders unsigned
+  arithmetic can be equivalent and survive. Use `int64_t` to break it for real.
 - Board details (pins, power, recovery) are in
   `.claude/skills/m5stack-stopwatch/`.
