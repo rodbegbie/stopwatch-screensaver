@@ -23,7 +23,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Critical | 30.4 | 0.7 ms | 31.1 ms | 0 ms | about 15 KB |
 | CloudLife | 24.2 | 8.8-8.9 ms | 31.4 ms | 0 ms | about 260 KB |
 | WhirlWindWarp | 17.0-24.8 | 6.2-26.4 ms | 31.3 ms | 0 ms | about 410 KB |
-| Flame | 1.8-7.4 | 76-592 ms | 31.4 ms | 0-72 ms | none measurable |
+| Flame | 4.4-6.8 | 26-107 ms | 31.3-31.4 ms | 85-187 ms | none measurable |
 | Hopalong | 19.2-25.2 | 7.3-20.1 ms | 31.2-31.3 ms | 0 ms | about 8 KB |
 | Vines | 2.8-3.0 | 133-160 ms | 31.2 ms | 175-187 ms | none measurable |
 | Sierpinski | 2.4-2.6 | 1.8-4.0 ms | 31.3-31.4 ms | 377-409 ms | about 32 KB |
@@ -31,9 +31,9 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Thornbird | 29.0-29.2 | 2.0-2.2 ms | 31.1-31.2 ms | 0 ms | about 11 KB |
 | Spiral | 18.8 | 0.9-1.2 ms | 31.1 ms | 21 ms | about 5 KB |
 | Sphere | 30.0-30.4 | 0.6-1.1 ms | 31.1-31.2 ms | 0 ms | none measurable |
-| Discrete | 1.0-1.2 | 0.93-1.11 s | 31.5 ms | 0 ms | about 16 KB |
+| Discrete | 5.4-5.6 | 149-160 ms | 31.5 ms | 0 ms | about 16 KB |
 | Galaxy | 9.4-11.2 | 58-75 ms | 31.1-31.3 ms | 0 ms | about 225-266 KB |
-| Drift | 10.4 | 63-65 ms | 31.5 ms | 0 ms | about 16 KB |
+| Drift | 22.0-23.0 | 11-13 ms | 31.5 ms | 0 ms | about 16 KB |
 | Lightning | 29.4 | 1.8-1.9 ms | 31.2 ms | 0 ms | none measurable |
 
 Free heap and free PSRAM return to exactly the same values every time a
@@ -59,15 +59,15 @@ hack is switched back to, so switching does not leak.
   WhirlWindWarp (about 6 ms) are the next most expensive; Squiral and
   Critical draw in under a millisecond and run at the push ceiling.
 - Coral's step time falls as the picture fills in (15.0 fps, then 21.2).
-- Flame is the slowest hack so far. A frame takes about 76-80 ms for the
-  cheap pictures and up to about 590 ms (1.8 fps) for the expensive ones,
-  depending on the random flame it draws. Its source is all `double`, with
-  `sin`, `cos` and `sqrt` in a recursive per-point loop, and the ESP32-S3 has
-  only a single-precision FPU. Double-precision maths in software is the
-  likely cause, but it has not been profiled. The scorer's `float-heavy` flag
-  missed it, because it counts call sites in the source, not how often loops
-  run it. A press made during such a step is kept and handled when the step
-  ends (see Buttons below).
+- Flame was the slowest hack at first: 76-592 ms a step (1.8-7.4 fps), because
+  its source is all `double` with `sin`, `cos` and `sqrt` in a recursive
+  per-point loop, and the ESP32-S3 has only a single-precision FPU. Building
+  it in single precision (`hacks/flame_single.c`) cut the step to 26-107 ms.
+  Its frame rate is now 4.4-6.8 fps and set by the hack's own pauses between
+  pictures (85-187 ms of wait), not by compute. The scorer's `float-heavy`
+  flag missed Flame, because it counts call sites in the source, not how often
+  loops run it. A press made during a long step is kept and handled when the
+  step ends (see Buttons below).
 - WhirlWindWarp's step time sits on plateaus that change over time: about 6,
   8, 10, 19-20 and 25-26 ms across restarts, and it shifted within a single
   run (19.1, then 20.4, then 26.4 ms). It switches around 16 forcefields on
@@ -75,11 +75,12 @@ hack is switched back to, so switching does not leak.
   identified.
 - Free heap and PSRAM showed a single reading per hack across five restarts
   each of Flame and WhirlWindWarp, so repeated starts do not leak.
-- Discrete (about 1 s a frame) and Drift (about 64 ms) are the most
-  expensive of the xlockmore batch; the rest run at or near the push ceiling.
-  Vines and Sierpinski are slow because they ask for long delays
-  (Sierpinski waits about 409 ms between cheap steps). Rod found Discrete's
-  slow updates in keeping with other deliberately slow hacks and Drift fine.
+- The slowest of the xlockmore batch were Discrete (about 1 s a frame) and
+  Drift (64 ms) until they were built in single precision, which brought them
+  to about 150 ms and 11-13 ms. Vines and Sierpinski are slow because they ask
+  for long delays (Sierpinski waits about 409 ms between cheap steps). Rod
+  found Discrete's slow updates in keeping with other deliberately slow hacks,
+  and saw nothing wrong with Discrete, Drift or Flame in single precision.
 - Galaxy first ran at 5 fps (152-172 ms a frame): about 4,400 stars, each
   pulled by every galaxy in `double` maths, which the ESP32-S3 emulates in
   software. Building the unmodified source with `double` redefined as `float`
