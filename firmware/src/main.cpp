@@ -36,8 +36,8 @@ static void resetStats() {
 }
 
 /* step/push/wait are mean milliseconds per frame spent in the hack, in
- * pushImage, and waiting out what is left of the hack's requested delay
- * (including button polling). */
+ * pushImage, and waiting out what is left of the hack's requested delay after
+ * the push (including button polling). */
 static void printStats(const char *tag) {
   float n = frames ? (float)frames : 1.0f;
   Serial.printf(
@@ -96,7 +96,10 @@ void loop() {
   stepUs += t1 - t0;
   pushUs += t2 - t1;
 
-  unsigned long waitUsTarget = runner_remaining_delay_us(delayUs, t2 - t0);
+  /* Only the push counts against the delay. A hack's delay is the pause after
+   * it draws, so a hack that asks for a one-second hold must still get it
+   * however long its own step took. */
+  unsigned long waitUsTarget = runner_remaining_delay_us(delayUs, t2 - t1);
   uint32_t waitedUs = 0;
   bool switched = false;
   while (!switched && waitedUs < waitUsTarget) {
