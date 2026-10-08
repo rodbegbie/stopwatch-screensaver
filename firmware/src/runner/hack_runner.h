@@ -11,7 +11,7 @@ extern "C" {
 typedef struct HackRunner HackRunner;
 
 #define RUNNER_MIN_DELAY_US 1000UL
-#define RUNNER_MAX_DELAY_US 1000000UL
+#define RUNNER_MAX_DELAY_US 10000000UL
 
 HackRunner *runner_create(Canvas *canvas); /* uses g_hacks */
 HackRunner *runner_create_with(Canvas *canvas, const HackEntry *const *hacks,

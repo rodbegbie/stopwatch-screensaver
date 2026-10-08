@@ -23,9 +23,11 @@ static void *stub_init(Display *d, Window w) { (void)d; (void)w; return calloc(1
 static void stub_free(Display *d, Window w, void *c) { (void)d; (void)w; free(c); }
 static unsigned long zero_draw(Display *d, Window w, void *c) { (void)d; (void)w; (void)c; return 0; }
 static unsigned long huge_draw(Display *d, Window w, void *c) { (void)d; (void)w; (void)c; return ULONG_MAX; }
+static unsigned long five_second_draw(Display *d, Window w, void *c) { (void)d; (void)w; (void)c; return 5000000UL; }
 static const HackEntry zero_hack = {"zero", NULL, stub_init, zero_draw, stub_free};
 static const HackEntry huge_hack = {"huge", NULL, stub_init, huge_draw, stub_free};
-static const HackEntry *const stubs[] = {&zero_hack, &huge_hack};
+static const HackEntry five_second_hack = {"five", NULL, stub_init, five_second_draw, stub_free};
+static const HackEntry *const stubs[] = {&zero_hack, &huge_hack, &five_second_hack};
 
 void test_pyro_is_registered(void) {
   TEST_ASSERT_TRUE(g_hack_count >= 1);
@@ -48,11 +50,18 @@ void test_pyro_pixels_stay_in_canvas_for_1000_frames(void) {
 }
 
 void test_step_delay_is_clamped(void) {
-  HackRunner *r = runner_create_with(&cv, stubs, 2);
+  HackRunner *r = runner_create_with(&cv, stubs, 3);
   runner_start(r, 0);
   TEST_ASSERT_EQUAL_UINT32(1000, runner_step(r));
   runner_start(r, 1);
-  TEST_ASSERT_EQUAL_UINT32(1000000, runner_step(r));
+  TEST_ASSERT_EQUAL_UINT32(10000000, runner_step(r));
+  runner_destroy(r);
+}
+
+void test_a_five_second_hold_is_passed_through_unchanged(void) {
+  HackRunner *r = runner_create_with(&cv, stubs, 3);
+  runner_start(r, 2);
+  TEST_ASSERT_EQUAL_UINT32(5000000, runner_step(r));
   runner_destroy(r);
 }
 
@@ -124,6 +133,7 @@ int main(void) {
   RUN_TEST(test_pyro_draws_something_within_300_frames);
   RUN_TEST(test_pyro_pixels_stay_in_canvas_for_1000_frames);
   RUN_TEST(test_step_delay_is_clamped);
+  RUN_TEST(test_a_five_second_hold_is_passed_through_unchanged);
   RUN_TEST(test_pyro_delay_is_in_clamp_range);
   RUN_TEST(test_switching_100_times_is_asan_clean);
   RUN_TEST(test_start_clears_canvas);
