@@ -1,0 +1,13 @@
+design: approved
+
+---
+
+lgtm. write the plan
+
+---
+
+I trust you. Go ahead with native.  Flash the device as necessary, and let me know when you need my human eyes on the screen.
+
+---
+
+Your claude.ai usage limit has reset. Continue the task you were working on when the limit was reached; do not repeat work that is already complete.
