@@ -5,8 +5,7 @@
   "branch": "feature/step1-rorschach-pedal",
   "checkpoints_count": 2,
   "files_touched": [
-    "README.md",
-    "tools/assessment_measured.md"
+    "README.md"
   ],
   "sessions": [
     {
@@ -14,14 +13,14 @@
       "transcript": "/0/full.jsonl",
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
-      "prompt": "/0/prompt.txt"
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 18,
-    "cache_creation_tokens": 11277,
-    "cache_read_tokens": 3406481,
-    "output_tokens": 7637,
-    "api_call_count": 9
+    "input_tokens": 4,
+    "cache_creation_tokens": 1744,
+    "cache_read_tokens": 772762,
+    "output_tokens": 758,
+    "api_call_count": 2
   }
 }
