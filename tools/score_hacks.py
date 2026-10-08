@@ -8,6 +8,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import textwrap
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -26,6 +27,7 @@ FLAG_CALLS = {
     "text": {"XDrawString", "XLoadFont", "XLoadQueryFont"},
     "clipmask": {"XSetClipMask"},
 }
+MODULE_ENTRY = re.compile(r"\bXSCREENSAVER_MODULE(?:_2)?\s*\(")
 MISSING_HEADER = re.compile(r"fatal error: '([^']+)' file not found")
 ERROR_PATTERNS = (
     (re.compile(r"use of undeclared identifier '([^']+)'"), "{0}"),
@@ -41,6 +43,12 @@ MAX_MEDIUM_MISSING = 4
 
 def strip_noise(source: str) -> str:
     return NOISE.sub(lambda m: "\n" * m.group(0).count("\n") or " ", source)
+
+
+def is_hack(source: str) -> bool:
+    """A screensaver registers itself with XSCREENSAVER_MODULE; everything
+    else in hacks/ is a model, a helper library or a command-line tool."""
+    return bool(MODULE_ENTRY.search(strip_noise(source)))
 
 
 def implemented_calls(header: str) -> set[str]:
@@ -159,11 +167,21 @@ def render_ranking(ranked: list[tuple[str, float, int]]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def scan(vendor: Path, provided: set[str], include_dirs: list[Path]) -> list[dict]:
+def render_excluded(names: list[str]) -> str:
+    return textwrap.fill(", ".join(names), width=78) + "\n"
+
+
+def scan(
+    vendor: Path, provided: set[str], include_dirs: list[Path]
+) -> tuple[list[dict], list[str]]:
+    """Returns (scored hacks, names of excluded non-hack files)."""
     files = sorted((vendor / "hacks").glob("*.c")) + sorted(
         (vendor / "hacks" / "glx").glob("*.c")
     )
-    sources = {p: p.read_text(errors="replace") for p in files}
+    all_sources = {p: p.read_text(errors="replace") for p in files}
+    sources = {p: src for p, src in all_sources.items() if is_hack(src)}
+    excluded = sorted(p.stem for p in all_sources if p not in sources)
+    files = list(sources)
 
     def one(path: Path) -> dict:
         source = sources[path]
@@ -173,7 +191,7 @@ def scan(vendor: Path, provided: set[str], include_dirs: list[Path]) -> list[dic
         return score(path, source, provided, blockers)
 
     with ThreadPoolExecutor(max_workers=8) as pool:
-        return list(pool.map(one, files))
+        return list(pool.map(one, files)), excluded
 
 
 def main(argv: list[str]) -> int:
@@ -197,10 +215,15 @@ def main(argv: list[str]) -> int:
         root / "firmware/src",
         root / "firmware/src/x11shim/include",
     ]
-    rows = scan(vendor, implemented_calls(Path(args.header).read_text()), includes)
+    rows, excluded = scan(
+        vendor, implemented_calls(Path(args.header).read_text()), includes
+    )
     counts = {e: sum(r["effort"] == e for r in rows) for e in ("S", "M", "L", "XL")}
     intro = Path(args.intro).read_text().format(
-        version=version, total=len(rows), **{f"n_{k.lower()}": v for k, v in counts.items()}
+        version=version,
+        total=len(rows),
+        excluded=len(excluded),
+        **{f"n_{k.lower()}": v for k, v in counts.items()},
     )
     measured = Path(args.measured).read_text() if Path(args.measured).exists() else ""
     out = (
@@ -213,9 +236,14 @@ def main(argv: list[str]) -> int:
         + render_ranking(rank_missing(rows, 10))
         + "\n## All hacks\n\n"
         + render_table(rows)
+        + "\n## Excluded files\n\n"
+        + "These files in `hacks/` and `hacks/glx/` have no `XSCREENSAVER_MODULE`\n"
+        + "entry point, so they are models, helper libraries or command-line\n"
+        + "tools rather than screensavers:\n\n"
+        + render_excluded(excluded)
     )
     Path(args.out).write_text(out)
-    print(f"wrote {args.out}: {len(rows)} hacks, {counts}")
+    print(f"wrote {args.out}: {len(rows)} hacks ({len(excluded)} files excluded), {counts}")
     return 0
 
 

@@ -6,7 +6,10 @@ it with `uv run tools/score_hacks.py`.
 
 ## How to read this
 
-- **{total} hacks** were scanned: every `hacks/*.c` and `hacks/glx/*.c`.
+- **{total} hacks** were scanned: every `hacks/*.c` and `hacks/glx/*.c`
+  that registers itself with `XSCREENSAVER_MODULE`. Another {excluded}
+  files (3D models, helper libraries, command-line tools) are excluded and
+  listed at the end.
 - The scan is static and heuristic. For each 2D hack it counts the Xlib
   calls in the source that the shim does not declare, and it also
   syntax-checks the unmodified source against the shim's headers
@@ -15,11 +18,6 @@ it with `uv run tools/score_hacks.py`.
   That second check catches helpers hacks reach through `utils/` that a
   count of Xlib calls cannot see. It does not run anything, so treat the
   effort ratings as a prioritisation aid, not an estimate.
-- Many files in `hacks/` are shared helpers or support code rather than
-  hacks, so the totals overstate the number of distinct screensavers. Some
-  of them are rated S because they compile (for example
-  `webcollage-helper`, a command-line image tool); a file without an
-  `XSCREENSAVER_MODULE` entry point is not a screensaver to port.
 
 ## Effort ratings
 

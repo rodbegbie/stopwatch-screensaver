@@ -149,3 +149,34 @@ def test_blockers_anonymous_struct_member_has_clean_name_without_paths():
     got = sh.blockers_for("anon", src, SHIM_INCLUDES)
     assert "XEvent.nosuch" in got
     assert not any("unnamed" in g or "/" in g for g in got)
+
+
+def test_is_hack_detects_module_entry_point():
+    assert sh.is_hack('XSCREENSAVER_MODULE ("Pyro", pyro)\n')
+    assert sh.is_hack('XSCREENSAVER_MODULE_2 ("X", x, y)\n')
+    assert not sh.is_hack("int helper(void) { return 0; }\n")
+
+
+def test_is_hack_ignores_comments_and_strings():
+    assert not sh.is_hack("/* XSCREENSAVER_MODULE (a, b) */\nint x;\n")
+    assert not sh.is_hack('const char *s = "XSCREENSAVER_MODULE (a, b)";\n')
+
+
+def test_scan_excludes_non_hacks_and_reports_them(tmp_path):
+    hacks = tmp_path / "xscreensaver-9.9" / "hacks"
+    (hacks / "glx").mkdir(parents=True)
+    (hacks / "real.c").write_text('XSCREENSAVER_MODULE ("Real", real)\n')
+    (hacks / "helper.c").write_text("int helper(void) { return 0; }\n")
+    (hacks / "glx" / "model.c").write_text("int model;\n")
+    (hacks / "glx" / "gl_hack.c").write_text('XSCREENSAVER_MODULE ("G", g)\nglBegin(0);\n')
+    rows, excluded = sh.scan(tmp_path / "xscreensaver-9.9", set(), SHIM_INCLUDES)
+    assert sorted(r["name"] for r in rows) == ["gl_hack", "real"]
+    assert excluded == ["helper", "model"]
+
+
+def test_render_excluded_wraps_names_in_a_paragraph():
+    names = [f"helper{i}" for i in range(40)]
+    text = sh.render_excluded(names)
+    assert all(len(line) <= 78 for line in text.splitlines())
+    assert "helper0" in text and "helper39" in text
+    assert text.endswith("\n") and not text.endswith("\n\n")
