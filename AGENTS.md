@@ -35,6 +35,14 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
 - `pio run -e stopwatch`: build for the device. Add `-t upload` to flash.
 - `pio run -e dump`, then `.pio/build/dump/program <index> <frames> out.raw`,
   then `uv run tools/rgb565_to_png.py out.raw 466 466 out.png` to see a frame.
+- Serial log: read `/dev/cu.usbmodem112401` at 115200 for N seconds into a file
+  (a pyserial script run with `.venv/bin/python -I`). Run it in the background
+  with absolute paths, since background shells ignore `cd`. Lines to read:
+  `run <hack> fps= step= push= wait=` (ms per frame in the hack, `pushImage`
+  and the wait) and `switch -> <hack> press_waited=`.
+- `cc -O1 -fstack-usage -c src/hacks/<n>/<n>.c` (with `-Isrc
+  -Isrc/x11shim/include -DXSHIM_NATIVE`) lists stack frames; keep each well
+  under the 16 KB loop stack.
 
 From the repo root:
 
@@ -58,6 +66,8 @@ Set `NO_COLOR=1` on `pio` output you parse.
   small equivalents in `x11shim/`.
 - **Test first**, on the host. Clip arithmetic must use `int64_t`: the ESP32's
   `long` is 32 bits, so host tests cannot see 32-bit overflow.
+- Mutation-check new tests: break the rule under test and watch the test fail.
+  Race fixes need a failing two-thread stress test first (see `test_buttons`).
 - **Never flash, erase or write the device without asking Rod.** The
   conference firmware was backed up to `backups/` (git-ignored, one copy).
   Keep the `app3M_fat9M_16MB` partition scheme and never touch `ffat`. Serial
@@ -82,6 +92,17 @@ Set `NO_COLOR=1` on `pio` output you parse.
 6. Regenerate the assessment and add measurements to
    `tools/assessment_measured.md`.
 
+## Delivering a branch
+
+- `entire trail create --title ... --type feature --body ...` pushes the branch
+  and opens a linked DRAFT PR. The PR body is not synced from the trail: update
+  both (`entire trail update --body`, `gh pr edit N --body-file`). Put
+  `Fixes #N` in the body.
+- Rod approves and merges (merge commit). Afterwards delete the merged branch
+  (remote and local) without asking and fast-forward `main`.
+- Findings: `entire trail finding list N`, then `... resolve N <id> -m "..."`.
+  Bot reviews can lag about 20 minutes.
+
 ## Gotchas
 
 - M5GFX reads a plain `uint32_t` colour as RGB888. `TFT_RED` and friends are
@@ -102,6 +123,13 @@ Set `NO_COLOR=1` on `pio` output you parse.
   bounced and was counted as a second press. Check `press_waited` in the log.
 - The runner caps a hack's delay at 10 s, and the loop credits only the 31 ms
   push against it, because a hack's delay is its pause after drawing.
+- Don't declare `xrealloc` or `xmalloc` in the shim: cloudlife defines its own
+  static `xrealloc`, which would clash.
+- `score_hacks.py` rates hacks by call sites, not loop trips: Flame (all
+  `double` maths) is rated S but runs at 2-7 fps. Measure on the device.
+- `pio test` runs every registered hack for 3000 frames under ASan (about 15 s);
+  a hack that is slow on the host slows the whole suite.
+- zsh does not word-split `$var`: loop over file lists with `bash -c`.
 - jwz.org returns 403 to Python's default User-Agent.
 - `esptool` reads of the 16 MB flash need `--baud 921600` (about 3.5 minutes)
   and show no progress when piped.
