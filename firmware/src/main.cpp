@@ -6,6 +6,7 @@ extern "C" {
 #include "hacks/registry.h"
 #include "runner/button_latch.h"
 #include "runner/hack_runner.h"
+#include "runner/overlay.h"
 }
 
 /* Hacks run on loopTask, whose 8 KB default stack is too small: Rorschach
@@ -15,6 +16,9 @@ SET_LOOP_TASK_STACK_SIZE(16 * 1024);
 static const int kSize = 466;
 static const uint32_t kSliceUs = 10000;
 static const uint32_t kStatsEveryMs = 5000;
+static const uint32_t kNameShownMs = 5000;
+static const int kNameY = kSize / 2;
+static const int kFpsY = kSize - 40;
 
 /* M5Unified reads the buttons as active-low GPIOs, and only inside
  * M5.update(), so a press during a long hack step would go unseen. A small
@@ -39,6 +43,7 @@ static void buttonTask(void *) {
 
 static Canvas canvas;
 static HackRunner *runner;
+static Overlay overlay;
 static uint32_t frames;
 static uint32_t statsAt;
 static uint32_t stepUs, pushUs, waitUs;
@@ -70,6 +75,63 @@ static void printStats(const char *tag) {
       (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
 }
 
+/* Overlay text is stamped into the canvas just for the push, then the pixels
+ * under it are put back. Drawing on the display after the push flickered,
+ * because the next push wiped the text for a moment. The canvas must end up
+ * as the hack left it, since hacks draw incrementally. M5Canvas wraps the
+ * canvas buffer so M5GFX's fonts can draw into it; the DejaVu fonts are 1-bit,
+ * so only pure black and white are written (the same in either byte order). */
+static const int kPatchMaxH = 48;
+static const int kPatchMargin = 2;
+
+struct Patch {
+  int x, y, w, h;
+  uint16_t *saved;
+};
+
+static M5Canvas stamp;
+static Patch namePatch, fpsPatch;
+
+static void stampText(Patch *p, const char *text, int cx, int cy,
+                      const lgfx::IFont *font) {
+  stamp.setFont(font);
+  stamp.setTextDatum(middle_center);
+  int w = stamp.textWidth(text) + 2 * kPatchMargin;
+  int h = stamp.fontHeight() + 2 * kPatchMargin;
+  p->w = w < kSize ? w : kSize;
+  p->h = h < kPatchMaxH ? h : kPatchMaxH;
+  p->x = cx - p->w / 2;
+  p->y = cy - p->h / 2;
+  canvas_copy_rect(&canvas, p->x, p->y, p->w, p->h, p->saved);
+  stamp.setTextColor(0x000000);
+  for (int dy = -1; dy <= 1; dy++)
+    for (int dx = -1; dx <= 1; dx++)
+      if (dx || dy) stamp.drawString(text, cx + dx, cy + dy);
+  stamp.setTextColor(0xFFFFFF);
+  stamp.drawString(text, cx, cy);
+}
+
+static void unstamp(Patch *p) {
+  if (p->w) canvas_paste_rect(&canvas, p->x, p->y, p->w, p->h, p->saved);
+  p->w = 0;
+}
+
+static void present() {
+  uint32_t now = millis();
+  if (overlay_name_visible(&overlay, now))
+    stampText(&namePatch, g_hacks[runner_index(runner)]->name, kSize / 2,
+              kNameY, &fonts::DejaVu24);
+  if (overlay_fps_visible(&overlay)) {
+    char text[16];
+    overlay_fps_text(&overlay, text, sizeof text);
+    stampText(&fpsPatch, text, kSize / 2, kFpsY, &fonts::DejaVu18);
+  }
+  overlay_drawn(&overlay, now);
+  M5.Display.pushImage(0, 0, kSize, kSize, canvas.px);
+  unstamp(&fpsPatch);
+  unstamp(&namePatch);
+}
+
 /* Returns true if a button switched hacks (which also resets the stats). */
 static bool pollButtons() {
   bool switched = false;
@@ -88,9 +150,16 @@ static bool pollButtons() {
                   (unsigned)(millis() - pressedAt),
                   (unsigned)ESP.getFreeHeap(),
                   (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+    overlay_hack_started(&overlay, millis());
     resetStats();
   }
   return switched;
+}
+
+/* A tap anywhere toggles the fps readout. Call right after M5.update(), which
+ * is the only place the touch edge is recorded. */
+static void pollTouch() {
+  if (M5.Touch.getDetail().wasPressed()) overlay_toggle_fps(&overlay);
 }
 
 void setup() {
@@ -105,8 +174,14 @@ void setup() {
 
   if (canvas_init(&canvas, kSize, kSize, ps_malloc) != 0)
     halt("PSRAM alloc failed");
+  stamp.setBuffer(canvas.px, kSize, kSize, 16);
+  namePatch.saved = (uint16_t *)ps_malloc(kSize * kPatchMaxH * sizeof(uint16_t));
+  fpsPatch.saved = (uint16_t *)ps_malloc(kSize * kPatchMaxH * sizeof(uint16_t));
+  if (!namePatch.saved || !fpsPatch.saved) halt("PSRAM alloc failed");
   runner = runner_create(&canvas);
   if (!runner || runner_start(runner, 0) != 0) halt("hack start failed");
+  overlay_init(&overlay, kNameShownMs);
+  overlay_hack_started(&overlay, millis());
   printStats("boot");
   resetStats();
 }
@@ -114,13 +189,15 @@ void setup() {
 void loop() {
   M5.update();
   pollButtons();
+  pollTouch();
 
   uint32_t t0 = micros();
   unsigned long delayUs = runner_step(runner);
   uint32_t t1 = micros();
-  M5.Display.pushImage(0, 0, kSize, kSize, canvas.px);
+  present();
   uint32_t t2 = micros();
   frames++;
+  overlay_frame(&overlay, millis());
   stepUs += t1 - t0;
   pushUs += t2 - t1;
 
@@ -137,6 +214,8 @@ void loop() {
     waitedUs += slice;
     M5.update();
     switched = pollButtons();
+    if (!switched) pollTouch();
+    if (!switched && overlay_wants_redraw(&overlay, millis())) present();
   }
   if (!switched) waitUs += micros() - t2;
 

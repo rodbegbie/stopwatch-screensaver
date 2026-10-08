@@ -1,9 +1,31 @@
 {
-  "enabled": true,
-  "telemetry": true,
   "checkpoints": {
     "primary": {
       "type": "git-refs"
     }
-  }
+  },
+  "enabled": true,
+  "review_default_profile": "general",
+  "review_profiles": {
+    "general": {
+      "task": "Review this change for correctness, regressions, API design, missing tests, maintainability, and user-facing behavior changes. Return only real, actionable defects with concrete evidence and an exact code pointer. No praise, summaries, speculation, style preferences, or nice-to-have refactors.",
+      "agents": {
+        "claude-code": {
+          "agent": "claude-code",
+          "skills": [
+            "/review"
+          ]
+        },
+        "codex": {
+          "agent": "codex",
+          "prompt": "Review the change according to the profile task."
+        }
+      },
+      "judge": {
+        "agent": "codex"
+      },
+      "output": "trail"
+    }
+  },
+  "telemetry": true
 }
