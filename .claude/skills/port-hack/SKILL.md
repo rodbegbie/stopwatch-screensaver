@@ -19,16 +19,22 @@ before copying it:
 | A state struct or arrays over a few MB (check `sizeof`, `[1000][1000]`) | Patch a copy at build time; `hacks/` stays byte-identical | Maze |
 | Many `double`s, `sqrt`, `sin`/`cos`, `pow` | `hacks/<name>_single.c` wrapper; compare double and float frames | Galaxy |
 | Locals over a few KB | `-fstack-usage` check (AGENTS.md); loop stack is 16 KB | Rorschach |
+| `malloc`, `calloc` or `realloc` of 100 KB or more, or `exit()` on allocation failure | Find where the allocator puts it (PSRAM or internal heap), then read heap and PSRAM in the serial log | Not yet confirmed on the device |
 | Pixmaps, clip masks or a logo image | Shim has them; pictures are raw blobs, never a PNG decoder | Maze |
 | Threads, GL, Xft, shared memory | Skip it | L and XL rows |
-| A licence header that is not jwz's | Read it; add its own section to `THIRD_PARTY_NOTICES.md` | Maze, Pedal |
+| A licence header | Read it. Add its own section to `THIRD_PARTY_NOTICES.md` only if the wording differs from jwz's | Maze, Pedal |
 
 ## 2. Set up
 
 A worktree off `origin/main`. A fresh worktree lacks the ignored `vendor/`,
-`.venv/` and `.platformio/`: symlink them from the main checkout and add the
-names to `.git/info/exclude`. Run `../.venv/bin/pio` with a literal
-`PLATFORMIO_CORE_DIR`; a worktree session refuses `source` and computed paths.
+`.venv/` and `.platformio/`: symlink them from the main checkout. The ignore
+patterns end in `/`, so the symlinks show as untracked: `git add` named paths,
+never `-A`. Adding them to `.git/info/exclude` changes state shared with every
+worktree, so ask Rod first.
+
+A worktree session refuses `source`, `$VAR` in a command and `&&` chains with a
+computed path. Run plain commands with literal paths, for example
+`PLATFORMIO_CORE_DIR=<worktree>/.platformio ../.venv/bin/pio test -e native`.
 
 ## 3. Red, copy, green
 
