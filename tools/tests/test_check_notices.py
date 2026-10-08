@@ -54,6 +54,20 @@ int x;
     assert cn.check(src, md) == []
 
 
+def test_naughton_xlock_notice_passes(tmp_path):
+    naughton = """/*-
+ * Copyright (c) 1991 by Patrick J. Naughton.
+ *
+ * Permission to use, copy, modify, and distribute this software and its
+ * documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright notice appear in all copies.
+ */
+int x;
+"""
+    src, md = setup(tmp_path, {"hopalong/hopalong.c": naughton}, "| hopalong.c | x | y |")
+    assert cn.check(src, md) == []
+
+
 def test_file_without_notice_is_reported(tmp_path):
     src, md = setup(tmp_path, {"pyro/pyro.c": "int x;\n"}, "pyro")
     problems = cn.check(src, md)

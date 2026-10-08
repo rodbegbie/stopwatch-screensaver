@@ -256,12 +256,21 @@ def main(argv: list[str], root: Path | None = None) -> int:
         return 1
 
 
-def run(args: argparse.Namespace, vendor: Path, root: Path) -> int:
-    version = vendor.name.removeprefix("xscreensaver-")
-    includes = [Path(d) for d in args.shim_include] if args.shim_include else [
+def default_includes(root: Path) -> list[Path]:
+    return [
         root / "firmware/src",
         root / "firmware/src/x11shim/include",
+        root / "firmware/src/xs_support",
     ]
+
+
+def run(args: argparse.Namespace, vendor: Path, root: Path) -> int:
+    version = vendor.name.removeprefix("xscreensaver-")
+    includes = (
+        [Path(d) for d in args.shim_include]
+        if args.shim_include
+        else default_includes(root)
+    )
     rows, excluded = scan(
         vendor, implemented_calls(Path(args.header).read_text()), includes
     )

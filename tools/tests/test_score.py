@@ -127,6 +127,13 @@ def test_blockers_define_standalone_like_the_real_build():
     assert sh.blockers_for("sa", src, SHIM_INCLUDES) == []
 
 
+def test_ported_xlockmore_hack_is_clean_under_the_default_includes():
+    root = Path(__file__).resolve().parents[2]
+    src = (root / "firmware/src/hacks/hopalong/hopalong.c").read_text()
+    includes = sh.default_includes(root)
+    assert sh.blockers_for("hopalong", src, includes) == []
+
+
 def test_blockers_pyro_like_hack_compiles_clean_against_shim():
     pyro = Path(__file__).resolve().parents[2] / "firmware/src/hacks/pyro/pyro.c"
     assert sh.blockers_for("pyro", pyro.read_text(), SHIM_INCLUDES) == []

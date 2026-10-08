@@ -41,8 +41,8 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
   `run <hack> fps= step= push= wait=` (ms per frame in the hack, `pushImage`
   and the wait) and `switch -> <hack> press_waited=`.
 - `cc -O1 -fstack-usage -c src/hacks/<n>/<n>.c` (with `-Isrc
-  -Isrc/x11shim/include -DXSHIM_NATIVE`) lists stack frames; keep each well
-  under the 16 KB loop stack.
+  -Isrc/x11shim/include -Isrc/xs_support -DXSHIM_NATIVE -DSTANDALONE`) lists
+  stack frames; keep each well under the 16 KB loop stack.
 
 From the repo root:
 
@@ -123,6 +123,15 @@ Set `NO_COLOR=1` on `pio` output you parse.
   bounced and was counted as a second press. Check `press_waited` in the log.
 - The runner caps a hack's delay at 10 s, and the loop credits only the 31 ms
   push against it, because a hack's delay is its pause after drawing.
+- xlockmore hacks (the 40 that include `xlockmore.h`) need `-DSTANDALONE`,
+  which every PlatformIO env and `score_hacks.py` set; without it they
+  include `xlock.h` instead. Register one in `hacks/registry.c` with
+  `XLOCKMORE_HACK(<name>, "<Class>")`. The runner runs the hack's
+  `setup_cb` once and passes `setup_arg` as `init_cb`'s hidden third
+  argument, as xscreensaver's `screenhack.c` does. Its table is empty until
+  then. Resources the framework reads but a hack does not define
+  (`delta3d`, `size`, ...) fall back to `kFrameworkDefaults` in
+  `x11shim/resources.c`.
 - Don't declare `xrealloc` or `xmalloc` in the shim: cloudlife defines its own
   static `xrealloc`, which would clash.
 - `score_hacks.py` rates hacks by call sites, not loop trips: Flame (all

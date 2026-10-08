@@ -25,6 +25,9 @@ implied warranty.
 | --- | --- | --- |
 | `firmware/src/hacks/pyro/pyro.c` | Copyright (c) 1992-2008 Jamie Zawinski; inspired by TI Explorer Lisp code by John S. Pezaris | jwz permission notice (above) |
 | `firmware/src/xs_support/hsv.c` | Copyright (c) 1992, 1997 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/xs_support/xlockmore.c` | Copyright (c) 1997-2018 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/xs_support/xlockmore.h` | Copyright (c) 1997-2021 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/xs_support/xlockmoreI.h` | Copyright (c) 1997-2025 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/hypercube/hypercube.c` | Copyright (c) 1992-2008 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/xspirograph/xspirograph.c` | The Spiral Generator, Copyright (c) 2000 Rohit Singh; contains code from xscreensaver, Copyright (c) 1992, 1995, 1996, 1997 Jamie Zawinski | jwz permission notice (above); the file's own header says "notices" for its two copyright holders |
 | `firmware/src/hacks/petri/petri.c` | Copyright (c) 1992-1999 Dan Bornstein, with help from Jamie Zawinski | jwz permission notice (above) |
@@ -37,14 +40,16 @@ implied warranty.
 | `firmware/src/hacks/whirlwindwarp/whirlwindwarp.c` | Copyright (c) 2000 Paul "Joey" Clark | jwz permission notice (above) |
 | `firmware/src/hacks/flame/flame.c` | Copyright (c) 1993-2014 Jamie Zawinski; ported from xlock, Copyright (c) 1991 Patrick J. Naughton, with updates by Scott Draves | jwz permission notice (above), and Naughton's xlock notice (below) |
 | `firmware/src/hacks/pedal/pedal.c` | Copyright (c) 1994 Carnegie Mellon University; X version by Dale Moore | CMU permission notice (below) |
+| `firmware/src/hacks/hopalong/hopalong.c` | Copyright (c) 1991 Patrick J. Naughton; later changes by the xlockmore and xscreensaver authors | Naughton xlock notice (below) |
 
 Each copied file keeps its own header unchanged; the notice text above is
 reproduced here to satisfy the "supporting documentation" requirement.
 
-### Patrick J. Naughton xlock notice (Flame)
+### Patrick J. Naughton xlock notice (Flame, Hopalong)
 
 `flame.c` was ported from xlock and carries the original notice alongside
-jwz's. It is reproduced here as it appears in the file:
+jwz's. `hopalong.c` carries it alone. It is reproduced here as it appears
+in the files:
 
 ```text
 Copyright (c) 1991 by Patrick J. Naughton.

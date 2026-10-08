@@ -6,6 +6,9 @@
 #include "colors.h"
 #include "core/canvas.h"
 #include "erase.h"
+#include "fps.h"
+#include "screenhack.h"
+#include "utils.h"
 #include "x11shim/xshim.h"
 
 static Canvas cv;
@@ -191,6 +194,27 @@ void test_button_press_event_fields_exist(void) {
 void test_xrectangle_type_exists(void) {
   XRectangle r = {1, 2, 3, 4};
   TEST_ASSERT_EQUAL_INT(3, r.width);
+}
+
+void test_framework_resources_fall_back_to_builtin_defaults(void) {
+  static const char *const none[] = {NULL};
+  xshim_set_defaults(none);
+  TEST_ASSERT_TRUE(get_float_resource(dpy, "delta3d", "Float") == 1.5);
+  TEST_ASSERT_EQUAL_HEX(0xF81F, get_pixel_resource(dpy, 0, "both3d", "Color"));
+  TEST_ASSERT_EQUAL_HEX(0xF800, get_pixel_resource(dpy, 0, "right3d", "Color"));
+  TEST_ASSERT_EQUAL_HEX(0x001F, get_pixel_resource(dpy, 0, "left3d", "Color"));
+  TEST_ASSERT_EQUAL_HEX(0x0000, get_pixel_resource(dpy, 0, "none3d", "Color"));
+}
+
+void test_hack_defaults_beat_the_builtin_fallbacks(void) {
+  static const char *const own[] = {"*delta3d: 2.5", NULL};
+  xshim_set_defaults(own);
+  TEST_ASSERT_TRUE(get_float_resource(dpy, "delta3d", "Float") == 2.5);
+}
+
+void test_progclass_is_set(void) {
+  TEST_ASSERT_NOT_NULL(progclass);
+  TEST_ASSERT_TRUE(strlen(progclass) > 0);
 }
 
 void test_progname_is_set(void) {
@@ -388,6 +412,69 @@ void test_free_colors_accepts_a_colormap_from_the_helpers(void) {
   free_colors(NULL, 1, colors, n);
 }
 
+void test_root_window_of_screen_accepts_null_and_names_the_runner_window(void) {
+  TEST_ASSERT_EQUAL_UINT(win, RootWindowOfScreen(NULL));
+}
+
+void test_select_input_is_accepted_and_ignored(void) {
+  TEST_ASSERT_EQUAL_INT(0, XSelectInput(dpy, win, PointerMotionMask));
+}
+
+void test_pointer_motion_mask_is_the_x11_bit(void) {
+  TEST_ASSERT_EQUAL_INT64(1L << 6, PointerMotionMask);
+}
+
+void test_window_attributes_have_your_event_mask(void) {
+  XWindowAttributes a = {0};
+  a.your_event_mask = 5;
+  TEST_ASSERT_EQUAL_INT64(5, a.your_event_mask);
+}
+
+void test_ya_rand_init_with_a_seed_repeats_the_sequence(void) {
+  ya_rand_init(42);
+  long a = LRAND();
+  ya_rand_init(42);
+  TEST_ASSERT_EQUAL_INT64(a, LRAND());
+}
+
+void test_nrand_stays_below_n_and_covers_the_range(void) {
+  int seen[10] = {0};
+  for (int i = 0; i < 1000; i++) {
+    int v = NRAND(10);
+    TEST_ASSERT_TRUE(v >= 0 && v < 10);
+    seen[v] = 1;
+  }
+  for (int i = 0; i < 10; i++) TEST_ASSERT_TRUE(seen[i]);
+}
+
+void test_lrand_is_non_negative_and_below_maxrand(void) {
+  for (int i = 0; i < 1000; i++) {
+    TEST_ASSERT_TRUE(LRAND() >= 0);
+    TEST_ASSERT_TRUE((double)LRAND() < MAXRAND);
+  }
+  TEST_ASSERT_TRUE(MAXRAND == 2147483648.0);
+}
+
+void test_countof_gives_the_array_length(void) {
+  int a[5];
+  (void)a;
+  TEST_ASSERT_EQUAL_INT(5, countof(a));
+}
+
+void test_fps_stand_ins_accept_a_null_state(void) {
+  fps_compute(NULL, 0, 0);
+  fps_draw(NULL);
+  fps_free(NULL);
+}
+
+void test_xrm_option_strings_are_writable_like_xscreensavers(void) {
+  char option[8] = "-xx";
+  char specifier[8] = "x";
+  XrmOptionDescRec o = {option, specifier, 0, NULL};
+  o.specifier[0] = '.';
+  TEST_ASSERT_EQUAL_STRING(".", specifier);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_draw_points_plots_each_point_in_the_gc_colour);
@@ -418,9 +505,22 @@ int main(void) {
   RUN_TEST(test_button_press_event_fields_exist);
   RUN_TEST(test_xrectangle_type_exists);
   RUN_TEST(test_progname_is_set);
+  RUN_TEST(test_progclass_is_set);
+  RUN_TEST(test_framework_resources_fall_back_to_builtin_defaults);
+  RUN_TEST(test_hack_defaults_beat_the_builtin_fallbacks);
   RUN_TEST(test_pixel_resource_x11_colour_names);
   RUN_TEST(test_pixel_resource_names_are_case_insensitive);
   RUN_TEST(test_erase_window_clears_and_reports_done);
   RUN_TEST(test_make_random_colormap_fills_colours_in_rgb565);
+  RUN_TEST(test_root_window_of_screen_accepts_null_and_names_the_runner_window);
+  RUN_TEST(test_select_input_is_accepted_and_ignored);
+  RUN_TEST(test_pointer_motion_mask_is_the_x11_bit);
+  RUN_TEST(test_window_attributes_have_your_event_mask);
+  RUN_TEST(test_ya_rand_init_with_a_seed_repeats_the_sequence);
+  RUN_TEST(test_nrand_stays_below_n_and_covers_the_range);
+  RUN_TEST(test_lrand_is_non_negative_and_below_maxrand);
+  RUN_TEST(test_countof_gives_the_array_length);
+  RUN_TEST(test_fps_stand_ins_accept_a_null_state);
+  RUN_TEST(test_xrm_option_strings_are_writable_like_xscreensavers);
   return UNITY_END();
 }

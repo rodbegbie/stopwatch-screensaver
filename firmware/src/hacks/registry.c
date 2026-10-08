@@ -1,5 +1,12 @@
 #include "hacks/registry.h"
 
+/* A hack built on xlockmore.h defines a function table, not a HackEntry. */
+#define XLOCKMORE_HACK(NAME, CLASS)                                      \
+  extern struct xscreensaver_function_table NAME##_xscreensaver_function_table; \
+  static const HackEntry NAME##_hack = {                                 \
+      CLASS, NULL, NULL, NULL, NULL,                                     \
+      &NAME##_xscreensaver_function_table}
+
 extern const HackEntry pyro_hack;
 extern const HackEntry hypercube_hack;
 extern const HackEntry xspirograph_hack;
@@ -13,10 +20,11 @@ extern const HackEntry critical_hack;
 extern const HackEntry cloudlife_hack;
 extern const HackEntry whirlwindwarp_hack;
 extern const HackEntry flame_hack;
+XLOCKMORE_HACK(hopalong, "Hopalong");
 
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
     &squiral_hack,  &critical_hack,  &cloudlife_hack,     &whirlwindwarp_hack,
-    &flame_hack};
+    &flame_hack,    &hopalong_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);
