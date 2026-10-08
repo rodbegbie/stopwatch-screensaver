@@ -23,6 +23,7 @@ extern const HackEntry flame_hack;
 XLOCKMORE_HACK(hopalong, "Hopalong");
 XLOCKMORE_HACK(vines, "Vines");
 XLOCKMORE_HACK(sierpinski, "Sierpinski");
+XLOCKMORE_HACK(fadeplot, "FadePlot");
 
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
@@ -30,5 +31,6 @@ const HackEntry *const g_hacks[] = {
     &squiral_hack,  &critical_hack,  &cloudlife_hack,     &whirlwindwarp_hack,
     &flame_hack,    &hopalong_hack,
     &vines_hack,
-    &sierpinski_hack};
+    &sierpinski_hack,
+    &fadeplot_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);
