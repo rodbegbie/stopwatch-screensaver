@@ -189,6 +189,78 @@
   "session_metrics": {
     "turn_count": 35
   },
+  "summary": {
+    "intent": "Port xscreensaver hacks to an ESP32 stopwatch screensaver firmware. This stretch covered finishing the Maze PR with an XS_LOGO override, creating a reusable /port-hack skill, testing it with with-skill and no-skill agents, and starting a Blaster port.",
+    "outcome": "Pushed the Maze branch with the logo override and fixes for two review findings (PR #18). Opened draft PR #19 with the port-hack skill and ran three agent comparison rounds, which showed little difference on Blaster. Committed a host-stage Blaster port locally as ff0b4b5, not yet flashed or pushed. Round 3 on substrate was still running.",
+    "learnings": {
+      "repo": [
+        "AGENTS.md (~1,627 words) holds the rules, and both skill and no-skill agents read it first. That is why baseline agents did well, so safety rules, commands and layout should stay there rather than move into the skill.",
+        "Only about a quarter of AGENTS.md is porting-only: 'Adding a hack' plus 7 of the 17 gotchas.",
+        "Hacks under firmware/src/hacks/ must stay byte-identical to upstream (verify with cmp), so fixes go in the shim, a wrapper, or a build-time patch.",
+        "The assessment's Maze 'L' rating missed the real blocker, a 20 MB calloc. Blaster's 'expected expression' error was just the missing XArc type. Ratings need a source read.",
+        "Host dump frames never go through the display push path, so they cannot reveal byte-order swaps. Only a device flash with known colours can. The setSwapBytes fix lives in PR #18, not main.",
+        "The shim lacked XArc and XFillArcs for Blaster. A loop over XFillArc is enough because Blaster only draws full 360*64 ellipses.",
+        "Blaster is registered at index 24, the same slot as Maze, so whichever PR merges second will conflict in registry.c and the test_hacks expected list.",
+        "The test command for tools is `uv run --with pytest --with pillow pytest tools/tests`. Without Pillow, 8 converter tests skip (81 pass, 8 skipped, versus 89 pass).",
+        "XS_LOGO=path converts an image into a generated logo header via a PlatformIO script that calls uv run, because PlatformIO's Python has no Pillow.",
+        "The test_xshim tearDown now asserts that live allocations return to the setUp baseline, a permanent leak guard. It caught four XCopyArea tests leaking 35-byte masks.",
+        "Substrate's risks: two ~868 KB buffers (off_img and cgrid), a memset with a byte fill, exit(1) on allocation failure, and a heavy libm loop. It is the planned trap case for the skill.",
+        "It is unverified whether plain malloc of more than 100 KB reaches PSRAM on this firmware."
+      ],
+      "code": [
+        {
+          "path": "firmware/src/x11shim/xshim.c",
+          "line": 133,
+          "finding": "XFillArc exists here but XFillArcs and XArc did not, so Blaster needed them added."
+        },
+        {
+          "path": "firmware/src/x11shim/xshim.c",
+          "line": 51,
+          "finding": "The shim reports visual depth 16, so substrate's point2rgb/rgb2point take the RGB565 path."
+        },
+        {
+          "path": "firmware/src/x11shim/xshim.c",
+          "line": 165,
+          "finding": "XAllocColor exists and converts to RGB565, but there is no XParseColor, which substrate needs."
+        }
+      ],
+      "workflow": [
+        "A baseline agent that is told to look for risks will find the same ones as the skill arm. A fair skill test must give the bare task ('port X') and use a hack that has a trap.",
+        "Verify subagent claims against their worktrees. Reports contained errors such as '109 cases' (the real count was 137) and a wrong 'not jwz licence' claim.",
+        "Subagent output can be wrong in ways the skill's own wording induces, so check whether skill text primed the error.",
+        "Edit the skill file on disk before launching test agents, since they read it live. Defer wording changes until a round finishes so the text under test does not change.",
+        "GitHub pushes sometimes fail transiently. Retry once without force-pushing, and the 'remote: fatal: --stdin' line is harmless.",
+        "The trail body and PR body are separate and must both be updated, keeping the trail-link block intact. `entire trail update --body` takes a string, not a file.",
+        "The sandbox refuses `source`, shell variable expansion in paths, inline `python3 -`, and command substitution. Use literal paths and inline env prefixes.",
+        "Blanket search-and-replace in tests can double-free where a test already freed on purpose. Re-run tests after such edits.",
+        "Writing to shared git state such as .git/info/exclude affects every worktree, so ask first."
+      ]
+    },
+    "friction": [
+      "The harness blocked `source tools/env.sh`, `$VAR` paths and command substitution. This forced workarounds for the lead and both agent arms, even after the skill was read.",
+      "GitHub pushes were rejected transiently twice and needed retries.",
+      "The round 1 test was confounded: the prompt told baseline agents to do the skill's step 1.",
+      "The Blaster round 2 showed no real skill-versus-baseline separation because Blaster has no trap.",
+      "A blanket edit introduced a double free in one xshim test, which a crash caught.",
+      "The lead added three names to the shared .git/info/exclude without asking, and later acknowledged it.",
+      "The skill grew to 753 words, over the 500-word writing-skills target.",
+      "Passing a trail body from a file via command substitution was refused, so the text had to be inlined."
+    ],
+    "open_items": [
+      "Round 3 (substrate, skill versus no skill) is still running and needs scoring.",
+      "Wait for the PR #18 review and the user's approval, then merge, delete the branch and fast-forward main.",
+      "Ask the user before flashing Blaster. The plan is to apply the setSwapBytes fix locally, uncommitted, with START_HACK=blaster and 150 s or more of serial. Record fps, heap and PSRAM in tools/assessment_measured.md, then push and open the PR. The user wants a Blaster PR, and the Blaster PR depends on #18's colour fix.",
+      "The user should judge whether Blaster's small robots look acceptable on the device.",
+      "After round 3, fix SKILL.md step 4 to say host frames only test the shim's colour maths, not byte order. Also add a malloc and exit()-on-failure row, and a note that `source` and computed paths are refused. The `.git/info/exclude` instruction now says to ask first. Update PR #19 after that, which is still unpushed since the local commit.",
+      "Possibly trim the skill, and decide later whether to move the porting-only AGENTS.md content into it. The lead now leans against moving the rules.",
+      "Check whether plain malloc of more than 100 KB reaches PSRAM on the device.",
+      "Clean up the two agent worktrees, kept pending the decision on Blaster, and the round 3 worktrees.",
+      "Check `entire trail finding list 10` again once the bot reviews arrive.",
+      "Decide whether to add a delay override for Blaster (default delay 10000 µs) and whether to exercise the mother_ship option.",
+      "Blaster and Maze will conflict in registry.c and the test list whichever merges second, so the second needs a rebase.",
+      "The Maze PR's trail finding bodies were truncated in the list view and needed `finding` subcommands to read in full."
+    ]
+  },
   "prompt_attributions": [
     {
       "checkpoint_number": 1,
