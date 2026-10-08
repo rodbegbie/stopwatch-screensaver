@@ -1,6 +1,6 @@
 ## Measured on the device
 
-Thirteen hacks have been run so far (default settings, 466×466 canvas pushed to
+Fourteen hacks have been run so far (default settings, 466×466 canvas pushed to
 the display every frame, canvas held in PSRAM). The firmware times each frame
 in three parts, averaged over 5 seconds: **step** is the hack's own draw call,
 **push** is sending the canvas to the display, and **wait** is what is left of
@@ -24,6 +24,7 @@ holds, so its frame rate will now be lower than shown.
 | CloudLife | 24.2 | 8.8-8.9 ms | 31.4 ms | 0 ms | about 260 KB |
 | WhirlWindWarp | 17.0-24.8 | 6.2-26.4 ms | 31.3 ms | 0 ms | about 410 KB |
 | Flame | 1.8-7.4 | 76-592 ms | 31.4 ms | 0-72 ms | none measurable |
+| Hopalong | 19.2-25.2 | 7.3-20.1 ms | 31.2-31.3 ms | 0 ms | about 8 KB |
 
 Free heap and free PSRAM return to exactly the same values every time a
 hack is switched back to, so switching does not leak.
