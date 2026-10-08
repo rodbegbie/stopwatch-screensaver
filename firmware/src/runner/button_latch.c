@@ -3,15 +3,16 @@
 void button_latch_init(ButtonLatch *l, uint32_t debounce_ms) {
   l->pending = 0;
   l->first_ms = 0;
-  l->last_ms = 0;
-  l->has_last = 0;
+  l->last_edge_ms = 0;
+  l->has_edge = 0;
   l->debounce_ms = debounce_ms;
 }
 
-void button_latch_press(ButtonLatch *l, uint32_t now_ms) {
-  if (l->has_last && (uint32_t)(now_ms - l->last_ms) < l->debounce_ms) return;
-  l->has_last = 1;
-  l->last_ms = now_ms;
+void button_latch_edge(ButtonLatch *l, bool pressed, uint32_t now_ms) {
+  bool quiet = !l->has_edge || (uint32_t)(now_ms - l->last_edge_ms) >= l->debounce_ms;
+  l->has_edge = 1;
+  l->last_edge_ms = now_ms;
+  if (!pressed || !quiet) return;
   if (l->pending == 0) l->first_ms = now_ms;
   __atomic_fetch_add(&l->pending, 1, __ATOMIC_RELEASE);
 }

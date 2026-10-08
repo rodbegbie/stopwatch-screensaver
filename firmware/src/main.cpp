@@ -25,8 +25,33 @@ static const uint32_t kButtonDebounceMs = 30;
 
 static ButtonLatch latchA, latchB;
 
-static void IRAM_ATTR onButtonA() { button_latch_press(&latchA, millis()); }
-static void IRAM_ATTR onButtonB() { button_latch_press(&latchB, millis()); }
+/* The last edges seen on either button, kept so a double switch can be
+ * diagnosed from the serial log. Both interrupts run on one core and cannot
+ * nest, so the single counter needs no lock. */
+struct EdgeRecord {
+  volatile uint32_t ms;
+  volatile uint8_t button;
+  volatile uint8_t released;
+};
+static const uint32_t kEdgeLogSize = 32;
+static EdgeRecord edgeLog[kEdgeLogSize];
+static volatile uint32_t edgeCount;
+static volatile uint32_t lastEdgeMs;
+static uint32_t edgePrinted;
+
+static void IRAM_ATTR onButtonEdge(ButtonLatch *latch, int pin, char name) {
+  uint32_t now = millis();
+  bool pressed = gpio_get_level((gpio_num_t)pin) == 0;
+  EdgeRecord &e = edgeLog[edgeCount % kEdgeLogSize];
+  e.ms = now;
+  e.button = (uint8_t)name;
+  e.released = pressed ? 0 : 1;
+  edgeCount = edgeCount + 1;
+  lastEdgeMs = now;
+  button_latch_edge(latch, pressed, now);
+}
+static void IRAM_ATTR onButtonA() { onButtonEdge(&latchA, kPinButtonA, 'A'); }
+static void IRAM_ATTR onButtonB() { onButtonEdge(&latchB, kPinButtonB, 'B'); }
 
 static Canvas canvas;
 static HackRunner *runner;
@@ -61,6 +86,23 @@ static void printStats(const char *tag) {
       (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
 }
 
+/* Prints edges not yet reported as "A v-120 A ^-70": v is the button going
+ * down, ^ going up, and the number is milliseconds before now. */
+static void printEdges() {
+  uint32_t total = edgeCount;
+  uint32_t from = edgePrinted;
+  if (total - from > kEdgeLogSize) from = total - kEdgeLogSize;
+  uint32_t now = millis();
+  Serial.print("edges:");
+  for (uint32_t i = from; i < total; i++) {
+    const EdgeRecord &e = edgeLog[i % kEdgeLogSize];
+    Serial.printf(" %c%s-%u", (char)e.button, e.released ? "^" : "v",
+                  (unsigned)(now - e.ms));
+  }
+  Serial.println();
+  edgePrinted = total;
+}
+
 /* Returns true if a button switched hacks (which also resets the stats). */
 static bool pollButtons() {
   bool switched = false;
@@ -92,8 +134,8 @@ void setup() {
 
   button_latch_init(&latchA, kButtonDebounceMs);
   button_latch_init(&latchB, kButtonDebounceMs);
-  attachInterrupt(digitalPinToInterrupt(kPinButtonA), onButtonA, FALLING);
-  attachInterrupt(digitalPinToInterrupt(kPinButtonB), onButtonB, FALLING);
+  attachInterrupt(digitalPinToInterrupt(kPinButtonA), onButtonA, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(kPinButtonB), onButtonB, CHANGE);
 
   if (canvas_init(&canvas, kSize, kSize, ps_malloc) != 0)
     halt("PSRAM alloc failed");
@@ -131,6 +173,8 @@ void loop() {
     switched = pollButtons();
   }
   if (!switched) waitUs += micros() - t2;
+
+  if (edgeCount != edgePrinted && millis() - lastEdgeMs > 400) printEdges();
 
   if (millis() - statsAt >= kStatsEveryMs) {
     printStats("run");
