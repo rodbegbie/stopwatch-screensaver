@@ -42,15 +42,18 @@ typedef struct {
   void *(*init)(Display *, Window);
   unsigned long (*draw)(Display *, Window, void *);
   void (*free)(Display *, Window, void *);
+  void *setup_arg; /* xlockmore_init's hidden third argument; NULL otherwise */
+  int has_setup_arg;
 } Callbacks;
 
 /* An xlockmore hack's table is empty until its setup_cb has run, and that
  * allocates, so run it once rather than on every button press. */
 static Callbacks callbacks_for(const HackEntry *e) {
   struct xscreensaver_function_table *t = e->xsft;
-  if (!t) return (Callbacks){e->defaults, e->init, e->draw, e->free};
+  if (!t) return (Callbacks){e->defaults, e->init, e->draw, e->free, NULL, 0};
   if (!t->init_cb && t->setup_cb) t->setup_cb(t, t->setup_arg);
-  return (Callbacks){t->defaults, t->init_cb, t->draw_cb, t->free_cb};
+  return (Callbacks){t->defaults, t->init_cb, t->draw_cb, t->free_cb,
+                     t->setup_arg, 1};
 }
 
 static void stop(HackRunner *r) {
@@ -74,7 +77,15 @@ int runner_start(HackRunner *r, int index) {
   canvas_clear(r->canvas, 0);
   const Callbacks cb = callbacks_for(r->hacks[index]);
   xshim_set_defaults(cb.defaults);
-  r->closure = cb.init(r->dpy, RUNNER_WINDOW);
+  if (cb.has_setup_arg) {
+    /* Like screenhack.c: init_cb is declared with two arguments, but the
+     * xlockmore one takes its function table as a third. */
+    void *(*init3)(Display *, Window, void *) =
+        (void *(*)(Display *, Window, void *))cb.init;
+    r->closure = init3(r->dpy, RUNNER_WINDOW, cb.setup_arg);
+  } else {
+    r->closure = cb.init(r->dpy, RUNNER_WINDOW);
+  }
   r->running = 1;
   return 0;
 }

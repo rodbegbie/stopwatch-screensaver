@@ -9,17 +9,20 @@ static Canvas cv;
 static int setup_calls;
 static int seen_count;
 static int seen_delay;
+static void *seen_arg;
+static int sentinel;
 static const char **merged;
 
 static const char *const kPlainDefaults[] = {"*count: 3", NULL};
 
 static void fake_setup(struct xscreensaver_function_table *t, void *arg);
-static void *fake_init(Display *dpy, Window w);
+static void *fake_init(Display *dpy, Window w, void *arg);
 static unsigned long fake_draw(Display *dpy, Window w, void *closure);
 static void fake_free(Display *dpy, Window w, void *closure);
 
 static struct xscreensaver_function_table fake_xsft = {
     .setup_cb = fake_setup,
+    .setup_arg = &sentinel,
 };
 
 static void fake_setup(struct xscreensaver_function_table *t, void *arg) {
@@ -30,13 +33,16 @@ static void fake_setup(struct xscreensaver_function_table *t, void *arg) {
   merged[1] = "*count: 7";
   merged[2] = NULL;
   t->defaults = (const char *const *)merged;
-  t->init_cb = fake_init;
+  t->init_cb = (void *(*)(Display *, Window))fake_init;
   t->draw_cb = fake_draw;
   t->free_cb = fake_free;
 }
 
-static void *fake_init(Display *dpy, Window w) {
+/* xlockmore_init takes the function table as a third argument that the
+ * struct's two-argument prototype hides; screenhack.c casts to pass it. */
+static void *fake_init(Display *dpy, Window w, void *arg) {
   (void)w;
+  seen_arg = arg;
   seen_count = get_integer_resource(dpy, "count", "Int");
   seen_delay = get_integer_resource(dpy, "delay", "Usecs");
   return &fake_xsft;
@@ -79,6 +85,7 @@ void setUp(void) {
   setup_calls = 0;
   seen_count = 0;
   seen_delay = 0;
+  seen_arg = NULL;
   merged = NULL;
   fake_xsft.init_cb = NULL;
   fake_xsft.draw_cb = NULL;
@@ -113,6 +120,15 @@ void test_framework_and_hack_defaults_both_resolve(void) {
   TEST_ASSERT_EQUAL_INT(1000, seen_delay);
 }
 
+void test_init_receives_the_tables_setup_arg(void) {
+  static const HackEntry entry = {"Fake", NULL, NULL, NULL, NULL, &fake_xsft};
+  const HackEntry *const hacks[] = {&entry};
+  HackRunner *r = runner_create_with(&cv, hacks, 1);
+  runner_start(r, 0);
+  runner_destroy(r);
+  TEST_ASSERT_EQUAL_PTR(&sentinel, seen_arg);
+}
+
 void test_plain_hack_with_null_xsft_still_runs(void) {
   static const HackEntry entry = {"Plain", kPlainDefaults, plain_init,
                                   plain_draw, plain_free, NULL};
@@ -135,6 +151,7 @@ int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_setup_runs_once_across_100_starts);
   RUN_TEST(test_framework_and_hack_defaults_both_resolve);
+  RUN_TEST(test_init_receives_the_tables_setup_arg);
   RUN_TEST(test_plain_hack_with_null_xsft_still_runs);
   RUN_TEST(test_screenhackI_h_alone_provides_the_random_macros);
   return UNITY_END();
