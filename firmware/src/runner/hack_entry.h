@@ -19,6 +19,8 @@ typedef struct HackEntry {
   unsigned long (*draw)(Display *, Window, void *closure); /* delay in us */
   void (*free)(Display *, Window, void *closure);
   struct xscreensaver_function_table *xsft;
+  /* Device-specific resources that beat the hack's own defaults. */
+  const char *const *overrides;
 } HackEntry;
 
 #ifdef __cplusplus

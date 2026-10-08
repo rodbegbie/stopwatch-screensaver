@@ -141,6 +141,21 @@ void test_plain_hack_with_null_xsft_still_runs(void) {
   TEST_ASSERT_EQUAL_INT(0, setup_calls);
 }
 
+void test_entry_overrides_apply_to_its_hack_only(void) {
+  static const char *const over[] = {"*count: 2", NULL};
+  static const HackEntry with = {"With", NULL, NULL, NULL, NULL, &fake_xsft,
+                                 over};
+  static const HackEntry without = {"Without", NULL, NULL, NULL, NULL,
+                                    &fake_xsft};
+  const HackEntry *const hacks[] = {&with, &without};
+  HackRunner *r = runner_create_with(&cv, hacks, 2);
+  runner_start(r, 0);
+  TEST_ASSERT_EQUAL_INT(2, seen_count);
+  runner_start(r, 1);
+  TEST_ASSERT_EQUAL_INT(7, seen_count);
+  runner_destroy(r);
+}
+
 void test_screenhackI_h_alone_provides_the_random_macros(void) {
   ya_rand_init(7);
   TEST_ASSERT_TRUE(NRAND(3) < 3);
@@ -153,6 +168,7 @@ int main(void) {
   RUN_TEST(test_framework_and_hack_defaults_both_resolve);
   RUN_TEST(test_init_receives_the_tables_setup_arg);
   RUN_TEST(test_plain_hack_with_null_xsft_still_runs);
+  RUN_TEST(test_entry_overrides_apply_to_its_hack_only);
   RUN_TEST(test_screenhackI_h_alone_provides_the_random_macros);
   return UNITY_END();
 }

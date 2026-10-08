@@ -134,7 +134,9 @@ Set `NO_COLOR=1` on `pio` output you parse.
   argument, as xscreensaver's `screenhack.c` does. Its table is empty until
   then. Resources the framework reads but a hack does not define
   (`delta3d`, `size`, ...) fall back to `kFrameworkDefaults` in
-  `x11shim/resources.c`.
+  `x11shim/resources.c`. A `HackEntry`'s `overrides` list beats the hack's own
+  defaults (Galaxy runs with `count: 2` to stay near 15 fps); register it with
+  `XLOCKMORE_HACK_WITH`.
 - Don't declare `xrealloc` or `xmalloc` in the shim: cloudlife defines its own
   static `xrealloc`, which would clash.
 - `score_hacks.py` rates hacks by call sites, not loop trips: Flame (all

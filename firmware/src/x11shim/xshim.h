@@ -144,6 +144,8 @@ Bool screenhack_event_helper(Display *, Window, XEvent *);
 
 /* Resources come from the running hack's defaults table. */
 void xshim_set_defaults(const char *const *defaults); /* NULL-terminated */
+/* Looked up before the hack's own defaults; NULL clears them. */
+void xshim_set_overrides(const char *const *overrides);
 int get_integer_resource(Display *, const char *name, const char *cls);
 double get_float_resource(Display *, const char *name, const char *cls);
 Bool get_boolean_resource(Display *, const char *name, const char *cls);

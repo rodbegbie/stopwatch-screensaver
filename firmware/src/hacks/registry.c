@@ -1,11 +1,16 @@
 #include "hacks/registry.h"
 
 /* A hack built on xlockmore.h defines a function table, not a HackEntry. */
-#define XLOCKMORE_HACK(NAME, CLASS)                                      \
+#define XLOCKMORE_HACK_WITH(NAME, CLASS, OVERRIDES)                      \
   extern struct xscreensaver_function_table NAME##_xscreensaver_function_table; \
   static const HackEntry NAME##_hack = {                                 \
       CLASS, NULL, NULL, NULL, NULL,                                     \
-      &NAME##_xscreensaver_function_table}
+      &NAME##_xscreensaver_function_table, OVERRIDES}
+#define XLOCKMORE_HACK(NAME, CLASS) XLOCKMORE_HACK_WITH(NAME, CLASS, NULL)
+
+/* Galaxy's `count: -5` picks 2-5 galaxies and every star is pulled by every
+ * galaxy in double precision, which costs 160 ms a frame on the device. */
+static const char *const kGalaxyOverrides[] = {"*count: 2", NULL};
 
 extern const HackEntry pyro_hack;
 extern const HackEntry hypercube_hack;
@@ -28,7 +33,7 @@ XLOCKMORE_HACK(thornbird, "Thornbird");
 XLOCKMORE_HACK(spiral, "Spiral");
 XLOCKMORE_HACK(sphere, "Sphere");
 XLOCKMORE_HACK(discrete, "Discrete");
-XLOCKMORE_HACK(galaxy, "Galaxy");
+XLOCKMORE_HACK_WITH(galaxy, "Galaxy", kGalaxyOverrides);
 XLOCKMORE_HACK(drift, "Drift");
 XLOCKMORE_HACK(lightning, "Lightning");
 
