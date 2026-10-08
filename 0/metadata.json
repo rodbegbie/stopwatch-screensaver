@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4CPEQ134PZ77612VZEJKQM2",
+  "session_id": "01a11962-efcf-7b61-a748-02525302624d",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-08T02:46:07.229854Z",
+  "branch": "feature/pyro-m5-stopwatch",
+  "checkpoints_count": 1,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-6.1-sol",
+  "turn_id": "4ca631e80414",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 74884,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1860224,
+    "output_tokens": 4767,
+    "api_call_count": 29,
+    "subagent_tokens_complete": false
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 21,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".agent-traces/.active-session": 1,
+        ".agent-traces/.active-session.v2.codex.30316131313936322d656663662d3762.39d5130fb70c8e315d80be5523edd643764c90ff6fbf7094f66c36f580494d2a": 1,
+        ".agent-traces/.pending-calls.v2.codex.30316131313936322d656663662d3762.39d5130fb70c8e315d80be5523edd643764c90ff6fbf7094f66c36f580494d2a.json": 1,
+        ".agent-traces/01a11962-efcf-7b/events.ndjson": 1,
+        ".agent-traces/01a11962-efcf-7b/meta.json": 17
+      }
+    }
+  ]
+}
