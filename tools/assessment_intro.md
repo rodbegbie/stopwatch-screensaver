@@ -18,6 +18,12 @@ it with `uv run tools/score_hacks.py`.
   That second check catches helpers hacks reach through `utils/` that a
   count of Xlib calls cannot see. It does not run anything, so treat the
   effort ratings as a prioritisation aid, not an estimate.
+- The **All hacks** table is sorted from least to most effort (S, M, L,
+  XL), then by name. Its **Ported** column shows ✅ for a hack in the
+  firmware's registry (`hacks/registry.c`) and ❌ for one that was
+  attempted and abandoned (see "Failed ports" after the table, which only
+  appears when there are any). Failures are recorded in
+  `tools/failed_ports.txt`.
 
 ## Effort ratings
 

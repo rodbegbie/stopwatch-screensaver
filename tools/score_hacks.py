@@ -44,6 +44,11 @@ UNNAMED = re.compile(r"::\(unnamed[^)]*\)")
 MAX_HEADER_STUBS = 25
 FLOAT_HEAVY_THRESHOLD = 20
 MAX_MEDIUM_MISSING = 4
+EFFORT_ORDER = {"S": 0, "M": 1, "L": 2, "XL": 3}
+REGISTRY_ARRAY = re.compile(r"\bg_hacks\s*\[\s*\]\s*=\s*\{(.*?)\}\s*;", re.DOTALL)
+REGISTRY_ENTRY = re.compile(r"&(\w+)_hack\b")
+PORTED = "\u2705"
+FAILED = "\u274c"
 
 
 def strip_noise(source: str) -> str:
@@ -165,23 +170,66 @@ def rank_missing(rows: list[dict], n: int) -> list[tuple[str, float, int]]:
     return [(c, round(weight[c], 2), hacks[c]) for c in ranked[:n]]
 
 
+def registered_hacks(registry: str) -> set[str]:
+    """Names of the hacks in firmware's g_hacks[]: the ones already ported."""
+    array = REGISTRY_ARRAY.search(strip_noise(registry))
+    if not array:
+        raise ScoreError("no g_hacks[] array found in the registry source")
+    return set(REGISTRY_ENTRY.findall(array.group(1)))
+
+
+def read_failed_ports(text: str) -> dict[str, str]:
+    """Parses failed_ports.txt: one `name: reason` per line, # for comments."""
+    failed = {}
+    for number, line in enumerate(text.splitlines(), 1):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        name, colon, reason = line.partition(":")
+        if not colon or not name.strip():
+            raise ScoreError(
+                f"failed_ports line {number} is not `name: reason`: {line}"
+            )
+        failed[name.strip()] = reason.strip()
+    return failed
+
+
+def check_ports(ported: set[str], failed: dict[str, str], known: set[str]) -> None:
+    """Catches a hack marked both ways and names that match no scanned hack."""
+    both = sorted(ported & set(failed))
+    if both:
+        raise ScoreError(f"ported and also listed as failed: {', '.join(both)}")
+    unknown = sorted((ported | set(failed)) - known)
+    if unknown:
+        raise ScoreError(f"not a scanned hack (typo?): {', '.join(unknown)}")
+
+
 def code_cell(text: str) -> str:
     """Markdown-safe table cell: a code span with pipes escaped."""
     return "`" + text.replace("`", "'").replace("|", "\\|") + "`"
 
 
-def render_table(rows: list[dict]) -> str:
+def render_table(rows: list[dict], ported=frozenset(), failed=frozenset()) -> str:
     lines = [
-        "| Hack | Kind | Effort | Shim gaps | Flags | LOC |",
-        "| --- | --- | --- | --- | --- | --- |",
+        "| Hack | Kind | Effort | Ported | Shim gaps | Flags | LOC |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
     ]
-    for r in sorted(rows, key=lambda r: (r["effort"], r["name"])):
+    for r in sorted(rows, key=lambda r: (EFFORT_ORDER[r["effort"]], r["name"])):
         missing = ", ".join(code_cell(g) for g in r.get("gaps", r["missing"])) or "-"
         flags = ", ".join(r["flags"]) or "-"
+        mark = PORTED if r["name"] in ported else FAILED if r["name"] in failed else "-"
         lines.append(
-            f"| {r['name']} | {r['kind']} | {r['effort']} | {missing} | {flags} | {r['loc']} |"
+            f"| {r['name']} | {r['kind']} | {r['effort']} | {mark} | {missing} | {flags} | {r['loc']} |"
         )
     return "\n".join(lines) + "\n"
+
+
+def render_failed(failed: dict[str, str]) -> str:
+    """The reasons behind the failed marks; nothing at all if none failed."""
+    if not failed:
+        return ""
+    items = "".join(f"- **{name}**: {failed[name]}\n" for name in sorted(failed))
+    return "\n## Failed ports\n\n" + items
 
 
 def render_ranking(ranked: list[tuple[str, float, int]]) -> str:
@@ -243,6 +291,8 @@ def main(argv: list[str], root: Path | None = None) -> int:
         action="append",
         help="include dir for the shim compile check (default: the firmware's)",
     )
+    parser.add_argument("--registry", default=str(root / "firmware/src/hacks/registry.c"))
+    parser.add_argument("--failed-ports", default=str(root / "tools/failed_ports.txt"))
     parser.add_argument("--intro", default=str(root / "tools/assessment_intro.md"))
     parser.add_argument("--measured", default=str(root / "tools/assessment_measured.md"))
     parser.add_argument("--out", default=str(root / "docs/porting-assessment.md"))
@@ -274,6 +324,13 @@ def run(args: argparse.Namespace, vendor: Path, root: Path) -> int:
     rows, excluded = scan(
         vendor, implemented_calls(Path(args.header).read_text()), includes
     )
+    registry = Path(args.registry)
+    if not registry.exists():
+        raise ScoreError(f"registry not found: {registry} (see --registry)")
+    ported = registered_hacks(registry.read_text())
+    failed_path = Path(args.failed_ports)
+    failed = read_failed_ports(failed_path.read_text()) if failed_path.exists() else {}
+    check_ports(ported, failed, {r["name"] for r in rows})
     counts = {e: sum(r["effort"] == e for r in rows) for e in ("S", "M", "L", "XL")}
     intro = Path(args.intro).read_text().format(
         version=version,
@@ -291,7 +348,8 @@ def run(args: argparse.Namespace, vendor: Path, root: Path) -> int:
         + "needing few additions come first.\n\n"
         + render_ranking(rank_missing(rows, 10))
         + "\n## All hacks\n\n"
-        + render_table(rows)
+        + render_table(rows, ported, set(failed))
+        + render_failed(failed)
         + "\n## Excluded files\n\n"
         + "These files in `hacks/` and `hacks/glx/` have no `XSCREENSAVER_MODULE`\n"
         + "entry point, so they are models, helper libraries or command-line\n"
