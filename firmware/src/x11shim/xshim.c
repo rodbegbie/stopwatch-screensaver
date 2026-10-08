@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "fps.h"
+#include "x11shim/pixmap.h"
 #include "yarandom.h"
 
 Bool mono_p = False;
@@ -27,6 +28,7 @@ GC XCreateGC(Display *dpy, Drawable d, unsigned long mask, XGCValues *v) {
 
 int XFreeGC(Display *dpy, GC gc) {
   (void)dpy;
+  if (gc) xshim_gc_release_clip(gc);
   free(gc);
   return 0;
 }

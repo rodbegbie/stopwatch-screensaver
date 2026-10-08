@@ -203,7 +203,7 @@ void setup() {
   auto cfg = M5.config();
   M5.begin(cfg);
   Serial.begin(115200);
-  M5.Display.setSwapBytes(false);
+  M5.Display.setSwapBytes(true);
 
   button_latch_init(&latchA, kButtonSettleMs);
   button_latch_init(&latchB, kButtonSettleMs);

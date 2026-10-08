@@ -1,4 +1,5 @@
 #include <math.h>
+#include <sanitizer/allocator_interface.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unity.h>
@@ -10,18 +11,25 @@
 #include "screenhack.h"
 #include "utils.h"
 #include "x11shim/xshim.h"
+#include "ximage-loader.h"
 
 static Canvas cv;
 static Display *dpy;
 static Window win = 1;
 
+static size_t live_before;
+
 void setUp(void) {
+  live_before = __sanitizer_get_current_allocated_bytes();
   TEST_ASSERT_EQUAL_INT(0, canvas_init(&cv, 16, 16, malloc));
   dpy = xshim_open_display(&cv);
 }
 void tearDown(void) {
   xshim_close_display(dpy);
   canvas_free(&cv);
+  TEST_ASSERT_EQUAL_UINT64_MESSAGE(live_before,
+                                   __sanitizer_get_current_allocated_bytes(),
+                                   "test leaked memory");
 }
 
 static int count_set(void) {
@@ -486,8 +494,297 @@ void test_xrm_option_strings_are_writable_like_xscreensavers(void) {
   TEST_ASSERT_EQUAL_STRING(".", specifier);
 }
 
+/* A 4 by 3 image. Pixel (x, y) is 0x1000 + 4y + x, so every pixel is non-zero
+ * and distinct. The mask is row 0 all set, row 1 columns 0 and 2, row 2 none:
+ * 6 set bits. */
+#define BLOB_W 4
+#define BLOB_H 3
+#define MASK_SET_BITS 6
+static unsigned char blob[8 + 2 * BLOB_W * BLOB_H + BLOB_H];
+
+static void fill_blob(void) {
+  memcpy(blob, "565M", 4);
+  blob[4] = BLOB_W;
+  blob[5] = 0;
+  blob[6] = BLOB_H;
+  blob[7] = 0;
+  for (int i = 0; i < BLOB_W * BLOB_H; i++) {
+    blob[8 + 2 * i] = (0x1000 + i) & 0xFF;
+    blob[9 + 2 * i] = (0x1000 + i) >> 8;
+  }
+  blob[8 + 2 * BLOB_W * BLOB_H + 0] = 0xF0;
+  blob[8 + 2 * BLOB_W * BLOB_H + 1] = 0xA0;
+  blob[8 + 2 * BLOB_W * BLOB_H + 2] = 0x00;
+}
+
+static Pixmap load_image(Pixmap *mask) {
+  int w, h;
+  fill_blob();
+  return image_data_to_pixmap(dpy, win, blob, sizeof(blob), &w, &h, mask);
+}
+
+static GC new_gc(unsigned long fg, unsigned long bg) {
+  GC gc = XCreateGC(dpy, win, 0, NULL);
+  XSetForeground(dpy, gc, fg);
+  XSetBackground(dpy, gc, bg);
+  return gc;
+}
+
+void test_image_data_to_pixmap_makes_a_colour_pixmap_and_a_mask(void) {
+  int w = 99, h = 99;
+  Pixmap mask = None;
+  fill_blob();
+  Pixmap p = image_data_to_pixmap(dpy, win, blob, sizeof(blob), &w, &h, &mask);
+  TEST_ASSERT_NOT_EQUAL(None, p);
+  TEST_ASSERT_NOT_EQUAL(None, mask);
+  TEST_ASSERT_EQUAL_INT(BLOB_W, w);
+  TEST_ASSERT_EQUAL_INT(BLOB_H, h);
+
+  Window root;
+  int x, y;
+  unsigned int pw, ph, border, depth;
+  TEST_ASSERT_TRUE(XGetGeometry(dpy, p, &root, &x, &y, &pw, &ph, &border, &depth));
+  TEST_ASSERT_EQUAL_UINT(BLOB_W, pw);
+  TEST_ASSERT_EQUAL_UINT(BLOB_H, ph);
+  TEST_ASSERT_EQUAL_UINT(16, depth);
+  TEST_ASSERT_TRUE(XGetGeometry(dpy, mask, &root, &x, &y, &pw, &ph, &border, &depth));
+  TEST_ASSERT_EQUAL_UINT(BLOB_W, pw);
+  TEST_ASSERT_EQUAL_UINT(1, depth);
+  XFreePixmap(dpy, p);
+  XFreePixmap(dpy, mask);
+}
+
+void test_image_data_to_pixmap_rejects_a_blob_that_is_not_ours(void) {
+  fill_blob();
+  unsigned char bad_magic[sizeof(blob)];
+  memcpy(bad_magic, blob, sizeof(blob));
+  bad_magic[0] = 0x89; /* a PNG signature starts like this */
+  struct {
+    const unsigned char *data;
+    unsigned long size;
+  } cases[] = {{bad_magic, sizeof(blob)},
+               {blob, sizeof(blob) - 1},
+               {blob, sizeof(blob) + 1},
+               {blob, 7}};
+  for (unsigned i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+    int w = 99, h = 99;
+    Pixmap mask = 12345;
+    Pixmap p = image_data_to_pixmap(dpy, win, cases[i].data, cases[i].size, &w, &h, &mask);
+    TEST_ASSERT_EQUAL(None, p);
+    TEST_ASSERT_EQUAL(None, mask);
+    TEST_ASSERT_EQUAL_INT(0, w);
+    TEST_ASSERT_EQUAL_INT(0, h);
+  }
+}
+
+void test_get_geometry_of_the_window_is_the_canvas_and_of_nothing_is_failure(void) {
+  Window root;
+  int x, y;
+  unsigned int w, h, border, depth;
+  TEST_ASSERT_TRUE(XGetGeometry(dpy, win, &root, &x, &y, &w, &h, &border, &depth));
+  TEST_ASSERT_EQUAL_UINT(16, w);
+  TEST_ASSERT_EQUAL_UINT(16, h);
+  TEST_ASSERT_EQUAL_UINT(16, depth);
+  TEST_ASSERT_FALSE(XGetGeometry(dpy, None, &root, &x, &y, &w, &h, &border, &depth));
+}
+
+void test_copy_area_draws_the_image_at_the_destination(void) {
+  Pixmap mask = None;
+  Pixmap p = load_image(&mask);
+  GC gc = new_gc(0xFFFF, 0);
+  XCopyArea(dpy, p, win, gc, 0, 0, BLOB_W, BLOB_H, 5, 6);
+  TEST_ASSERT_EQUAL_INT(BLOB_W * BLOB_H, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0x1000, at(5, 6));
+  TEST_ASSERT_EQUAL_HEX16(0x100B, at(8, 8));
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+  XFreePixmap(dpy, mask);
+}
+
+void test_copy_area_copies_only_the_requested_source_rectangle(void) {
+  Pixmap mask = None;
+  Pixmap p = load_image(&mask);
+  GC gc = new_gc(0xFFFF, 0);
+  XCopyArea(dpy, p, win, gc, 1, 1, 2, 2, 0, 0);
+  TEST_ASSERT_EQUAL_INT(4, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0x1005, at(0, 0));
+  TEST_ASSERT_EQUAL_HEX16(0x100A, at(1, 1));
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+  XFreePixmap(dpy, mask);
+}
+
+void test_copy_area_is_clipped_at_every_canvas_edge(void) {
+  Pixmap mask = None;
+  Pixmap p = load_image(&mask);
+  GC gc = new_gc(0xFFFF, 0);
+  XCopyArea(dpy, p, win, gc, 0, 0, BLOB_W, BLOB_H, -2, -1);
+  TEST_ASSERT_EQUAL_INT(2 * 2, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0x1006, at(0, 0));
+  XClearWindow(dpy, win);
+  XCopyArea(dpy, p, win, gc, 0, 0, BLOB_W, BLOB_H, 14, 14);
+  TEST_ASSERT_EQUAL_INT(2 * 2, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0x1005, at(15, 15));
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+  XFreePixmap(dpy, mask);
+}
+
+void test_copy_area_is_clipped_to_the_source_image(void) {
+  Pixmap mask = None;
+  Pixmap p = load_image(&mask);
+  GC gc = new_gc(0xFFFF, 0);
+  XCopyArea(dpy, p, win, gc, 2, 1, 10, 10, 0, 0);
+  TEST_ASSERT_EQUAL_INT(2 * 2, count_set());
+  XCopyArea(dpy, p, win, gc, -3, -3, 5, 5, 8, 8);
+  TEST_ASSERT_EQUAL_HEX16(0x1000, at(11, 11));
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+  XFreePixmap(dpy, mask);
+}
+
+void test_clip_mask_draws_only_where_the_mask_is_set(void) {
+  Pixmap mask = None;
+  Pixmap p = load_image(&mask);
+  GC gc = new_gc(0xFFFF, 0);
+  XSetClipMask(dpy, gc, mask);
+  XSetClipOrigin(dpy, gc, 5, 6);
+  XCopyArea(dpy, p, win, gc, 0, 0, BLOB_W, BLOB_H, 5, 6);
+  TEST_ASSERT_EQUAL_INT(MASK_SET_BITS, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0x1000, at(5, 6));
+  TEST_ASSERT_EQUAL_HEX16(0, at(6, 7));
+  TEST_ASSERT_EQUAL_HEX16(0x1006, at(7, 7));
+  TEST_ASSERT_EQUAL_HEX16(0, at(5, 8));
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+  XFreePixmap(dpy, mask);
+}
+
+void test_clip_origin_positions_the_mask_and_outside_the_mask_is_not_drawn(void) {
+  Pixmap mask = None;
+  Pixmap p = load_image(&mask);
+  GC gc = new_gc(0xFFFF, 0);
+  XSetClipMask(dpy, gc, mask);
+  XSetClipOrigin(dpy, gc, 6, 6);
+  XCopyArea(dpy, p, win, gc, 0, 0, BLOB_W, BLOB_H, 5, 6);
+  TEST_ASSERT_EQUAL_INT(5, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0, at(5, 6));
+  TEST_ASSERT_EQUAL_HEX16(0x1001, at(6, 6));
+  TEST_ASSERT_EQUAL_HEX16(0x1007, at(8, 7));
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+  XFreePixmap(dpy, mask);
+}
+
+void test_clip_mask_outlives_the_pixmap_it_was_set_from(void) {
+  Pixmap mask = None;
+  Pixmap p = load_image(&mask);
+  GC gc = new_gc(0xFFFF, 0);
+  XSetClipMask(dpy, gc, mask);
+  XFreePixmap(dpy, mask);
+  XCopyArea(dpy, p, win, gc, 0, 0, BLOB_W, BLOB_H, 0, 0);
+  TEST_ASSERT_EQUAL_INT(MASK_SET_BITS, count_set());
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+}
+
+void test_clip_mask_none_removes_the_clip(void) {
+  Pixmap mask = None;
+  Pixmap p = load_image(&mask);
+  GC gc = new_gc(0xFFFF, 0);
+  XSetClipMask(dpy, gc, mask);
+  XSetClipMask(dpy, gc, None);
+  XCopyArea(dpy, p, win, gc, 0, 0, BLOB_W, BLOB_H, 0, 0);
+  TEST_ASSERT_EQUAL_INT(BLOB_W * BLOB_H, count_set());
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+  XFreePixmap(dpy, mask);
+}
+
+void test_copy_plane_draws_set_bits_in_foreground_and_clear_bits_in_background(void) {
+  Pixmap mask = None;
+  Pixmap p = load_image(&mask);
+  GC gc = new_gc(0xF800, 0x001F);
+  XCopyPlane(dpy, mask, win, gc, 0, 0, BLOB_W, BLOB_H, 0, 0, 1);
+  TEST_ASSERT_EQUAL_INT(BLOB_W * BLOB_H, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xF800, at(0, 0));
+  TEST_ASSERT_EQUAL_HEX16(0xF800, at(3, 0));
+  TEST_ASSERT_EQUAL_HEX16(0xF800, at(0, 1));
+  TEST_ASSERT_EQUAL_HEX16(0x001F, at(1, 1));
+  TEST_ASSERT_EQUAL_HEX16(0xF800, at(2, 1));
+  TEST_ASSERT_EQUAL_HEX16(0x001F, at(3, 1));
+  TEST_ASSERT_EQUAL_HEX16(0x001F, at(0, 2));
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+  XFreePixmap(dpy, mask);
+}
+
+void test_copy_plane_honours_the_clip_mask(void) {
+  Pixmap mask = None;
+  Pixmap p = load_image(&mask);
+  GC gc = new_gc(0xF800, 0x001F);
+  XSetClipMask(dpy, gc, mask);
+  XCopyPlane(dpy, mask, win, gc, 0, 0, BLOB_W, BLOB_H, 0, 0, 1);
+  TEST_ASSERT_EQUAL_INT(MASK_SET_BITS, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0, at(1, 1));
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+  XFreePixmap(dpy, mask);
+}
+
+void test_copy_with_the_wrong_kind_of_source_draws_nothing(void) {
+  Pixmap mask = None;
+  Pixmap p = load_image(&mask);
+  GC gc = new_gc(0xF800, 0x001F);
+  XCopyArea(dpy, mask, win, gc, 0, 0, BLOB_W, BLOB_H, 0, 0);
+  XCopyPlane(dpy, p, win, gc, 0, 0, BLOB_W, BLOB_H, 0, 0, 1);
+  XCopyPlane(dpy, mask, win, gc, 0, 0, BLOB_W, BLOB_H, 0, 0, 2);
+  XCopyArea(dpy, None, win, gc, 0, 0, BLOB_W, BLOB_H, 0, 0);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+  XFreePixmap(dpy, mask);
+}
+
+void test_pixmaps_and_clip_masks_leave_no_memory_behind(void) {
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  for (int i = 0; i < 20; i++) {
+    Pixmap mask = None;
+    Pixmap p = load_image(&mask);
+    GC gc = new_gc(0xFFFF, 0);
+    XSetClipMask(dpy, gc, mask);
+    XSetClipMask(dpy, gc, mask); /* replacing a clip must free the old one */
+    XCopyArea(dpy, p, win, gc, 0, 0, BLOB_W, BLOB_H, 0, 0);
+    XFreePixmap(dpy, mask);
+    XFreePixmap(dpy, p);
+    XFreeGC(dpy, gc); /* still holding a clip */
+  }
+  TEST_ASSERT_EQUAL_UINT64(before, __sanitizer_get_current_allocated_bytes());
+}
+
+void test_free_pixmap_of_none_and_sync_are_harmless(void) {
+  TEST_ASSERT_EQUAL_INT(0, XFreePixmap(dpy, None));
+  TEST_ASSERT_EQUAL_INT(0, XSync(dpy, False));
+}
+
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_image_data_to_pixmap_makes_a_colour_pixmap_and_a_mask);
+  RUN_TEST(test_image_data_to_pixmap_rejects_a_blob_that_is_not_ours);
+  RUN_TEST(test_get_geometry_of_the_window_is_the_canvas_and_of_nothing_is_failure);
+  RUN_TEST(test_copy_area_draws_the_image_at_the_destination);
+  RUN_TEST(test_copy_area_copies_only_the_requested_source_rectangle);
+  RUN_TEST(test_copy_area_is_clipped_at_every_canvas_edge);
+  RUN_TEST(test_copy_area_is_clipped_to_the_source_image);
+  RUN_TEST(test_clip_mask_draws_only_where_the_mask_is_set);
+  RUN_TEST(test_clip_origin_positions_the_mask_and_outside_the_mask_is_not_drawn);
+  RUN_TEST(test_clip_mask_outlives_the_pixmap_it_was_set_from);
+  RUN_TEST(test_clip_mask_none_removes_the_clip);
+  RUN_TEST(test_copy_plane_draws_set_bits_in_foreground_and_clear_bits_in_background);
+  RUN_TEST(test_copy_plane_honours_the_clip_mask);
+  RUN_TEST(test_copy_with_the_wrong_kind_of_source_draws_nothing);
+  RUN_TEST(test_pixmaps_and_clip_masks_leave_no_memory_behind);
+  RUN_TEST(test_free_pixmap_of_none_and_sync_are_harmless);
   RUN_TEST(test_draw_points_plots_each_point_in_the_gc_colour);
   RUN_TEST(test_draw_points_with_zero_count_draws_nothing);
   RUN_TEST(test_change_gc_sets_foreground_only_when_masked);

@@ -80,8 +80,14 @@ def test_file_not_listed_in_notices_is_reported(tmp_path):
     assert len(problems) == 1 and "not listed" in problems[0]
 
 
-def test_notice_text_past_line_40_is_not_accepted(tmp_path):
-    text = "\n" * 45 + JWZ
+def test_notice_after_a_long_modification_history_is_accepted(tmp_path):
+    history = "/*\n" + " * modified: [1988] someone\n" * 60 + " */\n"
+    src, md = setup(tmp_path, {"maze/maze.c": history + MIT}, "maze.c")
+    assert cn.check(src, md) == []
+
+
+def test_notice_text_far_down_the_file_is_not_accepted(tmp_path):
+    text = "\n" * 120 + JWZ
     src, md = setup(tmp_path, {"pyro/pyro.c": text}, "pyro.c")
     assert len(cn.check(src, md)) == 1
 

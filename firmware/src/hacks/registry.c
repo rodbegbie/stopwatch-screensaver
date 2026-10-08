@@ -26,6 +26,7 @@ extern const HackEntry critical_hack;
 extern const HackEntry cloudlife_hack;
 extern const HackEntry whirlwindwarp_hack;
 extern const HackEntry flame_hack;
+extern const HackEntry maze_hack;
 XLOCKMORE_HACK(hopalong, "Hopalong");
 XLOCKMORE_HACK(vines, "Vines");
 XLOCKMORE_HACK(sierpinski, "Sierpinski");
@@ -52,5 +53,6 @@ const HackEntry *const g_hacks[] = {
     &discrete_hack,
     &galaxy_hack,
     &drift_hack,
-    &lightning_hack};
+    &lightning_hack,
+    &maze_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);
