@@ -1,0 +1,5 @@
+yes, flash it.  Also, there was a new finding added by a reviewer agent.  It might already be addressed by the work you've done since the last push, but take a look see.
+
+---
+
+Oh, my bad. I was looking at the wrong UI in Entire.  OK, check your log now.
