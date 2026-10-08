@@ -51,14 +51,14 @@ performance numbers exist yet, so this stays a separate future project.
 
 ## Measured on the device
 
-Fourteen hacks have been run so far (default settings, 466×466 canvas pushed to
-the display every frame, canvas held in PSRAM). The firmware times each frame
-in three parts, averaged over 5 seconds: **step** is the hack's own draw call,
-**push** is sending the canvas to the display, and **wait** is what is left of
-the delay the hack asked for once the push is credited against it (the runner
-caps any delay at 10 seconds). Rows other than Rorschach and Pedal were
-measured before the cap was raised from 1 second; Helix also asks for 5-second
-holds, so its frame rate will now be lower than shown.
+Twenty-four hacks have been run so far (default settings, 466×466 canvas
+pushed to the display every frame, canvas held in PSRAM). The firmware times
+each frame in three parts, averaged over 5 seconds: **step** is the hack's own
+draw call, **push** is sending the canvas to the display, and **wait** is what
+is left of the delay the hack asked for once the push is credited against it
+(the runner caps any delay at 10 seconds). Rows other than Rorschach and Pedal
+were measured before the cap was raised from 1 second; Helix also asks for
+5-second holds, so its frame rate will now be lower than shown.
 
 | Hack | fps | step | push | wait | Extra PSRAM |
 | --- | --- | --- | --- | --- | --- |
@@ -76,6 +76,16 @@ holds, so its frame rate will now be lower than shown.
 | WhirlWindWarp | 17.0-24.8 | 6.2-26.4 ms | 31.3 ms | 0 ms | about 410 KB |
 | Flame | 1.8-7.4 | 76-592 ms | 31.4 ms | 0-72 ms | none measurable |
 | Hopalong | 19.2-25.2 | 7.3-20.1 ms | 31.2-31.3 ms | 0 ms | about 8 KB |
+| Vines | 2.8-3.0 | 133-160 ms | 31.2 ms | 175-187 ms | none measurable |
+| Sierpinski | 2.4-2.6 | 1.8-4.0 ms | 31.3-31.4 ms | 377-409 ms | about 32 KB |
+| FadePlot | 28.0-28.2 | 2.9-3.2 ms | 31.3-31.4 ms | 0 ms | about 16 KB |
+| Thornbird | 29.0-29.2 | 2.0-2.2 ms | 31.1-31.2 ms | 0 ms | about 11 KB |
+| Spiral | 18.8 | 0.9-1.2 ms | 31.1 ms | 21 ms | about 5 KB |
+| Sphere | 30.0-30.4 | 0.6-1.1 ms | 31.1-31.2 ms | 0 ms | none measurable |
+| Discrete | 1.0-1.2 | 0.93-1.11 s | 31.5 ms | 0 ms | about 16 KB |
+| Galaxy | 5.0-5.4 | 159-172 ms | 31.2 ms | 0 ms | about 294 KB |
+| Drift | 10.4 | 63-65 ms | 31.5 ms | 0 ms | about 16 KB |
+| Lightning | 29.4 | 1.8-1.9 ms | 31.2 ms | 0 ms | none measurable |
 
 Free heap and free PSRAM return to exactly the same values every time a
 hack is switched back to, so switching does not leak.
@@ -116,6 +126,16 @@ hack is switched back to, so switching does not leak.
   identified.
 - Free heap and PSRAM showed a single reading per hack across five restarts
   each of Flame and WhirlWindWarp, so repeated starts do not leak.
+- Discrete (about 1 s a frame), Galaxy (about 160 ms) and Drift (about
+  64 ms) are the most expensive of the xlockmore batch; the rest run at or
+  near the push ceiling. Vines and Sierpinski are slow because they ask for
+  long delays (Sierpinski waits about 409 ms between cheap steps). Rod found
+  Discrete's slow updates in keeping with other deliberately slow hacks,
+  Drift fine and Galaxy the slowest-feeling.
+- Thornbird keeps 400 buffers of 100 rectangles (about 320 KB) in internal
+  heap, filled one per frame, so free heap falls to under 1 KB after about
+  six seconds. It is bounded, not a leak: switching away returned the heap
+  to its earlier value.
 - Hacks that draw many primitives per frame are the ones to profile first.
 
 ## Other notes
