@@ -94,7 +94,7 @@ void test_next_and_prev_wrap(void) {
 
 void test_start_rejects_bad_index(void) {
   HackRunner *r = runner_create(&cv);
-  TEST_ASSERT_EQUAL_INT(-1, runner_start(r, 5));
+  TEST_ASSERT_EQUAL_INT(-1, runner_start(r, g_hack_count));
   TEST_ASSERT_EQUAL_INT(-1, runner_start(r, -1));
   runner_destroy(r);
 }

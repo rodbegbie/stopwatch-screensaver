@@ -29,6 +29,24 @@ implied warranty.
 | `firmware/src/hacks/xspirograph/xspirograph.c` | The Spiral Generator, Copyright (c) 2000 Rohit Singh; contains code from xscreensaver, Copyright (c) 1992, 1995, 1996, 1997 Jamie Zawinski | jwz permission notice (above); the file's own header says "notices" for its two copyright holders |
 | `firmware/src/hacks/petri/petri.c` | Copyright (c) 1992-1999 Dan Bornstein, with help from Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/helix/helix.c` | Copyright (c) 1992-2008 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/rorschach/rorschach.c` | Copyright (c) 1992-2014 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/pedal/pedal.c` | Copyright (c) 1994 Carnegie Mellon University; X version by Dale Moore | CMU permission notice (below) |
 
 Each copied file keeps its own header unchanged; the notice text above is
 reproduced here to satisfy the "supporting documentation" requirement.
+
+### Carnegie Mellon University notice (Pedal)
+
+`pedal.c` carries its own permission notice, reproduced here as it appears
+in the file (including its "fnord" typos):
+
+```text
+Copyright (c) 1994, by Carnegie Mellon University.  Permission to use,
+copy, modify, distribute, and sell this software and its documentation
+for any purpose is hereby granted without fee, provided fnord that the
+above copyright notice appear in all copies and that both that copyright
+notice and this permission notice appear in supporting documentation.
+No representations are made about the  suitability of fnord this software
+for any purpose.  It is provided "as is" without express or implied
+warranty.
+```

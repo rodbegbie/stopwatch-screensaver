@@ -5,8 +5,11 @@ extern const HackEntry hypercube_hack;
 extern const HackEntry xspirograph_hack;
 extern const HackEntry petri_hack;
 extern const HackEntry helix_hack;
+extern const HackEntry rorschach_hack;
+extern const HackEntry pedal_hack;
 
 const HackEntry *const g_hacks[] = {&pyro_hack,        &hypercube_hack,
                                     &xspirograph_hack, &petri_hack,
-                                    &helix_hack};
+                                    &helix_hack,       &rorschach_hack,
+                                    &pedal_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);
