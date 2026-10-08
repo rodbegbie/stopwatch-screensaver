@@ -1,0 +1,13 @@
+Yes, push it and open the trail
+
+---
+
+Are there any other hacks that would benefit from a single-precision build?
+
+---
+
+Let's file this as an issue for later.  And remember it as something to consider for future hacks.
+
+---
+
+Check PR 12 for findings
