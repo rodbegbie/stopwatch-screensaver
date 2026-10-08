@@ -1,0 +1,39 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4E51XZ23Q4ARS9MAP81MHZP",
+  "session_id": "55911a95-94f2-4d02-bde2-fa3ebd532a21",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-08T16:20:33.19713Z",
+  "branch": "feature/4-15-name-and-fps-overlay",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/src/runner/overlay.c",
+    "firmware/src/runner/overlay.h",
+    "firmware/test/test_overlay/test_overlay.c"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "77383a7b2428",
+  "checkpoint_transcript_start": 92,
+  "transcript_lines_at_start": 92,
+  "compact_transcript_start": 8,
+  "token_usage": {
+    "input_tokens": 24,
+    "cache_creation_tokens": 29209,
+    "cache_read_tokens": 787715,
+    "output_tokens": 12274,
+    "api_call_count": 12
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-10-08T16:20:33.18029Z",
+    "agent_lines": 237,
+    "agent_removed": 0,
+    "human_added": 52,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 289,
+    "total_lines_changed": 290,
+    "agent_percentage": 81.72413793103448,
+    "metric_version": 2
+  }
+}
