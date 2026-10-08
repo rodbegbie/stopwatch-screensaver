@@ -35,7 +35,8 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Drift",
                                          "Lightning",
                                          "Maze",
-                                         "Blaster"};
+                                         "Blaster",
+                                         "Substrate"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -140,6 +141,30 @@ void test_maze_cycles_do_not_leak(void) {
   TEST_ASSERT_TRUE_MESSAGE(after < before + 60 * 1024, "allocated bytes grew");
 }
 
+/* With `maxCycles: 3` Substrate rebuilds its crack grid and pixel map every
+ * 3 frames. Each is about 1.7 MB (3.5 MB on the host, where `unsigned long` is
+ * 8 bytes), so a leak of either shows within a few restarts. */
+void test_substrate_restarts_do_not_leak(void) {
+  const HackEntry *substrate = NULL;
+  for (int i = 0; i < g_hack_count; i++)
+    if (strcmp(g_hacks[i]->name, "Substrate") == 0) substrate = g_hacks[i];
+  TEST_ASSERT_NOT_NULL(substrate);
+
+  const char *const overrides[] = {"*maxCycles: 3", NULL};
+  HackEntry entry = *substrate;
+  entry.overrides = overrides;
+  const HackEntry *const hacks[] = {&entry};
+
+  HackRunner *r = runner_create_with(&cv, hacks, 1);
+  runner_start(r, 0);
+  for (int f = 0; f < 10; f++) runner_step(r);
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  for (int f = 0; f < 60; f++) runner_step(r);
+  const size_t after = __sanitizer_get_current_allocated_bytes();
+  runner_destroy(r);
+  TEST_ASSERT_TRUE_MESSAGE(after < before + 256 * 1024, "allocated bytes grew");
+}
+
 void test_prev_from_first_wraps_to_last_hack(void) {
   HackRunner *r = runner_create(&cv);
   runner_start(r, 0);
@@ -157,6 +182,7 @@ int main(void) {
   RUN_TEST(test_cycling_through_all_hacks_100_times_is_asan_clean);
   RUN_TEST(test_galaxy_restarts_do_not_leak_with_its_registered_overrides);
   RUN_TEST(test_maze_cycles_do_not_leak);
+  RUN_TEST(test_substrate_restarts_do_not_leak);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
   return UNITY_END();
 }

@@ -180,6 +180,7 @@ int XCopyPlane(Display *, Drawable src, Drawable dst, GC, int src_x,
 /* Drawing is synchronous, so there is nothing to wait for. */
 int XSync(Display *, Bool discard);
 
+Status XParseColor(Display *, Colormap, const char *spec, XColor *);
 Status XAllocColor(Display *, Colormap, XColor *);
 int XFreeColors(Display *, Colormap, unsigned long *pixels, int n,
                 unsigned long planes);

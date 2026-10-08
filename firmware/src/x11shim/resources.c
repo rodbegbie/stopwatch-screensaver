@@ -58,6 +58,41 @@ static const struct {
     {"magenta", 255, 0, 255}, {"cyan", 0, 255, 255},  {"orange", 255, 165, 0},
 };
 
+static int colour_from_spec(const char *v, uint8_t *r, uint8_t *g,
+                            uint8_t *b) {
+  size_t tok = 0;
+  while (v[tok] && !isspace((unsigned char)v[tok])) tok++;
+  for (size_t i = 0; i < sizeof(kColours) / sizeof(kColours[0]); i++)
+    if (strlen(kColours[i].name) == tok &&
+        strncasecmp(v, kColours[i].name, tok) == 0) {
+      *r = kColours[i].r;
+      *g = kColours[i].g;
+      *b = kColours[i].b;
+      return 1;
+    }
+  unsigned ur, ug, ub;
+  if (*v == '#' && strlen(v) >= 7 &&
+      sscanf(v + 1, "%2x%2x%2x", &ur, &ug, &ub) == 3) {
+    *r = (uint8_t)ur;
+    *g = (uint8_t)ug;
+    *b = (uint8_t)ub;
+    return 1;
+  }
+  return 0;
+}
+
+Status XParseColor(Display *dpy, Colormap cmap, const char *spec, XColor *c) {
+  (void)dpy;
+  (void)cmap;
+  uint8_t r, g, b;
+  if (!spec || !colour_from_spec(spec, &r, &g, &b)) return 0;
+  c->red = (unsigned short)(r * 0x101);
+  c->green = (unsigned short)(g * 0x101);
+  c->blue = (unsigned short)(b * 0x101);
+  c->flags = DoRed | DoGreen | DoBlue;
+  return 1;
+}
+
 static void warn_missing(const char *name) {
   fprintf(stderr, "xshim: no default for resource '%s'\n", name);
 }
@@ -110,17 +145,8 @@ unsigned long get_pixel_resource(Display *dpy, Colormap cmap, const char *name,
     warn_missing(name);
     return 0;
   }
-  size_t tok = 0;
-  while (v[tok] && !isspace((unsigned char)v[tok])) tok++;
-  for (size_t i = 0; i < sizeof(kColours) / sizeof(kColours[0]); i++)
-    if (strlen(kColours[i].name) == tok &&
-        strncasecmp(v, kColours[i].name, tok) == 0)
-      return rgb565(kColours[i].r, kColours[i].g, kColours[i].b);
-  if (*v == '#' && strlen(v) >= 7) {
-    unsigned r, g, b;
-    if (sscanf(v + 1, "%2x%2x%2x", &r, &g, &b) == 3)
-      return rgb565((uint8_t)r, (uint8_t)g, (uint8_t)b);
-  }
+  uint8_t r, g, b;
+  if (colour_from_spec(v, &r, &g, &b)) return rgb565(r, g, b);
   fprintf(stderr, "xshim: unknown colour '%s' for '%s'\n", v, name);
   return 0xFFFF;
 }

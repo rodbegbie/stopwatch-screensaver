@@ -784,6 +784,28 @@ void test_free_pixmap_of_none_and_sync_are_harmless(void) {
   TEST_ASSERT_EQUAL_INT(0, XSync(dpy, False));
 }
 
+void test_parse_color_reads_hex_and_names_into_16_bit_channels(void) {
+  XColor c = {0};
+  TEST_ASSERT_TRUE(XParseColor(dpy, 1, "#9C542B", &c) != 0);
+  TEST_ASSERT_EQUAL_HEX16(0x9C9C, c.red);
+  TEST_ASSERT_EQUAL_HEX16(0x5454, c.green);
+  TEST_ASSERT_EQUAL_HEX16(0x2B2B, c.blue);
+  TEST_ASSERT_TRUE(XParseColor(dpy, 1, "White", &c) != 0);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, c.red);
+  TEST_ASSERT_TRUE(XAllocColor(dpy, 1, &c) != 0);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, (uint16_t)c.pixel);
+  TEST_ASSERT_TRUE(XParseColor(dpy, 1, "#F80000", &c) != 0);
+  TEST_ASSERT_TRUE(XAllocColor(dpy, 1, &c) != 0);
+  TEST_ASSERT_EQUAL_HEX16(0xF800, (uint16_t)c.pixel);
+}
+
+void test_parse_color_rejects_unknown_specs(void) {
+  XColor c = {0};
+  TEST_ASSERT_EQUAL_INT(0, XParseColor(dpy, 1, "notacolour", &c));
+  TEST_ASSERT_EQUAL_INT(0, XParseColor(dpy, 1, "#12", &c));
+  TEST_ASSERT_EQUAL_INT(0, XParseColor(dpy, 1, "#GG0000", &c));
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_image_data_to_pixmap_makes_a_colour_pixmap_and_a_mask);
@@ -849,5 +871,7 @@ int main(void) {
   RUN_TEST(test_countof_gives_the_array_length);
   RUN_TEST(test_fps_stand_ins_accept_a_null_state);
   RUN_TEST(test_xrm_option_strings_are_writable_like_xscreensavers);
+  RUN_TEST(test_parse_color_reads_hex_and_names_into_16_bit_channels);
+  RUN_TEST(test_parse_color_rejects_unknown_specs);
   return UNITY_END();
 }
