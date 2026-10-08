@@ -35,6 +35,11 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
 - `pio run -e stopwatch`: build for the device. Add `-t upload` to flash.
 - `pio run -e dump`, then `.pio/build/dump/program <index> <frames> out.raw`,
   then `uv run tools/rgb565_to_png.py out.raw 466 466 out.png` to see a frame.
+  The index is the hack's 0-based position in `g_hacks[]` in
+  `hacks/registry.c` (Hopalong is 13, Galaxy 21, Drift 22): look it up, and
+  check the dumped hack by name before trusting a comparison.
+- To compare frames side by side, write a small `uv run` script with an inline
+  `pillow` dependency; the system Python has no PIL.
 - Serial log: read `/dev/cu.usbmodem112401` at 115200 for N seconds into a file
   (a pyserial script run with `.venv/bin/python -I`). Run it in the background
   with absolute paths, since background shells ignore `cd`. Lines to read:
@@ -109,6 +114,8 @@ Set `NO_COLOR=1` on `pio` output you parse.
   `Fixes #N` in the body.
 - Rod approves and merges (merge commit). Afterwards delete the merged branch
   (remote and local) without asking and fast-forward `main`.
+- Merge with `gh pr merge N --merge` once Rod approves. His approval is
+  enough: do not wait for the Entire Gates check to finish.
 - `gh pr edit N --body-file` replaces the whole body, including the
   `<!-- entire-trail-link-start -->` ... `-end -->` block at the top. Keep that
   block in the file, or the PR loses its trail.
@@ -166,6 +173,8 @@ Set `NO_COLOR=1` on `pio` output you parse.
   `__sanitizer_get_current_allocated_bytes()`
   (`<sanitizer/allocator_interface.h>`) before and after many restarts, as in
   `test_hacks.c`.
+- `pio test` hides `printf` and stderr from tests. To see two values, assert
+  `TEST_ASSERT_EQUAL_UINT64(a, b)` temporarily: the failure line prints both.
 - zsh does not word-split `$var`: loop over file lists with `bash -c`.
 - jwz.org returns 403 to Python's default User-Agent.
 - `esptool` reads of the 16 MB flash need `--baud 921600` (about 3.5 minutes)
