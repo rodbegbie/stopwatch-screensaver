@@ -1,0 +1,17 @@
+design: approved
+
+---
+
+lgtm. write the plan
+
+---
+
+I trust you. Go ahead with native.  Flash the device as necessary, and let me know when you need my human eyes on the screen.
+
+---
+
+Your claude.ai usage limit has reset. Continue the task you were working on when the limit was reached; do not repeat work that is already complete.
+
+---
+
+Eyeballing Maze, it's looking great.  Colours are correct, and the display is smooth and updating correctly.  Name label & FPS labels appear/disappear as expected. No display bugs that I can spot across different hacks. And the performance improvement is REAL!  Nice one!
