@@ -3,127 +3,156 @@
 
 #include "runner/button_latch.h"
 
+#define POLL_MS 5
+
 static ButtonLatch latch;
 
-static void press(uint32_t ms) { button_latch_edge(&latch, true, ms); }
-static void release(uint32_t ms) { button_latch_edge(&latch, false, ms); }
+/* Samples the button every POLL_MS from `from` up to (not including) `to`. */
+static void hold(bool down, uint32_t from, uint32_t to) {
+  for (uint32_t t = from; (uint32_t)(to - t) != 0 && (uint32_t)(to - t) < 0x80000000u;
+       t += POLL_MS)
+    button_latch_sample(&latch, down, t);
+}
 
-void setUp(void) { button_latch_init(&latch, 30); }
+void setUp(void) {
+  button_latch_init(&latch, 30);
+  button_latch_sample(&latch, false, 0);
+}
 void tearDown(void) {}
 
-void test_no_edge_means_nothing_to_take(void) {
+void test_a_button_left_alone_gives_nothing_to_take(void) {
+  hold(false, 5, 1000);
   TEST_ASSERT_FALSE(button_latch_take(&latch, NULL));
 }
 
-void test_a_press_is_taken_once(void) {
-  press(1000);
+void test_a_click_is_one_press_taken_once(void) {
+  hold(false, 5, 100);
+  hold(true, 100, 250);
+  hold(false, 250, 400);
+  TEST_ASSERT_EQUAL_UINT32(1, button_latch_pending(&latch));
   TEST_ASSERT_TRUE(button_latch_take(&latch, NULL));
   TEST_ASSERT_FALSE(button_latch_take(&latch, NULL));
 }
 
-void test_a_press_at_time_zero_is_accepted(void) {
-  press(0);
+void test_a_press_only_counts_once_it_has_settled(void) {
+  hold(true, 100, 125);
+  TEST_ASSERT_EQUAL_UINT32(0, button_latch_pending(&latch));
+  hold(true, 125, 135);
   TEST_ASSERT_EQUAL_UINT32(1, button_latch_pending(&latch));
 }
 
-void test_a_release_on_its_own_is_not_a_press(void) {
-  release(1000);
+void test_a_long_press_is_still_one_press(void) {
+  hold(true, 100, 5000);
+  TEST_ASSERT_EQUAL_UINT32(1, button_latch_pending(&latch));
+}
+
+void test_a_glitch_shorter_than_the_settle_time_is_ignored(void) {
+  hold(true, 100, 120);
+  hold(false, 120, 400);
   TEST_ASSERT_EQUAL_UINT32(0, button_latch_pending(&latch));
 }
 
-void test_a_click_is_one_press_even_though_the_release_comes_later(void) {
-  press(100);
-  release(180);
+void test_an_old_glitch_does_not_shorten_the_settle_time_of_a_later_press(void) {
+  hold(true, 100, 120);
+  hold(false, 120, 400);
+  hold(true, 400, 425);
+  TEST_ASSERT_EQUAL_UINT32(0, button_latch_pending(&latch));
+  hold(true, 425, 435);
+  uint32_t began = 0;
+  TEST_ASSERT_TRUE(button_latch_take(&latch, &began));
+  TEST_ASSERT_EQUAL_UINT32(400, began);
+}
+
+void test_bounce_on_press_is_one_press(void) {
+  hold(true, 100, 105);
+  hold(false, 105, 110);
+  hold(true, 110, 115);
+  hold(false, 115, 120);
+  hold(true, 120, 300);
+  hold(false, 300, 400);
   TEST_ASSERT_EQUAL_UINT32(1, button_latch_pending(&latch));
 }
 
-void test_a_bounce_on_release_is_not_a_second_press(void) {
-  press(100);
+void test_bounce_on_release_is_not_a_second_press(void) {
+  hold(true, 100, 250);
   TEST_ASSERT_TRUE(button_latch_take(&latch, NULL));
-  release(250);
-  press(252);
-  release(253);
+  hold(false, 250, 255);
+  hold(true, 255, 260);
+  hold(false, 260, 265);
+  hold(true, 265, 270);
+  hold(false, 270, 500);
   TEST_ASSERT_FALSE(button_latch_take(&latch, NULL));
 }
 
-void test_a_bounce_on_press_counts_once(void) {
-  press(100);
-  release(101);
-  press(102);
-  press(104);
-  TEST_ASSERT_EQUAL_UINT32(1, button_latch_pending(&latch));
-}
-
-void test_a_second_real_click_is_a_second_press(void) {
-  press(100);
-  release(150);
-  press(200);
-  release(240);
-  TEST_ASSERT_EQUAL_UINT32(2, button_latch_pending(&latch));
-}
-
-void test_a_press_must_follow_a_quiet_gap_after_the_last_edge(void) {
-  press(100);
-  release(150);
-  press(179);
-  TEST_ASSERT_EQUAL_UINT32(1, button_latch_pending(&latch));
-  release(190);
-  press(230);
+void test_two_separate_clicks_are_two_presses(void) {
+  hold(true, 100, 250);
+  hold(false, 250, 400);
+  hold(true, 400, 550);
+  hold(false, 550, 700);
   TEST_ASSERT_EQUAL_UINT32(2, button_latch_pending(&latch));
 }
 
 void test_taking_collapses_several_pending_presses_into_one_event(void) {
-  press(100);
-  release(150);
-  press(500);
-  release(550);
-  press(900);
+  hold(true, 100, 250);
+  hold(false, 250, 400);
+  hold(true, 400, 550);
+  hold(false, 550, 700);
   TEST_ASSERT_TRUE(button_latch_take(&latch, NULL));
   TEST_ASSERT_EQUAL_UINT32(0, button_latch_pending(&latch));
   TEST_ASSERT_FALSE(button_latch_take(&latch, NULL));
 }
 
 void test_a_press_after_a_take_is_a_new_event(void) {
-  press(100);
-  release(160);
+  hold(true, 100, 250);
   TEST_ASSERT_TRUE(button_latch_take(&latch, NULL));
-  press(400);
+  hold(false, 250, 400);
+  hold(true, 400, 550);
   TEST_ASSERT_TRUE(button_latch_take(&latch, NULL));
 }
 
-void test_the_quiet_gap_survives_the_millisecond_counter_wrapping(void) {
-  press(0xFFFFFFF0u);
-  release(0x00000000u);
-  press(0x0000000Au);
+void test_take_reports_when_the_press_began(void) {
+  hold(false, 5, 1000);
+  hold(true, 1000, 1200);
+  uint32_t began = 0;
+  TEST_ASSERT_TRUE(button_latch_take(&latch, &began));
+  TEST_ASSERT_EQUAL_UINT32(1000, began);
+}
+
+void test_a_button_held_at_start_is_not_a_press(void) {
+  ButtonLatch held_at_boot;
+  button_latch_init(&held_at_boot, 30);
+  for (uint32_t t = 0; t < 500; t += POLL_MS)
+    button_latch_sample(&held_at_boot, true, t);
+  TEST_ASSERT_EQUAL_UINT32(0, button_latch_pending(&held_at_boot));
+  for (uint32_t t = 500; t < 700; t += POLL_MS)
+    button_latch_sample(&held_at_boot, false, t);
+  for (uint32_t t = 700; t < 900; t += POLL_MS)
+    button_latch_sample(&held_at_boot, true, t);
+  TEST_ASSERT_EQUAL_UINT32(1, button_latch_pending(&held_at_boot));
+}
+
+void test_the_settle_time_survives_the_millisecond_counter_wrapping(void) {
+  hold(false, 5, 0xFFFFFF00u);
+  hold(false, 0xFFFFFF00u, 0xFFFFFFF0u);
+  hold(true, 0xFFFFFFF0u, 0x00000050u);
   TEST_ASSERT_EQUAL_UINT32(1, button_latch_pending(&latch));
-  release(0x0000000Cu);
-  press(0x00000040u);
-  TEST_ASSERT_EQUAL_UINT32(2, button_latch_pending(&latch));
-}
-
-void test_take_reports_when_the_first_pending_press_arrived(void) {
-  press(4000);
-  release(4050);
-  press(4500);
-  uint32_t first = 0;
-  TEST_ASSERT_TRUE(button_latch_take(&latch, &first));
-  TEST_ASSERT_EQUAL_UINT32(4000, first);
 }
 
 int main(void) {
   UNITY_BEGIN();
-  RUN_TEST(test_no_edge_means_nothing_to_take);
-  RUN_TEST(test_a_press_is_taken_once);
-  RUN_TEST(test_a_press_at_time_zero_is_accepted);
-  RUN_TEST(test_a_release_on_its_own_is_not_a_press);
-  RUN_TEST(test_a_click_is_one_press_even_though_the_release_comes_later);
-  RUN_TEST(test_a_bounce_on_release_is_not_a_second_press);
-  RUN_TEST(test_a_bounce_on_press_counts_once);
-  RUN_TEST(test_a_second_real_click_is_a_second_press);
-  RUN_TEST(test_a_press_must_follow_a_quiet_gap_after_the_last_edge);
+  RUN_TEST(test_a_button_left_alone_gives_nothing_to_take);
+  RUN_TEST(test_a_click_is_one_press_taken_once);
+  RUN_TEST(test_a_press_only_counts_once_it_has_settled);
+  RUN_TEST(test_a_long_press_is_still_one_press);
+  RUN_TEST(test_a_glitch_shorter_than_the_settle_time_is_ignored);
+  RUN_TEST(test_an_old_glitch_does_not_shorten_the_settle_time_of_a_later_press);
+  RUN_TEST(test_bounce_on_press_is_one_press);
+  RUN_TEST(test_bounce_on_release_is_not_a_second_press);
+  RUN_TEST(test_two_separate_clicks_are_two_presses);
   RUN_TEST(test_taking_collapses_several_pending_presses_into_one_event);
   RUN_TEST(test_a_press_after_a_take_is_a_new_event);
-  RUN_TEST(test_the_quiet_gap_survives_the_millisecond_counter_wrapping);
-  RUN_TEST(test_take_reports_when_the_first_pending_press_arrived);
+  RUN_TEST(test_take_reports_when_the_press_began);
+  RUN_TEST(test_a_button_held_at_start_is_not_a_press);
+  RUN_TEST(test_the_settle_time_survives_the_millisecond_counter_wrapping);
   return UNITY_END();
 }

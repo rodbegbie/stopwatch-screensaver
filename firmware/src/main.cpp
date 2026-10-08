@@ -17,41 +17,25 @@ static const uint32_t kSliceUs = 10000;
 static const uint32_t kStatsEveryMs = 5000;
 
 /* M5Unified reads the buttons as active-low GPIOs, and only inside
- * M5.update(), so a press during a long hack step would go unseen. Interrupts
- * on the falling edge latch every press instead. */
-static const int kPinButtonA = 2;
-static const int kPinButtonB = 1;
-static const uint32_t kButtonDebounceMs = 30;
+ * M5.update(), so a press during a long hack step would go unseen. A small
+ * task on the otherwise idle core 0 samples both pins every few milliseconds
+ * (it preempts nothing the hacks run on) and a latch keeps the presses. The
+ * pin must hold its new level for the settle time, which rejects bounce. */
+static const gpio_num_t kPinButtonA = GPIO_NUM_2;
+static const gpio_num_t kPinButtonB = GPIO_NUM_1;
+static const uint32_t kButtonPollMs = 5;
+static const uint32_t kButtonSettleMs = 30;
 
 static ButtonLatch latchA, latchB;
 
-/* The last edges seen on either button, kept so a double switch can be
- * diagnosed from the serial log. Both interrupts run on one core and cannot
- * nest, so the single counter needs no lock. */
-struct EdgeRecord {
-  volatile uint32_t ms;
-  volatile uint8_t button;
-  volatile uint8_t released;
-};
-static const uint32_t kEdgeLogSize = 32;
-static EdgeRecord edgeLog[kEdgeLogSize];
-static volatile uint32_t edgeCount;
-static volatile uint32_t lastEdgeMs;
-static uint32_t edgePrinted;
-
-static void IRAM_ATTR onButtonEdge(ButtonLatch *latch, int pin, char name) {
-  uint32_t now = millis();
-  bool pressed = gpio_get_level((gpio_num_t)pin) == 0;
-  EdgeRecord &e = edgeLog[edgeCount % kEdgeLogSize];
-  e.ms = now;
-  e.button = (uint8_t)name;
-  e.released = pressed ? 0 : 1;
-  edgeCount = edgeCount + 1;
-  lastEdgeMs = now;
-  button_latch_edge(latch, pressed, now);
+static void buttonTask(void *) {
+  for (;;) {
+    uint32_t now = millis();
+    button_latch_sample(&latchA, gpio_get_level(kPinButtonA) == 0, now);
+    button_latch_sample(&latchB, gpio_get_level(kPinButtonB) == 0, now);
+    vTaskDelay(pdMS_TO_TICKS(kButtonPollMs));
+  }
 }
-static void IRAM_ATTR onButtonA() { onButtonEdge(&latchA, kPinButtonA, 'A'); }
-static void IRAM_ATTR onButtonB() { onButtonEdge(&latchB, kPinButtonB, 'B'); }
 
 static Canvas canvas;
 static HackRunner *runner;
@@ -86,23 +70,6 @@ static void printStats(const char *tag) {
       (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
 }
 
-/* Prints edges not yet reported as "A v-120 A ^-70": v is the button going
- * down, ^ going up, and the number is milliseconds before now. */
-static void printEdges() {
-  uint32_t total = edgeCount;
-  uint32_t from = edgePrinted;
-  if (total - from > kEdgeLogSize) from = total - kEdgeLogSize;
-  uint32_t now = millis();
-  Serial.print("edges:");
-  for (uint32_t i = from; i < total; i++) {
-    const EdgeRecord &e = edgeLog[i % kEdgeLogSize];
-    Serial.printf(" %c%s-%u", (char)e.button, e.released ? "^" : "v",
-                  (unsigned)(now - e.ms));
-  }
-  Serial.println();
-  edgePrinted = total;
-}
-
 /* Returns true if a button switched hacks (which also resets the stats). */
 static bool pollButtons() {
   bool switched = false;
@@ -132,10 +99,9 @@ void setup() {
   Serial.begin(115200);
   M5.Display.setSwapBytes(false);
 
-  button_latch_init(&latchA, kButtonDebounceMs);
-  button_latch_init(&latchB, kButtonDebounceMs);
-  attachInterrupt(digitalPinToInterrupt(kPinButtonA), onButtonA, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(kPinButtonB), onButtonB, CHANGE);
+  button_latch_init(&latchA, kButtonSettleMs);
+  button_latch_init(&latchB, kButtonSettleMs);
+  xTaskCreatePinnedToCore(buttonTask, "buttons", 2048, nullptr, 2, nullptr, 0);
 
   if (canvas_init(&canvas, kSize, kSize, ps_malloc) != 0)
     halt("PSRAM alloc failed");
@@ -173,8 +139,6 @@ void loop() {
     switched = pollButtons();
   }
   if (!switched) waitUs += micros() - t2;
-
-  if (edgeCount != edgePrinted && millis() - lastEdgeMs > 400) printEdges();
 
   if (millis() - statsAt >= kStatsEveryMs) {
     printStats("run");
