@@ -24,6 +24,10 @@ int runner_start(HackRunner *r, int index);
 /* One draw call; returns the hack's delay in microseconds, clamped to
  * [RUNNER_MIN_DELAY_US, RUNNER_MAX_DELAY_US]. */
 unsigned long runner_step(HackRunner *r);
+/* How much of the hack's delay is still left to wait once spent_us has
+ * already gone on drawing and pushing the frame. Never negative. */
+unsigned long runner_remaining_delay_us(unsigned long requested_us,
+                                        unsigned long spent_us);
 /* Switch hacks, wrapping around. Return the new index. */
 int runner_next(HackRunner *r);
 int runner_prev(HackRunner *r);

@@ -69,6 +69,11 @@ unsigned long runner_step(HackRunner *r) {
   return d;
 }
 
+unsigned long runner_remaining_delay_us(unsigned long requested_us,
+                                        unsigned long spent_us) {
+  return requested_us > spent_us ? requested_us - spent_us : 0;
+}
+
 int runner_next(HackRunner *r) {
   runner_start(r, (r->index + 1) % r->count);
   return r->index;

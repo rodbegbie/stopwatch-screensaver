@@ -99,6 +99,17 @@ void test_start_rejects_bad_index(void) {
   runner_destroy(r);
 }
 
+void test_remaining_delay_subtracts_time_already_spent(void) {
+  TEST_ASSERT_EQUAL_UINT32(10000 - 3000, runner_remaining_delay_us(10000, 3000));
+  TEST_ASSERT_EQUAL_UINT32(20000, runner_remaining_delay_us(20000, 0));
+}
+
+void test_remaining_delay_is_zero_once_the_period_is_used_up(void) {
+  TEST_ASSERT_EQUAL_UINT32(0, runner_remaining_delay_us(10000, 10000));
+  TEST_ASSERT_EQUAL_UINT32(0, runner_remaining_delay_us(10000, 43000));
+  TEST_ASSERT_EQUAL_UINT32(0, runner_remaining_delay_us(1000, 4000000000UL));
+}
+
 void test_hsv_to_rgb_pure_red_h0(void) {
   unsigned short r, g, b;
   hsv_to_rgb(0, 1.0, 1.0, &r, &g, &b);
@@ -118,6 +129,8 @@ int main(void) {
   RUN_TEST(test_start_clears_canvas);
   RUN_TEST(test_next_and_prev_wrap);
   RUN_TEST(test_start_rejects_bad_index);
+  RUN_TEST(test_remaining_delay_subtracts_time_already_spent);
+  RUN_TEST(test_remaining_delay_is_zero_once_the_period_is_used_up);
   RUN_TEST(test_hsv_to_rgb_pure_red_h0);
   return UNITY_END();
 }

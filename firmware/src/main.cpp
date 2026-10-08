@@ -36,7 +36,8 @@ static void resetStats() {
 }
 
 /* step/push/wait are mean milliseconds per frame spent in the hack, in
- * pushImage, and in the hack-requested delay (including button polling). */
+ * pushImage, and waiting out what is left of the hack's requested delay
+ * (including button polling). */
 static void printStats(const char *tag) {
   float n = frames ? (float)frames : 1.0f;
   Serial.printf(
@@ -93,9 +94,11 @@ void loop() {
   stepUs += t1 - t0;
   pushUs += t2 - t1;
 
+  unsigned long waitUsTarget = runner_remaining_delay_us(delayUs, t2 - t0);
   uint32_t waitedUs = 0;
-  while (waitedUs < delayUs) {
-    uint32_t slice = delayUs - waitedUs < kSliceUs ? delayUs - waitedUs : kSliceUs;
+  while (waitedUs < waitUsTarget) {
+    uint32_t slice =
+        waitUsTarget - waitedUs < kSliceUs ? waitUsTarget - waitedUs : kSliceUs;
     delayMicroseconds(slice);
     waitedUs += slice;
     M5.update();
