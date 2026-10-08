@@ -46,7 +46,7 @@ firmware/
   src/main.cpp          setup/loop, hack selection, button handling
   src/x11shim/          Display, GC, Window, Pixmap and Draw* functions
   src/hacks/            hack sources copied from vendor, minimally patched
-tools/                  helper scripts (coverage scoring, assessment)
+tools/                  helper scripts (fetch, coverage scoring, assessment)
 docs/                   specs, plans, porting assessment
 vendor/                 pristine xscreensaver 6.16 (untracked, read-only)
 ```
@@ -62,6 +62,28 @@ vendor/                 pristine xscreensaver 6.16 (untracked, read-only)
   from each hack's built-in defaults table.
 - Vendored sources are copied, not edited in place, so our patches show up
   in git.
+
+## Fetching the xscreensaver source
+
+`vendor/` is not committed, so `tools/fetch_xscreensaver.py` recreates it.
+
+- Run with `uv run tools/fetch_xscreensaver.py`. It uses only the Python
+  standard library.
+- It reads <https://www.jwz.org/xscreensaver/download.html>, finds the
+  `xscreensaver-<version>.tar.gz` link under "Linux, X11, Wayland" and
+  picks the highest version listed. `--version X.YY` fetches a specific one
+  instead.
+- The tarball is downloaded to a temporary directory, extracted with
+  Python's safe `tarfile` filter (no absolute paths or escaping links),
+  then moved to `vendor/xscreensaver-<version>/`. If that directory exists
+  it does nothing unless `--force` is given.
+- It prints the version, download URL and SHA-256 of the tarball. jwz
+  publishes no checksum, so this is for our records only.
+- The shim's call survey and porting assessment were made against 6.16. If
+  the latest version differs, the script warns that results may need
+  re-checking, and the assessment records the version it was built from.
+- Downloaded content is treated as untrusted data: nothing from the
+  tarball is executed.
 
 ## Shim scope
 
@@ -149,9 +171,9 @@ The repo may become public, so every copied file must meet its licence.
     "supporting documentation" requirement.
   - `tools/` includes a check that fails if a file in `firmware/src/hacks/`
     lacks a recognised notice or isn't listed in the notices file.
-- Our own code (shim, `main.cpp`, tools) needs a licence chosen by Rod
-  before the repo goes public. MIT is the obvious candidate, but it's
-  Rod's call.
+- Our own code (shim, `main.cpp`, tools) is MIT licensed (Rod's decision),
+  with a root `LICENSE` file. Copied hack files keep their own notices and
+  are not relicensed; `THIRD_PARTY_NOTICES.md` says so.
 - Dependencies are licensed separately: M5Unified and M5GFX (MIT) and
   PlatformIO (Apache 2.0) are fine to use. Their notices are added to the
   same file if they are redistributed. A future TinyGL port would need its
