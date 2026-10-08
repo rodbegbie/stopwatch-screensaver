@@ -147,3 +147,41 @@ def test_requests_send_descriptive_user_agent(tmp_path):
         server.shutdown()
     assert len(seen) == 2
     assert all("Python-urllib" not in ua and "stopwatch-screensaver" in ua for ua in seen)
+
+
+def test_safe_extract_dot_member_is_clean_error(tmp_path):
+    tar = tmp_path / "dot.tar.gz"
+    with tarfile.open(tar, "w:gz") as t:
+        dot = tarfile.TarInfo(".")
+        dot.type = tarfile.DIRTYPE
+        t.addfile(dot)
+        info = tarfile.TarInfo("xscreensaver-9.9/a.txt")
+        info.size = 1
+        t.addfile(info, io.BytesIO(b"x"))
+    dest = tmp_path / "out"
+    dest.mkdir()
+    top = fx.safe_extract(tar, dest)
+    assert top == dest / "xscreensaver-9.9"
+
+
+def test_safe_extract_only_dot_member_raises_fetch_error(tmp_path):
+    tar = tmp_path / "onlydot.tar.gz"
+    with tarfile.open(tar, "w:gz") as t:
+        t.addfile(tarfile.TarInfo("."))
+    dest = tmp_path / "out"
+    dest.mkdir()
+    with pytest.raises(fx.FetchError):
+        fx.safe_extract(tar, dest)
+
+
+def test_safe_extract_os_error_is_clean_fetch_error(tmp_path):
+    tar = tmp_path / "weird.tar.gz"
+    with tarfile.open(tar, "w:gz") as t:
+        t.addfile(tarfile.TarInfo("."))
+        info = tarfile.TarInfo("xscreensaver-9.9/a.txt")
+        info.size = 1
+        t.addfile(info, io.BytesIO(b"x"))
+    dest = tmp_path / "out"
+    dest.mkdir()
+    with pytest.raises(fx.FetchError):
+        fx.safe_extract(tar, dest)

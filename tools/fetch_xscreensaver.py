@@ -53,12 +53,13 @@ def safe_extract(tar_path: Path, dest: Path) -> Path:
             name = PurePosixPath(member.name)
             if name.is_absolute() or ".." in name.parts:
                 raise FetchError(f"unsafe path in tarball: {member.name}")
-            tops.add(name.parts[0])
+            if name.parts:
+                tops.add(name.parts[0])
         if len(tops) != 1:
             raise FetchError(f"expected one top-level directory, found {sorted(tops)}")
         try:
             tar.extractall(dest, filter="data")
-        except tarfile.TarError as err:
+        except (tarfile.TarError, OSError) as err:
             raise FetchError(f"unsafe tarball: {err}") from err
     return dest / tops.pop()
 
