@@ -86,7 +86,7 @@ def blockers_for(
         stubs.mkdir()
         src_path = tmp / f"{name}.c"
         src_path.write_text(source)
-        cmd = [cc, "-fsyntax-only", "-w", "-ferror-limit=0"]
+        cmd = [cc, "-fsyntax-only", "-w", "-ferror-limit=0", "-DSTANDALONE"]
         cmd += [f"-I{d}" for d in include_dirs] + [f"-I{stubs}", str(src_path)]
         run = None
         for _ in range(MAX_HEADER_STUBS):

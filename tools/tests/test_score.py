@@ -119,6 +119,14 @@ def test_blockers_reports_undeclared_function_type_and_member():
     assert "XWindowAttributes.bogus" in got
 
 
+def test_blockers_define_standalone_like_the_real_build():
+    src = (
+        "#ifdef STANDALONE\nint standalone_set;\n"
+        '#else\n#include "xlock.h"\n#endif\n'
+    )
+    assert sh.blockers_for("sa", src, SHIM_INCLUDES) == []
+
+
 def test_blockers_pyro_like_hack_compiles_clean_against_shim():
     pyro = Path(__file__).resolve().parents[2] / "firmware/src/hacks/pyro/pyro.c"
     assert sh.blockers_for("pyro", pyro.read_text(), SHIM_INCLUDES) == []
