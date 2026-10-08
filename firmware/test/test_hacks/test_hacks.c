@@ -77,17 +77,19 @@ void test_cycling_through_all_hacks_100_times_is_asan_clean(void) {
   runner_destroy(r);
 }
 
-/* Galaxy restarts every 4 * cycles frames, and with some counts its restart
- * leaks the star rectangle buffers. Shorten the cycle to see many restarts.
- * Each restart picks 1500-3000 stars a galaxy at random, so live memory moves
- * by up to about 400 KB; a leak adds at least 48 KB a restart, 40 restarts. */
+/* With `cycles: 1` Galaxy restarts every 5 frames, and with some counts its
+ * restart leaks the star rectangle buffers. Each restart picks 1500-3000 stars
+ * a galaxy at random (MAX_STARS is a #define, so it cannot be pinned), which
+ * moves live memory by up to about 400 KB. About 160 restarts spread that
+ * slack over each one, so the test catches leaks of roughly 2.5 KB a restart
+ * or more; the count-2 leak was 48 KB or more. */
 void test_galaxy_restarts_do_not_leak_with_its_registered_overrides(void) {
   const HackEntry *galaxy = NULL;
   for (int i = 0; i < g_hack_count; i++)
     if (strcmp(g_hacks[i]->name, "Galaxy") == 0) galaxy = g_hacks[i];
   TEST_ASSERT_NOT_NULL(galaxy);
 
-  const char *merged[8] = {"*cycles: 5"};
+  const char *merged[8] = {"*cycles: 1"};
   int n = 1;
   for (const char *const *o = galaxy->overrides; o && *o && n < 7; o++)
     merged[n++] = *o;
