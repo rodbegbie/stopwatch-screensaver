@@ -3,7 +3,7 @@
   "checkpoint_id": "01M4ET362SGD4AXVCDYXV8M34Q",
   "strategy": "manual-commit",
   "branch": "chore/23-push-timing-spike",
-  "checkpoints_count": 2,
+  "checkpoints_count": 23,
   "files_touched": [
     "firmware/src/main.cpp"
   ],
@@ -21,13 +21,27 @@
       "compact_transcript": "/1/transcript.jsonl",
       "content_hash": "/1/content_hash.txt",
       "prompt": "/1/prompt.txt"
+    },
+    {
+      "metadata": "/2/metadata.json",
+      "transcript": "/2/full.jsonl",
+      "compact_transcript": "/2/transcript.jsonl",
+      "content_hash": "/2/content_hash.txt",
+      "prompt": "/2/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 54,
-    "cache_creation_tokens": 110075,
-    "cache_read_tokens": 1918263,
-    "output_tokens": 13050,
-    "api_call_count": 27
+    "input_tokens": 366,
+    "cache_creation_tokens": 892705,
+    "cache_read_tokens": 112449516,
+    "output_tokens": 158221,
+    "api_call_count": 182,
+    "subagent_tokens": {
+      "input_tokens": 0,
+      "cache_creation_tokens": 0,
+      "cache_read_tokens": 0,
+      "output_tokens": 0,
+      "api_call_count": 0
+    }
   }
 }

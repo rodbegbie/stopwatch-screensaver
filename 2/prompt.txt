@@ -1,0 +1,17 @@
+Blaster: Rebase it on main -- it's also now got the structural change to the porting assessment doc, so you'll probably need to rerun the scoring script as part of your conflict resolution.
+
+---
+
+OK, let's finish up the skill.  Rebase that branch onto main and make your addition. Also, there was a finding left on the trail, but I suspect that was a false positive because the skill referenced code that hadn't landed on the branch yet.  Take a look, and dismiss the finding if that's the case.
+
+---
+
+We've done a LOT in this session.  Great work!  Revise AGENTS.md with anything important we've learned that hasn't already been updated.
+
+---
+
+File a Github issue to review README.md and update anything in there that's out of date (e.g. the list of "thirteen hacks") and consider adding updating the README to the hack porting skill
+
+---
+
+This is the end of a terrific session! Run the end session tasks and then you can take some well-earned time off.
