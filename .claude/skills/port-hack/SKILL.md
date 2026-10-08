@@ -43,12 +43,17 @@ copying. Fill each shim gap test-first, then break the code on purpose and
 watch the test fail. Leak-test any hack that restarts itself, and prove the
 test sees restarts with a deliberate per-restart leak.
 
+Filling a missing function is a shim gap. Changing what every hack sees (the
+runner, a default, a shared helper) is not: stop and ask Rod first.
+
 ## 4. Verify on the host
 
 Run `pio test -e native`, `uv run --with pytest --with pillow pytest tools/tests`
 and `uv run tools/check_notices.py`. Dump frames at several counts and look at
-them. A hue-sweeping palette stays a rainbow when its bytes are swapped, so
-judge colour on a fixed colour or image you know the answer to.
+them. Host frames test only the shim's colour maths: a byte swap happens in
+the push to the display, so only the device can show one. A hue-sweeping
+palette stays a rainbow when swapped, so judge colour on the device, on a fixed
+colour or image you know the answer to.
 
 ## 5. Device
 
@@ -77,5 +82,6 @@ deferred ideas as issues.
 | --- | --- |
 | "It is rated S, so I need not read it" | Maze was rated L for Xlib gaps; the real blocker was a 20 MB `calloc`. |
 | "It compiles, so it works" | Rorschach compiled and rebooted on its first frame. |
-| "The colours look right" | Only for colours you know. Every hack was byte swapped until Maze. |
+| "The colours look right" | Not from a host frame. Every hack was byte swapped until Maze, and only the device showed it. |
+| "AGENTS.md says to fix gaps in the shim, so I can change the runner" | A new function is a gap. A change every hack sees needs Rod. |
 | "Rod approved flashing earlier" | Ask again for each flash. |
