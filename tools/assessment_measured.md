@@ -32,7 +32,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Spiral | 18.8 | 0.9-1.2 ms | 31.1 ms | 21 ms | about 5 KB |
 | Sphere | 30.0-30.4 | 0.6-1.1 ms | 31.1-31.2 ms | 0 ms | none measurable |
 | Discrete | 1.0-1.2 | 0.93-1.11 s | 31.5 ms | 0 ms | about 16 KB |
-| Galaxy | 13.4-14.2 | 38-42 ms | 31.0-31.1 ms | 0 ms | about 200 KB |
+| Galaxy | 9.4-11.2 | 58-75 ms | 31.1-31.3 ms | 0 ms | about 225-266 KB |
 | Drift | 10.4 | 63-65 ms | 31.5 ms | 0 ms | about 16 KB |
 | Lightning | 29.4 | 1.8-1.9 ms | 31.2 ms | 0 ms | none measurable |
 
@@ -83,11 +83,12 @@ hack is switched back to, so switching does not leak.
 - Galaxy first ran at 5 fps (152-172 ms a frame): about 4,400 stars, each
   pulled by every galaxy in `double` maths, which the ESP32-S3 emulates in
   software. Building the unmodified source with `double` redefined as `float`
-  (`hacks/galaxy_single.c`) cut the step to 38-42 ms and gave 14 fps, which
-  Rod called a lot better. The frames look the same on the host. That run had
-  two galaxies; a count override of 2 leaked the star buffers on each restart,
-  so it now uses `count: -3` (two or three galaxies), which has not been
-  measured on the device.
+  (`hacks/galaxy_single.c`) cut the step to 38-42 ms and 14 fps with two
+  galaxies, and the frames look the same on the host. A count override of 2
+  leaked the star buffers on each restart, so it now uses `count: -3` (two or
+  three galaxies, re-picked on each restart). With that it ran at 9.4-11.2 fps
+  (58-75 ms a step) across two restarts' configurations, which is the cost of
+  the third galaxy and the larger star counts.
 - Thornbird keeps 400 buffers of 100 rectangles (about 320 KB) in internal
   heap, filled one per frame, so free heap falls to under 1 KB after about
   six seconds. It is bounded, not a leak: switching away returned the heap
