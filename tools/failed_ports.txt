@@ -1,0 +1,3 @@
+# Hacks that were attempted and given up on, one per line as `name: reason`.
+# score_hacks.py marks them with a cross in the Ported column and lists the
+# reasons in a "Failed ports" section. Nothing has failed so far.

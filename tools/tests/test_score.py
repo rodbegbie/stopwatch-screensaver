@@ -247,9 +247,11 @@ def test_main_explicit_vendor_works_without_a_default_one(tmp_path, capsys):
     header.write_text("int XDrawLine(int);\n")
     intro = tmp_path / "intro.md"
     intro.write_text("# T\n\n{version} {total} {excluded} {n_s} {n_m} {n_l} {n_xl}\n")
+    registry = tmp_path / "registry.c"
+    registry.write_text("const HackEntry *const g_hacks[] = {&demo_hack};\n")
     out = tmp_path / "out.md"
     argv = ["--vendor", str(vendor), "--header", str(header), "--intro", str(intro),
-            "--out", str(out)]
+            "--registry", str(registry), "--out", str(out)]
     for d in SHIM_INCLUDES:
         argv += ["--shim-include", str(d)]
     assert sh.main(argv, root=tmp_path) == 0
@@ -269,9 +271,170 @@ def test_table_renders_gaps_as_code_and_escapes_pipes():
     data_line = table.strip().splitlines()[-1]
     assert "`error: unknown type 'Display *'`" in data_line
     assert "`a\\|b`" in data_line
-    assert data_line.replace("\\|", "").count("|") == 7
+    assert data_line.replace("\\|", "").count("|") == 8
 
 
 def test_ranking_renders_gaps_as_code():
     text = sh.render_ranking([("Display *", 1.0, 2)])
     assert "| `Display *` |" in text
+
+
+REGISTRY = """
+extern const HackEntry pyro_hack;
+XLOCKMORE_HACK(hopalong, "Hopalong");
+XLOCKMORE_HACK_WITH(galaxy, "Galaxy", kGalaxyOverrides);
+/* old list: g_hacks[] = { &ghost_hack }; */
+const HackEntry *const g_hacks[] = {
+    &pyro_hack,     &hopalong_hack,
+    &galaxy_hack};
+const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);
+"""
+
+
+def test_registered_hacks_are_the_entries_of_g_hacks():
+    assert sh.registered_hacks(REGISTRY) == {"pyro", "hopalong", "galaxy"}
+
+
+def test_registered_hacks_without_the_array_is_an_error():
+    with pytest.raises(sh.ScoreError, match="g_hacks"):
+        sh.registered_hacks("int x;")
+
+
+def test_failed_ports_reads_names_and_reasons_and_skips_comments():
+    text = "# comment\n\nmaze: needs XCopyArea\nfoo:no space\n"
+    assert sh.read_failed_ports(text) == {"maze": "needs XCopyArea", "foo": "no space"}
+
+
+def test_failed_port_line_without_a_colon_is_an_error():
+    with pytest.raises(sh.ScoreError, match="failed_ports"):
+        sh.read_failed_ports("maze\n")
+
+
+def test_a_hack_cannot_be_both_ported_and_failed():
+    with pytest.raises(sh.ScoreError, match="pyro"):
+        sh.check_ports({"pyro"}, {"pyro": "x"}, {"pyro", "maze"})
+
+
+def test_a_failed_port_must_name_a_scanned_hack():
+    with pytest.raises(sh.ScoreError, match="typo"):
+        sh.check_ports(set(), {"typo": "x"}, {"pyro"})
+
+
+def test_a_registered_name_that_was_not_scanned_is_an_error():
+    with pytest.raises(sh.ScoreError, match="ghost"):
+        sh.check_ports({"ghost"}, {}, {"pyro"})
+
+
+def _row(name, effort):
+    return {"name": name, "kind": "2d", "effort": effort, "missing": [], "gaps": [],
+            "flags": [], "loc": 1}
+
+
+def test_table_sorts_by_effort_size_then_name():
+    rows = [_row("b", "XL"), _row("z", "S"), _row("c", "L"), _row("a", "L"),
+            _row("m", "M"), _row("a2", "S")]
+    lines = sh.render_table(rows).splitlines()[2:]
+    assert [line.split("|")[1].strip() for line in lines] == [
+        "a2", "z", "m", "a", "c", "b"]
+
+
+def test_table_has_a_ported_column_with_ticks_crosses_and_dashes():
+    rows = [_row("pyro", "S"), _row("maze", "L"), _row("other", "L")]
+    table = sh.render_table(rows, ported={"pyro"}, failed={"maze"})
+    header, _, *data = table.splitlines()
+    cells = [c.strip() for c in header.strip("|").split("|")]
+    col = cells.index("Ported")
+    got = {line.split("|")[1].strip(): line.split("|")[col + 1].strip() for line in data}
+    assert got == {"pyro": "\u2705", "maze": "\u274c", "other": "-"}
+
+
+def test_failed_section_is_empty_when_nothing_failed():
+    assert sh.render_failed({}) == ""
+
+
+def test_failed_section_lists_each_hack_with_its_reason():
+    text = sh.render_failed({"maze": "needs XCopyArea", "a": "slow"})
+    assert text.startswith("\n## Failed ports\n\n")
+    assert "- **a**: slow\n- **maze**: needs XCopyArea\n" in text
+    assert text.endswith("\n") and not text.endswith("\n\n")
+
+
+def test_main_marks_registered_hacks_as_ported(tmp_path):
+    vendor = tmp_path / "ext" / "xscreensaver-9.9"
+    (vendor / "hacks").mkdir(parents=True)
+    for name in ("demo", "other"):
+        (vendor / "hacks" / f"{name}.c").write_text(f'XSCREENSAVER_MODULE ("{name}", {name})\n')
+    header = tmp_path / "xshim.h"
+    header.write_text("int XDrawLine(int);\n")
+    intro = tmp_path / "intro.md"
+    intro.write_text("# T\n\n{version} {total} {excluded} {n_s} {n_m} {n_l} {n_xl}\n")
+    registry = tmp_path / "registry.c"
+    registry.write_text("const HackEntry *const g_hacks[] = {&demo_hack};\n")
+    failed = tmp_path / "failed.txt"
+    failed.write_text("other: would not run\n")
+    out = tmp_path / "out.md"
+    argv = ["--vendor", str(vendor), "--header", str(header), "--intro", str(intro),
+            "--registry", str(registry), "--failed-ports", str(failed), "--out", str(out)]
+    for d in SHIM_INCLUDES:
+        argv += ["--shim-include", str(d)]
+    assert sh.main(argv, root=tmp_path) == 0
+    text = out.read_text()
+    assert "| demo |" in text and "\u2705" in text and "\u274c" in text
+    assert "- **other**: would not run" in text
+
+
+def test_main_missing_registry_is_an_actionable_error(tmp_path, capsys):
+    vendor = tmp_path / "xscreensaver-9.9"
+    (vendor / "hacks").mkdir(parents=True)
+    header = tmp_path / "xshim.h"
+    header.write_text("int XDrawLine(int);\n")
+    argv = ["--vendor", str(vendor), "--header", str(header)]
+    assert sh.main(argv, root=tmp_path) == 1
+    assert "--registry" in capsys.readouterr().err
+
+
+def _cells(table):
+    header, _, *data = table.splitlines()
+    names = [c.strip() for c in header.strip("|").split("|")]
+    return [dict(zip(names, (c.strip() for c in line.strip("|").split("|")))) for line in data]
+
+
+def test_a_ported_hack_has_no_effort_rating():
+    rows = [_row("pyro", "S"), _row("todo", "S")]
+    got = {c["Hack"]: c["Effort"] for c in _cells(sh.render_table(rows, ported={"pyro"}))}
+    assert got == {"pyro": "-", "todo": "S"}
+
+
+def test_ported_hacks_sort_after_every_unported_one():
+    rows = [_row("pyro", "S"), _row("big", "XL"), _row("a", "L"), _row("b", "S")]
+    order = [c["Hack"] for c in _cells(sh.render_table(rows, ported={"pyro"}))]
+    assert order == ["b", "a", "big", "pyro"]
+
+
+def test_a_failed_hack_keeps_its_effort_rating_and_its_place():
+    rows = [_row("maze", "L"), _row("a", "S"), _row("z", "XL")]
+    cells = _cells(sh.render_table(rows, failed={"maze"}))
+    assert [(c["Hack"], c["Effort"]) for c in cells] == [("a", "S"), ("maze", "L"), ("z", "XL")]
+
+
+def test_main_counts_only_unported_hacks_per_rating(tmp_path):
+    vendor = tmp_path / "xscreensaver-9.9"
+    (vendor / "hacks").mkdir(parents=True)
+    for name in ("done", "todo"):
+        (vendor / "hacks" / f"{name}.c").write_text(f'XSCREENSAVER_MODULE ("{name}", {name})\n')
+    header = tmp_path / "xshim.h"
+    header.write_text("int XDrawLine(int);\n")
+    intro = tmp_path / "intro.md"
+    intro.write_text("# T\n\ncounts={n_s} {n_m} {n_l} {n_xl} ported={n_ported}\n")
+    registry = tmp_path / "registry.c"
+    registry.write_text("const HackEntry *const g_hacks[] = {&done_hack};\n")
+    out = tmp_path / "out.md"
+    argv = ["--vendor", str(vendor), "--header", str(header), "--intro", str(intro),
+            "--registry", str(registry), "--out", str(out)]
+    for d in SHIM_INCLUDES:
+        argv += ["--shim-include", str(d)]
+    assert sh.main(argv, root=tmp_path) == 0
+    line = next(l for l in out.read_text().splitlines() if l.startswith("counts="))
+    counts, ported = line.removeprefix("counts=").split(" ported=")
+    assert sum(int(n) for n in counts.split()) == 1
+    assert ported == "1"
