@@ -79,3 +79,8 @@ def test_main_exit_codes(tmp_path, capsys):
     md.write_text("")
     assert cn.main(["--src", str(src), "--notices", str(md)]) == 1
     assert "not listed" in capsys.readouterr().out
+
+
+def test_top_level_files_in_hacks_are_ours_and_ignored(tmp_path):
+    src, md = setup(tmp_path, {"registry.c": "int x;\n"}, "")
+    assert cn.check(src, md) == []

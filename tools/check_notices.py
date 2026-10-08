@@ -8,7 +8,8 @@ import argparse
 import sys
 from pathlib import Path
 
-SCANNED_DIRS = ("hacks", "xs_support")
+# Copied third-party code: one directory per hack under hacks/ (top-level
+# files in hacks/ are our own, e.g. the registry), plus xs_support/.
 SUFFIXES = {".c", ".h", ".cpp"}
 HEADER_LINES = 40
 NOTICE_PHRASES = (
@@ -25,15 +26,17 @@ def has_notice(text: str) -> bool:
 def check(src_dir: Path, notices_md: Path) -> list[str]:
     notices = notices_md.read_text() if notices_md.exists() else ""
     problems = []
-    for sub in SCANNED_DIRS:
-        for path in sorted((src_dir / sub).rglob("*")):
-            if path.suffix not in SUFFIXES or not path.is_file():
-                continue
-            rel = path.relative_to(src_dir)
-            if not has_notice(path.read_text(errors="replace")):
-                problems.append(f"{rel}: no licence notice in first {HEADER_LINES} lines")
-            if path.name not in notices and path.stem not in notices:
-                problems.append(f"{rel}: not listed in {notices_md.name}")
+    candidates = sorted((src_dir / "hacks").glob("*/**/*")) + sorted(
+        (src_dir / "xs_support").rglob("*")
+    )
+    for path in candidates:
+        if path.suffix not in SUFFIXES or not path.is_file():
+            continue
+        rel = path.relative_to(src_dir)
+        if not has_notice(path.read_text(errors="replace")):
+            problems.append(f"{rel}: no licence notice in first {HEADER_LINES} lines")
+        if path.name not in notices and path.stem not in notices:
+            problems.append(f"{rel}: not listed in {notices_md.name}")
     return problems
 
 
