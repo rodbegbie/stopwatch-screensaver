@@ -49,7 +49,7 @@ void test_alloc_color_red_gives_f800_and_white_gives_ffff(void) {
   c.red = 0xFFFF;
   c.flags = DoRed | DoGreen | DoBlue;
   TEST_ASSERT_TRUE(XAllocColor(dpy, 1, &c) != 0);
-  TEST_ASSERT_EQUAL_HEX(0xF800, c.pixel);
+  TEST_ASSERT_EQUAL_HEX(px_swap(0xF800), c.pixel);
   c.red = c.green = c.blue = 0xFFFF;
   TEST_ASSERT_TRUE(XAllocColor(dpy, 1, &c) != 0);
   TEST_ASSERT_EQUAL_HEX(0xFFFF, c.pixel);
@@ -183,7 +183,7 @@ void test_pixel_resource_black_white_hex(void) {
   TEST_ASSERT_EQUAL_HEX(0xFFFF, get_pixel_resource(dpy, 1, "foreground", "Foreground"));
   static const char *const hex[] = {"*c: #ff0000", 0};
   xshim_set_defaults(hex);
-  TEST_ASSERT_EQUAL_HEX(0xF800, get_pixel_resource(dpy, 1, "c", "C"));
+  TEST_ASSERT_EQUAL_HEX(px_swap(0xF800), get_pixel_resource(dpy, 1, "c", "C"));
 }
 
 void test_gc_accepts_function_and_line_width_fields(void) {
@@ -225,9 +225,9 @@ void test_framework_resources_fall_back_to_builtin_defaults(void) {
   static const char *const none[] = {NULL};
   xshim_set_defaults(none);
   TEST_ASSERT_TRUE(get_float_resource(dpy, "delta3d", "Float") == 1.5);
-  TEST_ASSERT_EQUAL_HEX(0xF81F, get_pixel_resource(dpy, 0, "both3d", "Color"));
-  TEST_ASSERT_EQUAL_HEX(0xF800, get_pixel_resource(dpy, 0, "right3d", "Color"));
-  TEST_ASSERT_EQUAL_HEX(0x001F, get_pixel_resource(dpy, 0, "left3d", "Color"));
+  TEST_ASSERT_EQUAL_HEX(px_swap(0xF81F), get_pixel_resource(dpy, 0, "both3d", "Color"));
+  TEST_ASSERT_EQUAL_HEX(px_swap(0xF800), get_pixel_resource(dpy, 0, "right3d", "Color"));
+  TEST_ASSERT_EQUAL_HEX(px_swap(0x001F), get_pixel_resource(dpy, 0, "left3d", "Color"));
   TEST_ASSERT_EQUAL_HEX(0x0000, get_pixel_resource(dpy, 0, "none3d", "Color"));
 }
 
@@ -263,19 +263,19 @@ void test_pixel_resource_x11_colour_names(void) {
                                       "*d: red", "*e: blue", "*f: cyan",
                                       "*g: orange", 0};
   xshim_set_defaults(names);
-  TEST_ASSERT_EQUAL_HEX(0xF81F, get_pixel_resource(dpy, 1, "a", "A"));
-  TEST_ASSERT_EQUAL_HEX(0xFFE0, get_pixel_resource(dpy, 1, "b", "B"));
-  TEST_ASSERT_EQUAL_HEX(0x07E0, get_pixel_resource(dpy, 1, "c", "C"));
-  TEST_ASSERT_EQUAL_HEX(0xF800, get_pixel_resource(dpy, 1, "d", "D"));
-  TEST_ASSERT_EQUAL_HEX(0x001F, get_pixel_resource(dpy, 1, "e", "E"));
-  TEST_ASSERT_EQUAL_HEX(0x07FF, get_pixel_resource(dpy, 1, "f", "F"));
-  TEST_ASSERT_EQUAL_HEX(0xFD20, get_pixel_resource(dpy, 1, "g", "G"));
+  TEST_ASSERT_EQUAL_HEX(px_swap(0xF81F), get_pixel_resource(dpy, 1, "a", "A"));
+  TEST_ASSERT_EQUAL_HEX(px_swap(0xFFE0), get_pixel_resource(dpy, 1, "b", "B"));
+  TEST_ASSERT_EQUAL_HEX(px_swap(0x07E0), get_pixel_resource(dpy, 1, "c", "C"));
+  TEST_ASSERT_EQUAL_HEX(px_swap(0xF800), get_pixel_resource(dpy, 1, "d", "D"));
+  TEST_ASSERT_EQUAL_HEX(px_swap(0x001F), get_pixel_resource(dpy, 1, "e", "E"));
+  TEST_ASSERT_EQUAL_HEX(px_swap(0x07FF), get_pixel_resource(dpy, 1, "f", "F"));
+  TEST_ASSERT_EQUAL_HEX(px_swap(0xFD20), get_pixel_resource(dpy, 1, "g", "G"));
 }
 
 void test_pixel_resource_names_are_case_insensitive(void) {
   static const char *const names[] = {"*a: Magenta", 0};
   xshim_set_defaults(names);
-  TEST_ASSERT_EQUAL_HEX(0xF81F, get_pixel_resource(dpy, 1, "a", "A"));
+  TEST_ASSERT_EQUAL_HEX(px_swap(0xF81F), get_pixel_resource(dpy, 1, "a", "A"));
 }
 
 void test_erase_window_clears_and_reports_done(void) {
@@ -611,8 +611,8 @@ void test_copy_area_draws_the_image_at_the_destination(void) {
   GC gc = new_gc(0xFFFF, 0);
   XCopyArea(dpy, p, win, gc, 0, 0, BLOB_W, BLOB_H, 5, 6);
   TEST_ASSERT_EQUAL_INT(BLOB_W * BLOB_H, count_set());
-  TEST_ASSERT_EQUAL_HEX16(0x1000, at(5, 6));
-  TEST_ASSERT_EQUAL_HEX16(0x100B, at(8, 8));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1000), at(5, 6));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x100B), at(8, 8));
   XFreeGC(dpy, gc);
   XFreePixmap(dpy, p);
   XFreePixmap(dpy, mask);
@@ -624,8 +624,8 @@ void test_copy_area_copies_only_the_requested_source_rectangle(void) {
   GC gc = new_gc(0xFFFF, 0);
   XCopyArea(dpy, p, win, gc, 1, 1, 2, 2, 0, 0);
   TEST_ASSERT_EQUAL_INT(4, count_set());
-  TEST_ASSERT_EQUAL_HEX16(0x1005, at(0, 0));
-  TEST_ASSERT_EQUAL_HEX16(0x100A, at(1, 1));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1005), at(0, 0));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x100A), at(1, 1));
   XFreeGC(dpy, gc);
   XFreePixmap(dpy, p);
   XFreePixmap(dpy, mask);
@@ -637,11 +637,11 @@ void test_copy_area_is_clipped_at_every_canvas_edge(void) {
   GC gc = new_gc(0xFFFF, 0);
   XCopyArea(dpy, p, win, gc, 0, 0, BLOB_W, BLOB_H, -2, -1);
   TEST_ASSERT_EQUAL_INT(2 * 2, count_set());
-  TEST_ASSERT_EQUAL_HEX16(0x1006, at(0, 0));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1006), at(0, 0));
   XClearWindow(dpy, win);
   XCopyArea(dpy, p, win, gc, 0, 0, BLOB_W, BLOB_H, 14, 14);
   TEST_ASSERT_EQUAL_INT(2 * 2, count_set());
-  TEST_ASSERT_EQUAL_HEX16(0x1005, at(15, 15));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1005), at(15, 15));
   XFreeGC(dpy, gc);
   XFreePixmap(dpy, p);
   XFreePixmap(dpy, mask);
@@ -654,7 +654,7 @@ void test_copy_area_is_clipped_to_the_source_image(void) {
   XCopyArea(dpy, p, win, gc, 2, 1, 10, 10, 0, 0);
   TEST_ASSERT_EQUAL_INT(2 * 2, count_set());
   XCopyArea(dpy, p, win, gc, -3, -3, 5, 5, 8, 8);
-  TEST_ASSERT_EQUAL_HEX16(0x1000, at(11, 11));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1000), at(11, 11));
   XFreeGC(dpy, gc);
   XFreePixmap(dpy, p);
   XFreePixmap(dpy, mask);
@@ -668,9 +668,9 @@ void test_clip_mask_draws_only_where_the_mask_is_set(void) {
   XSetClipOrigin(dpy, gc, 5, 6);
   XCopyArea(dpy, p, win, gc, 0, 0, BLOB_W, BLOB_H, 5, 6);
   TEST_ASSERT_EQUAL_INT(MASK_SET_BITS, count_set());
-  TEST_ASSERT_EQUAL_HEX16(0x1000, at(5, 6));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1000), at(5, 6));
   TEST_ASSERT_EQUAL_HEX16(0, at(6, 7));
-  TEST_ASSERT_EQUAL_HEX16(0x1006, at(7, 7));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1006), at(7, 7));
   TEST_ASSERT_EQUAL_HEX16(0, at(5, 8));
   XFreeGC(dpy, gc);
   XFreePixmap(dpy, p);
@@ -686,8 +686,8 @@ void test_clip_origin_positions_the_mask_and_outside_the_mask_is_not_drawn(void)
   XCopyArea(dpy, p, win, gc, 0, 0, BLOB_W, BLOB_H, 5, 6);
   TEST_ASSERT_EQUAL_INT(5, count_set());
   TEST_ASSERT_EQUAL_HEX16(0, at(5, 6));
-  TEST_ASSERT_EQUAL_HEX16(0x1001, at(6, 6));
-  TEST_ASSERT_EQUAL_HEX16(0x1007, at(8, 7));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1001), at(6, 6));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1007), at(8, 7));
   XFreeGC(dpy, gc);
   XFreePixmap(dpy, p);
   XFreePixmap(dpy, mask);
@@ -796,7 +796,7 @@ void test_parse_color_reads_hex_and_names_into_16_bit_channels(void) {
   TEST_ASSERT_EQUAL_HEX16(0xFFFF, (uint16_t)c.pixel);
   TEST_ASSERT_TRUE(XParseColor(dpy, 1, "#F80000", &c) != 0);
   TEST_ASSERT_TRUE(XAllocColor(dpy, 1, &c) != 0);
-  TEST_ASSERT_EQUAL_HEX16(0xF800, (uint16_t)c.pixel);
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0xF800), (uint16_t)c.pixel);
 }
 
 void test_parse_color_rejects_unknown_specs(void) {

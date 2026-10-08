@@ -64,7 +64,7 @@ Pixmap image_data_to_pixmap(Display *dpy, Window win, const unsigned char *data,
     pixmap_free(mask);
     return None;
   }
-  for (unsigned i = 0; i < w * h; i++) colour->rgb[i] = (uint16_t)le16(data + 8 + 2 * i);
+  for (unsigned i = 0; i < w * h; i++) colour->rgb[i] = px_swap((uint16_t)le16(data + 8 + 2 * i));
   memcpy(mask->bits, data + 8 + pixel_bytes, (size_t)mask_bytes);
 
   *width_ret = (int)w;
