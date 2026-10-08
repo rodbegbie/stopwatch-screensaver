@@ -1,0 +1,17 @@
+/address-findings
+
+---
+
+Yeah, dismiss them.
+
+---
+
+OK, I approve.  Merge the PR
+
+---
+
+/claude-md-management:revise-claude-md
+
+---
+
+commit the changes on main.
