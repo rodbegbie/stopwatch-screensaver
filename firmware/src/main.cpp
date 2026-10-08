@@ -1,20 +1,71 @@
 #include <M5Unified.h>
 #include <esp_heap_caps.h>
 
-static const uint32_t colors[] = {0xFF0000, 0x00FF00, 0x0000FF};
-static int step = 0;
+extern "C" {
+#include "core/canvas.h"
+#include "runner/hack_runner.h"
+}
+
+static const int kSize = 466;
+static const uint32_t kSliceUs = 10000;
+static const uint32_t kStatsEveryMs = 5000;
+
+static Canvas canvas;
+static HackRunner *runner;
+static uint32_t frames;
+static uint32_t statsAt;
+
+static void halt(const char *msg) {
+  Serial.println(msg);
+  M5.Display.fillScreen(0x000000);
+  M5.Display.setTextColor(0xFFFFFF);
+  M5.Display.setTextDatum(middle_center);
+  M5.Display.drawString(msg, M5.Display.width() / 2, M5.Display.height() / 2);
+  for (;;) delay(1000);
+}
+
+static void printStats(const char *tag) {
+  Serial.printf("%s fps=%.1f heap=%u psram=%u\n", tag,
+                frames * 1000.0f / kStatsEveryMs, (unsigned)ESP.getFreeHeap(),
+                (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+}
 
 void setup() {
   auto cfg = M5.config();
   M5.begin(cfg);
   Serial.begin(115200);
+  M5.Display.setSwapBytes(false);
+
+  if (canvas_init(&canvas, kSize, kSize, ps_malloc) != 0)
+    halt("PSRAM alloc failed");
+  runner = runner_create(&canvas);
+  if (!runner || runner_start(runner, 0) != 0) halt("hack start failed");
+  printStats("boot");
+  statsAt = millis();
 }
 
 void loop() {
-  M5.Display.fillScreen(colors[step % 3]);
-  Serial.printf("hello step=%d heap=%u psram=%u\n", step,
-                (unsigned)ESP.getFreeHeap(),
-                (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
-  step++;
-  delay(1000);
+  M5.update();
+  if (M5.BtnA.wasPressed()) runner_next(runner);
+  if (M5.BtnB.wasPressed()) runner_prev(runner);
+
+  unsigned long delayUs = runner_step(runner);
+  M5.Display.pushImage(0, 0, kSize, kSize, canvas.px);
+  frames++;
+
+  uint32_t waitedUs = 0;
+  while (waitedUs < delayUs) {
+    uint32_t slice = delayUs - waitedUs < kSliceUs ? delayUs - waitedUs : kSliceUs;
+    delayMicroseconds(slice);
+    waitedUs += slice;
+    M5.update();
+    if (M5.BtnA.wasPressed()) runner_next(runner);
+    if (M5.BtnB.wasPressed()) runner_prev(runner);
+  }
+
+  if (millis() - statsAt >= kStatsEveryMs) {
+    printStats("run");
+    frames = 0;
+    statsAt = millis();
+  }
 }
