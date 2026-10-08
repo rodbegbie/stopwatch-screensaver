@@ -1,0 +1,19 @@
+ok, flash it up and let's see
+
+---
+
+Take a look.  I *think* I saw one crash when I was htiting the buttons quickly
+
+---
+
+I'm happy.  Update things, push the branchm open a trail, and then update the PR.
+
+---
+
+<task-notification>
+<task-id>btldd77wc</task-id>
+<tool-use-id>toolu_01ADyLBurjoJUPTN1aqxNdqz</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/cd7d24f7-9aab-4dcd-baf1-b0d59d2a6982/tasks/btldd77wc.output</output-file>
+<status>completed</status>
+<summary>Background command "Capture 4 minutes of serial output in background" completed (exit code 0)</summary>
+</task-notification>
