@@ -1,0 +1,5 @@
+$dg Entire trail 15
+
+---
+
+add the gap as a finding on the trail
