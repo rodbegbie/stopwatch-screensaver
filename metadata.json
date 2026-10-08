@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4EVQCGZB041PDQC8J7Z9P95",
+  "strategy": "manual-commit",
+  "branch": "fix/23-display-order-canvas",
+  "checkpoints_count": 6,
+  "files_touched": [
+    "firmware/native/dump_main.c",
+    "firmware/src/core/canvas.c",
+    "firmware/src/core/canvas.h",
+    "firmware/src/hacks/substrate_single.c",
+    "firmware/src/x11shim/pixmap.c",
+    "firmware/test/test_canvas/test_canvas.c",
+    "firmware/test/test_hacks/test_hacks.c",
+    "firmware/test/test_xshim/test_xshim.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 44,
+    "cache_creation_tokens": 42183,
+    "cache_read_tokens": 2204625,
+    "output_tokens": 16104,
+    "api_call_count": 22
+  }
+}
