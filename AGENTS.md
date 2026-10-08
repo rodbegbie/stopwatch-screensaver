@@ -137,6 +137,9 @@ Set `NO_COLOR=1` on `pio` output you parse.
   `x11shim/resources.c`. A `HackEntry`'s `overrides` list beats the hack's own
   defaults (Galaxy runs with `count: 2` to stay near 15 fps); register it with
   `XLOCKMORE_HACK_WITH`.
+  Galaxy is built through `hacks/galaxy_single.c`, which includes the unmodified
+  `galaxy.c` with `double` redefined as `float` (the S3's FPU is single-precision
+  only); `galaxy.c` is excluded from each env's `build_src_filter`.
 - Don't declare `xrealloc` or `xmalloc` in the shim: cloudlife defines its own
   static `xrealloc`, which would clash.
 - `score_hacks.py` rates hacks by call sites, not loop trips: Flame (all
