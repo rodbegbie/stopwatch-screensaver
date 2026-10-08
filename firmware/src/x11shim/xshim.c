@@ -7,6 +7,7 @@
 
 Bool mono_p = False;
 const char *progname = "stopwatch-screensaver";
+const char *progclass = "StopwatchScreensaver";
 
 Display *xshim_open_display(Canvas *canvas) {
   Display *dpy = (Display *)calloc(1, sizeof(*dpy));

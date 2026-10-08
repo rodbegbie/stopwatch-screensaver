@@ -196,6 +196,11 @@ void test_xrectangle_type_exists(void) {
   TEST_ASSERT_EQUAL_INT(3, r.width);
 }
 
+void test_progclass_is_set(void) {
+  TEST_ASSERT_NOT_NULL(progclass);
+  TEST_ASSERT_TRUE(strlen(progclass) > 0);
+}
+
 void test_progname_is_set(void) {
   TEST_ASSERT_NOT_NULL(progname);
   TEST_ASSERT_TRUE(strlen(progname) > 0);
@@ -484,6 +489,7 @@ int main(void) {
   RUN_TEST(test_button_press_event_fields_exist);
   RUN_TEST(test_xrectangle_type_exists);
   RUN_TEST(test_progname_is_set);
+  RUN_TEST(test_progclass_is_set);
   RUN_TEST(test_pixel_resource_x11_colour_names);
   RUN_TEST(test_pixel_resource_names_are_case_insensitive);
   RUN_TEST(test_erase_window_clears_and_reports_done);

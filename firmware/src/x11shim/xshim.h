@@ -106,6 +106,7 @@ int XSelectInput(Display *, Window, long mask);
 
 extern Bool mono_p;
 extern const char *progname;
+extern const char *progclass;
 
 Display *xshim_open_display(Canvas *canvas);
 void xshim_close_display(Display *dpy);
