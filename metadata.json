@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4D4DFSQA444Y43QQ4GDV8S0",
+  "strategy": "manual-commit",
+  "branch": "feature/xlockmore-framework",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "THIRD_PARTY_NOTICES.md",
+    "firmware/platformio.ini",
+    "firmware/src/hacks/hopalong/hopalong.c",
+    "firmware/src/hacks/registry.c",
+    "firmware/src/runner/hack_runner.c",
+    "firmware/test/test_hacks/test_hacks.c",
+    "firmware/test/test_runner_xsft/test_runner_xsft.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 32,
+    "cache_creation_tokens": 15104,
+    "cache_read_tokens": 3098098,
+    "output_tokens": 9459,
+    "api_call_count": 16
+  }
+}
