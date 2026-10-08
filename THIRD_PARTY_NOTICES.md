@@ -40,16 +40,29 @@ implied warranty.
 | `firmware/src/hacks/whirlwindwarp/whirlwindwarp.c` | Copyright (c) 2000 Paul "Joey" Clark | jwz permission notice (above) |
 | `firmware/src/hacks/flame/flame.c` | Copyright (c) 1993-2014 Jamie Zawinski; ported from xlock, Copyright (c) 1991 Patrick J. Naughton, with updates by Scott Draves | jwz permission notice (above), and Naughton's xlock notice (below) |
 | `firmware/src/hacks/pedal/pedal.c` | Copyright (c) 1994 Carnegie Mellon University; X version by Dale Moore | CMU permission notice (below) |
-| `firmware/src/hacks/hopalong/hopalong.c` | Copyright (c) 1991 Patrick J. Naughton; later changes by the xlockmore and xscreensaver authors | Naughton xlock notice (below) |
+| `firmware/src/hacks/hopalong/hopalong.c` | Copyright (c) 1991 Patrick J. Naughton; later changes by the xlockmore and xscreensaver authors | xlock permission notice (below) |
+| `firmware/src/hacks/vines/vines.c` | Copyright (c) 1997 Tracy Camp | xlock permission notice (below) |
+| `firmware/src/hacks/sierpinski/sierpinski.c` | Copyright (c) 1996 Desmond Daignault | xlock permission notice (below) |
+| `firmware/src/hacks/fadeplot/fadeplot.c` | Copyright (c) 1996 Charles Vidal | xlock permission notice (below) |
+| `firmware/src/hacks/thornbird/thornbird.c` | Copyright (c) 1996 Tim Auckland | xlock permission notice (below) |
+| `firmware/src/hacks/spiral/spiral.c` | Copyright (c) 1994 Darrick Brown | xlock permission notice (below) |
+| `firmware/src/hacks/sphere/sphere.c` | Copyright (c) 1988 Sun Microsystems | xlock permission notice (below) |
+| `firmware/src/hacks/discrete/discrete.c` | Copyright (c) 1996 Tim Auckland | xlock permission notice (below) |
+| `firmware/src/hacks/galaxy/galaxy.c` | No copyright line; the header credits Uli Siegmund, Harald Backert and Hubert Feyrer (1997) | xlock permission notice (below) |
+| `firmware/src/hacks/drift/drift.c` | Copyright (c) 1991 Patrick J. Naughton | xlock permission notice (below) |
+| `firmware/src/hacks/lightning/lightning.c` | Copyright (c) 1996 Keith Romberg | xlock permission notice (below) |
 
 Each copied file keeps its own header unchanged; the notice text above is
 reproduced here to satisfy the "supporting documentation" requirement.
 
-### Patrick J. Naughton xlock notice (Flame, Hopalong)
+### xlock permission notice (Flame and the xlockmore hacks)
 
-`flame.c` was ported from xlock and carries the original notice alongside
-jwz's. `hopalong.c` carries it alone. It is reproduced here as it appears
-in the files:
+`flame.c` was ported from xlock and carries Patrick J. Naughton's notice
+alongside jwz's. The xlockmore hacks (`hopalong.c`, `vines.c` and the
+others whose table rows say "xlock permission notice") carry the same
+permission text alone, each under its own author's copyright line, which
+the table lists. The text is reproduced here as it appears in
+`hopalong.c`:
 
 ```text
 Copyright (c) 1991 by Patrick J. Naughton.

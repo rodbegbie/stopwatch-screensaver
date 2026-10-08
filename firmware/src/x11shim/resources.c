@@ -7,7 +7,12 @@
 
 static const char *const *g_defaults;
 
+static const char *const *g_overrides;
+
 void xshim_set_defaults(const char *const *defaults) { g_defaults = defaults; }
+void xshim_set_overrides(const char *const *overrides) {
+  g_overrides = overrides;
+}
 
 /* What xscreensaver's app-defaults file supplies to the xlockmore framework.
  * A hack's own defaults take precedence. */
@@ -19,19 +24,24 @@ static const struct {
     {"both3d", "magenta"}, {"none3d", "black"}, {"size", "0"},
 };
 
-/* Finds "<.|*>name:<ws>value" and returns a pointer to the value, or NULL. */
-static const char *lookup(const char *name) {
+/* Finds "<.|*>name:<ws>value" in a NULL-terminated list, or returns NULL. */
+static const char *find_in(const char *const *list, const char *name) {
   size_t len = strlen(name);
-  if (g_defaults) {
-    for (const char *const *p = g_defaults; *p; p++) {
-      const char *s = *p;
-      if (*s == '.' || *s == '*') s++;
-      if (strncmp(s, name, len) != 0 || s[len] != ':') continue;
-      s += len + 1;
-      while (*s && isspace((unsigned char)*s)) s++;
-      return s;
-    }
+  for (const char *const *p = list; p && *p; p++) {
+    const char *s = *p;
+    if (*s == '.' || *s == '*') s++;
+    if (strncmp(s, name, len) != 0 || s[len] != ':') continue;
+    s += len + 1;
+    while (*s && isspace((unsigned char)*s)) s++;
+    return s;
   }
+  return NULL;
+}
+
+static const char *lookup(const char *name) {
+  const char *v = find_in(g_overrides, name);
+  if (!v) v = find_in(g_defaults, name);
+  if (v) return v;
   for (size_t i = 0; i < sizeof(kFrameworkDefaults) / sizeof(*kFrameworkDefaults);
        i++)
     if (strcmp(kFrameworkDefaults[i].name, name) == 0)

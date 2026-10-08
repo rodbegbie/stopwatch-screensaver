@@ -125,13 +125,22 @@ Set `NO_COLOR=1` on `pio` output you parse.
   push against it, because a hack's delay is its pause after drawing.
 - xlockmore hacks (the 40 that include `xlockmore.h`) need `-DSTANDALONE`,
   which every PlatformIO env and `score_hacks.py` set; without it they
-  include `xlock.h` instead. Register one in `hacks/registry.c` with
+  include `xlock.h` instead. The envs also define `HAVE_MOBILE`, because
+  otherwise each hack's `XSCREENSAVER_LINK` defines the same global
+  `xscreensaver_function_table` and two hacks fail to link; the only other
+  effect is an inert `*ignoreRotation: True` default. Register one in `hacks/registry.c` with
   `XLOCKMORE_HACK(<name>, "<Class>")`. The runner runs the hack's
   `setup_cb` once and passes `setup_arg` as `init_cb`'s hidden third
   argument, as xscreensaver's `screenhack.c` does. Its table is empty until
   then. Resources the framework reads but a hack does not define
   (`delta3d`, `size`, ...) fall back to `kFrameworkDefaults` in
-  `x11shim/resources.c`.
+  `x11shim/resources.c`. A `HackEntry`'s `overrides` list beats the hack's own
+  defaults (Galaxy runs with `count: -3`, at most three galaxies; a count of -2 or
+  above skips the hack's restart cleanup and leaks); register it with
+  `XLOCKMORE_HACK_WITH`.
+  Galaxy is built through `hacks/galaxy_single.c`, which includes the unmodified
+  `galaxy.c` with `double` redefined as `float` (the S3's FPU is single-precision
+  only); `galaxy.c` is excluded from each env's `build_src_filter`.
 - Don't declare `xrealloc` or `xmalloc` in the shim: cloudlife defines its own
   static `xrealloc`, which would clash.
 - `score_hacks.py` rates hacks by call sites, not loop trips: Flame (all

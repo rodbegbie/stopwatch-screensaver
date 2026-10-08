@@ -212,6 +212,17 @@ void test_hack_defaults_beat_the_builtin_fallbacks(void) {
   TEST_ASSERT_TRUE(get_float_resource(dpy, "delta3d", "Float") == 2.5);
 }
 
+void test_overrides_beat_the_hacks_own_defaults(void) {
+  static const char *const own[] = {"*count: -5", "*delay: 20000", NULL};
+  static const char *const over[] = {"*count: 2", NULL};
+  xshim_set_defaults(own);
+  xshim_set_overrides(over);
+  TEST_ASSERT_EQUAL_INT(2, get_integer_resource(dpy, "count", "Int"));
+  TEST_ASSERT_EQUAL_INT(20000, get_integer_resource(dpy, "delay", "Usecs"));
+  xshim_set_overrides(NULL);
+  TEST_ASSERT_EQUAL_INT(-5, get_integer_resource(dpy, "count", "Int"));
+}
+
 void test_progclass_is_set(void) {
   TEST_ASSERT_NOT_NULL(progclass);
   TEST_ASSERT_TRUE(strlen(progclass) > 0);
@@ -505,6 +516,7 @@ int main(void) {
   RUN_TEST(test_button_press_event_fields_exist);
   RUN_TEST(test_xrectangle_type_exists);
   RUN_TEST(test_progname_is_set);
+  RUN_TEST(test_overrides_beat_the_hacks_own_defaults);
   RUN_TEST(test_progclass_is_set);
   RUN_TEST(test_framework_resources_fall_back_to_builtin_defaults);
   RUN_TEST(test_hack_defaults_beat_the_builtin_fallbacks);
