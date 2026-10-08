@@ -96,24 +96,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Lightning | 29.4 | 1.8-1.9 ms | 31.2 ms | 0 ms | none measurable |
 | Maze | 6.0-28.8 | 0.1-1.3 ms | 31.2-33.4 ms | 0-256 ms | not measured |
 | Blaster | 20.4-20.8 | 3.6-4.0 ms | 43.4-44.4 ms | 0 ms | not measured |
-| Substrate | 6.0-21.4 | 4.4-124.4 ms | 41.4 ms | 0 ms | about 1.74 MB |
-
-Substrate's row is 16 five-second readings (about 80 seconds), because the
-90-second rotation moved the board on to Pyro before the capture ended, so no
-restart was seen. It starts near 21 fps with a step of about 5 ms, and within
-about 20 seconds as the cracks and their sand paint build up the step grows to
-about 121 ms and holds there at 6.2 fps, with a wait of 0: from then on it is
-limited by the hack's own drawing, not by the push or by its 18 ms delay. Free
-PSRAM was 1,742,096 bytes lower than under HyperCube in the same log, which
-matches its two image-sized buffers (2 x 466 x 466 x 4 bytes, plus a few KB),
-so both buffers were allocated in PSRAM by plain `malloc`. Free heap stayed
-between 336,228 and 339,364 bytes. No stack canary, panic or reboot appeared.
-
-In the same capture Pyro and HyperCube pushed in 41-45 ms and ran at 20-23 fps,
-against 31 ms and 28-30 fps in their rows above. So push time is longer on the
-current build for every hack, not just Substrate or Blaster. The cause has not
-been tested. The slower pushes began after the byte-order fix, but other
-changes landed at the same time.
+| Substrate | 12.4-20.6 | 2.9-43.9 ms | 41.1-44.4 ms | 0 ms | about 1.74 MB |
 
 Maze's row is 26 five-second readings over 160 seconds, taken on a build that
 includes the overlay stamping. Its steps are cheap, and its frame rate is set
@@ -133,6 +116,30 @@ investigated, so the cause is unknown. Free heap held between 338,352 and
 panic or reboot appeared. There is no PSRAM baseline for this build, so its
 extra PSRAM is not split out. This run used a build with the byte-order fix,
 which was applied locally before it reached `main`.
+
+Substrate is built in single precision (`hacks/substrate_single.c`), and its
+row is 30 five-second readings of that build. It starts near 20 fps with a
+step of about 3 ms. As the cracks and their sand paint build up, the step grows
+over about 40 seconds and settles at 37-38 ms and 12.4-12.6 fps, with a wait
+of 0, so from then on the frame is the hack's step plus the push.
+
+The same hack in double precision settled at a step of 119-121 ms and 6.2 fps,
+over a 31.8 minute capture (382 readings). That capture also showed one
+restart, at about 25 minutes: the step fell to 26 ms and climbed back as the
+new picture filled, and free PSRAM returned to the same value (only two
+distinct readings in the whole run), so its two buffers were freed and
+allocated again without a leak. The single-precision build has not been run
+through a restart. Free PSRAM was 1,742,096 bytes lower than under HyperCube in
+an earlier log, which matches the two image-sized buffers (2 x 466 x 466 x 4
+bytes, plus a few KB), so plain `malloc` put both in PSRAM. Free heap stayed
+between 336,228 and 339,524 bytes. No stack canary, panic or reboot appeared in
+any run.
+
+In an earlier capture Pyro and HyperCube pushed in 41-45 ms and ran at 20-23
+fps, against 31 ms and 28-30 fps in their rows above. So push time is longer on
+the current build for every hack, not just Substrate or Blaster. The cause has
+not been tested (issue #23). The slower pushes began after the byte-order fix,
+but other changes landed at the same time.
 
 Free heap and free PSRAM return to exactly the same values every time a
 hack is switched back to, so switching does not leak.
