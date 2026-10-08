@@ -60,8 +60,9 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
 - Serial log: read `/dev/cu.usbmodem112401` at 115200 for N seconds into a file
   (a pyserial script run with `.venv/bin/python -I`). Run it in the background
   with absolute paths, since background shells ignore `cd`. Lines to read:
-  `run <hack> fps= step= push= wait=` (ms per frame in the hack, `pushImage`
-  and the wait) and `switch -> <hack> press_waited=`.
+  `run <hack> fps= step= push= wait= rows=` (ms per frame in the hack, the
+  push and the wait; mean canvas rows sent per frame, 466 being a full push)
+  and `switch -> <hack> press_waited=`.
 - Flash with `pio run -e stopwatch -t upload > file 2>&1`, never piped through
   `head`, and check for "Hash of data verified". The button steps backwards
   (Pyro, then Lightning, then Drift...). Work out how long a restart takes
@@ -207,6 +208,17 @@ hack, and holds a recipe per trap. The steps:
   dump every hack before and after a pixel-format change and `cmp` the frames.
   Pyro differs by a few hundred pixels, because it sorts projectiles by pixel
   value and so draws overlaps in another order.
+- The display only gets the rows a hack drew. Every canvas write must go
+  through `canvas_clear`, `canvas_point`, `hspan` or `canvas_paste_rect`
+  (which record a span per row), or call `canvas_mark_dirty`, or the screen
+  keeps the old pixels. The overlay text in `main.cpp` is the one deliberate
+  bypass: it is written straight into `px`, marked by hand, and restored with
+  `canvas_paste_rect`, which marks it again so the next push erases it.
+  `test_push_present` replays every hack into a shadow display to catch a
+  missed mark. A push of a few rows still took about 10 ms when frames came
+  back to back (Squiral), probably a floor between display updates; untested.
+  Hacks that redraw unchanged pixels (CloudLife, Pedal) dirty nearly every row
+  and gain little.
 - In `platformio.ini` use `platform = platformio/native`; plain `native`
   breaks `pio run`. Native tests need `test_build_src = yes`.
 - Quoted includes resolve beside the including file first, so compile hack

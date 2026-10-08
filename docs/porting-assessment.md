@@ -159,16 +159,47 @@ Pushing part of the canvas scales with its area. On Pyro, with the swap on,
 the top half took 20.6 ms (of 41.0) and a quarter-size block pushed row by row
 took 13.7 ms. Each separate `pushImage` call costs about 12 microseconds, so a
 row-by-row push of the whole canvas took 46.8 ms and a row-by-row push of the
-inscribed circle took 38.7 ms, against 41.0 ms for one call. That is the
-groundwork for issue #6.
+inscribed circle took 38.7 ms, against 41.0 ms for one call.
+
+Issue #6 then sent only the rows a hack drew. The canvas keeps the leftmost and
+rightmost pixel written in each row, and the firmware pushes those spans in one
+`startWrite`, where a call costs about 5 microseconds instead of 16, or one
+full push when the rows would cost more. Steady readings on the device, with
+the rotation off (previous push 31 ms and 28-30 fps):
+
+| Hack | push | fps | rows per frame |
+| --- | --- | --- | --- |
+| Pyro | 4.1-4.5 ms | 83 | 58-72 |
+| Squiral | 9.3-10.3 ms | 87 | 20 |
+| Lightning | 4.3-4.6 ms | 64 | 85-91 |
+| Maze | 0.5-4.3 ms | 6-29 | 24-76 |
+| HyperCube | 11.6-13.0 ms | 57-61 | 286-306 |
+| Blaster | 13.5 ms | 54 | 253 |
+| CloudLife | 27.7 ms | 26.6 | 464 |
+| Pedal | 19.6-33.9 ms | 0.2-0.4 | 348-495 |
+
+Maze, Lightning and Pyro are held back by their own delays, not the push.
+Substrate's early frames pushed in 1.7-6.8 ms (45 fps) and its later ones in
+6-10 ms. CloudLife and Pedal redraw nearly every row, so they gain little. The
+host estimates (a lower bound, since they counted only pixels that changed
+colour) were too low for hacks that redraw unchanged pixels: Blaster was
+estimated at 3.3 ms and took 13.5. Squiral pushes about 20 rows but takes
+10 ms each time; every push of 17-25 rows took 10.2-11.3 ms whatever the row
+count, which looks like a floor between display updates when frames come back
+to back. That has not been tested. Pyro's step stayed at 0.8 ms and
+Substrate's first readings at 2.8-3.0 ms, as before, so the marking costs
+nothing visible on the hot path. Rod checked Maze, the name and fps labels and
+several hacks on the screen: correct colours, no stale pixels.
 
 Free heap and free PSRAM return to exactly the same values every time a
 hack is switched back to, so switching does not leak.
 
 ## What limits the frame rate
 
-- Pushing the 434 KB canvas costs a steady 31 ms whatever the hack draws, so
-  about 31 fps is the real ceiling today. The best hacks reach about 30.
+- A full push of the 434 KB canvas costs a steady 31 ms, but the firmware now
+  sends only the rows a hack drew (issue #6), so the ceiling depends on the
+  hack: about 30 fps for hacks that redraw most of the screen, and 60-90 fps
+  for sparse ones (see the table above).
 - A hack's delay is the pause after it draws, and the firmware credits only
   the 31 ms push against it. Hacks that ask for 10-20 ms therefore run at the
   push ceiling. Before the push was credited the delay was added on top, and
