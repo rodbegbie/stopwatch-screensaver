@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4D3Z2GZA5QARENSDQD3AX2X",
+  "strategy": "manual-commit",
+  "branch": "feature/xlockmore-framework",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/src/runner/hack_entry.h",
+    "firmware/src/x11shim/include/fps.h",
+    "firmware/src/x11shim/include/screenhackI.h",
+    "firmware/test/test_runner_xsft/test_runner_xsft.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 12,
+    "cache_creation_tokens": 11350,
+    "cache_read_tokens": 876652,
+    "output_tokens": 7455,
+    "api_call_count": 6
+  }
+}
