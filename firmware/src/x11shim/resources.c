@@ -135,6 +135,12 @@ char *get_string_resource(Display *dpy, const char *name, const char *cls) {
   return v ? strdup(v) : NULL;
 }
 
+unsigned long xshim_background_pixel(void) {
+  return lookup("background")
+             ? get_pixel_resource(NULL, 1, "background", "Background")
+             : 0;
+}
+
 unsigned long get_pixel_resource(Display *dpy, Colormap cmap, const char *name,
                                  const char *cls) {
   (void)dpy;

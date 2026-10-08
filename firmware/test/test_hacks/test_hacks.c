@@ -52,6 +52,27 @@ void test_every_hack_can_be_stopped_before_its_first_frame(void) {
   }
 }
 
+static int index_of(const char *name) {
+  for (int i = 0; i < g_hack_count; i++)
+    if (strcmp(g_hacks[i]->name, name) == 0) return i;
+  return -1;
+}
+
+static long count_pixels(uint16_t colour) {
+  long n = 0;
+  for (long i = 0; i < (long)cv.w * cv.h; i++) n += cv.px[i] == colour;
+  return n;
+}
+
+/* Real screenhack.c paints the window in the hack's background colour before
+ * its init runs, and Substrate (`.background: white`) relies on it. */
+void test_a_hack_starts_on_the_background_colour_it_asks_for(void) {
+  HackRunner *r = runner_create(&cv);
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("Substrate")));
+  TEST_ASSERT_TRUE(count_pixels(0xFFFF) > (long)cv.w * cv.h * 99 / 100);
+  runner_destroy(r);
+}
+
 void test_every_hack_draws_something_within_2000_frames(void) {
   for (int i = 0; i < g_hack_count; i++) {
     HackRunner *r = runner_create(&cv);
@@ -177,6 +198,7 @@ int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
   RUN_TEST(test_every_hack_can_be_stopped_before_its_first_frame);
+  RUN_TEST(test_a_hack_starts_on_the_background_colour_it_asks_for);
   RUN_TEST(test_every_hack_draws_something_within_2000_frames);
   RUN_TEST(test_every_hack_runs_3000_frames_cleanly_with_sane_delays);
   RUN_TEST(test_cycling_through_all_hacks_100_times_is_asan_clean);
