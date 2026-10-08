@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4D47G0A07H9TTK3PTW5RS7Y",
+  "strategy": "manual-commit",
+  "branch": "feature/xlockmore-framework",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "THIRD_PARTY_NOTICES.md",
+    "firmware/src/x11shim/xshim.c",
+    "firmware/src/x11shim/xshim.h",
+    "firmware/src/xs_support/xlockmore.c",
+    "firmware/src/xs_support/xlockmore.h",
+    "firmware/src/xs_support/xlockmoreI.h",
+    "firmware/test/test_xshim/test_xshim.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 14,
+    "cache_creation_tokens": 6702,
+    "cache_read_tokens": 1235197,
+    "output_tokens": 3216,
+    "api_call_count": 7
+  }
+}
