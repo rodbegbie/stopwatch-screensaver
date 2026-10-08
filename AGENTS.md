@@ -167,6 +167,23 @@ Set `NO_COLOR=1` on `pio` output you parse.
   `hacks/single_precision.h` (`double` and the libm calls become `float` and
   the `f` versions; the S3's FPU is single-precision only), then the unmodified
   hack; the original `.c` is excluded from each env's `build_src_filter`.
+- Maze keeps a 1000 by 1000 maze and three 1,000,000-entry move lists in one
+  `calloc` (about 20 MB; the board has 8 MB of PSRAM). `hacks/maze/maze.c`
+  stays byte-identical: `firmware/patch_maze.py` (a PlatformIO `pre:` script
+  in every env) writes a copy with both limits at 80 into the build dir, using
+  `tools/maze_patch.py`, which fails loudly if upstream's `#define`s change.
+  `hacks/maze_small.c` includes that copy and the original is excluded from
+  `build_src_filter`. A `gridSize` below 7 would overflow the 80 by 80 arrays.
+- The shim's pixmaps are read-only sources for `XCopyArea`/`XCopyPlane`, and
+  the GC keeps its own copy of a clip mask because hacks free the pixmap right
+  after `XSetClipMask`. There is no PNG decoder: `image_data_to_pixmap` reads
+  the raw blob described in `ximage-loader.h`, made by
+  `tools/make_logo_blob.py` (`uv run`, needs Pillow). The `logo_180`/`360`
+  headers are aliases of the 50 px data, as a 466 px screen only picks 50.
+- Maze fills the whole 466 by 466 square, so its corners and the exit marker
+  fall outside the round display's visible circle.
+- `check_notices.py` reads 100 lines of header: Maze's licence follows a long
+  modification history.
 - Don't declare `xrealloc` or `xmalloc` in the shim: cloudlife defines its own
   static `xrealloc`, which would clash.
 - `score_hacks.py` rates hacks by call sites, not loop trips: Flame (all
@@ -179,6 +196,12 @@ Set `NO_COLOR=1` on `pio` output you parse.
   `test_hacks.c`.
 - `pio test` hides `printf` and stderr from tests. To see two values, assert
   `TEST_ASSERT_EQUAL_UINT64(a, b)` temporarily: the failure line prints both.
+- In a git worktree the ignored `vendor/`, `.venv/` and `.platformio/` are
+  missing. Symlink them from the main checkout and add the three names to
+  `.git/info/exclude` (`.gitignore`'s trailing slashes don't match symlinks).
+  The harness refuses `source tools/env.sh` and a computed `PATH` there: run
+  `PLATFORMIO_CORE_DIR=<worktree>/.platformio ../.venv/bin/pio ...` instead,
+  and keep commands plain (no scripts or loops that name `$VAR` paths).
 - zsh does not word-split `$var`: loop over file lists with `bash -c`.
 - jwz.org returns 403 to Python's default User-Agent.
 - `esptool` reads of the 16 MB flash need `--baud 921600` (about 3.5 minutes)
