@@ -1,0 +1,14 @@
+{
+  "tool_use_id": "toolu_0123PRRwxN84igfcSTccysYw",
+  "agent_id": "a92beb193014fb774",
+  "task_description": "Baseline plan: substrate, no skill",
+  "token_usage": {
+    "input_tokens": 12,
+    "cache_creation_tokens": 43156,
+    "cache_read_tokens": 279786,
+    "output_tokens": 458,
+    "api_call_count": 6
+  },
+  "started_at": "2026-10-08T10:38:39.97202-07:00",
+  "completed_at": "2026-10-08T10:39:19.661956-07:00"
+}

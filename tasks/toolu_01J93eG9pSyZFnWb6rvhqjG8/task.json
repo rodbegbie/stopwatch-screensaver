@@ -1,0 +1,14 @@
+{
+  "tool_use_id": "toolu_01J93eG9pSyZFnWb6rvhqjG8",
+  "agent_id": "a6c432b196046e67c",
+  "task_description": "With-skill plan: blaster",
+  "token_usage": {
+    "input_tokens": 8,
+    "cache_creation_tokens": 43349,
+    "cache_read_tokens": 167034,
+    "output_tokens": 1997,
+    "api_call_count": 4
+  },
+  "started_at": "2026-10-08T10:38:19.099279-07:00",
+  "completed_at": "2026-10-08T10:38:47.801091-07:00"
+}

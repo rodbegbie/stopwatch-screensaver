@@ -1,0 +1,14 @@
+{
+  "tool_use_id": "toolu_01LZW6CtFpZSMaK6k4EJKjqc",
+  "agent_id": "a99f711b530f5939b",
+  "task_description": "Baseline plan: blaster, no skill",
+  "token_usage": {
+    "input_tokens": 10,
+    "cache_creation_tokens": 62191,
+    "cache_read_tokens": 206216,
+    "output_tokens": 47,
+    "api_call_count": 5
+  },
+  "started_at": "2026-10-08T10:38:06.581563-07:00",
+  "completed_at": "2026-10-08T10:38:41.861961-07:00"
+}
