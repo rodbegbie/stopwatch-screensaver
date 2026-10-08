@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4CVS0BPDPJN9FDVABGA22EA",
+  "strategy": "manual-commit",
+  "branch": "feature/step1-rorschach-pedal",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/src/runner/hack_runner.h",
+    "firmware/test/test_pyro/test_pyro.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 10,
+    "cache_creation_tokens": 8962,
+    "cache_read_tokens": 1830613,
+    "output_tokens": 5038,
+    "api_call_count": 5
+  }
+}
