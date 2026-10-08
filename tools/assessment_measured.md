@@ -1,6 +1,6 @@
 ## Measured on the device
 
-Twelve hacks have been run so far (default settings, 466×466 canvas pushed to
+Thirteen hacks have been run so far (default settings, 466×466 canvas pushed to
 the display every frame, canvas held in PSRAM). The firmware times each frame
 in three parts, averaged over 5 seconds: **step** is the hack's own draw call,
 **push** is sending the canvas to the display, and **wait** is what is left of
@@ -22,7 +22,8 @@ holds, so its frame rate will now be lower than shown.
 | Squiral | 30.6-31.0 | 0.1-0.3 ms | 31.1 ms | 0 ms | about 850 KB |
 | Critical | 30.4 | 0.7 ms | 31.1 ms | 0 ms | about 15 KB |
 | CloudLife | 24.2 | 8.8-8.9 ms | 31.4 ms | 0 ms | about 260 KB |
-| WhirlWindWarp | 25.8 | 6.2-6.4 ms | 31.3 ms | 0 ms | about 410 KB |
+| WhirlWindWarp | 17.4-25.8 | 6.2-25.2 ms | 31.3 ms | 0 ms | about 410 KB |
+| Flame | 3.4-7.4 | 78-271 ms | 31.4 ms | 0-70 ms | none measurable |
 
 Free heap and free PSRAM return to exactly the same values every time a
 hack is switched back to, so switching does not leak.
@@ -47,6 +48,15 @@ hack is switched back to, so switching does not leak.
   WhirlWindWarp (about 6 ms) are the next most expensive; Squiral and
   Critical draw in under a millisecond and run at the push ceiling.
 - Coral's step time falls as the picture fills in (15.0 fps, then 21.2).
+- Flame is the slowest hack so far, at 78-271 ms a frame, and it varies from
+  picture to picture. Its source is all `double`, with `sin`, `cos` and
+  `sqrt` in a recursive per-point loop, and the ESP32-S3 has only a
+  single-precision FPU. Double-precision maths in software is the likely
+  cause, but it has not been profiled. The scorer's `float-heavy` flag missed
+  it, because it counts call sites in the source, not how often loops run it.
+- WhirlWindWarp ran at 6.2-6.4 ms a frame in one session and a steady 25.2 ms
+  in another. It switches around 16 forcefields on and off at random, so cost
+  may depend on which are active, but that has not been confirmed.
 - Hacks that draw many primitives per frame are the ones to profile first.
 
 ## Other notes
