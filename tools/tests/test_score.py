@@ -391,3 +391,50 @@ def test_main_missing_registry_is_an_actionable_error(tmp_path, capsys):
     argv = ["--vendor", str(vendor), "--header", str(header)]
     assert sh.main(argv, root=tmp_path) == 1
     assert "--registry" in capsys.readouterr().err
+
+
+def _cells(table):
+    header, _, *data = table.splitlines()
+    names = [c.strip() for c in header.strip("|").split("|")]
+    return [dict(zip(names, (c.strip() for c in line.strip("|").split("|")))) for line in data]
+
+
+def test_a_ported_hack_has_no_effort_rating():
+    rows = [_row("pyro", "S"), _row("todo", "S")]
+    got = {c["Hack"]: c["Effort"] for c in _cells(sh.render_table(rows, ported={"pyro"}))}
+    assert got == {"pyro": "-", "todo": "S"}
+
+
+def test_ported_hacks_sort_after_every_unported_one():
+    rows = [_row("pyro", "S"), _row("big", "XL"), _row("a", "L"), _row("b", "S")]
+    order = [c["Hack"] for c in _cells(sh.render_table(rows, ported={"pyro"}))]
+    assert order == ["b", "a", "big", "pyro"]
+
+
+def test_a_failed_hack_keeps_its_effort_rating_and_its_place():
+    rows = [_row("maze", "L"), _row("a", "S"), _row("z", "XL")]
+    cells = _cells(sh.render_table(rows, failed={"maze"}))
+    assert [(c["Hack"], c["Effort"]) for c in cells] == [("a", "S"), ("maze", "L"), ("z", "XL")]
+
+
+def test_main_counts_only_unported_hacks_per_rating(tmp_path):
+    vendor = tmp_path / "xscreensaver-9.9"
+    (vendor / "hacks").mkdir(parents=True)
+    for name in ("done", "todo"):
+        (vendor / "hacks" / f"{name}.c").write_text(f'XSCREENSAVER_MODULE ("{name}", {name})\n')
+    header = tmp_path / "xshim.h"
+    header.write_text("int XDrawLine(int);\n")
+    intro = tmp_path / "intro.md"
+    intro.write_text("# T\n\ncounts={n_s} {n_m} {n_l} {n_xl} ported={n_ported}\n")
+    registry = tmp_path / "registry.c"
+    registry.write_text("const HackEntry *const g_hacks[] = {&done_hack};\n")
+    out = tmp_path / "out.md"
+    argv = ["--vendor", str(vendor), "--header", str(header), "--intro", str(intro),
+            "--registry", str(registry), "--out", str(out)]
+    for d in SHIM_INCLUDES:
+        argv += ["--shim-include", str(d)]
+    assert sh.main(argv, root=tmp_path) == 0
+    line = next(l for l in out.read_text().splitlines() if l.startswith("counts="))
+    counts, ported = line.removeprefix("counts=").split(" ported=")
+    assert sum(int(n) for n in counts.split()) == 1
+    assert ported == "1"

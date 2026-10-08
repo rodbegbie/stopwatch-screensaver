@@ -214,12 +214,17 @@ def render_table(rows: list[dict], ported=frozenset(), failed=frozenset()) -> st
         "| Hack | Kind | Effort | Ported | Shim gaps | Flags | LOC |",
         "| --- | --- | --- | --- | --- | --- | --- |",
     ]
-    for r in sorted(rows, key=lambda r: (EFFORT_ORDER[r["effort"]], r["name"])):
+    def order(r):
+        return (r["name"] in ported, EFFORT_ORDER[r["effort"]], r["name"])
+
+    for r in sorted(rows, key=order):
         missing = ", ".join(code_cell(g) for g in r.get("gaps", r["missing"])) or "-"
         flags = ", ".join(r["flags"]) or "-"
-        mark = PORTED if r["name"] in ported else FAILED if r["name"] in failed else "-"
+        done = r["name"] in ported
+        mark = PORTED if done else FAILED if r["name"] in failed else "-"
+        effort = "-" if done else r["effort"]
         lines.append(
-            f"| {r['name']} | {r['kind']} | {r['effort']} | {mark} | {missing} | {flags} | {r['loc']} |"
+            f"| {r['name']} | {r['kind']} | {effort} | {mark} | {missing} | {flags} | {r['loc']} |"
         )
     return "\n".join(lines) + "\n"
 
@@ -331,10 +336,12 @@ def run(args: argparse.Namespace, vendor: Path, root: Path) -> int:
     failed_path = Path(args.failed_ports)
     failed = read_failed_ports(failed_path.read_text()) if failed_path.exists() else {}
     check_ports(ported, failed, {r["name"] for r in rows})
-    counts = {e: sum(r["effort"] == e for r in rows) for e in ("S", "M", "L", "XL")}
+    todo = [r for r in rows if r["name"] not in ported]
+    counts = {e: sum(r["effort"] == e for r in todo) for e in ("S", "M", "L", "XL")}
     intro = Path(args.intro).read_text().format(
         version=version,
         total=len(rows),
+        n_ported=len(ported),
         excluded=len(excluded),
         **{f"n_{k.lower()}": v for k, v in counts.items()},
     )
@@ -357,7 +364,7 @@ def run(args: argparse.Namespace, vendor: Path, root: Path) -> int:
         + render_excluded(excluded)
     )
     Path(args.out).write_text(out)
-    print(f"wrote {args.out}: {len(rows)} hacks ({len(excluded)} files excluded), {counts}")
+    print(f"wrote {args.out}: {len(rows)} hacks ({len(ported)} ported, {len(excluded)} files excluded), {counts}")
     return 0
 
 
