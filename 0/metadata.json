@@ -1,0 +1,74 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4E94KG3BT33H80Z01K8NBPV",
+  "session_id": "55911a95-94f2-4d02-bde2-fa3ebd532a21",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-08T17:31:55.28264Z",
+  "branch": "chore/port-hack-skill",
+  "checkpoints_count": 2,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "5b8cdd8862b0",
+  "checkpoint_transcript_start": 595,
+  "transcript_lines_at_start": 595,
+  "compact_transcript_start": 87,
+  "token_usage": {
+    "input_tokens": 12,
+    "cache_creation_tokens": 4184,
+    "cache_read_tokens": 679276,
+    "output_tokens": 2653,
+    "api_call_count": 5
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01W7EyHLQUNPCshsgfk7ihzm",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "a72ff8ab08f8",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 312,
+        "end": 313,
+        "entry_ids": [
+          "3b46cdd1-1f24-48da-854f-89737928fe09"
+        ],
+        "tool_use_id": "toolu_01W7EyHLQUNPCshsgfk7ihzm"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01W7EyHLQUNPCshsgfk7ihzm"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 14
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 24,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".private-journal/2026-10-07/19-59-30-000000-79f41e20.md": 8,
+        ".private-journal/2026-10-07/22-51-53-000000-2f0b9ece.md": 8,
+        ".private-journal/2026-10-08/07-50-07-000000-0110d472.md": 8
+      }
+    }
+  ]
+}
