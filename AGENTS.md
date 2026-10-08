@@ -59,7 +59,8 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
 
 From the repo root:
 
-- `uv run --with pytest pytest tools/tests`
+- `uv run --with pytest --with pillow pytest tools/tests` (without Pillow the
+  logo converter's tests are skipped, not run)
 - `uv run tools/check_notices.py`
 - `uv run tools/score_hacks.py` regenerates `docs/porting-assessment.md`.
 - `markdownlint <files>` (config in `.markdownlint.json`).

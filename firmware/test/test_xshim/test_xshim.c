@@ -17,13 +17,19 @@ static Canvas cv;
 static Display *dpy;
 static Window win = 1;
 
+static size_t live_before;
+
 void setUp(void) {
+  live_before = __sanitizer_get_current_allocated_bytes();
   TEST_ASSERT_EQUAL_INT(0, canvas_init(&cv, 16, 16, malloc));
   dpy = xshim_open_display(&cv);
 }
 void tearDown(void) {
   xshim_close_display(dpy);
   canvas_free(&cv);
+  TEST_ASSERT_EQUAL_UINT64_MESSAGE(live_before,
+                                   __sanitizer_get_current_allocated_bytes(),
+                                   "test leaked memory");
 }
 
 static int count_set(void) {
@@ -583,7 +589,8 @@ void test_get_geometry_of_the_window_is_the_canvas_and_of_nothing_is_failure(voi
 }
 
 void test_copy_area_draws_the_image_at_the_destination(void) {
-  Pixmap p = load_image(&(Pixmap){0});
+  Pixmap mask = None;
+  Pixmap p = load_image(&mask);
   GC gc = new_gc(0xFFFF, 0);
   XCopyArea(dpy, p, win, gc, 0, 0, BLOB_W, BLOB_H, 5, 6);
   TEST_ASSERT_EQUAL_INT(BLOB_W * BLOB_H, count_set());
@@ -591,10 +598,12 @@ void test_copy_area_draws_the_image_at_the_destination(void) {
   TEST_ASSERT_EQUAL_HEX16(0x100B, at(8, 8));
   XFreeGC(dpy, gc);
   XFreePixmap(dpy, p);
+  XFreePixmap(dpy, mask);
 }
 
 void test_copy_area_copies_only_the_requested_source_rectangle(void) {
-  Pixmap p = load_image(&(Pixmap){0});
+  Pixmap mask = None;
+  Pixmap p = load_image(&mask);
   GC gc = new_gc(0xFFFF, 0);
   XCopyArea(dpy, p, win, gc, 1, 1, 2, 2, 0, 0);
   TEST_ASSERT_EQUAL_INT(4, count_set());
@@ -602,10 +611,12 @@ void test_copy_area_copies_only_the_requested_source_rectangle(void) {
   TEST_ASSERT_EQUAL_HEX16(0x100A, at(1, 1));
   XFreeGC(dpy, gc);
   XFreePixmap(dpy, p);
+  XFreePixmap(dpy, mask);
 }
 
 void test_copy_area_is_clipped_at_every_canvas_edge(void) {
-  Pixmap p = load_image(&(Pixmap){0});
+  Pixmap mask = None;
+  Pixmap p = load_image(&mask);
   GC gc = new_gc(0xFFFF, 0);
   XCopyArea(dpy, p, win, gc, 0, 0, BLOB_W, BLOB_H, -2, -1);
   TEST_ASSERT_EQUAL_INT(2 * 2, count_set());
@@ -616,10 +627,12 @@ void test_copy_area_is_clipped_at_every_canvas_edge(void) {
   TEST_ASSERT_EQUAL_HEX16(0x1005, at(15, 15));
   XFreeGC(dpy, gc);
   XFreePixmap(dpy, p);
+  XFreePixmap(dpy, mask);
 }
 
 void test_copy_area_is_clipped_to_the_source_image(void) {
-  Pixmap p = load_image(&(Pixmap){0});
+  Pixmap mask = None;
+  Pixmap p = load_image(&mask);
   GC gc = new_gc(0xFFFF, 0);
   XCopyArea(dpy, p, win, gc, 2, 1, 10, 10, 0, 0);
   TEST_ASSERT_EQUAL_INT(2 * 2, count_set());
@@ -627,6 +640,7 @@ void test_copy_area_is_clipped_to_the_source_image(void) {
   TEST_ASSERT_EQUAL_HEX16(0x1000, at(11, 11));
   XFreeGC(dpy, gc);
   XFreePixmap(dpy, p);
+  XFreePixmap(dpy, mask);
 }
 
 void test_clip_mask_draws_only_where_the_mask_is_set(void) {
