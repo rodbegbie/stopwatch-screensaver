@@ -1,0 +1,10 @@
+vendor/
+.venv/
+.platformio/
+.pio/
+.superpowers/
+__pycache__/
+.pytest_cache/
+backups/
+*.raw
+.DS_Store

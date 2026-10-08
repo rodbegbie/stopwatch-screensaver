@@ -1,0 +1,262 @@
+import sys
+from pathlib import Path
+
+import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import score_hacks as sh  # noqa: E402
+
+HEADER = """
+int XCreateGC(Display *, Drawable, unsigned long, XGCValues *);
+int XFillRectangle(Display *, Drawable, GC, int, int, unsigned, unsigned);
+int XDrawLine (Display *, Drawable, GC, int, int, int, int);
+typedef struct XColor XColor;
+#define XSCREENSAVER_MODULE(a, b) x
+"""
+PROVIDED = {"XCreateGC", "XFillRectangle", "XDrawLine"}
+
+
+def test_used_calls_ignores_comments_and_strings():
+    src = '''
+    /* XGetImage(dpy) in a comment */
+    // XCopyArea( here too
+    const char *s = "XPutPixel(x)";
+    XFillRectangle (dpy, w, gc, 0, 0, 1, 1);
+    XDrawLine(dpy, w, gc, 0, 0, 1, 1);
+    '''
+    assert sh.used_calls(src) == {"XFillRectangle", "XDrawLine"}
+
+
+def test_implemented_calls_reads_header():
+    assert sh.implemented_calls(HEADER) == PROVIDED
+
+
+def test_classify_gl_by_path_and_by_identifier():
+    assert sh.classify(Path("hacks/glx/gears.c"), "int x;") == "gl"
+    assert sh.classify(Path("hacks/foo.c"), "void f(){ glBegin(GL_LINES); }") == "gl"
+    assert sh.classify(Path("hacks/foo.c"), "XDrawLine(a,b,c,d,e,f,g);") == "2d"
+
+
+def test_score_pyro_like_source_is_S():
+    src = "XCreateGC(a,b,c,d); XFillRectangle(a,b,c,d,e,f,g);"
+    row = sh.score(Path("hacks/pyro.c"), src, PROVIDED)
+    assert row["name"] == "pyro"
+    assert row["kind"] == "2d"
+    assert row["missing"] == []
+    assert row["effort"] == "S"
+
+
+def test_score_flags_readback_pixmaps_xor():
+    src = "XGetImage(a); XCreatePixmap(a); XSetFunction(a); XDrawString(a);"
+    row = sh.score(Path("hacks/x.c"), src, PROVIDED)
+    assert {"readback", "pixmaps", "xor", "text"} <= set(row["flags"])
+
+
+def test_score_effort_M_L_XL():
+    m = sh.score(Path("hacks/a.c"), "XDrawArc(a); XDrawLine(a);", PROVIDED)
+    assert m["effort"] == "M" and m["missing"] == ["XDrawArc"]
+    many = "XA1b(); XA2b(); XA3b(); XA4b(); XA5b();"
+    assert sh.score(Path("hacks/b.c"), many, PROVIDED)["effort"] == "L"
+    assert sh.score(Path("hacks/c.c"), "XCreatePixmap(a);", PROVIDED)["effort"] == "L"
+    gl = sh.score(Path("hacks/glx/d.c"), "XDrawLine(a);", PROVIDED)
+    assert gl["effort"] == "XL"
+
+
+def test_score_float_heavy_and_xlockmore_flags():
+    src = '#include "xlockmore.h"\n' + "x = sin(a) + cos(b);\n" * 10
+    row = sh.score(Path("hacks/e.c"), src, PROVIDED)
+    assert "float-heavy" in row["flags"]
+    assert "needs-xlockmore" in row["flags"]
+
+
+def test_rank_missing_prefers_calls_blocking_nearly_ready_hacks():
+    rows = [
+        {"kind": "2d", "missing": ["XA"]},
+        {"kind": "2d", "missing": ["XA", "XB"]},
+        {"kind": "2d", "missing": ["XB", "XC", "XD"]},
+        {"kind": "gl", "missing": ["XA"]},
+    ]
+    ranked = sh.rank_missing(rows, 3)
+    assert [r[0] for r in ranked][0] == "XA"
+    assert ranked[0][2] == 2
+
+
+def test_table_output_is_lint_clean_markdown():
+    rows = [sh.score(Path("hacks/pyro.c"), "XCreateGC(a);", PROVIDED)]
+    md = sh.render_table(rows)
+    assert md.startswith("| Hack |")
+    assert md.endswith("\n") and not md.endswith("\n\n")
+    assert all(line.startswith("|") for line in md.strip().splitlines())
+
+
+SHIM_INCLUDES = [
+    Path(__file__).resolve().parents[2] / "firmware" / "src",
+    Path(__file__).resolve().parents[2] / "firmware" / "src" / "x11shim" / "include",
+]
+
+
+def test_blockers_clean_source_has_none():
+    assert sh.blockers_for("ok", "int f(void) { return 0; }\n", SHIM_INCLUDES) == []
+
+
+def test_blockers_reports_missing_header_and_keeps_going():
+    src = '#include "nosuch.h"\nint f(void) { return GXnothing; }\n'
+    got = sh.blockers_for("hdr", src, SHIM_INCLUDES)
+    assert "nosuch.h" in got
+    assert "GXnothing" in got
+
+
+def test_blockers_reports_undeclared_function_type_and_member():
+    src = (
+        '#include "screenhack.h"\n'
+        "void f(Display *d) { XNotARealCall(d); XWindowAttributes a; a.bogus = 1;"
+        " NotAType t; }\n"
+    )
+    got = sh.blockers_for("misc", src, SHIM_INCLUDES)
+    assert "XNotARealCall" in got
+    assert "NotAType" in got
+    assert "XWindowAttributes.bogus" in got
+
+
+def test_blockers_pyro_like_hack_compiles_clean_against_shim():
+    pyro = Path(__file__).resolve().parents[2] / "firmware/src/hacks/pyro/pyro.c"
+    assert sh.blockers_for("pyro", pyro.read_text(), SHIM_INCLUDES) == []
+
+
+def test_score_with_blockers_is_not_S_even_if_x_calls_provided():
+    src = "XCreateGC(a,b,c,d);"
+    row = sh.score(Path("hacks/a.c"), src, PROVIDED, blockers=["erase.h"])
+    assert row["effort"] == "M"
+    assert row["gaps"] == ["erase.h"]
+    clean = sh.score(Path("hacks/a.c"), src, PROVIDED, blockers=[])
+    assert clean["effort"] == "S"
+
+
+def test_score_five_or_more_gaps_is_L():
+    row = sh.score(Path("hacks/a.c"), "int x;", PROVIDED, blockers=list("abcde"))
+    assert row["effort"] == "L"
+
+
+def test_score_gl_hack_is_XL_and_not_compiled():
+    row = sh.score(Path("hacks/glx/a.c"), "int x;", PROVIDED, blockers=None)
+    assert row["effort"] == "XL"
+
+
+def test_blockers_anonymous_struct_member_has_clean_name_without_paths():
+    src = (
+        '#include "screenhack.h"\n'
+        "int f(XEvent *e) { return e->xbutton.nosuch; }\n"
+    )
+    got = sh.blockers_for("anon", src, SHIM_INCLUDES)
+    assert "XEvent.nosuch" in got
+    assert not any("unnamed" in g or "/" in g for g in got)
+
+
+def test_is_hack_detects_module_entry_point():
+    assert sh.is_hack('XSCREENSAVER_MODULE ("Pyro", pyro)\n')
+    assert sh.is_hack('XSCREENSAVER_MODULE_2 ("X", x, y)\n')
+    assert not sh.is_hack("int helper(void) { return 0; }\n")
+
+
+def test_is_hack_ignores_comments_and_strings():
+    assert not sh.is_hack("/* XSCREENSAVER_MODULE (a, b) */\nint x;\n")
+    assert not sh.is_hack('const char *s = "XSCREENSAVER_MODULE (a, b)";\n')
+
+
+def test_scan_excludes_non_hacks_and_reports_them(tmp_path):
+    hacks = tmp_path / "xscreensaver-9.9" / "hacks"
+    (hacks / "glx").mkdir(parents=True)
+    (hacks / "real.c").write_text('XSCREENSAVER_MODULE ("Real", real)\n')
+    (hacks / "helper.c").write_text("int helper(void) { return 0; }\n")
+    (hacks / "glx" / "model.c").write_text("int model;\n")
+    (hacks / "glx" / "gl_hack.c").write_text('XSCREENSAVER_MODULE ("G", g)\nglBegin(0);\n')
+    rows, excluded = sh.scan(tmp_path / "xscreensaver-9.9", set(), SHIM_INCLUDES)
+    assert sorted(r["name"] for r in rows) == ["gl_hack", "real"]
+    assert excluded == ["helper", "model"]
+
+
+def test_render_excluded_wraps_names_in_a_paragraph():
+    names = [f"helper{i}" for i in range(40)]
+    text = sh.render_excluded(names)
+    assert all(len(line) <= 78 for line in text.splitlines())
+    assert "helper0" in text and "helper39" in text
+    assert text.endswith("\n") and not text.endswith("\n\n")
+
+
+def test_blockers_keep_unrecognised_compile_errors():
+    src = '#include "screenhack.h"\nvoid f(Display *d) { XDrawLine(d); }\n'
+    got = sh.blockers_for("badcall", src, SHIM_INCLUDES)
+    assert any("too few arguments" in b for b in got)
+
+
+def test_score_is_never_S_after_a_failed_compile():
+    src = '#include "screenhack.h"\nvoid f(Display *d) { XDrawLine(d); }\n'
+    blockers = sh.blockers_for("badcall", src, SHIM_INCLUDES)
+    row = sh.score(Path("hacks/badcall.c"), src, PROVIDED | {"XDrawLine"}, blockers)
+    assert row["effort"] != "S"
+
+
+def test_blockers_failed_compile_without_diagnostics_is_a_blocker():
+    got = sh.blockers_for("quiet", "int x;\n", SHIM_INCLUDES, cc="false")
+    assert got == ["compiler exited 1 with no diagnostics"]
+
+
+def test_blockers_missing_compiler_is_a_clear_error():
+    with pytest.raises(sh.ScoreError, match="not-a-real-compiler"):
+        sh.blockers_for("x", "int x;\n", SHIM_INCLUDES, cc="not-a-real-compiler")
+
+
+def test_find_vendor_picks_highest_version(tmp_path):
+    for v in ("6.9", "6.16", "6.2"):
+        (tmp_path / "vendor" / f"xscreensaver-{v}").mkdir(parents=True)
+    assert sh.find_vendor(tmp_path).name == "xscreensaver-6.16"
+
+
+def test_find_vendor_without_source_points_at_the_fetch_script(tmp_path):
+    with pytest.raises(sh.ScoreError, match="fetch_xscreensaver"):
+        sh.find_vendor(tmp_path)
+
+
+def test_main_help_works_without_a_vendor_directory(tmp_path):
+    with pytest.raises(SystemExit) as exc:
+        sh.main(["--help"], root=tmp_path)
+    assert exc.value.code == 0
+
+
+def test_main_explicit_vendor_works_without_a_default_one(tmp_path, capsys):
+    vendor = tmp_path / "ext" / "xscreensaver-9.9"
+    (vendor / "hacks").mkdir(parents=True)
+    (vendor / "hacks" / "demo.c").write_text('XSCREENSAVER_MODULE ("Demo", demo)\n')
+    header = tmp_path / "xshim.h"
+    header.write_text("int XDrawLine(int);\n")
+    intro = tmp_path / "intro.md"
+    intro.write_text("# T\n\n{version} {total} {excluded} {n_s} {n_m} {n_l} {n_xl}\n")
+    out = tmp_path / "out.md"
+    argv = ["--vendor", str(vendor), "--header", str(header), "--intro", str(intro),
+            "--out", str(out)]
+    for d in SHIM_INCLUDES:
+        argv += ["--shim-include", str(d)]
+    assert sh.main(argv, root=tmp_path) == 0
+    assert "demo" in out.read_text()
+
+
+def test_main_missing_vendor_is_an_actionable_error(tmp_path, capsys):
+    assert sh.main([], root=tmp_path) == 1
+    assert "fetch_xscreensaver" in capsys.readouterr().err
+
+
+def test_table_renders_gaps_as_code_and_escapes_pipes():
+    row = sh.score(
+        Path("hacks/a.c"), "int x;", PROVIDED, blockers=["error: unknown type 'Display *'", "a|b"]
+    )
+    table = sh.render_table([row])
+    data_line = table.strip().splitlines()[-1]
+    assert "`error: unknown type 'Display *'`" in data_line
+    assert "`a\\|b`" in data_line
+    assert data_line.replace("\\|", "").count("|") == 7
+
+
+def test_ranking_renders_gaps_as_code():
+    text = sh.render_ranking([("Display *", 1.0, 2)])
+    assert "| `Display *` |" in text
