@@ -7,6 +7,10 @@ extern "C" {
 #include "runner/hack_runner.h"
 }
 
+/* Hacks run on loopTask, whose 8 KB default stack is too small: Rorschach
+ * keeps a 9.6 KB array of rectangles on the stack. */
+SET_LOOP_TASK_STACK_SIZE(16 * 1024);
+
 static const int kSize = 466;
 static const uint32_t kSliceUs = 10000;
 static const uint32_t kStatsEveryMs = 5000;
