@@ -28,6 +28,7 @@ implied warranty.
 | `firmware/src/hacks/hypercube/hypercube.c` | Copyright (c) 1992-2008 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/xspirograph/xspirograph.c` | The Spiral Generator, Copyright (c) 2000 Rohit Singh; contains code from xscreensaver, Copyright (c) 1992, 1995, 1996, 1997 Jamie Zawinski | jwz permission notice (above); the file's own header says "notices" for its two copyright holders |
 | `firmware/src/hacks/petri/petri.c` | Copyright (c) 1992-1999 Dan Bornstein, with help from Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/helix/helix.c` | Copyright (c) 1992-2008 Jamie Zawinski | jwz permission notice (above) |
 
 Each copied file keeps its own header unchanged; the notice text above is
 reproduced here to satisfy the "supporting documentation" requirement.

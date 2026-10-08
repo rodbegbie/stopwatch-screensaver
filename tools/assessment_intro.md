@@ -16,7 +16,10 @@ it with `uv run tools/score_hacks.py`.
   count of Xlib calls cannot see. It does not run anything, so treat the
   effort ratings as a prioritisation aid, not an estimate.
 - Many files in `hacks/` are shared helpers or support code rather than
-  hacks, so the totals overstate the number of distinct screensavers.
+  hacks, so the totals overstate the number of distinct screensavers. Some
+  of them are rated S because they compile (for example
+  `webcollage-helper`, a command-line image tool); a file without an
+  `XSCREENSAVER_MODULE` entry point is not a screensaver to port.
 
 ## Effort ratings
 

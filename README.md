@@ -4,9 +4,9 @@ xscreensaver "hacks" running on the M5Stack StopWatch (SKU C152, ESP32-S3,
 466×466 round AMOLED), through a small X11 shim. A learning project in
 embedded development.
 
-Right now it runs four hacks, unmodified from xscreensaver 6.16: **Pyro**
-(fireworks), **HyperCube**, **XSpirograph** and **Petri** (mould growth), at
-about 22 fps (XSpirograph about 10). The
+Right now it runs five hacks, unmodified from xscreensaver 6.16: **Pyro**
+(fireworks), **HyperCube**, **XSpirograph**, **Petri** (mould growth) and
+**Helix**, at about 22 fps (the line-heavy ones about 10). The
 [porting assessment](docs/porting-assessment.md) rates every other hack by
 porting effort.
 
@@ -61,7 +61,7 @@ cd .. && uv run tools/rgb565_to_png.py /tmp/pyro.raw 466 466 /tmp/pyro.png
 ## Controls
 
 Button A starts the next hack and button B the previous one, wrapping
-around at either end. The order is Pyro, HyperCube, XSpirograph, Petri.
+around at either end. The order is Pyro, HyperCube, XSpirograph, Petri, Helix.
 
 ## Restoring the original firmware
 
