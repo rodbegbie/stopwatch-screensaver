@@ -1,0 +1,5 @@
+Take a look at Rorschach's performance first. Probably helpful to understand what's going on before we continue building.
+
+---
+
+Flash it
