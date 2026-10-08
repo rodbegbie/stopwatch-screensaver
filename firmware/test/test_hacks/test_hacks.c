@@ -73,16 +73,61 @@ void test_a_hack_starts_on_the_background_colour_it_asks_for(void) {
   runner_destroy(r);
 }
 
+/* True once at least 20 pixels differ from the canvas as the hack started. */
+static int draws_within(HackRunner *r, int frames) {
+  const size_t n = (size_t)cv.w * cv.h;
+  uint16_t *start = (uint16_t *)malloc(n * sizeof(*start));
+  TEST_ASSERT_NOT_NULL(start);
+  memcpy(start, cv.px, n * sizeof(*start));
+  int seen = 0;
+  for (int f = 0; f < frames && !seen; f++) {
+    runner_step(r);
+    long differing = 0;
+    for (size_t i = 0; i < n; i++) differing += cv.px[i] != start[i];
+    seen = differing >= 20;
+  }
+  free(start);
+  return seen;
+}
+
+static void *idle_init(Display *dpy, Window w) {
+  (void)dpy;
+  (void)w;
+  return NULL;
+}
+
+static unsigned long idle_draw(Display *dpy, Window w, void *closure) {
+  (void)dpy;
+  (void)w;
+  (void)closure;
+  return 10000;
+}
+
+static void idle_free(Display *dpy, Window w, void *closure) {
+  (void)dpy;
+  (void)w;
+  (void)closure;
+}
+
+/* Substrate starts on a white canvas, so "20 non-black pixels" was true before
+ * it drew anything. A hack that never draws must not pass, whatever colour its
+ * background is. */
+void test_a_hack_that_never_draws_on_white_is_not_drawing(void) {
+  static const char *const white[] = {".background: white", NULL};
+  static const HackEntry idle = {"Idle", white, idle_init, idle_draw, idle_free,
+                                 NULL};
+  const HackEntry *const hacks[] = {&idle};
+  HackRunner *r = runner_create_with(&cv, hacks, 1);
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, 0));
+  TEST_ASSERT_FALSE(draws_within(r, 50));
+  runner_destroy(r);
+}
+
 void test_every_hack_draws_something_within_2000_frames(void) {
   for (int i = 0; i < g_hack_count; i++) {
     HackRunner *r = runner_create(&cv);
     TEST_ASSERT_EQUAL_INT(0, runner_start(r, i));
-    int seen = 0;
-    for (int f = 0; f < 2000 && !seen; f++) {
-      runner_step(r);
-      seen = non_black() >= 20;
-    }
-    TEST_ASSERT_TRUE_MESSAGE(seen, g_hacks[i]->name);
+    TEST_ASSERT_TRUE_MESSAGE(draws_within(r, 2000), g_hacks[i]->name);
     runner_destroy(r);
   }
 }
@@ -199,6 +244,7 @@ int main(void) {
   RUN_TEST(test_registry_lists_hacks_in_order);
   RUN_TEST(test_every_hack_can_be_stopped_before_its_first_frame);
   RUN_TEST(test_a_hack_starts_on_the_background_colour_it_asks_for);
+  RUN_TEST(test_a_hack_that_never_draws_on_white_is_not_drawing);
   RUN_TEST(test_every_hack_draws_something_within_2000_frames);
   RUN_TEST(test_every_hack_runs_3000_frames_cleanly_with_sane_delays);
   RUN_TEST(test_cycling_through_all_hacks_100_times_is_asan_clean);
