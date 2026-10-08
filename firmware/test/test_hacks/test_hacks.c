@@ -108,6 +108,27 @@ void test_galaxy_restarts_do_not_leak_with_its_registered_overrides(void) {
   TEST_ASSERT_TRUE_MESSAGE(after < before + 400 * 1024, "allocated bytes grew");
 }
 
+/* Maze starts a new maze every cycle, allocating a sets table, an edge list
+ * and corner tables that the next cycle must free. Which of them is live when
+ * we sample depends on the generator it picked, and can hold up to about
+ * 52 KB, so the check allows 60 KB of slack: a leak of a few KB a cycle shows
+ * up after the dozens of cycles run here. */
+void test_maze_cycles_do_not_leak(void) {
+  int maze = -1;
+  for (int i = 0; i < g_hack_count; i++)
+    if (strcmp(g_hacks[i]->name, "Maze") == 0) maze = i;
+  TEST_ASSERT_TRUE(maze >= 0);
+
+  HackRunner *r = runner_create(&cv);
+  runner_start(r, maze);
+  for (int f = 0; f < 5000; f++) runner_step(r);
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  for (int f = 0; f < 60000; f++) runner_step(r);
+  const size_t after = __sanitizer_get_current_allocated_bytes();
+  runner_destroy(r);
+  TEST_ASSERT_TRUE_MESSAGE(after < before + 60 * 1024, "allocated bytes grew");
+}
+
 void test_prev_from_first_wraps_to_last_hack(void) {
   HackRunner *r = runner_create(&cv);
   runner_start(r, 0);
@@ -123,6 +144,7 @@ int main(void) {
   RUN_TEST(test_every_hack_runs_3000_frames_cleanly_with_sane_delays);
   RUN_TEST(test_cycling_through_all_hacks_100_times_is_asan_clean);
   RUN_TEST(test_galaxy_restarts_do_not_leak_with_its_registered_overrides);
+  RUN_TEST(test_maze_cycles_do_not_leak);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
   return UNITY_END();
 }

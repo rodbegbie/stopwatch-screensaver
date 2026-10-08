@@ -52,6 +52,7 @@ implied warranty.
 | `firmware/src/hacks/drift/drift.c` | Copyright (c) 1991 Patrick J. Naughton | xlock permission notice (below) |
 | `firmware/src/hacks/lightning/lightning.c` | Copyright (c) 1996 Keith Romberg | xlock permission notice (below) |
 | `firmware/src/hacks/maze/maze.c` | Copyright 1988 by Sun Microsystems, Inc.; later changes by Dave Lemke, Richard Hess, Jim Randell, Ed James, Johannes Keukelaar, Zack Weinberg and Jamie Zawinski | Sun/MIT permission notice (below) |
+| `firmware/src/x11shim/include/images/gen/logo-50_png.h` | The xscreensaver logo, designed by Angela Goodman; this is `utils/images/logo-50.gif` converted to raw pixels by `tools/make_logo_blob.py`. The image carries no copyright line | The image states no licence. See "The Maze logo" below |
 
 Each copied file keeps its own header unchanged; the notice text above is
 reproduced here to satisfy the "supporting documentation" requirement.
@@ -125,3 +126,18 @@ OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
 OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE
 OR PERFORMANCE OF THIS SOFTWARE.
 ```
+
+### The Maze logo
+
+Maze draws the xscreensaver logo inside its maze. The logo data in
+`logo-50_png.h` is `utils/images/logo-50.gif` from xscreensaver 6.16,
+re-encoded as 50 by 50 RGB565 pixels and a transparency mask, without
+changing the design. It is not part of the MIT-licensed code in this
+repository.
+
+The GIF has no licence text of its own. The C file that uses it,
+`utils/logo.c`, credits the design to Angela Goodman, carries jwz's
+permission notice (above) for its code, and asks that the logo not be
+altered: "The logo is xscreensaver's identity". To use a different
+picture, regenerate the header with `tools/make_logo_blob.py`, and see the
+format notes in `ximage-loader.h`.
