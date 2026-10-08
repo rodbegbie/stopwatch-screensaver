@@ -1,6 +1,7 @@
 #include "core/canvas.h"
 
 #include <math.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -181,4 +182,34 @@ void canvas_fill_polygon(Canvas *c, const int *xy, int n, uint16_t color) {
             color);
   }
   if (xs != stack_xs) free(xs);
+}
+
+/* Visible part of the rect as [x0,x1) x [y0,y1) in canvas coordinates; false
+ * if none of it is visible. */
+static bool visible_rect(const Canvas *c, int x, int y, int w, int h,
+                         int *x0, int *y0, int *x1, int *y1) {
+  if (w <= 0 || h <= 0) return false;
+  wide_t lx = x < 0 ? 0 : x, ly = y < 0 ? 0 : y;
+  wide_t rx = (wide_t)x + w, ry = (wide_t)y + h;
+  if (rx > c->w) rx = c->w;
+  if (ry > c->h) ry = c->h;
+  if (lx >= rx || ly >= ry) return false;
+  *x0 = (int)lx, *y0 = (int)ly, *x1 = (int)rx, *y1 = (int)ry;
+  return true;
+}
+
+void canvas_copy_rect(const Canvas *c, int x, int y, int w, int h, uint16_t *dst) {
+  int x0, y0, x1, y1;
+  if (!visible_rect(c, x, y, w, h, &x0, &y0, &x1, &y1)) return;
+  for (int py = y0; py < y1; py++)
+    memcpy(dst + (size_t)(py - y) * w + (x0 - x), c->px + (size_t)py * c->w + x0,
+           (size_t)(x1 - x0) * sizeof(uint16_t));
+}
+
+void canvas_paste_rect(Canvas *c, int x, int y, int w, int h, const uint16_t *src) {
+  int x0, y0, x1, y1;
+  if (!visible_rect(c, x, y, w, h, &x0, &y0, &x1, &y1)) return;
+  for (int py = y0; py < y1; py++)
+    memcpy(c->px + (size_t)py * c->w + x0, src + (size_t)(py - y) * w + (x0 - x),
+           (size_t)(x1 - x0) * sizeof(uint16_t));
 }

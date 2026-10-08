@@ -75,37 +75,61 @@ static void printStats(const char *tag) {
       (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
 }
 
-/* Text goes straight to the display after each pushImage rather than into the
- * canvas: hacks draw incrementally, so anything stamped into the canvas would
- * stay there. A black outline keeps white text readable on bright hacks. */
-static void drawOutlinedText(const char *text, int x, int y,
-                             const lgfx::IFont *font) {
-  M5.Display.setFont(font);
-  M5.Display.setTextDatum(middle_center);
-  M5.Display.setTextColor(0x000000);
+/* Overlay text is stamped into the canvas just for the push, then the pixels
+ * under it are put back. Drawing on the display after the push flickered,
+ * because the next push wiped the text for a moment. The canvas must end up
+ * as the hack left it, since hacks draw incrementally. M5Canvas wraps the
+ * canvas buffer so M5GFX's fonts can draw into it; the DejaVu fonts are 1-bit,
+ * so only pure black and white are written (the same in either byte order). */
+static const int kPatchMaxH = 48;
+static const int kPatchMargin = 2;
+
+struct Patch {
+  int x, y, w, h;
+  uint16_t *saved;
+};
+
+static M5Canvas stamp;
+static Patch namePatch, fpsPatch;
+
+static void stampText(Patch *p, const char *text, int cx, int cy,
+                      const lgfx::IFont *font) {
+  stamp.setFont(font);
+  stamp.setTextDatum(middle_center);
+  int w = stamp.textWidth(text) + 2 * kPatchMargin;
+  int h = stamp.fontHeight() + 2 * kPatchMargin;
+  p->w = w < kSize ? w : kSize;
+  p->h = h < kPatchMaxH ? h : kPatchMaxH;
+  p->x = cx - p->w / 2;
+  p->y = cy - p->h / 2;
+  canvas_copy_rect(&canvas, p->x, p->y, p->w, p->h, p->saved);
+  stamp.setTextColor(0x000000);
   for (int dy = -1; dy <= 1; dy++)
     for (int dx = -1; dx <= 1; dx++)
-      if (dx || dy) M5.Display.drawString(text, x + dx, y + dy);
-  M5.Display.setTextColor(0xFFFFFF);
-  M5.Display.drawString(text, x, y);
+      if (dx || dy) stamp.drawString(text, cx + dx, cy + dy);
+  stamp.setTextColor(0xFFFFFF);
+  stamp.drawString(text, cx, cy);
 }
 
-static void paintOverlay() {
-  uint32_t now = millis();
-  if (overlay_name_visible(&overlay, now))
-    drawOutlinedText(g_hacks[runner_index(runner)]->name, kSize / 2, kNameY,
-                     &fonts::DejaVu24);
-  if (overlay_fps_visible(&overlay)) {
-    char text[16];
-    overlay_fps_text(&overlay, text, sizeof text);
-    drawOutlinedText(text, kSize / 2, kFpsY, &fonts::DejaVu18);
-  }
-  overlay_drawn(&overlay, now);
+static void unstamp(Patch *p) {
+  if (p->w) canvas_paste_rect(&canvas, p->x, p->y, p->w, p->h, p->saved);
+  p->w = 0;
 }
 
 static void present() {
+  uint32_t now = millis();
+  if (overlay_name_visible(&overlay, now))
+    stampText(&namePatch, g_hacks[runner_index(runner)]->name, kSize / 2,
+              kNameY, &fonts::DejaVu24);
+  if (overlay_fps_visible(&overlay)) {
+    char text[16];
+    overlay_fps_text(&overlay, text, sizeof text);
+    stampText(&fpsPatch, text, kSize / 2, kFpsY, &fonts::DejaVu18);
+  }
+  overlay_drawn(&overlay, now);
   M5.Display.pushImage(0, 0, kSize, kSize, canvas.px);
-  paintOverlay();
+  unstamp(&fpsPatch);
+  unstamp(&namePatch);
 }
 
 /* Returns true if a button switched hacks (which also resets the stats). */
@@ -150,6 +174,10 @@ void setup() {
 
   if (canvas_init(&canvas, kSize, kSize, ps_malloc) != 0)
     halt("PSRAM alloc failed");
+  stamp.setBuffer(canvas.px, kSize, kSize, 16);
+  namePatch.saved = (uint16_t *)ps_malloc(kSize * kPatchMaxH * sizeof(uint16_t));
+  fpsPatch.saved = (uint16_t *)ps_malloc(kSize * kPatchMaxH * sizeof(uint16_t));
+  if (!namePatch.saved || !fpsPatch.saved) halt("PSRAM alloc failed");
   runner = runner_create(&canvas);
   if (!runner || runner_start(runner, 0) != 0) halt("hack start failed");
   overlay_init(&overlay, kNameShownMs);

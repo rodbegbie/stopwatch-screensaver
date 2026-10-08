@@ -272,6 +272,75 @@ void test_polygon_fill_matches_the_reference_on_random_polygons(void) {
   canvas_free(&want);
 }
 
+static void fill_pattern(void) {
+  for (int i = 0; i < c.w * c.h; i++) c.px[i] = (uint16_t)(i + 1);
+}
+
+void test_copy_then_paste_restores_a_rect_after_it_is_drawn_over(void) {
+  fill_pattern();
+  uint16_t saved[3 * 2];
+  canvas_copy_rect(&c, 2, 3, 3, 2, saved);
+  canvas_fill_rect(&c, 2, 3, 3, 2, C1);
+  TEST_ASSERT_EQUAL_HEX16(C1, at(3, 4));
+  canvas_paste_rect(&c, 2, 3, 3, 2, saved);
+  TEST_ASSERT_EQUAL_HEX16(3 * 8 + 2 + 1, at(2, 3));
+  TEST_ASSERT_EQUAL_HEX16(4 * 8 + 4 + 1, at(4, 4));
+}
+
+void test_paste_changes_nothing_outside_the_rect(void) {
+  fill_pattern();
+  uint16_t saved[2 * 2] = {0, 0, 0, 0};
+  canvas_paste_rect(&c, 1, 1, 2, 2, saved);
+  TEST_ASSERT_EQUAL_HEX16(1, at(0, 0));
+  TEST_ASSERT_EQUAL_HEX16(1 * 8 + 3 + 1, at(3, 1));
+  TEST_ASSERT_EQUAL_HEX16(3 * 8 + 1 + 1, at(1, 3));
+  TEST_ASSERT_EQUAL_HEX16(0, at(2, 2));
+}
+
+void test_a_rect_hanging_off_the_canvas_round_trips_its_visible_part(void) {
+  fill_pattern();
+  uint16_t saved[4 * 4];
+  for (int i = 0; i < 16; i++) saved[i] = 0xAAAA;
+  canvas_copy_rect(&c, 6, 6, 4, 4, saved);
+  TEST_ASSERT_EQUAL_HEX16(6 * 8 + 6 + 1, saved[0]);
+  TEST_ASSERT_EQUAL_HEX16(7 * 8 + 7 + 1, saved[1 * 4 + 1]);
+  TEST_ASSERT_EQUAL_HEX16(0xAAAA, saved[2]);
+  canvas_fill_rect(&c, 6, 6, 4, 4, C1);
+  canvas_paste_rect(&c, 6, 6, 4, 4, saved);
+  TEST_ASSERT_EQUAL_HEX16(6 * 8 + 6 + 1, at(6, 6));
+  TEST_ASSERT_EQUAL_HEX16(7 * 8 + 7 + 1, at(7, 7));
+}
+
+void test_a_rect_hanging_off_the_top_left_copies_from_the_right_offset(void) {
+  fill_pattern();
+  uint16_t saved[4 * 4];
+  canvas_copy_rect(&c, -2, -1, 4, 4, saved);
+  TEST_ASSERT_EQUAL_HEX16(0 * 8 + 0 + 1, saved[1 * 4 + 2]);
+  TEST_ASSERT_EQUAL_HEX16(2 * 8 + 1 + 1, saved[3 * 4 + 3]);
+  canvas_fill_rect(&c, 0, 0, 3, 3, C1);
+  canvas_paste_rect(&c, -2, -1, 4, 4, saved);
+  TEST_ASSERT_EQUAL_HEX16(0 * 8 + 0 + 1, at(0, 0));
+  TEST_ASSERT_EQUAL_HEX16(1 * 8 + 1 + 1, at(1, 1));
+  TEST_ASSERT_EQUAL_HEX16(C1, at(2, 2));
+}
+
+void test_a_rect_wholly_off_the_canvas_is_ignored(void) {
+  fill_pattern();
+  uint16_t saved[2 * 2] = {0, 0, 0, 0};
+  canvas_copy_rect(&c, -5, -5, 2, 2, saved);
+  canvas_paste_rect(&c, 100, 100, 2, 2, saved);
+  canvas_paste_rect(&c, -5, -5, 2, 2, saved);
+  TEST_ASSERT_EQUAL_HEX16(1, at(0, 0));
+  TEST_ASSERT_EQUAL_HEX16(0, saved[0]);
+}
+
+void test_extreme_rect_coordinates_do_not_overflow(void) {
+  uint16_t saved[1] = {0};
+  canvas_copy_rect(&c, INT_MAX, INT_MAX, 5, 5, saved);
+  canvas_paste_rect(&c, INT_MIN, INT_MIN, INT_MAX, INT_MAX, saved);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_polygon_fill_matches_the_reference_on_random_polygons);
@@ -297,5 +366,11 @@ int main(void) {
   RUN_TEST(test_polygon_triangle_fills_interior_not_exterior);
   RUN_TEST(test_polygon_degenerate_changes_nothing);
   RUN_TEST(test_polygon_offscreen_vertices_clip);
+  RUN_TEST(test_copy_then_paste_restores_a_rect_after_it_is_drawn_over);
+  RUN_TEST(test_paste_changes_nothing_outside_the_rect);
+  RUN_TEST(test_a_rect_hanging_off_the_canvas_round_trips_its_visible_part);
+  RUN_TEST(test_a_rect_hanging_off_the_top_left_copies_from_the_right_offset);
+  RUN_TEST(test_a_rect_wholly_off_the_canvas_is_ignored);
+  RUN_TEST(test_extreme_rect_coordinates_do_not_overflow);
   return UNITY_END();
 }
