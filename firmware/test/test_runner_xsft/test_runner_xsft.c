@@ -141,6 +141,60 @@ void test_plain_hack_with_null_xsft_still_runs(void) {
   TEST_ASSERT_EQUAL_INT(0, setup_calls);
 }
 
+static const char *const kWhiteBackground[] = {".background: white", NULL};
+static const char *const kBlackBackground[] = {".background: black", NULL};
+
+static void *nothing_init(Display *dpy, Window w) {
+  (void)dpy;
+  (void)w;
+  return NULL;
+}
+
+static long count_colour(uint16_t colour) {
+  long n = 0;
+  for (long i = 0; i < (long)cv.w * cv.h; i++) n += cv.px[i] == colour;
+  return n;
+}
+
+/* screenhack.c paints the window in the hack's background before init runs. */
+void test_runner_paints_the_hacks_background_before_init(void) {
+  static const HackEntry white = {"White", kWhiteBackground, nothing_init,
+                                  plain_draw, plain_free, NULL};
+  const HackEntry *const hacks[] = {&white};
+  HackRunner *r = runner_create_with(&cv, hacks, 1);
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, 0));
+  TEST_ASSERT_EQUAL_INT64((long)cv.w * cv.h, count_colour(0xFFFF));
+  runner_destroy(r);
+}
+
+void test_a_black_or_absent_background_clears_the_canvas_to_black(void) {
+  static const HackEntry black = {"Black", kBlackBackground, nothing_init,
+                                  plain_draw, plain_free, NULL};
+  static const HackEntry none = {"None", kPlainDefaults, nothing_init,
+                                 plain_draw, plain_free, NULL};
+  const HackEntry *const hacks[] = {&black, &none};
+  HackRunner *r = runner_create_with(&cv, hacks, 2);
+  for (int i = 0; i < 2; i++) {
+    for (long p = 0; p < (long)cv.w * cv.h; p++) cv.px[p] = 0x1234;
+    TEST_ASSERT_EQUAL_INT(0, runner_start(r, i));
+    TEST_ASSERT_EQUAL_INT64((long)cv.w * cv.h, count_colour(0));
+  }
+  runner_destroy(r);
+}
+
+void test_a_hack_does_not_inherit_the_previous_hacks_background(void) {
+  static const HackEntry white = {"White", kWhiteBackground, nothing_init,
+                                  plain_draw, plain_free, NULL};
+  static const HackEntry none = {"None", kPlainDefaults, nothing_init,
+                                 plain_draw, plain_free, NULL};
+  const HackEntry *const hacks[] = {&white, &none};
+  HackRunner *r = runner_create_with(&cv, hacks, 2);
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, 0));
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, 1));
+  TEST_ASSERT_EQUAL_INT64((long)cv.w * cv.h, count_colour(0));
+  runner_destroy(r);
+}
+
 void test_entry_overrides_apply_to_its_hack_only(void) {
   static const char *const over[] = {"*count: 2", NULL};
   static const HackEntry with = {"With", NULL, NULL, NULL, NULL, &fake_xsft,
@@ -168,6 +222,9 @@ int main(void) {
   RUN_TEST(test_framework_and_hack_defaults_both_resolve);
   RUN_TEST(test_init_receives_the_tables_setup_arg);
   RUN_TEST(test_plain_hack_with_null_xsft_still_runs);
+  RUN_TEST(test_runner_paints_the_hacks_background_before_init);
+  RUN_TEST(test_a_black_or_absent_background_clears_the_canvas_to_black);
+  RUN_TEST(test_a_hack_does_not_inherit_the_previous_hacks_background);
   RUN_TEST(test_entry_overrides_apply_to_its_hack_only);
   RUN_TEST(test_screenhackI_h_alone_provides_the_random_macros);
   return UNITY_END();

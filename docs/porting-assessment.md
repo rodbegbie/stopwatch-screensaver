@@ -30,11 +30,11 @@ it with `uv run tools/score_hacks.py`.
 
 | Rating | Meaning | Count |
 | --- | --- | --- |
-| S | 2D, and the unmodified source compiles against the shim | 2 |
-| M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 16 |
+| S | 2D, and the unmodified source compiles against the shim | 3 |
+| M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 14 |
 | L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 99 |
 | XL | GL: needs a software rasteriser (see below) | 140 |
-| Ported | Already running on the device, so no rating | 26 |
+| Ported | Already running on the device, so no rating | 27 |
 
 ## Flags
 
@@ -59,7 +59,7 @@ performance numbers exist yet, so this stays a separate future project.
 
 ## Measured on the device
 
-Twenty-six hacks have been run so far (default settings, 466×466 canvas
+Twenty-seven hacks have been run so far (default settings, 466×466 canvas
 pushed to the display every frame, canvas held in PSRAM). The firmware times
 each frame in three parts, averaged over 5 seconds: **step** is the hack's own
 draw call, **push** is sending the canvas to the display, and **wait** is what
@@ -96,6 +96,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Lightning | 29.4 | 1.8-1.9 ms | 31.2 ms | 0 ms | none measurable |
 | Maze | 6.0-28.8 | 0.1-1.3 ms | 31.2-33.4 ms | 0-256 ms | not measured |
 | Blaster | 20.4-20.8 | 3.6-4.0 ms | 43.4-44.4 ms | 0 ms | not measured |
+| Substrate | 12.4-20.6 | 2.9-43.9 ms | 41.1-44.4 ms | 0 ms | about 1.74 MB |
 
 Maze's row is 26 five-second readings over 160 seconds, taken on a build that
 includes the overlay stamping. Its steps are cheap, and its frame rate is set
@@ -115,6 +116,30 @@ investigated, so the cause is unknown. Free heap held between 338,352 and
 panic or reboot appeared. There is no PSRAM baseline for this build, so its
 extra PSRAM is not split out. This run used a build with the byte-order fix,
 which was applied locally before it reached `main`.
+
+Substrate is built in single precision (`hacks/substrate_single.c`), and its
+row is 30 five-second readings of that build. It starts near 20 fps with a
+step of about 3 ms. As the cracks and their sand paint build up, the step grows
+over about 40 seconds and settles at 37-38 ms and 12.4-12.6 fps, with a wait
+of 0, so from then on the frame is the hack's step plus the push.
+
+The same hack in double precision settled at a step of 119-121 ms and 6.2 fps,
+over a 31.8 minute capture (382 readings). That capture also showed one
+restart, at about 25 minutes: the step fell to 26 ms and climbed back as the
+new picture filled, and free PSRAM returned to the same value (only two
+distinct readings in the whole run), so its two buffers were freed and
+allocated again without a leak. The single-precision build has not been run
+through a restart. Free PSRAM was 1,742,096 bytes lower than under HyperCube in
+an earlier log, which matches the two image-sized buffers (2 x 466 x 466 x 4
+bytes, plus a few KB), so plain `malloc` put both in PSRAM. Free heap stayed
+between 336,228 and 339,524 bytes. No stack canary, panic or reboot appeared in
+any run.
+
+In an earlier capture Pyro and HyperCube pushed in 41-45 ms and ran at 20-23
+fps, against 31 ms and 28-30 fps in their rows above. So push time is longer on
+the current build for every hack, not just Substrate or Blaster. The cause has
+not been tested (issue #23). The slower pushes began after the byte-order fix,
+but other changes landed at the same time.
 
 Free heap and free PSRAM return to exactly the same values every time a
 hack is switched back to, so switching does not leak.
@@ -224,21 +249,22 @@ needing few additions come first.
 
 | Gap | Score | 2D hacks needing it |
 | --- | --- | --- |
-| `XCreatePixmap` | 9.2 | 57 |
+| `XCreatePixmap` | 9.22 | 57 |
 | `XSetLineAttributes` | 4.34 | 27 |
 | `LineSolid` | 3.26 | 24 |
 | `XDrawArc` | 3.2 | 17 |
-| `XParseColor` | 2.57 | 8 |
-| `XImage` | 2.19 | 39 |
+| `XImage` | 2.21 | 39 |
 | `XSetGraphicsExposures` | 2.17 | 8 |
-| `XSetWindowBackground` | 2.11 | 14 |
+| `XSetWindowBackground` | 2.13 | 14 |
 | `CapRound` | 2.03 | 19 |
 | `JoinRound` | 1.97 | 14 |
+| `Convex` | 1.94 | 14 |
 
 ## All hacks
 
 | Hack | Kind | Effort | Ported | Shim gaps | Flags | LOC |
 | --- | --- | --- | --- | --- | --- | --- |
+| interaggregate | 2d | S | - | - | - | 989 |
 | laser | 2d | S | - | - | needs-xlockmore | 356 |
 | mountain | 2d | S | - | - | needs-xlockmore | 283 |
 | bouboule | 2d | M | - | `GXor`, `XSetFunction` | xor, needs-xlockmore | 860 |
@@ -247,12 +273,10 @@ needing few additions come first.
 | grav | 2d | M | - | `XDrawArc` | needs-xlockmore | 360 |
 | hexadrop | 2d | M | - | `Convex`, `XSetWindowBackground` | - | 446 |
 | hyperball | 2d | M | - | `UnmapNotify` | - | 2464 |
-| interaggregate | 2d | M | - | `XParseColor` | - | 989 |
 | lissie | 2d | M | - | `XDrawArc` | needs-xlockmore | 323 |
 | munch | 2d | M | - | `GXxor`, `XSetFunction`, `i_log2`, `pow2.h` | xor | 462 |
 | rotor | 2d | M | - | `CapButt`, `JoinMiter`, `LineSolid`, `XSetLineAttributes` | needs-xlockmore | 394 |
 | scooter | 2d | M | - | `CapNotLast`, `JoinRound`, `LineSolid`, `XSetLineAttributes` | needs-xlockmore | 975 |
-| substrate | 2d | M | - | `XParseColor` | - | 780 |
 | triangle | 2d | M | - | `Convex`, `free_colors`, `make_smooth_colormap` | needs-xlockmore | 355 |
 | vermiculate | 2d | M | - | `XSetWindowBackground`, `ya_random` | - | 1229 |
 | worm | 2d | M | - | `GXor`, `XClearArea`, `XSetFunction`, `error: call to undeclared library function 'memset' with type 'void *(void *, int, unsigned long)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]` | xor, needs-xlockmore | 434 |
@@ -272,11 +296,11 @@ needing few additions come first.
 | braid | 2d | L | - | `CapButt`, `CapNotLast`, `CapRound`, `JoinMiter`, `JoinRound`, `LineSolid`, `XSetLineAttributes`, `error: call to undeclared library function 'memset' with type 'void *(void *, int, unsigned long)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]` | needs-xlockmore | 444 |
 | bsod | 2d | L | - | `A2CONTROLLER_DONE`, `A2CONTROLLER_FREE`, `A2_GR_FULL`, `A2_GR_HIRES`, `A2_GR_LORES`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `CapButt`, `CapRound`, `FcChar8`, `JoinMiter`, `LineSolid`, `XClearArea`, `XColor.color`, `XCreateImage`, `XCreatePixmap`, `XCreatePixmapFromBitmapData`, `XDestroyImage`, `XFetchName`, `XGetImage`, `XGetPixel`, `XGlyphInfo`, `XImage`, `XPutImage`, `XPutPixel`, `XQueryColor`, `XSetLineAttributes`, `XSetPlaneMask`, `XSetWindowBackground`, `XStoreName`, `XYPixmap`, `XftColor`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `XftTextExtentsUtf8_multi`, `ZPixmap`, `a2_cls`, `a2_goto`, `a2_init_memory_active`, `a2_invalidate`, `a2_poke`, `a2_printc`, `a2_printc_noscroll`, `a2_prints`, `amiga_png`, `android_png`, `apple2.h`, `apple2_one_frame`, `apple2_sim_t`, `apple2_start`, `apple2_state_t`, `apple_png`, `async_load_state`, `atari_png`, `atm_png`, `dvd_png`, `em`, `error: expected expression`, `font`, `gnome1_png`, `gnome2_png`, `hmac_png`, `i1`, `i2`, `images/gen/amiga_png.h`, `images/gen/android_png.h`, `images/gen/apple_png.h`, `images/gen/atari_png.h`, `images/gen/atm_png.h`, `images/gen/dvd_png.h`, `images/gen/gnome1_png.h`, `images/gen/gnome2_png.h`, `images/gen/hmac_png.h`, `images/gen/mac_png.h`, `images/gen/macbomb_png.h`, `images/gen/osx_10_2_png.h`, `images/gen/osx_10_3_png.h`, `images/gen/ransomware_png.h`, `images/gen/sun_png.h`, `load_image_async_simple`, `load_xft_font_retry`, `mac_png`, `macbomb_png`, `osx_10_2_png`, `osx_10_3_png`, `ov`, `ov2`, `ransomware_png`, `screen_number`, `sim`, `st`, `sun_png`, `utf8_decode_combining`, `utf8wc.h`, `xft.h`, `xft_word_wrap`, `xftwrap.h` | pixmaps, readback, clipmask | 7809 |
 | bubbles | 2d | L | - | `BUBBLE_MAGIC`, `Bubble`, `Bubble_Step`, `DELETE_BUBBLE`, `KEEP_BUBBLE`, `MAX`, `MAX_DROPPAGE`, `MIN`, `XDrawArc`, `bubbles.h`, `default_bubbles`, `error: expected expression`, `head`, `init_default_bubbles`, `least`, `newpix`, `nextbub`, `num_default_bubbles`, `pixmap_list`, `rv`, `tmp`, `tmppix`, `touch` | pixmaps, clipmask | 1468 |
-| bumps | 2d | L | - | `XCreatePixmap`, `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XParseColor`, `XQueryColors`, `XSetWindowBackground`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `load_image_async_simple`, `pScreenImage`, `put_xshm_image`, `xshm.h` | pixmaps, readback | 705 |
+| bumps | 2d | L | - | `XCreatePixmap`, `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XQueryColors`, `XSetWindowBackground`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `load_image_async_simple`, `pScreenImage`, `put_xshm_image`, `xshm.h` | pixmaps, readback | 705 |
 | ccurve | 2d | L | - | `XCreatePixmap`, `make_color_loop` | pixmaps | 872 |
 | celtic | 2d | L | - | `CapRound`, `GCCapStyle`, `JoinRound`, `LineSolid`, `XDrawArc`, `XGCValues.cap_style`, `XSetLineAttributes` | - | 1141 |
 | compass | 2d | L | - | `Convex`, `GCJoinStyle`, `JoinBevel`, `XCreatePixmap`, `XDrawSegments`, `XGCValues.join_style`, `XSegment`, `segs` | pixmaps, float-heavy | 999 |
-| crystal | 2d | L | - | `Convex`, `GXxor`, `XCreateColormap`, `XFreeColormap`, `XInstallColormap`, `XParseColor`, `XSetFunction`, `XSetWindowColormap`, `free_colors`, `has_writable_cells`, `make_random_colormap`, `make_smooth_colormap`, `make_uniform_colormap`, `rotate_colors` | xor, float-heavy, needs-xlockmore | 1286 |
+| crystal | 2d | L | - | `Convex`, `GXxor`, `XCreateColormap`, `XFreeColormap`, `XInstallColormap`, `XSetFunction`, `XSetWindowColormap`, `free_colors`, `has_writable_cells`, `make_random_colormap`, `make_smooth_colormap`, `make_uniform_colormap`, `rotate_colors` | xor, float-heavy, needs-xlockmore | 1286 |
 | cwaves | 2d | L | - | `BlackPixelOfScreen`, `CapRound`, `JoinRound`, `LineSolid`, `XSetLineAttributes` | - | 219 |
 | decayscreen | 2d | L | - | `XCreatePixmap`, `async_load_state`, `load_image_async_simple` | pixmaps | 392 |
 | deco | 2d | L | - | `CapButt`, `DisplayOfScreen`, `JoinBevel`, `LineSolid`, `XSetLineAttributes`, `XStoreColors`, `allocate_writable_colors`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `has_writable_cells` | - | 345 |
@@ -294,7 +318,7 @@ needing few additions come first.
 | flow | 2d | L | - | `CapNotLast`, `JoinMiter`, `LineSolid`, `XCreatePixmap`, `XDrawSegments`, `XSegment`, `XSetGraphicsExposures`, `XSetLineAttributes`, `error: call to undeclared library function 'memcpy' with type 'void *(void *, const void *, unsigned long)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]`, `error: call to undeclared library function 'memmove' with type 'void *(void *, const void *, unsigned long)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]`, `error: call to undeclared library function 'memset' with type 'void *(void *, int, unsigned long)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]`, `error: expected expression` | pixmaps, needs-xlockmore | 1216 |
 | fluidballs | 2d | L | - | `ButtonRelease`, `FcChar8`, `RootWindow`, `XCreatePixmap`, `XEvent.x`, `XEvent.xany`, `XEvent.y`, `XQueryPointer`, `XTranslateCoordinates`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `error: expected expression`, `error: too few arguments to function call, expected 2, have 1`, `load_xft_font_retry`, `screen_number` | pixmaps | 881 |
 | fontglide | 2d | L | - | `BlackPixelOfScreen`, `DisplayOfScreen`, `FcChar8`, `XCreateImage`, `XCreatePixmap`, `XDestroyImage`, `XDrawString`, `XDrawString16`, `XFreeFont`, `XGetAtomName`, `XGetImage`, `XGetPixel`, `XGlyphInfo`, `XImage`, `XLoadQueryFont`, `XLookupString`, `XPutImage`, `XPutPixel`, `XRenderColor`, `XSetFont`, `XTextExtents`, `XTextExtents16`, `XYPixmap`, `XftColor`, `XftColorAllocValue`, `XftColorFree`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `ZPixmap`, `bg`, `error: Xft is required under X11`, `error: expected expression`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `extents`, `fg`, `in`, `load_xft_font_retry`, `out`, `screen_number`, `swap`, `text_data`, `textclient.h`, `textclient_close`, `textclient_getc`, `textclient_open`, `utf8_decode_combining`, `utf8wc.h`, `xftdraw` | pixmaps, readback, text, clipmask | 2474 |
-| fuzzyflakes | 2d | L | - | `CapProjecting`, `GCCapStyle`, `GCJoinStyle`, `JoinMiter`, `XCreatePixmap`, `XGCValues.cap_style`, `XGCValues.join_style`, `XParseColor` | pixmaps | 655 |
+| fuzzyflakes | 2d | L | - | `CapProjecting`, `GCCapStyle`, `GCJoinStyle`, `JoinMiter`, `XCreatePixmap`, `XGCValues.cap_style`, `XGCValues.join_style` | pixmaps | 655 |
 | glitchpeg | 2d | L | - | `BitmapBitOrder`, `ButtonRelease`, `ImageByteOrder`, `XCreateImage`, `XDestroyImage`, `XEvent.xany`, `XGetPixel`, `XImage`, `XPutImage`, `XPutPixel`, `XtAppAddInput`, `XtDisplayToApplicationContext`, `XtInputExceptMask`, `XtInputId`, `XtInputReadMask`, `XtPointer`, `XtRemoveInput`, `ZPixmap`, `error: operand of type 'XPoint' where arithmetic or pointer type is required`, `image`, `image_data_to_ximage`, `out` | readback | 466 |
 | goop | 2d | L | - | `AllPlanes`, `DefaultScreenOfDisplay`, `DisplayOfScreen`, `GXclear`, `GXxor`, `Nonconvex`, `WhitePixelOfScreen`, `XCreatePixmap`, `XSetFunction`, `XSetPlaneMask`, `allocate_alpha_colors`, `alpha.h`, `compute_closed_spline`, `error: incompatible integer to pointer conversion assigning to 'int *' from 'int' [-Wint-conversion]`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `error: member reference base type 'int' is not a structure or union`, `error: type name does not allow function specifier to be specified`, `error: type specifier missing, defaults to 'int'; ISO C99 and later do not support implicit int [-Wimplicit-int]`, `free_spline`, `has_writable_cells`, `make_spline`, `spline` | pixmaps, xor | 651 |
 | greynetic | 2d | L | - | `FillOpaqueStippled`, `GCFillStyle`, `GCStipple`, `XCreatePixmapFromBitmapData`, `XGCValues.fill_style`, `XGCValues.stipple` | - | 297 |
@@ -315,7 +339,7 @@ needing few additions come first.
 | m6502 | 2d | L | - | `ANALOGTV_BLACK_LEVEL`, `ANALOGTV_BOT`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_TOP`, `ANALOGTV_VISLINES`, `ANALOGTV_VIS_END`, `ANALOGTV_VIS_LEN`, `ANALOGTV_VIS_START`, `ANALOGTV_WHITE_LEVEL`, `Bit8`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_draw_solid`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_lcp_to_ntsc`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `asm6502.h`, `double_time`, `doubletime.h`, `m6502.h`, `m6502_build`, `m6502_destroy6502`, `m6502_next_eval`, `m6502_start_eval_file`, `m6502_start_eval_string`, `machine_6502` | - | 288 |
 | marbling | 2d | L | - | `DefaultScreenOfDisplay`, `GET_PARENT_OBJ`, `KeyPress`, `KeySym`, `THREAD_DEFAULTS`, `THREAD_OPTIONS`, `XEvent.xany`, `XEvent.xkey`, `XImage`, `XK_Down`, `XK_Left`, `XK_Right`, `XK_Up`, `XLookupString`, `XPutPixel`, `XShmSegmentInfo`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `error: expected expression`, `error: field has incomplete type 'struct threadpool'`, `error: incompatible integer to pointer conversion passing 'int' to parameter of type 'Screen *' (aka 'struct XshimScreen *') [-Wint-conversion]`, `error: variable has incomplete type 'const struct threadpool_class'`, `hardware_concurrency`, `keysym`, `put_xshm_image`, `thread_memory_alignment`, `thread_util.h`, `threadpool_create`, `threadpool_destroy`, `threadpool_run`, `threadpool_wait`, `visual_pixmap_depth`, `xshm.h` | - | 635 |
 | memscroller | 2d | L | - | `FcChar8`, `XGlyphInfo`, `XImage`, `XShmSegmentInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `error: expected expression`, `load_xft_font_retry`, `overall`, `put_xshm_image`, `screen_number`, `xft.h`, `xshm.h` | pixmaps | 626 |
-| metaballs | 2d | L | - | `BitmapPad`, `XCreateImage`, `XDestroyImage`, `XFree`, `XImage`, `XListPixmapFormats`, `XParseColor`, `XPutImage`, `XPutPixel`, `XSetWindowBackground`, `ZPixmap` | - | 438 |
+| metaballs | 2d | L | - | `BitmapPad`, `XCreateImage`, `XDestroyImage`, `XFree`, `XImage`, `XListPixmapFormats`, `XPutImage`, `XPutPixel`, `XSetWindowBackground`, `ZPixmap` | - | 438 |
 | moire | 2d | L | - | `BlackPixelOfScreen`, `DefaultScreenOfDisplay`, `WhitePixelOfScreen`, `XImage`, `XPutPixel`, `XQueryColor`, `XShmSegmentInfo`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `make_color_ramp`, `put_xshm_image`, `rgb_to_hsv`, `visual_depth`, `xshm.h` | - | 253 |
 | moire2 | 2d | L | - | `GXor`, `GXxor`, `XCreatePixmap`, `XDrawArc`, `XSetFunction` | pixmaps, xor | 363 |
 | nerverot | 2d | L | - | `XCreatePixmap`, `make_color_ramp`, `rgb_to_hsv` | pixmaps, float-heavy | 1367 |
@@ -333,8 +357,8 @@ needing few additions come first.
 | ripples | 2d | L | - | `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XPutPixel`, `XQueryColor`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `load_image_async_simple`, `put_xshm_image`, `visual_rgb_masks`, `xshm.h` | readback | 1127 |
 | rocks | 2d | L | - | `Nonconvex`, `XCreatePixmap`, `XQueryColor`, `XSetGraphicsExposures` | pixmaps | 562 |
 | rotzoomer | 2d | L | - | `XCreatePixmap`, `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XPutPixel`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `load_image_async_simple`, `put_xshm_image`, `xshm.h` | pixmaps, readback | 601 |
-| shadebobs | 2d | L | - | `BlackPixelOfScreen`, `XCreateImage`, `XDestroyImage`, `XFree`, `XGetPixel`, `XImage`, `XListPixmapFormats`, `XParseColor`, `XPutImage`, `XPutPixel`, `XSetWindowBackground`, `ZPixmap` | readback | 474 |
-| slidescreen | 2d | L | - | `Convex`, `XFree`, `XParseColor`, `XQueryColors`, `async_load_state`, `load_image_async_simple`, `visual_cells` | pixmaps | 507 |
+| shadebobs | 2d | L | - | `BlackPixelOfScreen`, `XCreateImage`, `XDestroyImage`, `XFree`, `XGetPixel`, `XImage`, `XListPixmapFormats`, `XPutImage`, `XPutPixel`, `XSetWindowBackground`, `ZPixmap` | readback | 474 |
+| slidescreen | 2d | L | - | `Convex`, `XFree`, `XQueryColors`, `async_load_state`, `load_image_async_simple`, `visual_cells` | pixmaps | 507 |
 | slip | 2d | L | - | `DisplayOfScreen`, `ScreenOfDisplay`, `XCreatePixmap`, `XSetGraphicsExposures`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `load_image_async` | pixmaps, needs-xlockmore | 376 |
 | speedmine | 2d | L | - | `Nonconvex`, `XCreatePixmap`, `XQueryColor`, `error: too few arguments to function call, expected 2, have 1`, `make_color_ramp`, `rgb_to_hsv` | pixmaps, clipmask | 1659 |
 | spotlight | 2d | L | - | `XCreatePixmap`, `async_load_state`, `error: too few arguments to function call, expected 2, have 1`, `load_image_async_simple` | pixmaps, clipmask | 355 |
@@ -361,20 +385,20 @@ needing few additions come first.
 | antspotlight | gl | XL | - | - | needs-xlockmore | 797 |
 | atlantis | gl | XL | - | `XDestroyImage` | needs-xlockmore | 607 |
 | atunnel | gl | XL | - | `XDestroyImage` | needs-xlockmore | 315 |
-| b_lockglue | gl | XL | - | `XParseColor` | needs-xlockmore | 240 |
+| b_lockglue | gl | XL | - | - | needs-xlockmore | 240 |
 | beats | gl | XL | - | - | needs-xlockmore | 439 |
 | blinkbox | gl | XL | - | - | needs-xlockmore | 615 |
 | blocktube | gl | XL | - | `XDestroyImage` | needs-xlockmore | 454 |
-| boing | gl | XL | - | `XParseColor` | float-heavy, needs-xlockmore | 666 |
+| boing | gl | XL | - | - | float-heavy, needs-xlockmore | 666 |
 | bouncingcow | gl | XL | - | - | needs-xlockmore | 649 |
 | boxed | gl | XL | - | - | needs-xlockmore | 1361 |
 | cage | gl | XL | - | `XDestroyImage` | needs-xlockmore | 498 |
 | carousel | gl | XL | - | - | needs-xlockmore | 982 |
-| chompytower | gl | XL | - | `XParseColor` | needs-xlockmore | 1131 |
+| chompytower | gl | XL | - | - | needs-xlockmore | 1131 |
 | circuit | gl | XL | - | - | needs-xlockmore | 2106 |
 | cityflow | gl | XL | - | - | needs-xlockmore | 561 |
 | companion | gl | XL | - | - | needs-xlockmore | 605 |
-| covid19 | gl | XL | - | `XParseColor` | needs-xlockmore | 657 |
+| covid19 | gl | XL | - | - | needs-xlockmore | 657 |
 | crackberg | gl | XL | - | `XLookupString`, `XNextEvent`, `XPeekEvent`, `XPending` | float-heavy, needs-xlockmore | 1484 |
 | crumbler | gl | XL | - | - | needs-xlockmore | 905 |
 | cube21 | gl | XL | - | - | needs-xlockmore | 943 |
@@ -387,26 +411,26 @@ needing few additions come first.
 | dangerball | gl | XL | - | - | needs-xlockmore | 377 |
 | deepstars | gl | XL | - | - | needs-xlockmore | 385 |
 | discoball | gl | XL | - | - | needs-xlockmore | 709 |
-| dnalogo | gl | XL | - | `XLookupString`, `XParseColor` | float-heavy, needs-xlockmore | 3657 |
-| dumpsterfire | gl | XL | - | `XParseColor` | needs-xlockmore | 845 |
+| dnalogo | gl | XL | - | `XLookupString` | float-heavy, needs-xlockmore | 3657 |
+| dumpsterfire | gl | XL | - | - | needs-xlockmore | 845 |
 | dymaxionmap | gl | XL | - | `XCreateImage`, `XDestroyImage`, `XGetPixel`, `XLookupString`, `XPutPixel` | readback, needs-xlockmore | 1729 |
 | endgame | gl | XL | - | - | needs-xlockmore | 1451 |
 | energystream | gl | XL | - | - | needs-xlockmore | 536 |
 | engine | gl | XL | - | - | needs-xlockmore | 1015 |
-| esper | gl | XL | - | `XLookupString`, `XParseColor` | needs-xlockmore | 2463 |
+| esper | gl | XL | - | `XLookupString` | needs-xlockmore | 2463 |
 | etruscanvenus | gl | XL | - | - | needs-xlockmore | 2761 |
 | extrusion | gl | XL | - | - | needs-xlockmore | 552 |
 | flipflop | gl | XL | - | - | needs-xlockmore | 875 |
 | flipscreen3d | gl | XL | - | - | needs-xlockmore | 524 |
-| fliptext | gl | XL | - | `XParseColor` | needs-xlockmore | 1005 |
-| floppy | gl | XL | - | `XParseColor` | needs-xlockmore | 584 |
+| fliptext | gl | XL | - | - | needs-xlockmore | 1005 |
+| floppy | gl | XL | - | - | needs-xlockmore | 584 |
 | flurry | gl | XL | - | - | needs-xlockmore | 550 |
 | flyingtoasters | gl | XL | - | `XDestroyImage` | needs-xlockmore | 924 |
 | gears | gl | XL | - | - | needs-xlockmore | 953 |
 | geodesic | gl | XL | - | - | float-heavy, needs-xlockmore | 825 |
 | geodesicgears | gl | XL | - | `XLookupString` | float-heavy, needs-xlockmore | 1802 |
 | gflux | gl | XL | - | - | needs-xlockmore | 799 |
-| gibson | gl | XL | - | `XParseColor` | needs-xlockmore | 1317 |
+| gibson | gl | XL | - | - | needs-xlockmore | 1317 |
 | glblur | gl | XL | - | - | needs-xlockmore | 630 |
 | glcells | gl | XL | - | - | needs-xlockmore | 1382 |
 | gleidescope | gl | XL | - | `XOFFSET` | float-heavy, needs-xlockmore | 1620 |
@@ -420,12 +444,12 @@ needing few additions come first.
 | glsnake | gl | XL | - | - | needs-xlockmore | 2699 |
 | gltext | gl | XL | - | - | needs-xlockmore | 619 |
 | graphstat | gl | XL | - | - | needs-xlockmore | 750 |
-| gravitywell | gl | XL | - | `XParseColor` | needs-xlockmore | 770 |
-| handsy | gl | XL | - | `XLookupString`, `XParseColor` | needs-xlockmore | 1158 |
-| headroom | gl | XL | - | `XParseColor` | needs-xlockmore | 628 |
+| gravitywell | gl | XL | - | - | needs-xlockmore | 770 |
+| handsy | gl | XL | - | `XLookupString` | needs-xlockmore | 1158 |
+| headroom | gl | XL | - | - | needs-xlockmore | 628 |
 | hexstrut | gl | XL | - | `XLookupString` | needs-xlockmore | 511 |
 | hextrail | gl | XL | - | `XLookupString` | needs-xlockmore | 782 |
-| highvoltage | gl | XL | - | `XLookupString`, `XParseColor` | needs-xlockmore | 949 |
+| highvoltage | gl | XL | - | `XLookupString` | needs-xlockmore | 949 |
 | hilbert | gl | XL | - | `XLookupString` | needs-xlockmore | 1165 |
 | hopffibration | gl | XL | - | - | needs-xlockmore | 3580 |
 | hydrostat | gl | XL | - | - | needs-xlockmore | 796 |
@@ -439,7 +463,7 @@ needing few additions come first.
 | klein | gl | XL | - | `XLookupString` | float-heavy, needs-xlockmore | 3574 |
 | klondike | gl | XL | - | `XDestroyImage` | needs-xlockmore | 803 |
 | lament | gl | XL | - | `XDestroyImage`, `XLookupString` | needs-xlockmore | 1801 |
-| lavalite | gl | XL | - | `XParseColor` | needs-xlockmore | 1552 |
+| lavalite | gl | XL | - | - | needs-xlockmore | 1552 |
 | lockward | gl | XL | - | `XLookupString` | needs-xlockmore | 964 |
 | mapscroller | gl | XL | - | `XDestroyImage`, `XGetPixel`, `XLookupString` | readback, needs-xlockmore | 1672 |
 | maze3d | gl | XL | - | - | needs-xlockmore | 1958 |
@@ -447,9 +471,9 @@ needing few additions come first.
 | mirrorblob | gl | XL | - | - | needs-xlockmore | 1822 |
 | moebius | gl | XL | - | `XDestroyImage` | needs-xlockmore | 794 |
 | moebiusgears | gl | XL | - | `XLookupString` | needs-xlockmore | 446 |
-| molecule | gl | XL | - | `XLookupString`, `XParseColor` | needs-xlockmore | 1716 |
+| molecule | gl | XL | - | `XLookupString` | needs-xlockmore | 1716 |
 | morph3d | gl | XL | - | - | needs-xlockmore | 841 |
-| nakagin | gl | XL | - | `XParseColor` | needs-xlockmore | 1636 |
+| nakagin | gl | XL | - | - | needs-xlockmore | 1636 |
 | noof | gl | XL | - | - | needs-xlockmore | 530 |
 | papercube | gl | XL | - | - | needs-xlockmore | 1111 |
 | peepers | gl | XL | - | `XChangeProperty`, `XDestroyImage`, `XInternAtom`, `XQueryPointer` | float-heavy, needs-xlockmore | 1470 |
@@ -471,15 +495,15 @@ needing few additions come first.
 | rubikblocks | gl | XL | - | - | needs-xlockmore | 651 |
 | sballs | gl | XL | - | `XDestroyImage` | needs-xlockmore | 830 |
 | sierpinski3d | gl | XL | - | `XLookupString` | needs-xlockmore | 579 |
-| skulloop | gl | XL | - | `XParseColor` | needs-xlockmore | 651 |
-| skytentacles | gl | XL | - | `XCreateImage`, `XDestroyImage`, `XLookupString`, `XParseColor`, `XPutPixel` | float-heavy, needs-xlockmore | 1124 |
+| skulloop | gl | XL | - | - | needs-xlockmore | 651 |
+| skytentacles | gl | XL | - | `XCreateImage`, `XDestroyImage`, `XLookupString`, `XPutPixel` | float-heavy, needs-xlockmore | 1124 |
 | sonar | gl | XL | - | - | needs-xlockmore | 1266 |
 | sphereeversion | gl | XL | - | `XDestroyImage` | needs-xlockmore | 1420 |
 | spheremonics | gl | XL | - | - | needs-xlockmore | 926 |
-| splitflap | gl | XL | - | `XParseColor` | needs-xlockmore | 1427 |
+| splitflap | gl | XL | - | - | needs-xlockmore | 1427 |
 | splodesic | gl | XL | - | `XLookupString` | float-heavy, needs-xlockmore | 645 |
 | sproingiewrap | gl | XL | - | - | needs-xlockmore | 227 |
-| squirtorus | gl | XL | - | `XParseColor` | needs-xlockmore | 1006 |
+| squirtorus | gl | XL | - | - | needs-xlockmore | 1006 |
 | stairs | gl | XL | - | `XDestroyImage`, `XLookupString` | needs-xlockmore | 601 |
 | starwars | gl | XL | - | - | needs-xlockmore | 1080 |
 | stonerview | gl | XL | - | - | needs-xlockmore | 156 |
@@ -490,10 +514,10 @@ needing few additions come first.
 | topblock | gl | XL | - | `XLookupString` | needs-xlockmore | 891 |
 | tronbit | gl | XL | - | `XLookupString` | needs-xlockmore | 532 |
 | unicrud | gl | XL | - | `XLookupString` | needs-xlockmore | 1039 |
-| unknownpleasures | gl | XL | - | `XCreateImage`, `XDestroyImage`, `XGetPixel`, `XLookupString`, `XParseColor`, `XPutPixel` | readback, needs-xlockmore | 736 |
-| vigilance | gl | XL | - | `XLookupString`, `XParseColor` | needs-xlockmore | 1171 |
+| unknownpleasures | gl | XL | - | `XCreateImage`, `XDestroyImage`, `XGetPixel`, `XLookupString`, `XPutPixel` | readback, needs-xlockmore | 736 |
+| vigilance | gl | XL | - | `XLookupString` | needs-xlockmore | 1171 |
 | voronoi | gl | XL | - | - | needs-xlockmore | 543 |
-| winduprobot | gl | XL | - | `XDestroyImage`, `XLookupString`, `XParseColor` | float-heavy, needs-xlockmore | 2505 |
+| winduprobot | gl | XL | - | `XDestroyImage`, `XLookupString` | float-heavy, needs-xlockmore | 2505 |
 | worldpieces | gl | XL | - | `XDestroyImage` | float-heavy, needs-xlockmore | 2194 |
 | xshadertoy | gl | XL | - | `XFetchName`, `XQueryPointer`, `XStoreName` | needs-xlockmore | 1192 |
 | blaster | 2d | - | ✅ | - | - | 1208 |
@@ -517,6 +541,7 @@ needing few additions come first.
 | sphere | 2d | - | ✅ | - | needs-xlockmore | 304 |
 | spiral | 2d | - | ✅ | - | needs-xlockmore | 331 |
 | squiral | 2d | - | ✅ | - | - | 335 |
+| substrate | 2d | - | ✅ | - | - | 780 |
 | thornbird | 2d | - | ✅ | - | needs-xlockmore | 270 |
 | vines | 2d | - | ✅ | - | needs-xlockmore | 190 |
 | whirlwindwarp | 2d | - | ✅ | - | - | 509 |

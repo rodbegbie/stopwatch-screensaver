@@ -74,10 +74,10 @@ int runner_start(HackRunner *r, int index) {
   if (index < 0 || index >= r->count) return -1;
   stop(r);
   r->index = index;
-  canvas_clear(r->canvas, 0);
   const Callbacks cb = callbacks_for(r->hacks[index]);
   xshim_set_defaults(cb.defaults);
   xshim_set_overrides(r->hacks[index]->overrides);
+  canvas_clear(r->canvas, (uint16_t)xshim_background_pixel());
   if (cb.has_setup_arg) {
     /* Like screenhack.c: init_cb is declared with two arguments, but the
      * xlockmore one takes its function table as a third. */

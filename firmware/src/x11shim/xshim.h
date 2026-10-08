@@ -180,6 +180,7 @@ int XCopyPlane(Display *, Drawable src, Drawable dst, GC, int src_x,
 /* Drawing is synchronous, so there is nothing to wait for. */
 int XSync(Display *, Bool discard);
 
+Status XParseColor(Display *, Colormap, const char *spec, XColor *);
 Status XAllocColor(Display *, Colormap, XColor *);
 int XFreeColors(Display *, Colormap, unsigned long *pixels, int n,
                 unsigned long planes);
@@ -192,6 +193,10 @@ Bool screenhack_event_helper(Display *, Window, XEvent *);
 void xshim_set_defaults(const char *const *defaults); /* NULL-terminated */
 /* Looked up before the hack's own defaults; NULL clears them. */
 void xshim_set_overrides(const char *const *overrides);
+/* The running hack's `background` resource as a pixel, or black when it
+ * defines none. The runner paints the canvas with it before init, as
+ * screenhack.c paints the window. */
+unsigned long xshim_background_pixel(void);
 int get_integer_resource(Display *, const char *name, const char *cls);
 double get_float_resource(Display *, const char *name, const char *cls);
 Bool get_boolean_resource(Display *, const char *name, const char *cls);

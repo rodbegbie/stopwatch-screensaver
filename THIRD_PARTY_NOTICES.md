@@ -54,6 +54,7 @@ implied warranty.
 | `firmware/src/hacks/maze/maze.c` | Copyright 1988 by Sun Microsystems, Inc.; later changes by Dave Lemke, Richard Hess, Jim Randell, Ed James, Johannes Keukelaar, Zack Weinberg and Jamie Zawinski | Sun/MIT permission notice (below) |
 | `firmware/src/x11shim/include/images/gen/logo-50_png.h` | The xscreensaver logo, designed by Angela Goodman; this is `utils/images/logo-50.gif` converted to raw pixels by `tools/make_logo_blob.py`. The image carries no copyright line | The image states no licence. See "The Maze logo" below |
 | `firmware/src/hacks/blaster/blaster.c` | Copyright (c) 1999 Jonathan H. Lin | jwz permission notice (above) |
+| `firmware/src/hacks/substrate/substrate.c` | dragorn (dragorn@kismetwireless.net), ported from j.tarbell's Substrate (complexification.net, 2004); based on xscreensaver, Copyright (c) 1997, 1998, 2002 Jamie Zawinski | jwz permission notice (above) |
 
 Each copied file keeps its own header unchanged; the notice text above is
 reproduced here to satisfy the "supporting documentation" requirement.

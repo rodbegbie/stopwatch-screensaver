@@ -39,6 +39,7 @@ XLOCKMORE_HACK(discrete, "Discrete");
 XLOCKMORE_HACK_WITH(galaxy, "Galaxy", kGalaxyOverrides);
 XLOCKMORE_HACK(drift, "Drift");
 XLOCKMORE_HACK(lightning, "Lightning");
+extern const HackEntry substrate_hack;
 
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
@@ -56,5 +57,6 @@ const HackEntry *const g_hacks[] = {
     &drift_hack,
     &lightning_hack,
     &maze_hack,
-    &blaster_hack};
+    &blaster_hack,
+    &substrate_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);
