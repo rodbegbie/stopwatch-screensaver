@@ -218,6 +218,42 @@
   "session_metrics": {
     "turn_count": 26
   },
+  "summary": {
+    "intent": "Push the stopwatch-screensaver branch and open a draft PR/trail, then file a follow-up issue about single-precision builds and check PR #12 for review findings.",
+    "outcome": "Draft PR #12 (trail 6) was opened and issue #13 was filed with a memory note saved. A review finding, a Galaxy restart leak, was fixed with a regression test and committed locally as eb936f8 but not pushed.",
+    "learnings": {
+      "repo": [
+        "Galaxy only frees its star buffers on restart when count < -2. A positive count override such as count: 2 skips cleanup and leaks about 80 KB per restart, so the registry override is now count: -3.",
+        "The hack tests can read ASan allocated bytes through __sanitizer_get_current_allocated_bytes, which allows leak regression tests that run a registered hack through many restarts.",
+        "Docs that mention the Galaxy override (AGENTS.md, docs/porting-assessment.md, tools/assessment_measured.md) must be kept in sync with registry.c, and docs are regenerated after the change.",
+        "Double-heavy hacks (Discrete, Flame, Drift) are candidates for a generalised single-precision wrapper that also redirects libm calls (sinf, powf and so on), not just sqrt."
+      ],
+      "code": [
+        {
+          "path": "firmware/src/hacks/registry.c",
+          "line": 13,
+          "finding": "The Galaxy override count: 2 caused a leak because galaxy.c skips its free path on restart unless count < -2. It was changed to count: -3."
+        }
+      ],
+      "workflow": [
+        "gh pr edit replaces the whole PR body, including the trail link block, so the trail link has to be re-added after editing the body.",
+        "Write the regression test first and watch it fail on the old code, so it doubles as a mutation check, then apply the fix.",
+        "Review findings from bots can lag about 20 minutes after a PR is opened, so check back later.",
+        "Lint markdown bodies for PRs and issues. MD041 is expected for a body with no H1 and can be ignored."
+      ]
+    },
+    "friction": [
+      "The Skill invocation led to a placeholder file being written to the wrong path under /private/tmp, which then had to be removed.",
+      "The first gh pr edit overwrote the PR body and dropped the trail link, so it had to be restored.",
+      "The 90-second serial capture was too short to expose the Galaxy leak, which only appeared in review."
+    ],
+    "open_items": [
+      "Push eb936f8 to PR #12 and resolve the review finding with a note, pending user approval.",
+      "Flash and re-measure Galaxy speed with count: -3. Up to 3 galaxies might raise step time to about 60–90 ms, which is an unmeasured estimate.",
+      "Issue #13: try single-precision builds for Discrete, Flame and Drift, starting with Drift, and check frames at several frame counts before flashing.",
+      "After PR #12 is approved and merged, delete the branch (remote and local) and fast-forward main."
+    ]
+  },
   "initial_attribution": {
     "calculated_at": "2026-10-08T14:14:51.668479Z",
     "agent_lines": 44,
