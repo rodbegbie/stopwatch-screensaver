@@ -35,10 +35,32 @@ implied warranty.
 | `firmware/src/hacks/critical/critical.c` | Copyright (C) 1998, 1999, 2000 Martin Pool | jwz permission notice (above), reflowed in the file |
 | `firmware/src/hacks/cloudlife/cloudlife.c` | Don Marti; based on xscreensaver, Copyright (c) 1997, 1998, 2002 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/whirlwindwarp/whirlwindwarp.c` | Copyright (c) 2000 Paul "Joey" Clark | jwz permission notice (above) |
+| `firmware/src/hacks/flame/flame.c` | Copyright (c) 1993-2014 Jamie Zawinski; ported from xlock, Copyright (c) 1991 Patrick J. Naughton, with updates by Scott Draves | jwz permission notice (above), and Naughton's xlock notice (below) |
 | `firmware/src/hacks/pedal/pedal.c` | Copyright (c) 1994 Carnegie Mellon University; X version by Dale Moore | CMU permission notice (below) |
 
 Each copied file keeps its own header unchanged; the notice text above is
 reproduced here to satisfy the "supporting documentation" requirement.
+
+### Patrick J. Naughton xlock notice (Flame)
+
+`flame.c` was ported from xlock and carries the original notice alongside
+jwz's. It is reproduced here as it appears in the file:
+
+```text
+Copyright (c) 1991 by Patrick J. Naughton.
+
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
+provided that the above copyright notice appear in all copies and that
+both that copyright notice and this permission notice appear in
+supporting documentation.
+
+This file is provided AS IS with no warranties of any kind.  The author
+shall have no liability with respect to the infringement of copyrights,
+trade secrets or any patents by this file or any part thereof.  In no
+event will the author be liable for any lost revenue or profits or
+other special, indirect and consequential damages.
+```
 
 ### Carnegie Mellon University notice (Pedal)
 

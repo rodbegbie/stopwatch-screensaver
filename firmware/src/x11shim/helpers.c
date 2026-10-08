@@ -97,3 +97,16 @@ void free_colors(Screen *screen, Colormap cmap, XColor *colors, int ncolors) {
   (void)colors;
   (void)ncolors;
 }
+
+#ifdef ARDUINO
+#include <signal.h>
+
+/* The ESP32 C library has no signal(), but flame.c calls
+ * signal(SIGFPE, SIG_IGN). The Xtensa FPU never traps, so ignoring the signal
+ * is already what happens. */
+_sig_func_ptr signal(int sig, _sig_func_ptr handler) {
+  (void)sig;
+  (void)handler;
+  return SIG_DFL;
+}
+#endif
