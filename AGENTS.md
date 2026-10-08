@@ -40,6 +40,10 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
   with absolute paths, since background shells ignore `cd`. Lines to read:
   `run <hack> fps= step= push= wait=` (ms per frame in the hack, `pushImage`
   and the wait) and `switch -> <hack> press_waited=`.
+- Flash with `pio run -e stopwatch -t upload > file 2>&1`, never piped through
+  `head`, and check for "Hash of data verified". The button steps backwards
+  (Pyro, then Lightning, then Drift...), and a hack that restarts every ~70 s
+  needs a capture of 150 s or more to show a restart.
 - `cc -O1 -fstack-usage -c src/hacks/<n>/<n>.c` (with `-Isrc
   -Isrc/x11shim/include -Isrc/xs_support -DXSHIM_NATIVE -DSTANDALONE`) lists
   stack frames; keep each well under the 16 KB loop stack.
@@ -91,6 +95,10 @@ Set `NO_COLOR=1` on `pio` output you parse.
    flash and measure fps and free heap/PSRAM over serial.
 6. Regenerate the assessment and add measurements to
    `tools/assessment_measured.md`.
+7. If a hack is slow and `double`-heavy (many `double`s, `sqrt`, `sin`/`cos`,
+   `pow`), try a single-precision wrapper like `hacks/galaxy_single.c`
+   (candidates in issue #13). A resource override can skip a hack's restart
+   cleanup: Galaxy leaked at `count: 2`, so leak-test any override.
 
 ## Delivering a branch
 
@@ -100,8 +108,13 @@ Set `NO_COLOR=1` on `pio` output you parse.
   `Fixes #N` in the body.
 - Rod approves and merges (merge commit). Afterwards delete the merged branch
   (remote and local) without asking and fast-forward `main`.
+- `gh pr edit N --body-file` replaces the whole body, including the
+  `<!-- entire-trail-link-start -->` ... `-end -->` block at the top. Keep that
+  block in the file, or the PR loses its trail.
 - Findings: `entire trail finding list N`, then `... resolve N <id> -m "..."`.
-  Bot reviews can lag about 20 minutes.
+  Bot reviews can lag about 20 minutes. `N` is the trail number (PR #12 was
+  trail 6), not the PR number. For a false positive or upstream behaviour in a
+  byte-identical hack, use `entire trail finding dismiss N <id> -m "<reason>"`.
 
 ## Gotchas
 
@@ -128,25 +141,29 @@ Set `NO_COLOR=1` on `pio` output you parse.
   include `xlock.h` instead. The envs also define `HAVE_MOBILE`, because
   otherwise each hack's `XSCREENSAVER_LINK` defines the same global
   `xscreensaver_function_table` and two hacks fail to link; the only other
-  effect is an inert `*ignoreRotation: True` default. Register one in `hacks/registry.c` with
-  `XLOCKMORE_HACK(<name>, "<Class>")`. The runner runs the hack's
-  `setup_cb` once and passes `setup_arg` as `init_cb`'s hidden third
+  effect is an inert `*ignoreRotation: True` default. Register one in
+  `hacks/registry.c` with `XLOCKMORE_HACK(<name>, "<Class>")`. The runner runs
+  the hack's `setup_cb` once and passes `setup_arg` as `init_cb`'s hidden third
   argument, as xscreensaver's `screenhack.c` does. Its table is empty until
   then. Resources the framework reads but a hack does not define
   (`delta3d`, `size`, ...) fall back to `kFrameworkDefaults` in
   `x11shim/resources.c`. A `HackEntry`'s `overrides` list beats the hack's own
-  defaults (Galaxy runs with `count: -3`, at most three galaxies; a count of -2 or
-  above skips the hack's restart cleanup and leaks); register it with
-  `XLOCKMORE_HACK_WITH`.
-  Galaxy is built through `hacks/galaxy_single.c`, which includes the unmodified
-  `galaxy.c` with `double` redefined as `float` (the S3's FPU is single-precision
-  only); `galaxy.c` is excluded from each env's `build_src_filter`.
+  defaults (Galaxy runs with `count: -3`, at most three galaxies; a count of
+  -2 or above skips the hack's restart cleanup and leaks); register it with
+  `XLOCKMORE_HACK_WITH`. Galaxy is built through `hacks/galaxy_single.c`, which
+  includes the unmodified `galaxy.c` with `double` redefined as `float` (the
+  S3's FPU is single-precision only); `galaxy.c` is excluded from each env's
+  `build_src_filter`.
 - Don't declare `xrealloc` or `xmalloc` in the shim: cloudlife defines its own
   static `xrealloc`, which would clash.
 - `score_hacks.py` rates hacks by call sites, not loop trips: Flame (all
   `double` maths) is rated S but runs at 2-7 fps. Measure on the device.
 - `pio test` runs every registered hack for 3000 frames under ASan (about 15 s);
   a hack that is slow on the host slows the whole suite.
+- Host leak tests: LeakSanitizer does not run on macOS, so compare
+  `__sanitizer_get_current_allocated_bytes()`
+  (`<sanitizer/allocator_interface.h>`) before and after many restarts, as in
+  `test_hacks.c`.
 - zsh does not word-split `$var`: loop over file lists with `bash -c`.
 - jwz.org returns 403 to Python's default User-Agent.
 - `esptool` reads of the 16 MB flash need `--baud 921600` (about 3.5 minutes)
