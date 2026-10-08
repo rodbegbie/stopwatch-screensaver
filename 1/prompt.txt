@@ -1,0 +1,7 @@
+Let's do some performance work.  Issues #6 and #23 are good places to start, since they could potentially improve perf for many (all?) of the hacks.
+
+---
+
+1. 100% yes! This is exactly the right thing to do to understand the issues at play.  2. No objections at all, but thank you for asking.
+
+You have my permission to flash and reflash the device as you see fit while running these probes.
