@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4DWWN0H3EX0BRASF38R39M3",
+  "strategy": "manual-commit",
+  "branch": "feature/xlockmore-batch-1",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "AGENTS.md",
+    "firmware/platformio.ini",
+    "firmware/src/hacks/galaxy_single.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 20,
+    "cache_creation_tokens": 15632,
+    "cache_read_tokens": 1297546,
+    "output_tokens": 9192,
+    "api_call_count": 10
+  }
+}
