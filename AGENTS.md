@@ -131,8 +131,11 @@ Set `NO_COLOR=1` on `pio` output you parse.
 ## Gotchas
 
 - M5GFX reads a plain `uint32_t` colour as RGB888. `TFT_RED` and friends are
-  RGB565 constants. `pushImage` with a `uint16_t*` canvas wants
-  `setSwapBytes(false)`.
+  RGB565 constants. `pushImage` with a native-order `uint16_t*` canvas wants
+  `setSwapBytes(true)`. It was `false` until Maze: a hue-sweeping palette
+  stays a rainbow with its bytes swapped (red, green and blue rotate), so no
+  earlier hack showed the fault. Only pure black and white, or a colour you
+  know (Maze's red flame, its green solving path), expose a swap.
 - In `platformio.ini` use `platform = platformio/native`; plain `native`
   breaks `pio run`. Native tests need `test_build_src = yes`.
 - Quoted includes resolve beside the including file first, so compile hack
