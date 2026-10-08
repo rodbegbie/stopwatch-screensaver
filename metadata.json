@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4D3WGQ69VPGNQ3SE7ZNGXSX",
+  "strategy": "manual-commit",
+  "branch": "fix/scorer-define-standalone",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/porting-assessment.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 8,
+    "cache_creation_tokens": 3491,
+    "cache_read_tokens": 552571,
+    "output_tokens": 2249,
+    "api_call_count": 4
+  }
+}
