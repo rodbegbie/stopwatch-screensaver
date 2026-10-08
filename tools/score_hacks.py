@@ -27,6 +27,11 @@ FLAG_CALLS = {
     "text": {"XDrawString", "XLoadFont", "XLoadQueryFont"},
     "clipmask": {"XSetClipMask"},
 }
+class ScoreError(Exception):
+    pass
+
+
+ANY_ERROR = re.compile(r"^.*?\berror: (.+)$", re.MULTILINE)
 MODULE_ENTRY = re.compile(r"\bXSCREENSAVER_MODULE(?:_2)?\s*\(")
 MISSING_HEADER = re.compile(r"fatal error: '([^']+)' file not found")
 ERROR_PATTERNS = (
@@ -83,19 +88,32 @@ def blockers_for(
         src_path.write_text(source)
         cmd = [cc, "-fsyntax-only", "-w", "-ferror-limit=0"]
         cmd += [f"-I{d}" for d in include_dirs] + [f"-I{stubs}", str(src_path)]
-        stderr = ""
+        run = None
         for _ in range(MAX_HEADER_STUBS):
-            stderr = subprocess.run(cmd, capture_output=True, text=True).stderr
-            missing = MISSING_HEADER.search(stderr)
+            try:
+                run = subprocess.run(cmd, capture_output=True, text=True)
+            except FileNotFoundError as err:
+                raise ScoreError(f"compiler not found: {cc}") from err
+            missing = MISSING_HEADER.search(run.stderr)
             if not missing:
                 break
             header = missing.group(1)
             found.add(header)
             (stubs / header).parent.mkdir(parents=True, exist_ok=True)
             (stubs / header).write_text("")
+    stderr = run.stderr
+    recognised = [MISSING_HEADER, *(pattern for pattern, _ in ERROR_PATTERNS)]
     for pattern, template in ERROR_PATTERNS:
         for match in pattern.finditer(stderr):
             found.add(UNNAMED.sub("", template.format(*match.groups())))
+    for match in MISSING_HEADER.finditer(stderr):
+        found.add(match.group(1))
+    for line in stderr.splitlines():
+        error = ANY_ERROR.match(line)
+        if error and not any(p.search(line) for p in recognised):
+            found.add("error: " + UNNAMED.sub("", error.group(1)))
+    if run.returncode != 0 and not found:
+        found.add(f"compiler exited {run.returncode} with no diagnostics")
     return sorted(found)
 
 
@@ -147,13 +165,18 @@ def rank_missing(rows: list[dict], n: int) -> list[tuple[str, float, int]]:
     return [(c, round(weight[c], 2), hacks[c]) for c in ranked[:n]]
 
 
+def code_cell(text: str) -> str:
+    """Markdown-safe table cell: a code span with pipes escaped."""
+    return "`" + text.replace("`", "'").replace("|", "\\|") + "`"
+
+
 def render_table(rows: list[dict]) -> str:
     lines = [
         "| Hack | Kind | Effort | Shim gaps | Flags | LOC |",
         "| --- | --- | --- | --- | --- | --- |",
     ]
     for r in sorted(rows, key=lambda r: (r["effort"], r["name"])):
-        missing = ", ".join(r.get("gaps", r["missing"])) or "-"
+        missing = ", ".join(code_cell(g) for g in r.get("gaps", r["missing"])) or "-"
         flags = ", ".join(r["flags"]) or "-"
         lines.append(
             f"| {r['name']} | {r['kind']} | {r['effort']} | {missing} | {flags} | {r['loc']} |"
@@ -163,7 +186,7 @@ def render_table(rows: list[dict]) -> str:
 
 def render_ranking(ranked: list[tuple[str, float, int]]) -> str:
     lines = ["| Gap | Score | 2D hacks needing it |", "| --- | --- | --- |"]
-    lines += [f"| {c} | {s} | {h} |" for c, s, h in ranked]
+    lines += [f"| {code_cell(c)} | {s} | {h} |" for c, s, h in ranked]
     return "\n".join(lines) + "\n"
 
 
@@ -194,10 +217,26 @@ def scan(
         return list(pool.map(one, files)), excluded
 
 
-def main(argv: list[str]) -> int:
-    root = Path(__file__).resolve().parent.parent
+def find_vendor(root: Path) -> Path:
+    """The highest-versioned xscreensaver source under root/vendor."""
+    candidates = [p for p in (root / "vendor").glob("xscreensaver-*") if p.is_dir()]
+    if not candidates:
+        raise ScoreError(
+            "no xscreensaver source in vendor/; run "
+            "`uv run tools/fetch_xscreensaver.py` or pass --vendor DIR"
+        )
+
+    def version(path: Path) -> tuple[int, ...]:
+        parts = path.name.removeprefix("xscreensaver-").split(".")
+        return tuple(int(p) if p.isdigit() else 0 for p in parts)
+
+    return max(candidates, key=version)
+
+
+def main(argv: list[str], root: Path | None = None) -> int:
+    root = root or Path(__file__).resolve().parent.parent
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--vendor", default=str(next((root / "vendor").glob("xscreensaver-*"))))
+    parser.add_argument("--vendor", help="xscreensaver source dir (default: newest in vendor/)")
     parser.add_argument("--header", default=str(root / "firmware/src/x11shim/xshim.h"))
     parser.add_argument(
         "--shim-include",
@@ -209,7 +248,15 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--out", default=str(root / "docs/porting-assessment.md"))
     args = parser.parse_args(argv)
 
-    vendor = Path(args.vendor)
+    try:
+        vendor = Path(args.vendor) if args.vendor else find_vendor(root)
+        return run(args, vendor, root)
+    except ScoreError as err:
+        print(f"error: {err}", file=sys.stderr)
+        return 1
+
+
+def run(args: argparse.Namespace, vendor: Path, root: Path) -> int:
     version = vendor.name.removeprefix("xscreensaver-")
     includes = [Path(d) for d in args.shim_include] if args.shim_include else [
         root / "firmware/src",

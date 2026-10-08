@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import score_hacks as sh  # noqa: E402
@@ -180,3 +182,81 @@ def test_render_excluded_wraps_names_in_a_paragraph():
     assert all(len(line) <= 78 for line in text.splitlines())
     assert "helper0" in text and "helper39" in text
     assert text.endswith("\n") and not text.endswith("\n\n")
+
+
+def test_blockers_keep_unrecognised_compile_errors():
+    src = '#include "screenhack.h"\nvoid f(Display *d) { XDrawLine(d); }\n'
+    got = sh.blockers_for("badcall", src, SHIM_INCLUDES)
+    assert any("too few arguments" in b for b in got)
+
+
+def test_score_is_never_S_after_a_failed_compile():
+    src = '#include "screenhack.h"\nvoid f(Display *d) { XDrawLine(d); }\n'
+    blockers = sh.blockers_for("badcall", src, SHIM_INCLUDES)
+    row = sh.score(Path("hacks/badcall.c"), src, PROVIDED | {"XDrawLine"}, blockers)
+    assert row["effort"] != "S"
+
+
+def test_blockers_failed_compile_without_diagnostics_is_a_blocker():
+    got = sh.blockers_for("quiet", "int x;\n", SHIM_INCLUDES, cc="false")
+    assert got == ["compiler exited 1 with no diagnostics"]
+
+
+def test_blockers_missing_compiler_is_a_clear_error():
+    with pytest.raises(sh.ScoreError, match="not-a-real-compiler"):
+        sh.blockers_for("x", "int x;\n", SHIM_INCLUDES, cc="not-a-real-compiler")
+
+
+def test_find_vendor_picks_highest_version(tmp_path):
+    for v in ("6.9", "6.16", "6.2"):
+        (tmp_path / "vendor" / f"xscreensaver-{v}").mkdir(parents=True)
+    assert sh.find_vendor(tmp_path).name == "xscreensaver-6.16"
+
+
+def test_find_vendor_without_source_points_at_the_fetch_script(tmp_path):
+    with pytest.raises(sh.ScoreError, match="fetch_xscreensaver"):
+        sh.find_vendor(tmp_path)
+
+
+def test_main_help_works_without_a_vendor_directory(tmp_path):
+    with pytest.raises(SystemExit) as exc:
+        sh.main(["--help"], root=tmp_path)
+    assert exc.value.code == 0
+
+
+def test_main_explicit_vendor_works_without_a_default_one(tmp_path, capsys):
+    vendor = tmp_path / "ext" / "xscreensaver-9.9"
+    (vendor / "hacks").mkdir(parents=True)
+    (vendor / "hacks" / "demo.c").write_text('XSCREENSAVER_MODULE ("Demo", demo)\n')
+    header = tmp_path / "xshim.h"
+    header.write_text("int XDrawLine(int);\n")
+    intro = tmp_path / "intro.md"
+    intro.write_text("# T\n\n{version} {total} {excluded} {n_s} {n_m} {n_l} {n_xl}\n")
+    out = tmp_path / "out.md"
+    argv = ["--vendor", str(vendor), "--header", str(header), "--intro", str(intro),
+            "--out", str(out)]
+    for d in SHIM_INCLUDES:
+        argv += ["--shim-include", str(d)]
+    assert sh.main(argv, root=tmp_path) == 0
+    assert "demo" in out.read_text()
+
+
+def test_main_missing_vendor_is_an_actionable_error(tmp_path, capsys):
+    assert sh.main([], root=tmp_path) == 1
+    assert "fetch_xscreensaver" in capsys.readouterr().err
+
+
+def test_table_renders_gaps_as_code_and_escapes_pipes():
+    row = sh.score(
+        Path("hacks/a.c"), "int x;", PROVIDED, blockers=["error: unknown type 'Display *'", "a|b"]
+    )
+    table = sh.render_table([row])
+    data_line = table.strip().splitlines()[-1]
+    assert "`error: unknown type 'Display *'`" in data_line
+    assert "`a\\|b`" in data_line
+    assert data_line.replace("\\|", "").count("|") == 7
+
+
+def test_ranking_renders_gaps_as_code():
+    text = sh.render_ranking([("Display *", 1.0, 2)])
+    assert "| `Display *` |" in text
