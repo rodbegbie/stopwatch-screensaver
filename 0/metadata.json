@@ -1,0 +1,58 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4E5FDTAFZFXF8Z1FP8B80MC",
+  "session_id": "55911a95-94f2-4d02-bde2-fa3ebd532a21",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-08T16:27:55.437961Z",
+  "branch": "feature/4-15-name-and-fps-overlay",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "firmware/src/core/canvas.c",
+    "firmware/src/core/canvas.h",
+    "firmware/src/main.cpp",
+    "firmware/test/test_canvas/test_canvas.c"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "7e190ebb89da",
+  "checkpoint_transcript_start": 199,
+  "transcript_lines_at_start": 199,
+  "compact_transcript_start": 21,
+  "token_usage": {
+    "input_tokens": 22,
+    "cache_creation_tokens": 13767,
+    "cache_read_tokens": 978132,
+    "output_tokens": 10905,
+    "api_call_count": 11
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-10-08T16:27:55.419537Z",
+    "agent_lines": 159,
+    "agent_removed": 19,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 159,
+    "total_lines_changed": 178,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 27,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".claude/settings.json": 3,
+        ".private-journal/2026-10-07/19-59-30-000000-79f41e20.md": 8,
+        ".private-journal/2026-10-07/22-51-53-000000-2f0b9ece.md": 8,
+        ".private-journal/2026-10-08/07-50-07-000000-0110d472.md": 8
+      }
+    }
+  ]
+}
