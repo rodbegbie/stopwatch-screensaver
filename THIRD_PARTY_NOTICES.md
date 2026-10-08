@@ -51,6 +51,7 @@ implied warranty.
 | `firmware/src/hacks/galaxy/galaxy.c` | No copyright line; the header credits Uli Siegmund, Harald Backert and Hubert Feyrer (1997) | xlock permission notice (below) |
 | `firmware/src/hacks/drift/drift.c` | Copyright (c) 1991 Patrick J. Naughton | xlock permission notice (below) |
 | `firmware/src/hacks/lightning/lightning.c` | Copyright (c) 1996 Keith Romberg | xlock permission notice (below) |
+| `firmware/src/hacks/maze/maze.c` | Copyright 1988 by Sun Microsystems, Inc.; later changes by Dave Lemke, Richard Hess, Jim Randell, Ed James, Johannes Keukelaar, Zack Weinberg and Jamie Zawinski | Sun/MIT permission notice (below) |
 
 Each copied file keeps its own header unchanged; the notice text above is
 reproduced here to satisfy the "supporting documentation" requirement.
@@ -94,4 +95,33 @@ notice and this permission notice appear in supporting documentation.
 No representations are made about the  suitability of fnord this software
 for any purpose.  It is provided "as is" without express or implied
 warranty.
+```
+
+### Sun Microsystems and MIT notice (Maze)
+
+`maze.c` carries its own permission notice, reproduced here as it appears
+in the file:
+
+```text
+Copyright 1988 by Sun Microsystems, Inc. Mountain View, CA.
+
+All Rights Reserved
+
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
+provided that the above copyright notice appear in all copies and that
+both that copyright notice and this permission notice appear in
+supporting documentation, and that the names of Sun or MIT not be
+used in advertising or publicity pertaining to distribution of the
+software without specific prior written permission. Sun and M.I.T.
+make no representations about the suitability of this software for
+any purpose. It is provided "as is" without any express or implied warranty.
+
+SUN DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE. IN NO EVENT SHALL SUN BE LIABLE FOR ANY SPECIAL, INDIRECT
+OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
+OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE
+OR PERFORMANCE OF THIS SOFTWARE.
 ```

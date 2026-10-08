@@ -11,7 +11,7 @@ from pathlib import Path
 # Copied third-party code: one directory per hack under hacks/ (top-level
 # files in hacks/ are our own, e.g. the registry), plus xs_support/.
 SUFFIXES = {".c", ".h", ".cpp"}
-HEADER_LINES = 40
+HEADER_LINES = 100
 NOTICE_PHRASES = (
     "permission to use, copy, modify, distribute, and sell this software",
     "permission is hereby granted, free of charge",

@@ -23,15 +23,24 @@ typedef struct XshimDisplay {
   Canvas *canvas;
 } Display;
 
+typedef unsigned long Pixmap;
+#define None 0L
+
+/* The clip mask is the GC's own copy: Xlib servers copy it too, and hacks
+ * free the pixmap straight after XSetClipMask. */
 typedef struct XshimGC {
   unsigned long foreground;
+  unsigned long background;
+  struct XshimPixmap *clip;
+  int clip_x, clip_y;
 } *GC;
 
 typedef struct XshimScreen Screen;
 typedef struct XshimVisual Visual;
 
-/* background, function and line_width are accepted but ignored: drawing is
- * always GXcopy with 1-pixel lines. */
+/* background, function and line_width are accepted but ignored here (set a
+ * background with XSetBackground): drawing is always GXcopy with 1-pixel
+ * lines. */
 typedef struct {
   unsigned long foreground;
   unsigned long background;
@@ -88,6 +97,7 @@ enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
 #define GCLineWidth (1L << 4)
 #define GXcopy 0x3
 #define ButtonPress 4
+#define Expose 12
 #define DoRed 1
 #define DoGreen 2
 #define DoBlue 4
@@ -134,6 +144,34 @@ int XFillArc(Display *, Drawable, GC, int x, int y, unsigned int w,
              unsigned int h, int angle1, int angle2);
 int XFillPolygon(Display *, Drawable, GC, XPoint *pts, int n, int shape,
                  int mode);
+
+/* Pixmaps are read-only sources for XCopyArea and XCopyPlane; the only way
+ * to get one is image_data_to_pixmap (ximage-loader.h). Drawing into a pixmap
+ * is not supported. A depth-1 pixmap is a bitmap, anything else is RGB565. */
+int XFreePixmap(Display *, Pixmap);
+/* Reports the canvas for the window and the pixmap's own size otherwise.
+ * Returns 0 and writes nothing for a pixmap that does not exist. */
+Status XGetGeometry(Display *, Drawable, Window *root, int *x, int *y,
+                    unsigned int *w, unsigned int *h, unsigned int *border,
+                    unsigned int *depth);
+/* Copies the mask, so the pixmap can be freed afterwards. None clears it.
+ * A pixel is drawn only where the mask has a set bit; pixels outside the mask
+ * are not drawn. The mask is positioned by XSetClipOrigin. */
+int XSetClipMask(Display *, GC, Pixmap mask);
+int XSetClipOrigin(Display *, GC, int x, int y);
+int XSetBackground(Display *, GC, unsigned long pixel);
+/* Source must be a colour pixmap and the destination the window. Honours the
+ * clip mask. */
+int XCopyArea(Display *, Drawable src, Drawable dst, GC, int src_x, int src_y,
+              unsigned int w, unsigned int h, int dst_x, int dst_y);
+/* Source must be a depth-1 pixmap and plane 1: set bits are drawn in the
+ * foreground, clear bits in the background. Honours the clip mask. */
+int XCopyPlane(Display *, Drawable src, Drawable dst, GC, int src_x,
+               int src_y, unsigned int w, unsigned int h, int dst_x,
+               int dst_y, unsigned long plane);
+/* Drawing is synchronous, so there is nothing to wait for. */
+int XSync(Display *, Bool discard);
+
 Status XAllocColor(Display *, Colormap, XColor *);
 int XFreeColors(Display *, Colormap, unsigned long *pixels, int n,
                 unsigned long planes);
