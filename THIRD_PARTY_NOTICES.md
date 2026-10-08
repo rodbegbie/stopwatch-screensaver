@@ -45,6 +45,7 @@ implied warranty.
 | `firmware/src/hacks/sierpinski/sierpinski.c` | Copyright (c) 1996 Desmond Daignault | xlock permission notice (below) |
 | `firmware/src/hacks/fadeplot/fadeplot.c` | Copyright (c) 1996 Charles Vidal | xlock permission notice (below) |
 | `firmware/src/hacks/thornbird/thornbird.c` | Copyright (c) 1996 Tim Auckland | xlock permission notice (below) |
+| `firmware/src/hacks/spiral/spiral.c` | Copyright (c) 1994 Darrick Brown | xlock permission notice (below) |
 
 Each copied file keeps its own header unchanged; the notice text above is
 reproduced here to satisfy the "supporting documentation" requirement.
