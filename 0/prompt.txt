@@ -1,0 +1,1 @@
+Everything in there looks good. One more thought: Ensure that any copyright notice or other license requirements are met in the hacks you add to this repo.  I will probably make the repo public, and don't want to accidently infringe on anyone's intellectual property.
