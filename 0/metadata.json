@@ -1,0 +1,149 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4D3SRHG8EDQF5712DXT0MYN",
+  "session_id": "7818bbd0-37b3-4a75-bc5a-3c69d7ab38a5",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-08T06:39:22.48304Z",
+  "branch": "feature/xlockmore-framework",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/superpowers/plans/2026-10-07-xlockmore.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "5912b357f63e",
+  "checkpoint_transcript_start": 239,
+  "transcript_lines_at_start": 239,
+  "compact_transcript_start": 28,
+  "token_usage": {
+    "input_tokens": 12,
+    "cache_creation_tokens": 19449,
+    "cache_read_tokens": 634798,
+    "output_tokens": 9483,
+    "api_call_count": 6
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_0194HtDfW5rpJ9HHU4K7W4NE",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:brainstorming"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "07971bd13270",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 41,
+        "end": 42,
+        "entry_ids": [
+          "8a381849-9202-4131-a7e5-324f01c4c60c"
+        ],
+        "tool_use_id": "toolu_0194HtDfW5rpJ9HHU4K7W4NE"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_0194HtDfW5rpJ9HHU4K7W4NE"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:brainstorming",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01K4RsZA4HEeM8ZZJ5TXJoBj",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "07971bd13270",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 205,
+        "end": 206,
+        "entry_ids": [
+          "56215b7d-1ab4-4cbb-805b-5a450413c7dc"
+        ],
+        "tool_use_id": "toolu_01K4RsZA4HEeM8ZZJ5TXJoBj"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01K4RsZA4HEeM8ZZJ5TXJoBj"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_015EjwAdWckweDoG8yQjQBKJ",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:writing-plans"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "5912b357f63e",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 244,
+        "end": 245,
+        "entry_ids": [
+          "d0c4b400-40cc-4f59-b106-ad5f19eafd92"
+        ],
+        "tool_use_id": "toolu_015EjwAdWckweDoG8yQjQBKJ"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_015EjwAdWckweDoG8yQjQBKJ"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:writing-plans",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-10-08T06:39:22.464791Z",
+    "agent_lines": 231,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 231,
+    "total_lines_changed": 231,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 16,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".private-journal/2026-10-07/19-59-30-000000-79f41e20.md": 8,
+        ".private-journal/2026-10-07/22-51-53-000000-2f0b9ece.md": 8
+      }
+    }
+  ]
+}
