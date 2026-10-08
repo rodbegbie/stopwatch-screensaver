@@ -1,0 +1,7 @@
+Build-time patching makes sense to me. I like that approach, over editing the source code committed to the repo.
+
+Tell me more about the logo. What are you proposing to do here that is different from what happens on other platforms?
+
+---
+
+Yes, let's do that.  And let me know the format of the image you end up using, so I can think about maybe replacing it with something else (especially if you have any license concerns)
