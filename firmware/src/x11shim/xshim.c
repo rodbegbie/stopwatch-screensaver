@@ -33,6 +33,12 @@ int XSetForeground(Display *dpy, GC gc, unsigned long pixel) {
   return 0;
 }
 
+int XChangeGC(Display *dpy, GC gc, unsigned long mask, XGCValues *v) {
+  (void)dpy;
+  if (mask & GCForeground) gc->foreground = v->foreground;
+  return 0;
+}
+
 Status XGetWindowAttributes(Display *dpy, Window w, XWindowAttributes *a) {
   (void)w;
   a->x = a->y = 0;
@@ -57,10 +63,35 @@ int XDrawPoint(Display *dpy, Drawable d, GC gc, int x, int y) {
   return 0;
 }
 
+int XDrawPoints(Display *dpy, Drawable d, GC gc, XPoint *pts, int n,
+                int mode) {
+  (void)mode;
+  for (int i = 0; i < n; i++) XDrawPoint(dpy, d, gc, pts[i].x, pts[i].y);
+  return 0;
+}
+
 int XDrawLine(Display *dpy, Drawable d, GC gc, int x1, int y1, int x2,
               int y2) {
   (void)d;
   canvas_line(dpy->canvas, x1, y1, x2, y2, (uint16_t)gc->foreground);
+  return 0;
+}
+
+/* Sums are done in 64 bits so a huge width cannot overflow int. Anything
+ * past +-2^30 is far outside the canvas, so clamping it changes nothing. */
+static int clamp_coord(int64_t v) {
+  const int64_t lim = 1 << 30;
+  return (int)(v > lim ? lim : v < -lim ? -lim : v);
+}
+
+int XDrawRectangle(Display *dpy, Drawable d, GC gc, int x, int y,
+                   unsigned int w, unsigned int h) {
+  int x2 = clamp_coord((int64_t)x + w);
+  int y2 = clamp_coord((int64_t)y + h);
+  XDrawLine(dpy, d, gc, x, y, x2, y);
+  XDrawLine(dpy, d, gc, x2, y, x2, y2);
+  XDrawLine(dpy, d, gc, x2, y2, x, y2);
+  XDrawLine(dpy, d, gc, x, y2, x, y);
   return 0;
 }
 
