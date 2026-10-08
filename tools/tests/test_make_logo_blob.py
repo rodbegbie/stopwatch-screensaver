@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 from pathlib import Path
@@ -61,6 +62,77 @@ def test_header_holds_the_blob_bytes_under_the_name_the_hack_expects():
     body = text.split("= {", 1)[1].split("};", 1)[0]
     assert bytes(int(h, 16) for h in re.findall(r"0x([0-9a-f]{2})", body)) == blob
     assert text.endswith("#endif\n")
+
+
+def blob_from_header(path):
+    body = Path(path).read_text().split("= {", 1)[1].split("};", 1)[0]
+    return bytes(int(h, 16) for h in re.findall(r"0x([0-9a-f]{2})", body))
+
+
+def make_image(tmp_path, size, name="in.png"):
+    pil = pytest.importorskip("PIL.Image")
+    path = tmp_path / name
+    pil.new("RGBA", size, (255, 0, 0, 255)).save(path)
+    return path
+
+
+def size_of(blob):
+    return int.from_bytes(blob[4:6], "little"), int.from_bytes(blob[6:8], "little")
+
+
+def test_size_option_shrinks_to_fit_keeping_the_aspect_ratio(tmp_path):
+    src = make_image(tmp_path, (256, 128))
+    out = tmp_path / "logo.h"
+    assert mlb.main([str(src), "--name", "n", "--size", "50", "-o", str(out)]) == 0
+    assert size_of(blob_from_header(out)) == (50, 25)
+
+
+def test_size_option_never_enlarges_a_small_image(tmp_path):
+    src = make_image(tmp_path, (20, 20))
+    out = tmp_path / "logo.h"
+    assert mlb.main([str(src), "--name", "n", "--size", "50", "-o", str(out)]) == 0
+    assert size_of(blob_from_header(out)) == (20, 20)
+
+
+def test_without_size_the_image_keeps_its_own_size(tmp_path):
+    src = make_image(tmp_path, (64, 64))
+    out = tmp_path / "logo.h"
+    assert mlb.main([str(src), "--name", "n", "-o", str(out)]) == 0
+    assert size_of(blob_from_header(out)) == (64, 64)
+
+
+def test_output_directories_are_created(tmp_path):
+    src = make_image(tmp_path, (8, 8))
+    out = tmp_path / "a" / "b" / "logo.h"
+    assert mlb.main([str(src), "--name", "n", "-o", str(out)]) == 0
+    assert out.exists()
+
+
+def test_an_unchanged_header_is_not_rewritten(tmp_path):
+    src = make_image(tmp_path, (8, 8))
+    out = tmp_path / "logo.h"
+    args = [str(src), "--name", "n", "-o", str(out)]
+    assert mlb.main(args) == 0
+    os.utime(out, (1_000_000, 1_000_000))
+    assert mlb.main(args) == 0
+    assert out.stat().st_mtime == 1_000_000
+
+
+def test_a_changed_image_does_rewrite_the_header(tmp_path):
+    src = make_image(tmp_path, (8, 8))
+    out = tmp_path / "logo.h"
+    args = [str(src), "--name", "n", "-o", str(out)]
+    assert mlb.main(args) == 0
+    os.utime(out, (1_000_000, 1_000_000))
+    make_image(tmp_path, (9, 9))
+    assert mlb.main(args) == 0
+    assert out.stat().st_mtime != 1_000_000
+
+
+def test_a_missing_image_is_an_error_not_a_silent_fallback(tmp_path):
+    pytest.importorskip("PIL.Image")
+    with pytest.raises(FileNotFoundError):
+        mlb.main([str(tmp_path / "nope.png"), "--name", "n", "-o", str(tmp_path / "x.h")])
 
 
 def test_command_line_converts_an_image_file(tmp_path):

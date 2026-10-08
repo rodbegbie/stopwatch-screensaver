@@ -183,6 +183,11 @@ Set `NO_COLOR=1` on `pio` output you parse.
   the raw blob described in `ximage-loader.h`, made by
   `tools/make_logo_blob.py` (`uv run`, needs Pillow). The `logo_180`/`360`
   headers are aliases of the 50 px data, as a 466 px screen only picks 50.
+  `XS_LOGO=<image>` (relative to the repo root) swaps the logo for a local
+  image, shrunk to fit 50 px, without committing it: `firmware/logo_override.py`
+  writes the header into the build dir, where `maze_patched.c` finds it
+  before the committed one. Unset, it deletes that header. Needs `uv`. A
+  third-party logo kept under `vendor/` stays out of git that way.
 - Maze fills the whole 466 by 466 square, so its corners and the exit marker
   fall outside the round display's visible circle.
 - `check_notices.py` reads 100 lines of header: Maze's licence follows a long

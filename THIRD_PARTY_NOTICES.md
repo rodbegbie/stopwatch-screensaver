@@ -138,6 +138,6 @@ repository.
 The GIF has no licence text of its own. The C file that uses it,
 `utils/logo.c`, credits the design to Angela Goodman, carries jwz's
 permission notice (above) for its code, and asks that the logo not be
-altered: "The logo is xscreensaver's identity". To use a different
-picture, regenerate the header with `tools/make_logo_blob.py`, and see the
-format notes in `ximage-loader.h`.
+altered: "The logo is xscreensaver's identity". To use a different picture
+in a local build without committing it, set `XS_LOGO` to the image file (see
+`AGENTS.md`). The blob format is in `ximage-loader.h`.

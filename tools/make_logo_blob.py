@@ -71,11 +71,25 @@ def main(argv: list[str]) -> int:
     parser.add_argument("image")
     parser.add_argument("--name", required=True, help="C array name")
     parser.add_argument("-o", "--output", required=True)
+    parser.add_argument(
+        "--size",
+        type=int,
+        help="shrink to fit this many pixels square, keeping the aspect ratio "
+        "(never enlarges)",
+    )
     args = parser.parse_args(argv)
 
     image = Image.open(args.image).convert("RGBA")
+    if args.size:
+        image.thumbnail((args.size, args.size), Image.Resampling.LANCZOS)
     blob = build_blob(image.width, image.height, image.tobytes())
-    Path(args.output).write_text(c_header(args.name, blob, Path(args.image).name))
+
+    # Left alone when unchanged, so an unchanged logo does not rebuild.
+    output = Path(args.output)
+    text = c_header(args.name, blob, Path(args.image).name)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    if not output.exists() or output.read_text() != text:
+        output.write_text(text)
     print(f"{args.output}: {image.width}x{image.height}, {len(blob)} bytes")
     return 0
 
