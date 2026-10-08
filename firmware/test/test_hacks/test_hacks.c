@@ -78,7 +78,9 @@ void test_cycling_through_all_hacks_100_times_is_asan_clean(void) {
 }
 
 /* Galaxy restarts every 4 * cycles frames, and with some counts its restart
- * leaks the star rectangle buffers. Shorten the cycle to see many restarts. */
+ * leaks the star rectangle buffers. Shorten the cycle to see many restarts.
+ * Each restart picks 1500-3000 stars a galaxy at random, so live memory moves
+ * by up to about 400 KB; a leak adds at least 48 KB a restart, 40 restarts. */
 void test_galaxy_restarts_do_not_leak_with_its_registered_overrides(void) {
   const HackEntry *galaxy = NULL;
   for (int i = 0; i < g_hack_count; i++)
@@ -97,10 +99,10 @@ void test_galaxy_restarts_do_not_leak_with_its_registered_overrides(void) {
   runner_start(r, 0);
   for (int f = 0; f < 100; f++) runner_step(r);
   const size_t before = __sanitizer_get_current_allocated_bytes();
-  for (int f = 0; f < 400; f++) runner_step(r);
+  for (int f = 0; f < 800; f++) runner_step(r);
   const size_t after = __sanitizer_get_current_allocated_bytes();
   runner_destroy(r);
-  TEST_ASSERT_TRUE_MESSAGE(after < before + 4096, "allocated bytes grew");
+  TEST_ASSERT_TRUE_MESSAGE(after < before + 400 * 1024, "allocated bytes grew");
 }
 
 void test_prev_from_first_wraps_to_last_hack(void) {
