@@ -50,6 +50,7 @@ implied warranty.
 | `firmware/src/hacks/discrete/discrete.c` | Copyright (c) 1996 Tim Auckland | xlock permission notice (below) |
 | `firmware/src/hacks/galaxy/galaxy.c` | No copyright line; the header credits Uli Siegmund, Harald Backert and Hubert Feyrer (1997) | xlock permission notice (below) |
 | `firmware/src/hacks/drift/drift.c` | Copyright (c) 1991 Patrick J. Naughton | xlock permission notice (below) |
+| `firmware/src/hacks/lightning/lightning.c` | Copyright (c) 1996 Keith Romberg | xlock permission notice (below) |
 
 Each copied file keeps its own header unchanged; the notice text above is
 reproduced here to satisfy the "supporting documentation" requirement.

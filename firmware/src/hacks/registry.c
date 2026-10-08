@@ -30,6 +30,7 @@ XLOCKMORE_HACK(sphere, "Sphere");
 XLOCKMORE_HACK(discrete, "Discrete");
 XLOCKMORE_HACK(galaxy, "Galaxy");
 XLOCKMORE_HACK(drift, "Drift");
+XLOCKMORE_HACK(lightning, "Lightning");
 
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
@@ -44,5 +45,6 @@ const HackEntry *const g_hacks[] = {
     &sphere_hack,
     &discrete_hack,
     &galaxy_hack,
-    &drift_hack};
+    &drift_hack,
+    &lightning_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);
