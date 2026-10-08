@@ -1,0 +1,5 @@
+The screen is cycling through blue -> green -> black -> blue.
+
+---
+
+It's now Red -> Green -> Blue -> Red…
