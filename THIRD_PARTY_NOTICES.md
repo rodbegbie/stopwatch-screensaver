@@ -41,6 +41,7 @@ implied warranty.
 | `firmware/src/hacks/flame/flame.c` | Copyright (c) 1993-2014 Jamie Zawinski; ported from xlock, Copyright (c) 1991 Patrick J. Naughton, with updates by Scott Draves | jwz permission notice (above), and Naughton's xlock notice (below) |
 | `firmware/src/hacks/pedal/pedal.c` | Copyright (c) 1994 Carnegie Mellon University; X version by Dale Moore | CMU permission notice (below) |
 | `firmware/src/hacks/hopalong/hopalong.c` | Copyright (c) 1991 Patrick J. Naughton; later changes by the xlockmore and xscreensaver authors | xlock permission notice (below) |
+| `firmware/src/hacks/vines/vines.c` | Copyright (c) 1997 Tracy Camp | xlock permission notice (below) |
 
 Each copied file keeps its own header unchanged; the notice text above is
 reproduced here to satisfy the "supporting documentation" requirement.
