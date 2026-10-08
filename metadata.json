@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4CKPC3H5T8Y16NHAV1AVA1M",
+  "strategy": "manual-commit",
+  "branch": "feature/pyro-m5-stopwatch",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "tools/check_notices.py",
+    "tools/tests/test_check_notices.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 4,
+    "cache_creation_tokens": 2624,
+    "cache_read_tokens": 469617,
+    "output_tokens": 1782,
+    "api_call_count": 2
+  }
+}
