@@ -196,6 +196,22 @@ void test_xrectangle_type_exists(void) {
   TEST_ASSERT_EQUAL_INT(3, r.width);
 }
 
+void test_framework_resources_fall_back_to_builtin_defaults(void) {
+  static const char *const none[] = {NULL};
+  xshim_set_defaults(none);
+  TEST_ASSERT_TRUE(get_float_resource(dpy, "delta3d", "Float") == 1.5);
+  TEST_ASSERT_EQUAL_HEX(0xF81F, get_pixel_resource(dpy, 0, "both3d", "Color"));
+  TEST_ASSERT_EQUAL_HEX(0xF800, get_pixel_resource(dpy, 0, "right3d", "Color"));
+  TEST_ASSERT_EQUAL_HEX(0x001F, get_pixel_resource(dpy, 0, "left3d", "Color"));
+  TEST_ASSERT_EQUAL_HEX(0x0000, get_pixel_resource(dpy, 0, "none3d", "Color"));
+}
+
+void test_hack_defaults_beat_the_builtin_fallbacks(void) {
+  static const char *const own[] = {"*delta3d: 2.5", NULL};
+  xshim_set_defaults(own);
+  TEST_ASSERT_TRUE(get_float_resource(dpy, "delta3d", "Float") == 2.5);
+}
+
 void test_progclass_is_set(void) {
   TEST_ASSERT_NOT_NULL(progclass);
   TEST_ASSERT_TRUE(strlen(progclass) > 0);
@@ -490,6 +506,8 @@ int main(void) {
   RUN_TEST(test_xrectangle_type_exists);
   RUN_TEST(test_progname_is_set);
   RUN_TEST(test_progclass_is_set);
+  RUN_TEST(test_framework_resources_fall_back_to_builtin_defaults);
+  RUN_TEST(test_hack_defaults_beat_the_builtin_fallbacks);
   RUN_TEST(test_pixel_resource_x11_colour_names);
   RUN_TEST(test_pixel_resource_names_are_case_insensitive);
   RUN_TEST(test_erase_window_clears_and_reports_done);
