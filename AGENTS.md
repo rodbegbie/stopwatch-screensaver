@@ -95,6 +95,13 @@ Set `NO_COLOR=1` on `pio` output you parse.
   A hack with big local arrays can still overflow it (Rorschach's 9.6 KB did
   at 8 KB): the device reboots on that hack's first frame, and host tests
   cannot see it. Check the serial log for "Stack canary".
+- `M5.update()` samples the buttons only when it runs and keeps no edge, so a
+  press during a long hack step vanishes. `main.cpp` runs a 5 ms polling task
+  on core 0 into `button_latch`, which needs the pin to hold a level for 30 ms.
+  Reading the pin level inside a GPIO interrupt did not work: the release
+  bounced and was counted as a second press. Check `press_waited` in the log.
+- The runner caps a hack's delay at 10 s, and the loop credits only the 31 ms
+  push against it, because a hack's delay is its pause after drawing.
 - jwz.org returns 403 to Python's default User-Agent.
 - `esptool` reads of the 16 MB flash need `--baud 921600` (about 3.5 minutes)
   and show no progress when piped.

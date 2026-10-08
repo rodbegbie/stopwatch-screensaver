@@ -106,8 +106,8 @@ hack is switched back to, so switching does not leak.
   only a single-precision FPU. Double-precision maths in software is the
   likely cause, but it has not been profiled. The scorer's `float-heavy` flag
   missed it, because it counts call sites in the source, not how often loops
-  run it. A 590 ms frame also delays button presses by up to that long, since
-  buttons are polled between frames.
+  run it. A press made during such a step is kept and handled when the step
+  ends (see Buttons below).
 - WhirlWindWarp's step time sits on plateaus that change over time: about 6,
   8, 10, 19-20 and 25-26 ms across restarts, and it shifted within a single
   run (19.1, then 20.4, then 26.4 ms). It switches around 16 forcefields on
@@ -124,6 +124,32 @@ loop task's default 8 KB stack and rebooted the device on the first frame. The
 firmware now sets a 16 KB loop stack (about 8 KB less free heap). Any hack with
 large local arrays can hit the same limit.
 
+Pyro's `init` builds two 6284-entry sine and cosine tables in double
+precision, so restarting it dips to about 17 fps for a few seconds.
+
+## Buttons
+
+M5Unified reads the StopWatch buttons (GPIO2 for A and GPIO1 for B, active
+low) only inside `M5.update()` and keeps no edge, so a press that began and
+ended during one long hack step was never seen. The firmware now samples both
+pins every 5 ms from a small task on core 0, and a latch counts a press once
+the pin has held its new level for 30 ms. Repeated presses while a step runs
+count as one, and holding a button does not repeat.
+
+The serial switch line reports `press_waited`, the time from the press to the
+switch. On the device it was usually 45-100 ms (the 30 ms settle plus one loop
+period). Presses made during long steps waited for them: about 0.4 s on Flame
+and 0.5-1.3 s around Pedal and Rorschach. About 90 switches, including bursts
+of roughly four presses a second, showed no lost press, no reset and no
+memory change.
+
+A first version used GPIO interrupts and read the pin level when each ran.
+The button bounced on release, the rising-edge interrupt saw the line low, and
+the release was logged as a second press, so one click switched two hacks. The
+polling design replaced it.
+
+## Pedal
+
 Pedal picks up to 1000 points per picture. The shim used to skip polygons
 over 256 points, and the canvas dropped scanline crossings past 64, so half of
 Pedal's pictures drew nothing. Both limits are gone. Sorting the crossings
@@ -131,9 +157,6 @@ with insertion sort then cost 2.6 million steps per picture on average and
 21.6 million on the worst, which took about 4-5 seconds on the device; with
 `qsort` above 16 crossings the step means are 126-519 ms. Pedal remains the
 second most expensive hack to draw after Flame.
-
-Pyro's `init` builds two 6284-entry sine and cosine tables in double
-precision, so restarting it dips to about 17 fps for a few seconds.
 
 ## Suggested order for shim stage 2
 

@@ -24,7 +24,8 @@ porting effort and lists the measurements.
   unmodified against the shim's own `screenhack.h`.
 - `firmware/src/runner/` starts, steps and switches hacks.
 - `firmware/src/main.cpp` pushes the canvas to the display each frame and
-  handles the buttons.
+  handles the buttons. A small task on core 0 watches both buttons, so a
+  press made while a hack is in a long draw step is kept, not lost.
 
 The same code builds natively on the Mac, which is how the tests run and how
 frames are dumped to PNG without any hardware.
@@ -65,7 +66,12 @@ cd .. && uv run tools/rgb565_to_png.py /tmp/pyro.raw 466 466 /tmp/pyro.png
 ## Controls
 
 Button A starts the next hack and button B the previous one, wrapping
-around at either end. The order is Pyro, HyperCube, XSpirograph, Petri, Helix.
+around at either end. The order is Pyro, HyperCube, XSpirograph, Petri, Helix,
+Rorschach, Pedal, Coral, Squiral, Critical, CloudLife, WhirlWindWarp, Flame.
+
+A press made during a long draw step takes effect when the step ends (up to
+about half a second on Flame). Extra presses in that wait count as one, and
+holding a button does not repeat.
 
 ## Restoring the original firmware
 
