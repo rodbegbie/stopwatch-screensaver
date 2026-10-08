@@ -125,7 +125,10 @@ Set `NO_COLOR=1` on `pio` output you parse.
   push against it, because a hack's delay is its pause after drawing.
 - xlockmore hacks (the 40 that include `xlockmore.h`) need `-DSTANDALONE`,
   which every PlatformIO env and `score_hacks.py` set; without it they
-  include `xlock.h` instead. Register one in `hacks/registry.c` with
+  include `xlock.h` instead. The envs also define `HAVE_MOBILE`, because
+  otherwise each hack's `XSCREENSAVER_LINK` defines the same global
+  `xscreensaver_function_table` and two hacks fail to link; the only other
+  effect is an inert `*ignoreRotation: True` default. Register one in `hacks/registry.c` with
   `XLOCKMORE_HACK(<name>, "<Class>")`. The runner runs the hack's
   `setup_cb` once and passes `setup_arg` as `init_cb`'s hidden third
   argument, as xscreensaver's `screenhack.c` does. Its table is empty until
