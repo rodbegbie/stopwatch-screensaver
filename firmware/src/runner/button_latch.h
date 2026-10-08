@@ -15,6 +15,7 @@ extern "C" {
  * presses. The line only counts as changed once it has held its new level for
  * the settle time, so bounce on press or release cannot produce extra presses. */
 typedef struct {
+  volatile uint32_t lock; /* guards pending and first_ms, which change together */
   volatile uint32_t pending;
   volatile uint32_t first_ms;
   uint32_t settle_ms;

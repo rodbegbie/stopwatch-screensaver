@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <stdint.h>
 #include <unity.h>
 
@@ -138,8 +139,53 @@ void test_the_settle_time_survives_the_millisecond_counter_wrapping(void) {
   TEST_ASSERT_EQUAL_UINT32(1, button_latch_pending(&latch));
 }
 
+/* The device samples on one core and takes on another. The press that begins
+ * latest must never be reported with an earlier press's time. */
+enum { STRESS_PRESSES = 3000000 };
+static ButtonLatch shared;
+static volatile int producer_done;
+
+static void *stress_producer(void *unused) {
+  (void)unused;
+  uint32_t t = 1000;
+  for (int i = 0; i < STRESS_PRESSES; i++) {
+    button_latch_sample(&shared, true, t);
+    button_latch_sample(&shared, true, t + 30);
+    button_latch_sample(&shared, false, t + 31);
+    button_latch_sample(&shared, false, t + 61);
+    t += 100;
+  }
+  producer_done = 1;
+  return NULL;
+}
+
+void test_took_press_times_never_go_backwards_when_sampling_races_with_take(void) {
+  button_latch_init(&shared, 30);
+  button_latch_sample(&shared, false, 0);
+  producer_done = 0;
+  pthread_t producer;
+  TEST_ASSERT_EQUAL_INT(0, pthread_create(&producer, NULL, stress_producer, NULL));
+  uint32_t last = 0, began = 0;
+  long stale = 0, takes = 0;
+  for (;;) {
+    int finished = producer_done;
+    if (button_latch_take(&shared, &began)) {
+      takes++;
+      if (began <= last) stale++;
+      last = began;
+    } else if (finished) {
+      break;
+    }
+    for (volatile int spin = 0; spin < 40; spin++) {}
+  }
+  pthread_join(producer, NULL);
+  TEST_ASSERT_TRUE(takes > 1000);
+  TEST_ASSERT_EQUAL_INT(0, stale);
+}
+
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_took_press_times_never_go_backwards_when_sampling_races_with_take);
   RUN_TEST(test_a_button_left_alone_gives_nothing_to_take);
   RUN_TEST(test_a_click_is_one_press_taken_once);
   RUN_TEST(test_a_press_only_counts_once_it_has_settled);
