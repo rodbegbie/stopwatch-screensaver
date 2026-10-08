@@ -1,6 +1,6 @@
 ## Measured on the device
 
-Twenty-six hacks have been run so far (default settings, 466×466 canvas
+Twenty-seven hacks have been run so far (default settings, 466×466 canvas
 pushed to the display every frame, canvas held in PSRAM). The firmware times
 each frame in three parts, averaged over 5 seconds: **step** is the hack's own
 draw call, **push** is sending the canvas to the display, and **wait** is what
@@ -37,6 +37,24 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Lightning | 29.4 | 1.8-1.9 ms | 31.2 ms | 0 ms | none measurable |
 | Maze | 6.0-28.8 | 0.1-1.3 ms | 31.2-33.4 ms | 0-256 ms | not measured |
 | Blaster | 20.4-20.8 | 3.6-4.0 ms | 43.4-44.4 ms | 0 ms | not measured |
+| Substrate | 6.0-21.4 | 4.4-124.4 ms | 41.4 ms | 0 ms | about 1.74 MB |
+
+Substrate's row is 16 five-second readings (about 80 seconds), because the
+90-second rotation moved the board on to Pyro before the capture ended, so no
+restart was seen. It starts near 21 fps with a step of about 5 ms, and within
+about 20 seconds as the cracks and their sand paint build up the step grows to
+about 121 ms and holds there at 6.2 fps, with a wait of 0: from then on it is
+limited by the hack's own drawing, not by the push or by its 18 ms delay. Free
+PSRAM was 1,742,096 bytes lower than under HyperCube in the same log, which
+matches its two image-sized buffers (2 x 466 x 466 x 4 bytes, plus a few KB),
+so both buffers were allocated in PSRAM by plain `malloc`. Free heap stayed
+between 336,228 and 339,364 bytes. No stack canary, panic or reboot appeared.
+
+In the same capture Pyro and HyperCube pushed in 41-45 ms and ran at 20-23 fps,
+against 31 ms and 28-30 fps in their rows above. So push time is longer on the
+current build for every hack, not just Substrate or Blaster. The cause has not
+been tested. The slower pushes began after the byte-order fix, but other
+changes landed at the same time.
 
 Maze's row is 26 five-second readings over 160 seconds, taken on a build that
 includes the overlay stamping. Its steps are cheap, and its frame rate is set
