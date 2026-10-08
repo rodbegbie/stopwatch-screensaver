@@ -73,6 +73,16 @@ void test_fill_rect_huge_size_no_overflow(void) {
   TEST_ASSERT_EQUAL_INT(25, count_set());
 }
 
+void test_fill_rect_huge_size_from_nonzero_origin_clips_not_wraps(void) {
+  canvas_fill_rect(&c, 5, 0, INT_MAX, 1, C1);
+  TEST_ASSERT_EQUAL_INT(3, count_set());
+  TEST_ASSERT_EQUAL_HEX16(C1, at(7, 0));
+  canvas_clear(&c, 0);
+  canvas_fill_rect(&c, 0, 5, 1, INT_MAX, C1);
+  TEST_ASSERT_EQUAL_INT(3, count_set());
+  TEST_ASSERT_EQUAL_HEX16(C1, at(0, 7));
+}
+
 void test_fill_rect_zero_or_negative_size_changes_nothing(void) {
   canvas_fill_rect(&c, 1, 1, 0, 5, C1);
   canvas_fill_rect(&c, 1, 1, 5, -3, C1);
@@ -178,6 +188,7 @@ int main(void) {
   RUN_TEST(test_fill_rect_clips_negative_origin);
   RUN_TEST(test_fill_rect_entirely_outside_changes_nothing);
   RUN_TEST(test_fill_rect_huge_size_no_overflow);
+  RUN_TEST(test_fill_rect_huge_size_from_nonzero_origin_clips_not_wraps);
   RUN_TEST(test_fill_rect_zero_or_negative_size_changes_nothing);
   RUN_TEST(test_line_horizontal_vertical_diagonal);
   RUN_TEST(test_line_with_offscreen_endpoint_draws_visible_part);

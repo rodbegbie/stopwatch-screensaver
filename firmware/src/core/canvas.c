@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* The ESP32 has a 32-bit long; clip arithmetic needs 64 bits to be safe. */
+typedef int64_t wide_t;
+
 int canvas_init(Canvas *c, int w, int h, void *(*alloc)(size_t)) {
   c->w = w;
   c->h = h;
@@ -27,7 +30,7 @@ uint16_t rgb565_from16(uint16_t r, uint16_t g, uint16_t b) {
 }
 
 void canvas_clear(Canvas *c, uint16_t color) {
-  for (long i = 0, n = (long)c->w * c->h; i < n; i++) c->px[i] = color;
+  for (int i = 0, n = c->w * c->h; i < n; i++) c->px[i] = color;
 }
 
 void canvas_point(Canvas *c, int x, int y, uint16_t color) {
@@ -35,20 +38,20 @@ void canvas_point(Canvas *c, int x, int y, uint16_t color) {
   c->px[(size_t)y * c->w + x] = color;
 }
 
-static void hspan(Canvas *c, long x0, long x1, long y, uint16_t color) {
+static void hspan(Canvas *c, wide_t x0, wide_t x1, wide_t y, uint16_t color) {
   if (y < 0 || y >= c->h || x1 < 0 || x0 >= c->w) return;
   if (x0 < 0) x0 = 0;
   if (x1 >= c->w) x1 = c->w - 1;
   uint16_t *row = c->px + (size_t)y * c->w;
-  for (long x = x0; x <= x1; x++) row[x] = color;
+  for (int x = (int)x0, last = (int)x1; x <= last; x++) row[x] = color;
 }
 
 void canvas_fill_rect(Canvas *c, int x, int y, int w, int h, uint16_t color) {
   if (w <= 0 || h <= 0) return;
-  long x1 = (long)x + w - 1, y1 = (long)y + h - 1;
-  long y0 = y < 0 ? 0 : y;
+  wide_t x1 = (wide_t)x + w - 1, y1 = (wide_t)y + h - 1;
+  wide_t y0 = y < 0 ? 0 : y;
   if (y1 >= c->h) y1 = c->h - 1;
-  for (long yy = y0; yy <= y1; yy++) hspan(c, x, x1, yy, color);
+  for (wide_t yy = y0; yy <= y1; yy++) hspan(c, x, x1, yy, color);
 }
 
 /* Liang-Barsky clip of the segment to [0,w-1]x[0,h-1]; false if outside. */
@@ -114,14 +117,14 @@ void canvas_fill_ellipse(Canvas *c, int x, int y, int w, int h,
   if (w <= 0 || h <= 0) return;
   double cx = x + (w - 1) / 2.0, cy = y + (h - 1) / 2.0;
   double rx = w / 2.0, ry = h / 2.0;
-  long y0 = y < 0 ? 0 : y, y1 = (long)y + h - 1;
+  wide_t y0 = y < 0 ? 0 : y, y1 = (wide_t)y + h - 1;
   if (y1 >= c->h) y1 = c->h - 1;
-  for (long yy = y0; yy <= y1; yy++) {
+  for (wide_t yy = y0; yy <= y1; yy++) {
     double ny = (yy - cy) / ry;
     double t = 1.0 - ny * ny;
     if (t < 0) continue;
     double half = rx * sqrt(t);
-    long xa = (long)ceil(cx - half), xb = (long)floor(cx + half);
+    wide_t xa = (wide_t)ceil(cx - half), xb = (wide_t)floor(cx + half);
     if (xb < xa) continue;
     hspan(c, xa, xb, yy, color);
   }
@@ -129,14 +132,14 @@ void canvas_fill_ellipse(Canvas *c, int x, int y, int w, int h,
 
 void canvas_fill_polygon(Canvas *c, const int *xy, int n, uint16_t color) {
   if (n < 3) return;
-  long ymin = xy[1], ymax = xy[1];
+  wide_t ymin = xy[1], ymax = xy[1];
   for (int i = 1; i < n; i++) {
     if (xy[2 * i + 1] < ymin) ymin = xy[2 * i + 1];
     if (xy[2 * i + 1] > ymax) ymax = xy[2 * i + 1];
   }
   if (ymin < 0) ymin = 0;
   if (ymax >= c->h) ymax = c->h - 1;
-  for (long yy = ymin; yy <= ymax; yy++) {
+  for (wide_t yy = ymin; yy <= ymax; yy++) {
     double xs[64];
     int nx = 0;
     double sy = yy + 0.5;
@@ -154,7 +157,7 @@ void canvas_fill_polygon(Canvas *c, const int *xy, int n, uint16_t color) {
         xs[b - 1] = tmp;
       }
     for (int k = 0; k + 1 < nx; k += 2)
-      hspan(c, (long)ceil(xs[k] - 0.5), (long)ceil(xs[k + 1] - 0.5) - 1, yy,
+      hspan(c, (wide_t)ceil(xs[k] - 0.5), (wide_t)ceil(xs[k + 1] - 0.5) - 1, yy,
             color);
   }
 }
