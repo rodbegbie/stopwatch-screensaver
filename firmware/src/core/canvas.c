@@ -8,18 +8,42 @@
 /* The ESP32 has a 32-bit long; clip arithmetic needs 64 bits to be safe. */
 typedef int64_t wide_t;
 
+static void mark_all_dirty(Canvas *c) {
+  for (int y = 0; y < c->h; y++) {
+    c->dirty_x0[y] = 0;
+    c->dirty_x1[y] = (int16_t)(c->w - 1);
+  }
+}
+
+/* The caller has already clipped x0..x1 and y to the canvas. */
+static inline void mark_span(Canvas *c, wide_t x0, wide_t x1, wide_t y) {
+  if (x0 < c->dirty_x0[y]) c->dirty_x0[y] = (int16_t)x0;
+  if (x1 > c->dirty_x1[y]) c->dirty_x1[y] = (int16_t)x1;
+}
+
 int canvas_init(Canvas *c, int w, int h, void *(*alloc)(size_t)) {
   c->w = w;
   c->h = h;
+  c->dirty_x0 = c->dirty_x1 = NULL;
   c->px = (uint16_t *)alloc((size_t)w * (size_t)h * sizeof(uint16_t));
   if (!c->px) return -1;
   memset(c->px, 0, (size_t)w * (size_t)h * sizeof(uint16_t));
+  c->dirty_x0 = (int16_t *)malloc((size_t)h * sizeof(int16_t));
+  c->dirty_x1 = (int16_t *)malloc((size_t)h * sizeof(int16_t));
+  if (!c->dirty_x0 || !c->dirty_x1) {
+    canvas_free(c);
+    return -1;
+  }
+  mark_all_dirty(c);
   return 0;
 }
 
 void canvas_free(Canvas *c) {
   free(c->px);
+  free(c->dirty_x0);
+  free(c->dirty_x1);
   c->px = NULL;
+  c->dirty_x0 = c->dirty_x1 = NULL;
 }
 
 uint16_t px_swap(uint16_t v) { return (uint16_t)((v << 8) | (v >> 8)); }
@@ -32,19 +56,37 @@ uint16_t rgb565_from16(uint16_t r, uint16_t g, uint16_t b) {
   return rgb565((uint8_t)(r >> 8), (uint8_t)(g >> 8), (uint8_t)(b >> 8));
 }
 
+bool canvas_dirty_row(const Canvas *c, int y, int *x0, int *x1) {
+  if (y < 0 || y >= c->h || c->dirty_x0[y] > c->dirty_x1[y]) return false;
+  *x0 = c->dirty_x0[y];
+  *x1 = c->dirty_x1[y];
+  return true;
+}
+
+void canvas_clear_dirty(Canvas *c) {
+  for (int y = 0; y < c->h; y++) {
+    c->dirty_x0[y] = (int16_t)c->w;
+    c->dirty_x1[y] = -1;
+  }
+}
+
 void canvas_clear(Canvas *c, uint16_t color) {
   for (int i = 0, n = c->w * c->h; i < n; i++) c->px[i] = color;
+  mark_all_dirty(c);
 }
 
 void canvas_point(Canvas *c, int x, int y, uint16_t color) {
   if (x < 0 || y < 0 || x >= c->w || y >= c->h) return;
   c->px[(size_t)y * c->w + x] = color;
+  mark_span(c, x, x, y);
 }
 
 static void hspan(Canvas *c, wide_t x0, wide_t x1, wide_t y, uint16_t color) {
   if (y < 0 || y >= c->h || x1 < 0 || x0 >= c->w) return;
   if (x0 < 0) x0 = 0;
   if (x1 >= c->w) x1 = c->w - 1;
+  if (x0 > x1) return;
+  mark_span(c, x0, x1, y);
   uint16_t *row = c->px + (size_t)y * c->w;
   for (int x = (int)x0, last = (int)x1; x <= last; x++) row[x] = color;
 }
@@ -211,7 +253,15 @@ void canvas_copy_rect(const Canvas *c, int x, int y, int w, int h, uint16_t *dst
 void canvas_paste_rect(Canvas *c, int x, int y, int w, int h, const uint16_t *src) {
   int x0, y0, x1, y1;
   if (!visible_rect(c, x, y, w, h, &x0, &y0, &x1, &y1)) return;
-  for (int py = y0; py < y1; py++)
+  for (int py = y0; py < y1; py++) {
     memcpy(c->px + (size_t)py * c->w + x0, src + (size_t)(py - y) * w + (x0 - x),
            (size_t)(x1 - x0) * sizeof(uint16_t));
+    mark_span(c, x0, x1 - 1, py);
+  }
+}
+
+void canvas_mark_dirty(Canvas *c, int x, int y, int w, int h) {
+  int x0, y0, x1, y1;
+  if (!visible_rect(c, x, y, w, h, &x0, &y0, &x1, &y1)) return;
+  for (int py = y0; py < y1; py++) mark_span(c, x0, x1 - 1, py);
 }

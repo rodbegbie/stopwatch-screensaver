@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unity.h>
 
 #include "core/canvas.h"
@@ -351,6 +352,210 @@ void test_extreme_rect_coordinates_do_not_overflow(void) {
   TEST_ASSERT_EQUAL_INT(0, count_set());
 }
 
+/* Dirty spans: what a hack drew since the last push, per row. */
+static void snapshot(uint16_t *dst) { memcpy(dst, c.px, (size_t)c.w * c.h * sizeof(uint16_t)); }
+
+static int dirty_row_count(void) {
+  int n = 0, x0, x1;
+  for (int y = 0; y < c.h; y++) n += canvas_dirty_row(&c, y, &x0, &x1);
+  return n;
+}
+
+static void assert_span(int y, int want0, int want1) {
+  int x0 = -1, x1 = -1;
+  TEST_ASSERT_TRUE_MESSAGE(canvas_dirty_row(&c, y, &x0, &x1), "row should be dirty");
+  TEST_ASSERT_EQUAL_INT(want0, x0);
+  TEST_ASSERT_EQUAL_INT(want1, x1);
+}
+
+static void assert_changes_marked(const uint16_t *before) {
+  for (int y = 0; y < c.h; y++) {
+    int x0 = 0, x1 = -1;
+    bool dirty = canvas_dirty_row(&c, y, &x0, &x1);
+    for (int x = 0; x < c.w; x++)
+      if (c.px[y * c.w + x] != before[y * c.w + x])
+        TEST_ASSERT_TRUE_MESSAGE(dirty && x >= x0 && x <= x1,
+                                 "a changed pixel lies outside its row's span");
+  }
+}
+
+void test_a_new_canvas_is_dirty_in_every_row_in_full(void) {
+  Canvas fresh;
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&fresh, 8, 8, malloc));
+  for (int y = 0; y < 8; y++) {
+    int x0 = -1, x1 = -1;
+    TEST_ASSERT_TRUE(canvas_dirty_row(&fresh, y, &x0, &x1));
+    TEST_ASSERT_EQUAL_INT(0, x0);
+    TEST_ASSERT_EQUAL_INT(7, x1);
+  }
+  canvas_free(&fresh);
+}
+
+void test_clear_dirty_makes_every_row_clean(void) {
+  canvas_clear_dirty(&c);
+  TEST_ASSERT_EQUAL_INT(0, dirty_row_count());
+}
+
+void test_clear_marks_every_row_in_full(void) {
+  canvas_clear_dirty(&c);
+  canvas_clear(&c, C1);
+  TEST_ASSERT_EQUAL_INT(8, dirty_row_count());
+  for (int y = 0; y < 8; y++) assert_span(y, 0, 7);
+}
+
+void test_point_marks_exactly_its_pixel(void) {
+  canvas_clear_dirty(&c);
+  canvas_point(&c, 3, 5, C1);
+  TEST_ASSERT_EQUAL_INT(1, dirty_row_count());
+  assert_span(5, 3, 3);
+}
+
+void test_points_in_a_row_widen_its_span(void) {
+  canvas_clear_dirty(&c);
+  canvas_point(&c, 6, 1, C1);
+  canvas_point(&c, 2, 1, C1);
+  assert_span(1, 2, 6);
+}
+
+void test_fill_rect_marks_exactly_its_rows_and_columns(void) {
+  canvas_clear_dirty(&c);
+  canvas_fill_rect(&c, 2, 1, 3, 2, C1);
+  TEST_ASSERT_EQUAL_INT(2, dirty_row_count());
+  assert_span(1, 2, 4);
+  assert_span(2, 2, 4);
+}
+
+void test_drawing_that_clips_to_nothing_marks_nothing(void) {
+  canvas_clear_dirty(&c);
+  canvas_point(&c, -1, 0, C1);
+  canvas_point(&c, 8, 0, C1);
+  canvas_point(&c, 0, -1, C1);
+  canvas_point(&c, 0, 8, C1);
+  canvas_fill_rect(&c, -5, 0, 5, 8, C1);
+  canvas_fill_rect(&c, 8, 0, 5, 8, C1);
+  canvas_fill_rect(&c, 0, -5, 8, 5, C1);
+  canvas_fill_rect(&c, 0, 8, 8, 5, C1);
+  canvas_line(&c, -10, -10, -2, 20, C1);
+  TEST_ASSERT_EQUAL_INT(0, dirty_row_count());
+}
+
+void test_first_and_last_row_and_column_are_marked(void) {
+  canvas_clear_dirty(&c);
+  canvas_point(&c, 0, 0, C1);
+  canvas_point(&c, 7, 7, C1);
+  canvas_fill_rect(&c, 5, 3, 10, 1, C1);
+  assert_span(0, 0, 0);
+  assert_span(3, 5, 7);
+  assert_span(7, 7, 7);
+}
+
+void test_huge_coordinates_neither_overflow_nor_mark_stray_rows(void) {
+  uint16_t before[64];
+  fill_pattern();
+  snapshot(before);
+  canvas_clear_dirty(&c);
+  canvas_fill_rect(&c, INT_MIN, 2, INT_MAX, 1, C1);
+  TEST_ASSERT_EQUAL_INT(0, dirty_row_count());
+  canvas_fill_rect(&c, 3, INT_MIN, 1, INT_MAX, C1);
+  TEST_ASSERT_EQUAL_INT(0, dirty_row_count());
+  canvas_fill_rect(&c, -3, 2, INT_MAX, 1, C1);
+  TEST_ASSERT_EQUAL_INT(1, dirty_row_count());
+  assert_span(2, 0, 7);
+  assert_changes_marked(before);
+  canvas_clear_dirty(&c);
+  canvas_mark_dirty(&c, INT_MIN, 2, INT_MAX, 1);
+  canvas_mark_dirty(&c, 3, INT_MIN, 1, INT_MAX);
+  TEST_ASSERT_EQUAL_INT(0, dirty_row_count());
+}
+
+void test_line_ellipse_and_polygon_changes_are_all_marked(void) {
+  uint16_t before[64];
+  const int tri[] = {-3, 2, 6, -4, 10, 9};
+  canvas_clear(&c, 0);
+  snapshot(before);
+  canvas_clear_dirty(&c);
+  canvas_line(&c, -4, 1, 12, 6, C1);
+  assert_changes_marked(before);
+  canvas_clear(&c, 0);
+  canvas_clear_dirty(&c);
+  canvas_fill_ellipse(&c, -2, 1, 7, 5, C1);
+  assert_changes_marked(before);
+  canvas_clear(&c, 0);
+  canvas_clear_dirty(&c);
+  canvas_fill_polygon(&c, tri, 3, C1);
+  assert_changes_marked(before);
+  TEST_ASSERT_TRUE(dirty_row_count() > 0);
+}
+
+void test_paste_rect_marks_the_pasted_rows(void) {
+  const uint16_t block[6] = {1, 2, 3, 4, 5, 6};
+  canvas_clear_dirty(&c);
+  canvas_paste_rect(&c, 1, 2, 3, 2, block);
+  TEST_ASSERT_EQUAL_INT(2, dirty_row_count());
+  assert_span(2, 1, 3);
+  assert_span(3, 1, 3);
+  canvas_clear_dirty(&c);
+  canvas_paste_rect(&c, 6, 6, 3, 3, (const uint16_t[9]){1, 2, 3, 4, 5, 6, 7, 8, 9});
+  TEST_ASSERT_EQUAL_INT(2, dirty_row_count());
+  assert_span(6, 6, 7);
+  assert_span(7, 6, 7);
+}
+
+void test_mark_dirty_clips_to_the_canvas(void) {
+  canvas_clear_dirty(&c);
+  canvas_mark_dirty(&c, -2, -2, 4, 4);
+  TEST_ASSERT_EQUAL_INT(2, dirty_row_count());
+  assert_span(0, 0, 1);
+  assert_span(1, 0, 1);
+  canvas_clear_dirty(&c);
+  canvas_mark_dirty(&c, 20, 20, 3, 3);
+  canvas_mark_dirty(&c, 0, 0, 0, 5);
+  TEST_ASSERT_EQUAL_INT(0, dirty_row_count());
+}
+
+static uint32_t rng_state = 2463534242u;
+static int rnd(int lo, int hi) {
+  rng_state ^= rng_state << 13;
+  rng_state ^= rng_state >> 17;
+  rng_state ^= rng_state << 5;
+  return lo + (int)(rng_state % (uint32_t)(hi - lo + 1));
+}
+static int coord(void) {
+  switch (rnd(0, 19)) {
+    case 0: return INT_MIN;
+    case 1: return INT_MAX;
+    default: return rnd(-20, 30);
+  }
+}
+
+void test_random_primitive_calls_mark_every_pixel_they_change(void) {
+  uint16_t before[64];
+  uint16_t block[36];
+  for (int i = 0; i < 36; i++) block[i] = (uint16_t)(0x4000 + i);
+  for (int round = 0; round < 300; round++) {
+    for (int kind = 0; kind < 6; kind++) {
+      fill_pattern();
+      snapshot(before);
+      canvas_clear_dirty(&c);
+      switch (kind) {
+        case 0: canvas_point(&c, coord(), coord(), C1); break;
+        case 1: canvas_line(&c, coord(), coord(), coord(), coord(), C1); break;
+        case 2: canvas_fill_rect(&c, coord(), coord(), coord(), coord(), C1); break;
+        case 3: canvas_fill_ellipse(&c, coord(), coord(), coord(), coord(), C1); break;
+        case 4: {
+          int xy[12], n = rnd(3, 6);
+          for (int i = 0; i < 2 * n; i++) xy[i] = coord();
+          canvas_fill_polygon(&c, xy, n, C1);
+          break;
+        }
+        default:
+          canvas_paste_rect(&c, rnd(-20, 30), rnd(-20, 30), rnd(1, 6), rnd(1, 6), block);
+      }
+      assert_changes_marked(before);
+    }
+  }
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_polygon_fill_matches_the_reference_on_random_polygons);
@@ -383,5 +588,18 @@ int main(void) {
   RUN_TEST(test_a_rect_hanging_off_the_top_left_copies_from_the_right_offset);
   RUN_TEST(test_a_rect_wholly_off_the_canvas_is_ignored);
   RUN_TEST(test_extreme_rect_coordinates_do_not_overflow);
+  RUN_TEST(test_a_new_canvas_is_dirty_in_every_row_in_full);
+  RUN_TEST(test_clear_dirty_makes_every_row_clean);
+  RUN_TEST(test_clear_marks_every_row_in_full);
+  RUN_TEST(test_point_marks_exactly_its_pixel);
+  RUN_TEST(test_points_in_a_row_widen_its_span);
+  RUN_TEST(test_fill_rect_marks_exactly_its_rows_and_columns);
+  RUN_TEST(test_drawing_that_clips_to_nothing_marks_nothing);
+  RUN_TEST(test_first_and_last_row_and_column_are_marked);
+  RUN_TEST(test_huge_coordinates_neither_overflow_nor_mark_stray_rows);
+  RUN_TEST(test_line_ellipse_and_polygon_changes_are_all_marked);
+  RUN_TEST(test_paste_rect_marks_the_pasted_rows);
+  RUN_TEST(test_mark_dirty_clips_to_the_canvas);
+  RUN_TEST(test_random_primitive_calls_mark_every_pixel_they_change);
   return UNITY_END();
 }
