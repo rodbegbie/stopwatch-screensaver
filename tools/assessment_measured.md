@@ -32,7 +32,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Spiral | 18.8 | 0.9-1.2 ms | 31.1 ms | 21 ms | about 5 KB |
 | Sphere | 30.0-30.4 | 0.6-1.1 ms | 31.1-31.2 ms | 0 ms | none measurable |
 | Discrete | 1.0-1.2 | 0.93-1.11 s | 31.5 ms | 0 ms | about 16 KB |
-| Galaxy | 5.0-5.4 | 159-172 ms | 31.2 ms | 0 ms | about 294 KB |
+| Galaxy | 13.4-14.2 | 38-42 ms | 31.0-31.1 ms | 0 ms | about 200 KB |
 | Drift | 10.4 | 63-65 ms | 31.5 ms | 0 ms | about 16 KB |
 | Lightning | 29.4 | 1.8-1.9 ms | 31.2 ms | 0 ms | none measurable |
 
@@ -75,12 +75,18 @@ hack is switched back to, so switching does not leak.
   identified.
 - Free heap and PSRAM showed a single reading per hack across five restarts
   each of Flame and WhirlWindWarp, so repeated starts do not leak.
-- Discrete (about 1 s a frame), Galaxy (about 160 ms) and Drift (about
-  64 ms) are the most expensive of the xlockmore batch; the rest run at or
-  near the push ceiling. Vines and Sierpinski are slow because they ask for
-  long delays (Sierpinski waits about 409 ms between cheap steps). Rod found
-  Discrete's slow updates in keeping with other deliberately slow hacks,
-  Drift fine and Galaxy the slowest-feeling.
+- Discrete (about 1 s a frame) and Drift (about 64 ms) are the most
+  expensive of the xlockmore batch; the rest run at or near the push ceiling.
+  Vines and Sierpinski are slow because they ask for long delays
+  (Sierpinski waits about 409 ms between cheap steps). Rod found Discrete's
+  slow updates in keeping with other deliberately slow hacks and Drift fine.
+- Galaxy first ran at 5 fps (152-172 ms a frame): about 4,400 stars, each
+  pulled by every galaxy in `double` maths, which the ESP32-S3 emulates in
+  software. Capping `count` at 2 galaxies changed nothing measurable; the
+  PSRAM use suggests the random pick had already given two. Building the
+  unmodified source with `double` redefined as `float`
+  (`hacks/galaxy_single.c`) cut the step to 38-42 ms and gave 14 fps, which
+  Rod called a lot better. The frames look the same on the host.
 - Thornbird keeps 400 buffers of 100 rectangles (about 320 KB) in internal
   heap, filled one per frame, so free heap falls to under 1 KB after about
   six seconds. It is bounded, not a leak: switching away returned the heap
