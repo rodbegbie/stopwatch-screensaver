@@ -1,0 +1,9 @@
+I've approved the trail, so you can merge it without waiting for the bot review.
+
+---
+
+yeah, clean up branches after merging without my explicit request.
+
+---
+
+/claude-md-management:revise-claude-md
