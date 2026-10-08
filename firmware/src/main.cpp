@@ -1,7 +1,7 @@
 #include <M5Unified.h>
 #include <esp_heap_caps.h>
 
-static const uint32_t colors[] = {TFT_RED, TFT_GREEN, TFT_BLUE};
+static const uint32_t colors[] = {0xFF0000, 0x00FF00, 0x0000FF};
 static int step = 0;
 
 void setup() {
