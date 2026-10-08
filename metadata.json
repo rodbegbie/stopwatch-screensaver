@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4D672K06W5P7JD4Y2CX3GNN",
+  "strategy": "manual-commit",
+  "branch": "feature/xlockmore-batch-1",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "THIRD_PARTY_NOTICES.md",
+    "firmware/src/hacks/registry.c",
+    "firmware/src/hacks/vines/vines.c",
+    "firmware/test/test_hacks/test_hacks.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 6,
+    "cache_creation_tokens": 3449,
+    "cache_read_tokens": 803842,
+    "output_tokens": 3529,
+    "api_call_count": 3
+  }
+}
