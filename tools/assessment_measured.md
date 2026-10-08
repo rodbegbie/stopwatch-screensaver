@@ -1,6 +1,6 @@
 ## Measured on the device
 
-Seven hacks have been run so far (default settings, 466×466 canvas pushed to
+Twelve hacks have been run so far (default settings, 466×466 canvas pushed to
 the display every frame, canvas held in PSRAM). The firmware times each frame
 in three parts, averaged over 5 seconds: **step** is the hack's own draw call,
 **push** is sending the canvas to the display, and **wait** is what is left of
@@ -18,6 +18,11 @@ holds, so its frame rate will now be lower than shown.
 | Helix | 16.6-23.6 | 0.9-2.1 ms | 31.3 ms | 9-26 ms | none measurable |
 | Rorschach | 3.0 | 0.6-1.7 ms | 31.1-31.2 ms | 367 ms | none measurable |
 | Pedal | 0.2-0.4 | 126-519 ms | 31.4-31.5 ms | 3290-5507 ms | none measurable |
+| Coral | 15.0-21.2 | 15-25 ms | 31.2 ms | 0-10 ms | about 240 KB |
+| Squiral | 30.6-31.0 | 0.1-0.3 ms | 31.1 ms | 0 ms | about 850 KB |
+| Critical | 30.4 | 0.7 ms | 31.1 ms | 0 ms | about 15 KB |
+| CloudLife | 24.2 | 8.8-8.9 ms | 31.4 ms | 0 ms | about 260 KB |
+| WhirlWindWarp | 25.8 | 6.2-6.4 ms | 31.3 ms | 0 ms | about 410 KB |
 
 Free heap and free PSRAM return to exactly the same values every time a
 hack is switched back to, so switching does not leak.
@@ -36,9 +41,12 @@ hack is switched back to, so switching does not leak.
 - Rorschach and Pedal draw a picture and then hold it for the 5 seconds they
   ask for, so their frame rates (3.0 and 0.2-0.4) measure the holds, not the
   speed. Rorschach draws a picture in about 15 frames over half a second.
-- XSpirograph is the only measured hack that is slow at drawing: 54-56 ms a
-  frame for 1000 lines. Whether that is the PSRAM pixel writes or its
-  double-precision maths has not been separated.
+- XSpirograph is the slowest at drawing: 54-56 ms a frame for 1000 lines.
+  Whether that is the PSRAM pixel writes or its double-precision maths has
+  not been separated. Coral (15-25 ms), CloudLife (about 9 ms) and
+  WhirlWindWarp (about 6 ms) are the next most expensive; Squiral and
+  Critical draw in under a millisecond and run at the push ceiling.
+- Coral's step time falls as the picture fills in (15.0 fps, then 21.2).
 - Hacks that draw many primitives per frame are the ones to profile first.
 
 ## Other notes
