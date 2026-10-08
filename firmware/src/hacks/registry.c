@@ -8,9 +8,10 @@
       &NAME##_xscreensaver_function_table, OVERRIDES}
 #define XLOCKMORE_HACK(NAME, CLASS) XLOCKMORE_HACK_WITH(NAME, CLASS, NULL)
 
-/* Galaxy's `count: -5` picks 2-5 galaxies and every star is pulled by every
- * galaxy in double precision, which costs 160 ms a frame on the device. */
-static const char *const kGalaxyOverrides[] = {"*count: 2", NULL};
+/* Galaxy's `count: -5` picks 2-5 galaxies, and each star is pulled by every
+ * galaxy. -3 caps it at 3. Counts of -2 or above skip the hack's cleanup on
+ * restart and leak its star buffers. */
+static const char *const kGalaxyOverrides[] = {"*count: -3", NULL};
 
 extern const HackEntry pyro_hack;
 extern const HackEntry hypercube_hack;

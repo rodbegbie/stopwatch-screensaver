@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <sanitizer/allocator_interface.h>
 #include <unity.h>
 
 #include "core/canvas.h"
@@ -76,6 +77,32 @@ void test_cycling_through_all_hacks_100_times_is_asan_clean(void) {
   runner_destroy(r);
 }
 
+/* Galaxy restarts every 4 * cycles frames, and with some counts its restart
+ * leaks the star rectangle buffers. Shorten the cycle to see many restarts. */
+void test_galaxy_restarts_do_not_leak_with_its_registered_overrides(void) {
+  const HackEntry *galaxy = NULL;
+  for (int i = 0; i < g_hack_count; i++)
+    if (strcmp(g_hacks[i]->name, "Galaxy") == 0) galaxy = g_hacks[i];
+  TEST_ASSERT_NOT_NULL(galaxy);
+
+  const char *merged[8] = {"*cycles: 5"};
+  int n = 1;
+  for (const char *const *o = galaxy->overrides; o && *o && n < 7; o++)
+    merged[n++] = *o;
+  HackEntry entry = *galaxy;
+  entry.overrides = merged;
+  const HackEntry *const hacks[] = {&entry};
+
+  HackRunner *r = runner_create_with(&cv, hacks, 1);
+  runner_start(r, 0);
+  for (int f = 0; f < 100; f++) runner_step(r);
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  for (int f = 0; f < 400; f++) runner_step(r);
+  const size_t after = __sanitizer_get_current_allocated_bytes();
+  runner_destroy(r);
+  TEST_ASSERT_TRUE_MESSAGE(after < before + 4096, "allocated bytes grew");
+}
+
 void test_prev_from_first_wraps_to_last_hack(void) {
   HackRunner *r = runner_create(&cv);
   runner_start(r, 0);
@@ -90,6 +117,7 @@ int main(void) {
   RUN_TEST(test_every_hack_draws_something_within_2000_frames);
   RUN_TEST(test_every_hack_runs_3000_frames_cleanly_with_sane_delays);
   RUN_TEST(test_cycling_through_all_hacks_100_times_is_asan_clean);
+  RUN_TEST(test_galaxy_restarts_do_not_leak_with_its_registered_overrides);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
   return UNITY_END();
 }

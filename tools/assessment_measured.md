@@ -82,11 +82,12 @@ hack is switched back to, so switching does not leak.
   slow updates in keeping with other deliberately slow hacks and Drift fine.
 - Galaxy first ran at 5 fps (152-172 ms a frame): about 4,400 stars, each
   pulled by every galaxy in `double` maths, which the ESP32-S3 emulates in
-  software. Capping `count` at 2 galaxies changed nothing measurable; the
-  PSRAM use suggests the random pick had already given two. Building the
-  unmodified source with `double` redefined as `float`
+  software. Building the unmodified source with `double` redefined as `float`
   (`hacks/galaxy_single.c`) cut the step to 38-42 ms and gave 14 fps, which
-  Rod called a lot better. The frames look the same on the host.
+  Rod called a lot better. The frames look the same on the host. That run had
+  two galaxies; a count override of 2 leaked the star buffers on each restart,
+  so it now uses `count: -3` (two or three galaxies), which has not been
+  measured on the device.
 - Thornbird keeps 400 buffers of 100 rectangles (about 320 KB) in internal
   heap, filled one per frame, so free heap falls to under 1 KB after about
   six seconds. It is bounded, not a leak: switching away returned the heap

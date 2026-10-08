@@ -135,7 +135,8 @@ Set `NO_COLOR=1` on `pio` output you parse.
   then. Resources the framework reads but a hack does not define
   (`delta3d`, `size`, ...) fall back to `kFrameworkDefaults` in
   `x11shim/resources.c`. A `HackEntry`'s `overrides` list beats the hack's own
-  defaults (Galaxy runs with `count: 2` to stay near 15 fps); register it with
+  defaults (Galaxy runs with `count: -3`, at most three galaxies; a count of -2 or
+  above skips the hack's restart cleanup and leaks); register it with
   `XLOCKMORE_HACK_WITH`.
   Galaxy is built through `hacks/galaxy_single.c`, which includes the unmodified
   `galaxy.c` with `double` redefined as `float` (the S3's FPU is single-precision
