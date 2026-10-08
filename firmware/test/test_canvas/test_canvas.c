@@ -178,8 +178,29 @@ void test_polygon_offscreen_vertices_clip(void) {
   TEST_ASSERT_EQUAL_INT(64, count_set());
 }
 
+void test_polygon_keeps_every_crossing_when_a_scanline_has_over_64(void) {
+  enum { TEETH = 40 };
+  Canvas wide;
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&wide, 200, 8, malloc));
+  canvas_clear(&wide, 0);
+  int xy[TEETH * 4 * 2];
+  int n = 0;
+  for (int i = 0; i < TEETH; i++) {
+    xy[n++] = 4 * i, xy[n++] = 6;
+    xy[n++] = 4 * i, xy[n++] = 0;
+    xy[n++] = 4 * i + 2, xy[n++] = 0;
+    xy[n++] = 4 * i + 2, xy[n++] = 6;
+  }
+  canvas_fill_polygon(&wide, xy, n / 2, C1);
+  int last_tooth = 4 * (TEETH - 1);
+  TEST_ASSERT_EQUAL_HEX16(C1, wide.px[3 * wide.w + last_tooth + 1]);
+  TEST_ASSERT_EQUAL_HEX16(0, wide.px[3 * wide.w + last_tooth - 1]);
+  canvas_free(&wide);
+}
+
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_polygon_keeps_every_crossing_when_a_scanline_has_over_64);
   RUN_TEST(test_rgb565_white_black_red);
   RUN_TEST(test_rgb565_from16_matches_8bit);
   RUN_TEST(test_init_failing_alloc_returns_minus_one);

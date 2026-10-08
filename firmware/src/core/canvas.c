@@ -132,6 +132,14 @@ void canvas_fill_ellipse(Canvas *c, int x, int y, int w, int h,
 
 void canvas_fill_polygon(Canvas *c, const int *xy, int n, uint16_t color) {
   if (n < 3) return;
+  /* An edge crosses a scanline at most once, so n slots always suffice. The
+   * heap is only used for big polygons, to keep the task stack small. */
+  double stack_xs[64];
+  double *xs = stack_xs;
+  if (n > 64) {
+    xs = (double *)malloc((size_t)n * sizeof(double));
+    if (!xs) return;
+  }
   wide_t ymin = xy[1], ymax = xy[1];
   for (int i = 1; i < n; i++) {
     if (xy[2 * i + 1] < ymin) ymin = xy[2 * i + 1];
@@ -140,14 +148,13 @@ void canvas_fill_polygon(Canvas *c, const int *xy, int n, uint16_t color) {
   if (ymin < 0) ymin = 0;
   if (ymax >= c->h) ymax = c->h - 1;
   for (wide_t yy = ymin; yy <= ymax; yy++) {
-    double xs[64];
     int nx = 0;
     double sy = yy + 0.5;
     for (int i = 0, j = n - 1; i < n; j = i++) {
       double yi = xy[2 * i + 1], yj = xy[2 * j + 1];
       if ((yi <= sy && yj > sy) || (yj <= sy && yi > sy)) {
         double t = (sy - yi) / (yj - yi);
-        if (nx < 64) xs[nx++] = xy[2 * i] + t * (xy[2 * j] - xy[2 * i]);
+        xs[nx++] = xy[2 * i] + t * (xy[2 * j] - xy[2 * i]);
       }
     }
     for (int a = 1; a < nx; a++)
@@ -160,4 +167,5 @@ void canvas_fill_polygon(Canvas *c, const int *xy, int n, uint16_t color) {
       hspan(c, (wide_t)ceil(xs[k] - 0.5), (wide_t)ceil(xs[k + 1] - 0.5) - 1, yy,
             color);
   }
+  if (xs != stack_xs) free(xs);
 }

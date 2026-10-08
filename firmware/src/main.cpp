@@ -48,7 +48,8 @@ static void printStats(const char *tag) {
       (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
 }
 
-static void pollButtons() {
+/* Returns true if a button switched hacks (which also resets the stats). */
+static bool pollButtons() {
   bool switched = false;
   if (M5.BtnA.wasPressed()) {
     runner_next(runner);
@@ -65,6 +66,7 @@ static void pollButtons() {
                   (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
     resetStats();
   }
+  return switched;
 }
 
 void setup() {
@@ -96,15 +98,16 @@ void loop() {
 
   unsigned long waitUsTarget = runner_remaining_delay_us(delayUs, t2 - t0);
   uint32_t waitedUs = 0;
-  while (waitedUs < waitUsTarget) {
+  bool switched = false;
+  while (!switched && waitedUs < waitUsTarget) {
     uint32_t slice =
         waitUsTarget - waitedUs < kSliceUs ? waitUsTarget - waitedUs : kSliceUs;
     delayMicroseconds(slice);
     waitedUs += slice;
     M5.update();
-    pollButtons();
+    switched = pollButtons();
   }
-  waitUs += micros() - t2;
+  if (!switched) waitUs += micros() - t2;
 
   if (millis() - statsAt >= kStatsEveryMs) {
     printStats("run");

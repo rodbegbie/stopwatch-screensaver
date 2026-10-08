@@ -110,13 +110,19 @@ int XFillPolygon(Display *dpy, Drawable d, GC gc, XPoint *pts, int n,
   (void)d;
   (void)shape;
   (void)mode;
-  if (n < 3 || n > 256) return 0;
-  int xy[512];
+  if (n < 3) return 0;
+  int stack_xy[2 * 64];
+  int *xy = stack_xy;
+  if (n > 64) {
+    xy = (int *)malloc((size_t)n * 2 * sizeof(int));
+    if (!xy) return 0;
+  }
   for (int i = 0; i < n; i++) {
     xy[2 * i] = pts[i].x;
     xy[2 * i + 1] = pts[i].y;
   }
   canvas_fill_polygon(dpy->canvas, xy, n, (uint16_t)gc->foreground);
+  if (xy != stack_xy) free(xy);
   return 0;
 }
 

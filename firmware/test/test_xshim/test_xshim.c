@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unity.h>
@@ -108,6 +109,23 @@ void test_fill_polygon_fills_triangle(void) {
   XFillPolygon(dpy, win, gc, pts, 3, Complex, CoordModeOrigin);
   TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(1, 1));
   TEST_ASSERT_EQUAL_HEX16(0, at(7, 7));
+  XFreeGC(dpy, gc);
+}
+
+void test_fill_polygon_draws_with_1000_points(void) {
+  enum { N = 1000 };
+  static XPoint pts[N];
+  for (int i = 0; i < N; i++) {
+    double a = 2 * 3.14159265358979 * i / N;
+    pts[i].x = (short)(8 + (int)(6 * cos(a) + 0.5));
+    pts[i].y = (short)(8 + (int)(6 * sin(a) + 0.5));
+  }
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XFillPolygon(dpy, win, gc, pts, N, Complex, CoordModeOrigin);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(8, 8));
+  TEST_ASSERT_EQUAL_HEX16(0, at(0, 0));
   XFreeGC(dpy, gc);
 }
 
@@ -284,6 +302,7 @@ int main(void) {
   RUN_TEST(test_draw_line_and_lines_connect_points);
   RUN_TEST(test_fill_arc_full_circle_draws_partial_arc_does_not);
   RUN_TEST(test_fill_polygon_fills_triangle);
+  RUN_TEST(test_fill_polygon_draws_with_1000_points);
   RUN_TEST(test_resources_parse_star_and_dot_prefixes_and_tabs);
   RUN_TEST(test_resources_missing_integer_returns_zero);
   RUN_TEST(test_pixel_resource_black_white_hex);
