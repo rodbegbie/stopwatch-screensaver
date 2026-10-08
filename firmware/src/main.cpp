@@ -7,6 +7,7 @@ extern "C" {
 #include "runner/button_latch.h"
 #include "runner/hack_runner.h"
 #include "runner/overlay.h"
+#include "runner/rotation.h"
 #include "runner/start_pick.h"
 }
 
@@ -26,6 +27,13 @@ static const char *const kForcedStart = nullptr;
 
 static const uint32_t kStatsEveryMs = 5000;
 static const uint32_t kNameShownMs = 5000;
+
+/* Seconds before moving on to the next hack; build with -DROTATE_SECONDS=5 to
+ * shorten it for leak testing, or 0 to stay put. */
+#ifndef ROTATE_SECONDS
+#define ROTATE_SECONDS 90
+#endif
+static const uint32_t kRotateMs = ROTATE_SECONDS * 1000u;
 static const int kNameY = kSize / 2;
 static const int kFpsY = kSize - 40;
 
@@ -53,6 +61,7 @@ static void buttonTask(void *) {
 static Canvas canvas;
 static HackRunner *runner;
 static Overlay overlay;
+static Rotation rotation;
 static uint32_t frames;
 static uint32_t statsAt;
 static uint32_t stepUs, pushUs, waitUs;
@@ -141,7 +150,16 @@ static void present() {
   unstamp(&namePatch);
 }
 
-/* Returns true if a button switched hacks (which also resets the stats). */
+/* Whatever started the hack, the name shows again, the rotation countdown
+ * restarts and the stats begin afresh. */
+static void hackStarted() {
+  uint32_t now = millis();
+  overlay_hack_started(&overlay, now);
+  rotation_reset(&rotation, now);
+  resetStats();
+}
+
+/* Returns true if a button switched hacks. */
 static bool pollButtons() {
   bool switched = false;
   uint32_t pressedAt = 0;
@@ -159,10 +177,20 @@ static bool pollButtons() {
                   (unsigned)(millis() - pressedAt),
                   (unsigned)ESP.getFreeHeap(),
                   (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
-    overlay_hack_started(&overlay, millis());
-    resetStats();
+    hackStarted();
   }
   return switched;
+}
+
+/* Returns true if the timer moved on to the next hack. */
+static bool pollRotation() {
+  if (!rotation_due(&rotation, millis())) return false;
+  runner_next(runner);
+  Serial.printf("rotate -> %s heap=%u psram=%u\n",
+                g_hacks[runner_index(runner)]->name, (unsigned)ESP.getFreeHeap(),
+                (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+  hackStarted();
+  return true;
 }
 
 /* A tap anywhere toggles the fps readout. Call right after M5.update(), which
@@ -195,14 +223,15 @@ void setup() {
                   kForcedStart);
   if (runner_start(runner, first) != 0) halt("hack start failed");
   overlay_init(&overlay, kNameShownMs);
-  overlay_hack_started(&overlay, millis());
+  rotation_init(&rotation, kRotateMs, millis());
+  hackStarted();
   printStats("boot");
   resetStats();
 }
 
 void loop() {
   M5.update();
-  pollButtons();
+  if (!pollButtons()) pollRotation();
   pollTouch();
 
   uint32_t t0 = micros();
@@ -227,7 +256,7 @@ void loop() {
     delayMicroseconds(slice);
     waitedUs += slice;
     M5.update();
-    switched = pollButtons();
+    switched = pollButtons() || pollRotation();
     if (!switched) pollTouch();
     if (!switched && overlay_wants_redraw(&overlay, millis())) present();
   }

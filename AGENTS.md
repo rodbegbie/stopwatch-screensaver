@@ -37,6 +37,10 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
   `PLATFORMIO_BUILD_FLAGS='-DSTART_HACK=\"galaxy\"'` (a name from `g_hacks[]`,
   any case; an unknown name falls back to random and logs it). Rebuild without
   it afterwards, since the define sticks to the build.
+  It rotates to the next hack every 90 s (a button press restarts the count);
+  `-DROTATE_SECONDS=5` shortens that for leak testing and `=0` turns it off.
+  The log prints `rotate -> <hack> heap= psram=` at each change. Combine flags
+  in one `PLATFORMIO_BUILD_FLAGS` string.
 - `pio run -e dump`, then `.pio/build/dump/program <index> <frames> out.raw`,
   then `uv run tools/rgb565_to_png.py out.raw 466 466 out.png` to see a frame.
   The index is the hack's 0-based position in `g_hacks[]` in
