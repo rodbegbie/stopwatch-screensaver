@@ -126,6 +126,40 @@ stage 1.
    will be labelled as such. Measured numbers are added for the hacks we
    actually run.
 
+## Licensing and attribution
+
+The repo may become public, so every copied file must meet its licence.
+
+- Most xscreensaver hacks (154 of 161 top-level `hacks/*.c`) carry
+  jwz's permissive notice: use, copy, modify, distribute and sell are
+  allowed, provided the copyright notice and the permission notice stay in
+  all copies and in supporting documentation. `pyro.c` is under this
+  notice (Copyright 1992-2008 Jamie Zawinski).
+- Seven files use something else: `ifs`, `kumppa` and `xrayswarm` carry
+  MIT-style notices from their own authors, `t3d` is GPL v2+ or MIT/X
+  at the user's choice, `cynosure` quotes an older author's notice, and
+  `delaunay` has no notice in the file header. Each is read in full before
+  it is ever copied in, and anything unclear is left out.
+- Rules for copied hack files:
+  - Keep the original header intact. Our patches go below it and are marked
+    as modifications.
+  - A `THIRD_PARTY_NOTICES.md` at the repo root lists each hack included,
+    its author, copyright and licence, and the xscreensaver 6.16 source.
+    The permission notice text is reproduced there too, to satisfy the
+    "supporting documentation" requirement.
+  - `tools/` includes a check that fails if a file in `firmware/src/hacks/`
+    lacks a recognised notice or isn't listed in the notices file.
+- Our own code (shim, `main.cpp`, tools) needs a licence chosen by Rod
+  before the repo goes public. MIT is the obvious candidate, but it's
+  Rod's call.
+- Dependencies are licensed separately: M5Unified and M5GFX (MIT) and
+  PlatformIO (Apache 2.0) are fine to use. Their notices are added to the
+  same file if they are redistributed. A future TinyGL port would need its
+  own check.
+- `vendor/` is untracked, so xscreensaver's full source tree is not
+  redistributed by the repo.
+- This is a good-faith engineering checklist, not legal advice.
+
 ## Future work
 
 - Stage 2 shim, then more 2D hacks, prioritised by the assessment.
