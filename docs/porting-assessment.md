@@ -7,11 +7,14 @@ it with `uv run tools/score_hacks.py`.
 ## How to read this
 
 - **408 hacks** were scanned: every `hacks/*.c` and `hacks/glx/*.c`.
-- The scan is static and heuristic. It counts Xlib calls in the source and
-  compares them with the calls declared in `firmware/src/x11shim/xshim.h`.
-  It does not run anything, and it does not see helpers that hacks reach
-  through `xlockmore.h` or `utils/`, so treat the effort ratings as a
-  prioritisation aid, not an estimate.
+- The scan is static and heuristic. For each 2D hack it counts the Xlib
+  calls in the source that the shim does not declare, and it also
+  syntax-checks the unmodified source against the shim's headers
+  (`cc -fsyntax-only`). Anything the compiler cannot find is a **shim
+  gap**: a missing header, type, struct field, constant or function.
+  That second check catches helpers hacks reach through `utils/` that a
+  count of Xlib calls cannot see. It does not run anything, so treat the
+  effort ratings as a prioritisation aid, not an estimate.
 - Many files in `hacks/` are shared helpers or support code rather than
   hacks, so the totals overstate the number of distinct screensavers.
 
@@ -19,9 +22,9 @@ it with `uv run tools/score_hacks.py`.
 
 | Rating | Meaning | Count |
 | --- | --- | --- |
-| S | 2D, and every Xlib call is already in the shim | 24 |
-| M | 2D, 1-4 missing calls, no pixmaps or pixel read-back | 55 |
-| L | 2D, 5+ missing calls, or uses pixmaps or pixel read-back | 82 |
+| S | 2D, and the unmodified source compiles against the shim | 6 |
+| M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 35 |
+| L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 120 |
 | XL | GL: needs a software rasteriser (see below) | 247 |
 
 ## Flags
@@ -64,185 +67,185 @@ the cause of the dip at restart.
 
 ## Suggested order for shim stage 2
 
-Missing calls across 2D hacks, ranked so calls that block
-hacks needing few additions come first.
+Shim gaps across 2D hacks, ranked so gaps that block hacks
+needing few additions come first.
 
-| Call | Score | 2D hacks needing it |
+| Gap | Score | 2D hacks needing it |
 | --- | --- | --- |
-| XCreatePixmap | 11.07 | 63 |
-| XSetLineAttributes | 11.04 | 27 |
-| XCopyArea | 10.8 | 52 |
-| XFreePixmap | 9.18 | 59 |
-| XFillRectangles | 8.44 | 15 |
-| XSetWindowBackground | 5.68 | 17 |
-| XDrawPoints | 5.59 | 9 |
-| XDrawArc | 5.29 | 17 |
-| XPutPixel | 5.06 | 34 |
-| XDestroyImage | 5.03 | 40 |
+| xlock.h | 13.36 | 40 |
+| screenhack_event_helper | 5.39 | 45 |
+| XSetLineAttributes | 4.51 | 27 |
+| XCreatePixmap | 4.46 | 63 |
+| XCopyArea | 4.42 | 52 |
+| XFreePixmap | 3.87 | 59 |
+| Pixmap | 3.58 | 57 |
+| XFillRectangles | 3.17 | 15 |
+| XGCValues.background | 2.92 | 31 |
+| make_smooth_colormap | 2.84 | 26 |
 
 ## All hacks
 
-| Hack | Kind | Effort | Missing X calls | Flags | LOC |
+| Hack | Kind | Effort | Shim gaps | Flags | LOC |
 | --- | --- | --- | --- | --- | --- |
-| analogtv | 2d | L | XClearArea, XCreateImage, XCreatePixmap, XDestroyImage, XDrawString, XFreePixmap, XGetImage, XGetPixel, XPutPixel, XQueryColors, XSetWindowBackground, XWriteBitmapFile | pixmaps, readback, text | 2454 |
-| analogtv-cli | 2d | L | XClearArea, XCreateImage, XCreatePixmap, XCreatePixmapFromBitmapData, XDestroyImage, XDrawString, XFreePixmap, XGetImage, XGetPixel, XInitImage, XPutImage, XPutPixel, XQueryColor, XQueryColors, XSetWindowBackground | pixmaps, readback, text | 1121 |
-| anemone | 2d | L | XCopyArea, XCreatePixmap, XFreePixmap, XSetLineAttributes | pixmaps | 458 |
-| anemotaxis | 2d | L | XCopyArea, XCreatePixmap, XSetLineAttributes | pixmaps | 760 |
-| ant | 2d | L | XChangeGC, XCreatePixmapFromBitmapData, XDrawArc, XFreePixmap, XSetLineAttributes | needs-xlockmore | 1351 |
-| apple2 | 2d | L | XCreateImage, XCreatePixmap, XDestroyImage, XDrawString, XFreePixmap, XGetImage, XGetPixel, XLoadQueryFont, XPutPixel, XWriteBitmapFile | pixmaps, readback, text | 886 |
-| apple2-main | 2d | L | XCreatePixmap, XDestroyImage, XFreePixmap, XGetImage, XGetPixel, XQueryColors | pixmaps, readback | 1642 |
-| binaryhorizon | 2d | L | XCopyArea, XCreatePixmap, XDestroyImage, XFreePixmap, XGetImage, XPutImage, XPutPixel | pixmaps, readback | 624 |
-| binaryring | 2d | L | XCopyArea, XCreatePixmap, XDestroyImage, XFreePixmap, XGetImage, XPutImage, XPutPixel | pixmaps, readback | 577 |
-| blitspin | 2d | L | XCopyArea, XCopyPlane, XCreatePixmap, XDestroyImage, XDisplayHeight, XDisplayWidth, XFreePixmap, XGetImage, XPutImage, XScreenNumberOfScreen, XSetClipMask | pixmaps, readback, clipmask | 467 |
-| boxfit | 2d | L | XCreatePixmap, XDestroyImage, XDrawArc, XDrawRectangle, XFreePixmap, XGetImage, XGetPixel, XSetWindowBackground | pixmaps, readback | 573 |
-| bsod | 2d | L | XChangeGC, XClearArea, XCopyArea, XCopyPlane, XCreateImage, XCreatePixmap, XCreatePixmapFromBitmapData, XDestroyImage, XDrawRectangle, XFetchName, XFreePixmap, XGetImage, XGetPixel, XPutImage, XPutPixel, XQueryColor, XSetBackground, XSetClipMask, XSetClipOrigin, XSetLineAttributes, XSetPlaneMask, XSetWindowBackground, XStoreName | pixmaps, readback, clipmask | 7809 |
-| bubbles | 2d | L | XCopyArea, XDrawArc, XFreePixmap, XSetClipMask, XSetClipOrigin | pixmaps, clipmask | 1468 |
-| bumps | 2d | L | XCreatePixmap, XDestroyImage, XGetImage, XGetPixel, XParseColor, XQueryColors, XSetWindowBackground, XSync | pixmaps, readback | 705 |
-| ccurve | 2d | L | XCopyArea, XCreatePixmap, XFreePixmap | pixmaps | 872 |
-| compass | 2d | L | XCopyArea, XCreatePixmap, XDrawSegments, XFreePixmap | pixmaps, float-heavy | 999 |
-| crystal | 2d | L | XCreateColormap, XFreeColormap, XInstallColormap, XParseColor, XSetFunction, XSetWindowColormap | xor, float-heavy, needs-xlockmore | 1286 |
-| decayscreen | 2d | L | XCopyArea, XCreatePixmap | pixmaps | 392 |
-| deluxe | 2d | L | XCopyArea, XCreatePixmap, XDrawArc, XFreePixmap | pixmaps, float-heavy | 480 |
-| distort | 2d | L | XCopyArea, XCreatePixmap, XDestroyImage, XFreePixmap, XGetImage, XGetPixel, XPutImage, XPutPixel | pixmaps, readback | 894 |
-| droste | 2d | L | XCreatePixmap, XDestroyImage, XFreePixmap, XGetImage, XGetPixel, XLookupString, XPutPixel | pixmaps, readback | 686 |
-| fiberlamp | 2d | L | XAllocNamedColor, XCopyArea, XCreatePixmap, XFreePixmap, XSetGraphicsExposures, XSetLineAttributes, XTranslateCoordinates | pixmaps, needs-xlockmore | 480 |
-| filmleader | 2d | L | XCreateImage, XCreatePixmap, XDestroyImage, XDrawArc, XFreePixmap, XGetImage, XGetPixel, XLookupString, XPutImage, XPutPixel, XSetLineAttributes | pixmaps, readback | 548 |
-| flag | 2d | L | XCopyArea, XCreateImage, XCreatePixmap, XDestroyImage, XDrawString, XFreeFont, XFreePixmap, XGetImage, XGetPixel, XLoadQueryFont, XPutPixel, XSetGraphicsExposures, XTextExtents | pixmaps, readback, text, needs-xlockmore | 570 |
-| flow | 2d | L | XCopyArea, XCreatePixmap, XDrawSegments, XFreePixmap, XSetGraphicsExposures, XSetLineAttributes | pixmaps, needs-xlockmore | 1216 |
-| fluidballs | 2d | L | XCopyArea, XCreatePixmap, XFreePixmap, XQueryPointer, XSelectInput, XTranslateCoordinates | pixmaps | 881 |
-| fontglide | 2d | L | XCopyArea, XCreateImage, XCreatePixmap, XDestroyImage, XDrawRectangle, XDrawString, XDrawString16, XFreeFont, XFreePixmap, XGetAtomName, XGetGeometry, XGetImage, XGetPixel, XLoadQueryFont, XLookupString, XPutImage, XPutPixel, XSetClipMask, XSetClipOrigin, XSetFont, XTextExtents, XTextExtents16 | pixmaps, readback, text, clipmask | 2474 |
-| fuzzyflakes | 2d | L | XCopyArea, XCreatePixmap, XFreePixmap, XParseColor | pixmaps | 655 |
-| glitchpeg | 2d | L | XCreateImage, XDestroyImage, XGetPixel, XPutImage, XPutPixel | readback | 466 |
-| goop | 2d | L | XCopyArea, XCopyPlane, XCreatePixmap, XSetFunction, XSetPlaneMask | pixmaps, xor | 651 |
-| halftone | 2d | L | XCopyArea, XCreatePixmap, XFreePixmap | pixmaps | 413 |
-| halo | 2d | L | XCopyPlane, XCreatePixmap, XFreePixmap, XSetBackground | pixmaps | 459 |
-| ifs | 2d | L | XCopyArea, XCreatePixmap, XFillRectangles, XFreePixmap | pixmaps | 560 |
-| imsmap | 2d | L | XCreateImage, XDestroyImage, XPutImage, XPutPixel, XSetBackground | - | 426 |
-| interference | 2d | L | XCopyArea, XCreatePixmap, XFreePixmap, XPutPixel, XShmGetEventBase | pixmaps | 1002 |
-| intermomentary | 2d | L | XCopyArea, XCreatePixmap, XFreePixmap, XQueryColor, XSetFillStyle, XSetTile | pixmaps | 605 |
-| juggle | 2d | L | XDrawArc, XDrawImageString, XDrawString, XFreeFontInfo, XLoadQueryFont, XSetLineAttributes, XTextWidth | text, float-heavy, needs-xlockmore | 2798 |
-| julia | 2d | L | XCreatePixmap, XCreatePixmapCursor, XCreatePixmapFromBitmapData, XDefineCursor, XDrawArc, XFillRectangles, XFreeCursor, XFreePixmap, XSetFillStyle, XSetStipple, XSetTSOrigin, XUndefineCursor | pixmaps, float-heavy, needs-xlockmore | 451 |
-| kumppa | 2d | L | XCopyArea, XSetGraphicsExposures | pixmaps | 545 |
-| lcdscrub | 2d | L | XCreateImage, XCreatePixmap, XDestroyImage, XFreePixmap, XGetPixel, XPutImage, XPutPixel, XSetBackground, XSetClipMask | pixmaps, readback, clipmask | 399 |
-| maze | 2d | L | XCopyArea, XCopyPlane, XFreePixmap, XGetGeometry, XSetBackground, XSetClipMask, XSetClipOrigin, XSetLineAttributes, XSync | pixmaps, clipmask | 1681 |
-| memscroller | 2d | L | XCopyArea, XDrawRectangle | pixmaps | 626 |
-| metaballs | 2d | L | XCreateImage, XDestroyImage, XFree, XListPixmapFormats, XParseColor, XPutImage, XPutPixel, XSetWindowBackground | - | 438 |
-| moire2 | 2d | L | XCopyArea, XCopyPlane, XCreatePixmap, XDrawArc, XFreePixmap, XSetBackground, XSetFunction | pixmaps, xor | 363 |
-| nerverot | 2d | L | XCopyArea, XCreatePixmap | pixmaps, float-heavy | 1367 |
-| noseguy | 2d | L | XCopyArea, XCreateImage, XCreatePixmap, XDestroyImage, XDrawRectangle, XFreePixmap, XGetImage, XGetPixel, XPutImage, XPutPixel, XSetClipMask, XSetClipOrigin, XSetLineAttributes | pixmaps, readback, clipmask | 720 |
-| pacman | 2d | L | XCopyArea, XCreatePixmap, XDrawArc, XDrawString, XFreePixmap, XGetGeometry, XLoadQueryFont, XSetClipMask, XSetClipOrigin, XSetFillStyle, XSetLineAttributes | pixmaps, text, clipmask, needs-xlockmore | 1479 |
-| phosphor | 2d | L | XCopyArea, XCopyPlane, XCreateImage, XCreatePixmap, XDestroyImage, XFreePixmap, XGetImage, XGetPixel, XPutImage, XPutPixel, XQueryColor, XSetClipMask, XSetClipOrigin, XWriteBitmapFile | pixmaps, readback, clipmask | 1260 |
-| piecewise | 2d | L | XCopyArea, XCreatePixmap, XDrawArcs | pixmaps | 1036 |
-| polyominoes | 2d | L | XCreateImage, XDestroyImage, XDrawRectangle, XDrawSegments, XFillRectangles, XPutImage, XSetLineAttributes | needs-xlockmore | 2370 |
-| pong | 2d | L | XCreatePixmap, XCreatePixmapCursor, XDefineCursor, XDestroyImage, XGrabPointer, XHeightMMOfScreen, XHeightOfScreen, XLookupString, XQueryPointer, XSelectInput, XUngrabPointer, XWarpPointer | pixmaps | 1109 |
-| popsquares | 2d | L | XCopyArea, XCreatePixmap, XFreePixmap, XQueryColor | pixmaps | 310 |
-| recanim | 2d | L | XCopyArea, XCreateImage, XCreatePixmap, XDestroyImage, XFetchName, XFreePixmap, XGetSubImage, XStoreName, XSync | pixmaps | 449 |
-| ripples | 2d | L | XDestroyImage, XGetImage, XGetPixel, XPutPixel, XQueryColor | readback | 1127 |
-| rocks | 2d | L | XCopyPlane, XCreatePixmap, XFreePixmap, XQueryColor, XSetGraphicsExposures | pixmaps | 562 |
-| rotzoomer | 2d | L | XCreatePixmap, XDestroyImage, XFreePixmap, XGetImage, XGetPixel, XPutPixel | pixmaps, readback | 601 |
-| screenhack | 2d | L | XBell, XChangeProperty, XCreateColormap, XGetAtomName, XIfEvent, XInternAtom, XLookupString, XNextEvent, XPending, XSelectInput, XSendEvent, XSetErrorHandler, XSetWindowBackground, XSetWindowColormap, XSync, XVisualIDFromVisual | - | 1099 |
-| shadebobs | 2d | L | XCreateImage, XDestroyImage, XFree, XGetPixel, XListPixmapFormats, XParseColor, XPutImage, XPutPixel, XSetWindowBackground | readback | 474 |
-| slidescreen | 2d | L | XCopyArea, XDrawRectangle, XFree, XParseColor, XQueryColors | pixmaps | 507 |
-| slip | 2d | L | XCopyArea, XCreatePixmap, XFreePixmap, XSetGraphicsExposures | pixmaps, needs-xlockmore | 376 |
-| speedmine | 2d | L | XCopyArea, XCreatePixmap, XFreePixmap, XQueryColor, XSetClipMask | pixmaps, clipmask | 1659 |
-| spotlight | 2d | L | XCopyArea, XCreatePixmap, XDrawRectangle, XFreePixmap, XSetClipMask, XSetClipOrigin | pixmaps, clipmask | 355 |
-| strange | 2d | L | XCopyArea, XCopyPlane, XCreatePixmap, XDrawPoints, XFillRectangles, XFreePixmap, XPutPixel, XQueryColor, XQueryColors, XSetBackground, XSetFunction, XSetGraphicsExposures | pixmaps, xor, needs-xlockmore | 1353 |
-| swirl | 2d | L | XCreateColormap, XFree, XFreeColormap, XInstallColormap, XPutPixel, XQueryColor, XSetWMColormapWindows, XSetWindowColormap, XStoreColors | needs-xlockmore | 1447 |
-| t3d | 2d | L | XAllocColorCells, XCopyArea, XCreatePixmap, XDrawSegments, XFreePixmap, XGetImage, XLookupString, XPutImage, XQueryPointer, XStoreColors | pixmaps, readback, float-heavy | 991 |
-| tessellimage | 2d | L | XCopyArea, XCreateImage, XCreatePixmap, XDestroyImage, XFreePixmap, XGetGeometry, XGetImage, XGetPixel, XPutImage, XPutPixel, XQueryColor | pixmaps, readback | 996 |
-| testx11 | 2d | L | XClearArea, XCopyArea, XCopyPlane, XCreatePixmap, XCreatePixmapFromBitmapData, XDestroyImage, XDrawArc, XDrawPoints, XDrawRectangle, XDrawSegments, XDrawString, XFillRectangles, XFreePixmap, XGetImage, XLoadFont, XLookupString, XPutImage, XPutPixel, XSetBackground, XSetClipMask, XSetWindowBackground, XSync | pixmaps, readback, text, clipmask | 968 |
-| truchet | 2d | L | XCopyArea, XCreatePixmap, XDrawArc, XSetLineAttributes | pixmaps | 541 |
-| twang | 2d | L | XCreatePixmap, XDestroyImage, XFreePixmap, XGetImage, XGetPixel, XPutPixel | pixmaps, readback | 791 |
-| vfeedback | 2d | L | XCopyArea, XCreateImage, XCreatePixmap, XDestroyImage, XFreePixmap, XGetImage, XGetPixel, XLookupString, XPutPixel, XSelectInput | pixmaps, readback | 592 |
-| wander | 2d | L | XCopyArea, XCreatePixmap | pixmaps | 284 |
-| whirlygig | 2d | L | XCopyArea, XCreatePixmap, XDrawString | pixmaps, text, float-heavy | 741 |
-| wormhole | 2d | L | XCopyArea, XCreatePixmap, XFreePixmap, XSetLineAttributes | pixmaps | 734 |
-| xanalogtv | 2d | L | XCreatePixmap, XDestroyImage, XFreePixmap, XGetImage, XLookupString | pixmaps, readback | 689 |
-| xflame | 2d | L | XCreateImage, XDestroyImage, XGetPixel, XPutPixel, XQueryColor | readback | 826 |
-| ximage-loader | 2d | L | XCreateImage, XCreatePixmap, XDestroyImage, XFreePixmap, XGetImage, XGetPixel, XPutImage, XPutPixel | pixmaps, readback | 679 |
-| xjack | 2d | L | XClearArea, XCopyArea | pixmaps | 508 |
-| xlyap | 2d | L | XCopyArea, XCreatePixmap, XDrawPoints, XFreePixmap, XGetGeometry, XLookupString, XPending, XStoreColors | pixmaps | 1939 |
-| xmatrix | 2d | L | XChangeGC, XCopyArea, XCreateImage, XCreatePixmap, XDestroyImage, XDrawRectangle, XFreePixmap, XGetImage, XGetPixel, XLookupString, XPutImage, XPutPixel | pixmaps, readback | 1915 |
-| xscreensaver-getimage | 2d | L | XChangeProperty, XCopyArea, XCreateImage, XCreatePixmap, XDefaultColormapOfScreen, XDeleteProperty, XDestroyImage, XFree, XFreePixmap, XGetClassHint, XGetGeometry, XGetImage, XGetPixel, XGetVisualInfo, XGetWMNormalHints, XGetWindowProperty, XIfEvent, XInstallColormap, XInternAtom, XMapRaised, XPutImage, XPutPixel, XQueryColors, XQueryTree, XRootWindowOfScreen, XScreenNumberOfScreen, XSelectInput, XSetErrorHandler, XSetWMNormalHints, XStoreColors, XSync, XUnmapWindow, XVisualIDFromVisual | pixmaps, readback | 2483 |
-| xsublim | 2d | L | XDestroyImage, XDrawString, XGetImage, XGrabServer, XLoadQueryFont, XPutImage, XRootWindowOfScreen, XSetErrorHandler, XSync, XTextWidth, XUngrabServer | readback, text | 808 |
-| zoom | 2d | L | XCopyArea, XCreatePixmap, XDestroyImage, XFreePixmap, XGetImage, XGetPixel, XSetWindowBackground | pixmaps, readback | 290 |
-| apollonian | 2d | M | XDrawArc, XQueryColor | needs-xlockmore | 820 |
-| attraction | 2d | M | XDrawRectangle, XQueryPointer | - | 1115 |
-| barcode | 2d | M | XCreateImage, XDestroyImage, XPutImage | - | 2055 |
-| blaster | 2d | M | XFillArcs | - | 1208 |
-| bouboule | 2d | M | XFillArcs, XSetFunction | xor, needs-xlockmore | 860 |
-| braid | 2d | M | XSetLineAttributes | needs-xlockmore | 444 |
-| celtic | 2d | M | XDrawArc, XSetLineAttributes | - | 1141 |
-| cloudlife | 2d | M | XDrawPoints | - | 440 |
-| coral | 2d | M | XFillRectangles | - | 328 |
-| critical | 2d | M | XChangeGC | - | 462 |
-| cwaves | 2d | M | XSetLineAttributes | - | 219 |
-| cynosure | 2d | M | XCreateBitmapFromData, XDrawRectangle, XFreePixmap, XSetWindowBackground | - | 457 |
-| deco | 2d | M | XChangeGC, XDrawRectangle, XSetLineAttributes, XStoreColors | - | 345 |
-| demon | 2d | M | XChangeGC, XCreatePixmapFromBitmapData, XFillRectangles, XFreePixmap | needs-xlockmore | 953 |
-| discrete | 2d | M | XDrawPoints | needs-xlockmore | 442 |
-| drift | 2d | M | XDrawPoints | needs-xlockmore | 674 |
-| eruption | 2d | M | XPutPixel, XSetWindowBackground | - | 608 |
-| euler2d | 2d | M | XDrawArc, XDrawSegments, XSetLineAttributes | float-heavy, needs-xlockmore | 893 |
-| fadeplot | 2d | M | XFillRectangles | needs-xlockmore | 243 |
-| fireworkx | 2d | M | XCreateImage, XDestroyImage, XPutImage, XSync | - | 882 |
-| flame | 2d | M | XFillRectangles | - | 457 |
-| forest | 2d | M | XFillArcs, XSetLineAttributes | needs-xlockmore | 241 |
-| galaxy | 2d | M | XFillRectangles | needs-xlockmore | 462 |
-| grav | 2d | M | XDrawArc | needs-xlockmore | 360 |
-| greynetic | 2d | M | XChangeGC, XCreatePixmapFromBitmapData | - | 297 |
-| hexadrop | 2d | M | XSetWindowBackground | - | 446 |
-| hopalong | 2d | M | XFillRectangles | needs-xlockmore | 563 |
-| interaggregate | 2d | M | XParseColor | - | 989 |
-| kaleidescope | 2d | M | XDrawSegments, XSetLineAttributes | - | 514 |
-| laser | 2d | M | XChangeGC | needs-xlockmore | 356 |
-| lisa | 2d | M | XDrawPoints, XMaxRequestSize, XSetLineAttributes | needs-xlockmore | 744 |
-| lissie | 2d | M | XDrawArc | needs-xlockmore | 323 |
-| lmorph | 2d | M | XSetLineAttributes | float-heavy | 580 |
-| loop | 2d | M | XChangeGC, XCreatePixmapFromBitmapData, XFillRectangles, XFreePixmap | needs-xlockmore | 1700 |
-| marbling | 2d | M | XLookupString, XPutPixel | - | 635 |
-| moire | 2d | M | XPutPixel, XQueryColor | - | 253 |
-| munch | 2d | M | XSetFunction | xor | 462 |
-| pacman_ai | 2d | M | XQueryPointer | - | 879 |
-| penetrate | 2d | M | XDrawArc, XSetLineAttributes, XSync | - | 1037 |
-| penrose | 2d | M | XSetLineAttributes | needs-xlockmore | 1342 |
-| qix | 2d | M | XQueryColor, XSetWindowBackground | - | 642 |
-| rdbomb | 2d | M | XListPixmapFormats, XSetWindowBackground | - | 571 |
-| rorschach | 2d | M | XFillRectangles | - | 227 |
-| rotor | 2d | M | XSetLineAttributes | needs-xlockmore | 394 |
-| scooter | 2d | M | XSetLineAttributes | needs-xlockmore | 975 |
-| sierpinski | 2d | M | XDrawPoints | needs-xlockmore | 215 |
-| sphere | 2d | M | XDrawPoints | needs-xlockmore | 304 |
-| starfish | 2d | M | XSetWindowBackground | - | 564 |
-| substrate | 2d | M | XParseColor | - | 780 |
-| thornbird | 2d | M | XFillRectangles | needs-xlockmore | 270 |
-| vermiculate | 2d | M | XSetWindowBackground | - | 1229 |
-| whirlwindwarp | 2d | M | XDrawRectangle | - | 509 |
-| worm | 2d | M | XClearArea, XFillRectangles, XSetFunction | xor, needs-xlockmore | 434 |
-| xlockmore | 2d | M | XSelectInput | - | 795 |
-| xrayswarm | 2d | M | XSetGraphicsExposures | - | 1235 |
-| abstractile | 2d | S | - | - | 1625 |
-| ansi-tty | 2d | S | - | - | 1952 |
-| asm6502 | 2d | S | - | - | 2275 |
-| bubbles-default | 2d | S | - | - | 155 |
-| delaunay | 2d | S | - | - | 304 |
-| epicycle | 2d | S | - | - | 803 |
-| ffmpeg-out | 2d | S | - | - | 732 |
-| fps | 2d | S | - | - | 306 |
+| abstractile | 2d | L | BlackPixelOfScreen, Convex, countof, make_color_loop, make_color_ramp, make_smooth_colormap, make_uniform_colormap, rgb_to_hsv, screenhack_event_helper | - | 1625 |
+| analogtv | 2d | L | ANALOGTV_BLACK_LEVEL, ANALOGTV_BLANK_LEVEL, ANALOGTV_BOT, ANALOGTV_BP_START, ANALOGTV_CB_LEVEL, ANALOGTV_CB_START, ANALOGTV_CV_MAX, ANALOGTV_FP_START, ANALOGTV_GHOSTFIR_LEN, ANALOGTV_H, ANALOGTV_MAX_LINEHEIGHT, ANALOGTV_PIC_END, ANALOGTV_PIC_LEN, ANALOGTV_PIC_START, ANALOGTV_SCALE, ANALOGTV_SIGNAL_LEN, ANALOGTV_SYNC_LEVEL, ANALOGTV_SYNC_START, ANALOGTV_TOP, ANALOGTV_V, ANALOGTV_VISLINES, ANALOGTV_VIS_LEN, ANALOGTV_VIS_START, ANALOGTV_WHITE_LEVEL, BlackPixelOfScreen, DefaultScreenOfDisplay, DirectColor, FcChar8, GCBackground, GET_PARENT_OBJ, LSBFirst, MSBFirst, Pixmap, PseudoColor, StaticColor, TrueColor, X11/Xlib.h, X11/Xutil.h, XClearArea, XCreateImage, XCreatePixmap, XDestroyImage, XDrawString, XFreePixmap, XGCValues.background, XGetImage, XGetPixel, XImage, XPutPixel, XQueryColors, XSetWindowBackground, XWriteBitmapFile, XYBitmap, XYPixmap, XftColor, XftDraw, XftDrawCreate, XftDrawDestroy, XftDrawStringUtf8, XftFont, ZPixmap, analogtv, analogtv.h, analogtv_font, analogtv_input, analogtv_reception, create_xshm_image, destroy_xshm_image, dp, font, font-retry.h, frand, grabclient.h, hardware_concurrency, im, images/gen/6x10font_png.h, inp, it, load_xft_font_retry, m, mm, p, put_xshm_image, resources.h, ret, screen_number, text_pm, thread_free, thread_malloc, thread_memory_alignment, threadpool_create, threadpool_destroy, threadpool_run, threadpool_wait, visual.h, visual_class, visual_pixmap_depth, visual_rgb_masks, xft.h, xft_fg, xftdraw, xim, ximage-loader.h, yarandom.h | pixmaps, readback, text | 2454 |
+| analogtv-cli | 2d | L | ANALOGTV_SIGNAL_LEN, Bool, Colormap, Display, DoBlue, DoGreen, DoRed, Drawable, False, GC, LSBFirst, Pixmap, RANDSIGN, Screen, Status, True, TrueColor, Visual, Window, X11/Xlib.h, X11/Xos.h, X11/Xutil.h, XClearArea, XColor, XCreateImage, XCreatePixmap, XCreatePixmapFromBitmapData, XDestroyImage, XDrawString, XFreePixmap, XGCValues, XGetImage, XGetPixel, XImage, XInitImage, XPutImage, XPutPixel, XQueryColor, XQueryColors, XSetWindowBackground, XShmSegmentInfo, XWindowAttributes, ZPixmap, analogtv, analogtv.h, analogtv_allocate, analogtv_draw, analogtv_draw_solid_rel_lcp, analogtv_font, analogtv_input, analogtv_input_allocate, analogtv_lcp_to_ntsc, analogtv_load_ximage, analogtv_reception, analogtv_reception_update, analogtv_set_defaults, analogtv_setup_sync, base_image, countof, dpy, ffmpeg-out.h, ffmpeg_out_add_frame, ffmpeg_out_close, ffmpeg_out_init, ffmpeg_out_state, ffst, file_to_ximage, font-retry.h, frand, image, inp, input, out, powerp, progname, rec, resources.h, screen, screenhackI.h, thread_free, thread_malloc, thread_util.h, time, visual, visual.h, visual_pixmap_depth, visual_rgb_masks, window, ximage, ximage-loader.h, ximage2, ximages, xshm.h, ya_rand_init, yarandom.h | pixmaps, readback, text | 1121 |
+| anemone | 2d | L | CapRound, JoinBevel, LineSolid, Pixmap, XCopyArea, XCreatePixmap, XFreePixmap, XSetLineAttributes, make_smooth_colormap | pixmaps | 458 |
+| anemotaxis | 2d | L | CapRound, JoinRound, LineSolid, Pixmap, XCopyArea, XCreatePixmap, XSetLineAttributes | pixmaps | 760 |
+| ansi-tty | 2d | L | TTY_BLINK, TTY_BOLD, TTY_DIM, TTY_INVERSE, TTY_ITALIC, TTY_SYMBOLS, TTY_UNDERLINE, ansi-tty.h, ansi_tty, blurb.h, c, ch, end, gg, grid2, progname, tty, tty_char, tty_color, tty_flag, tty_state, utf8_decode, utf8wc.h | - | 1952 |
+| ant | 2d | L | XChangeGC, XCreatePixmapFromBitmapData, XDrawArc, XFreePixmap, XSetLineAttributes, automata.h, xlock.h | needs-xlockmore | 1351 |
+| apple2 | 2d | L | A2CONTROLLER_DONE, A2CONTROLLER_FREE, A2_GR_FULL, A2_GR_HIRES, A2_GR_LORES, ANALOGTV_BLACK_LEVEL, ANALOGTV_PIC_START, ANALOGTV_TOP, ANALOGTV_WHITE_LEVEL, BlackPixelOfScreen, DefaultScreenOfDisplay, Display, NULL, Pixmap, Window, XClearWindow, XCreateImage, XCreatePixmap, XDestroyImage, XDrawString, XFreePixmap, XGetImage, XGetPixel, XGetWindowAttributes, XImage, XLoadQueryFont, XPutPixel, XWindowAttributes, XWriteBitmapFile, XYBitmap, XYPixmap, ZPixmap, a2_cls, a2_goto, analogtv_allocate, analogtv_draw, analogtv_input_allocate, analogtv_reception, analogtv_reception_update, analogtv_release, analogtv_set_defaults, analogtv_setup_frame, analogtv_setup_sync, apple2.h, apple2_sim_t, apple2_state_t, gettimeofday, im, images/gen/apple2font_png.h, m, mm, p, random, screenhackI.h, sim, st, xgwa, ximage-loader.h | pixmaps, readback, text | 886 |
+| apple2-main | 2d | L | A2CONTROLLER_DONE, A2CONTROLLER_FREE, A2_GR_FULL, A2_GR_HIRES, A2_GR_LORES, ANALOGTV_DEFAULTS, ANALOGTV_OPTIONS, DisplayOfScreen, GrayScale, KeyPress, Pixmap, PseudoColor, TTY_BLINK, TTY_BOLD, TTY_INVERSE, TTY_SYMBOLS, XCreatePixmap, XDestroyImage, XEvent.xany, XEvent.xkey, XFreePixmap, XGetImage, XGetPixel, XImage, XQueryColors, ZPixmap, a2_clear_gr, a2_clear_hgr, a2_cls, a2_display_image_loading, a2_goto, a2_hline, a2_hplot, a2_invalidate, a2_plot, a2_printc, a2_printc_noscroll, a2_prints, analogtv_reconfigure, ansi-tty.h, ansi_tty, ansi_tty_free, ansi_tty_init, ansi_tty_print, apple2.h, apple2_one_frame, apple2_sim_t, apple2_start, apple2_state_t, countof, flag, image, load_image_async, p, sim, st, tc, text_data, textclient.h, textclient_close, textclient_getc, textclient_open, textclient_putc_event, textclient_puts, textclient_reshape, time, time_t, tty, tty_char, tty_flag, utf8_encode, utf8_to_latin1, utf8wc.h, visual_cells, visual_class, visual_rgb_masks | pixmaps, readback | 1642 |
+| asm6502 | 2d | L | ABS_LABEL_X, ABS_LABEL_Y, ABS_OR_BRANCH, ABS_VALUE, ABS_X, ABS_Y, Bit16, Bit32, Bit8, DCB_PARAM, FALSE, IMMEDIATE_GREAT, IMMEDIATE_LESS, IMMEDIATE_VALUE, INDIRECT_X, INDIRECT_Y, MAX_CMD_LEN, MAX_LABEL_LEN, MAX_PARAM_VALUE, MEM_64K, NUM_OPCODES, PROG_START, SINGLE, STACK_BOTTOM, STACK_TOP, TRUE, ZERO, ZERO_X, ZERO_Y, address, adm, al, ar, asm6502.h, bl, br, c, cf, currAddr, i, idx, m6502_AddrMode, m6502_Opcodes, m6502_Plotter, machine, machine_6502, mask, nl, nr, offMask, oldDefault, onMask, op, opcode, pc, tmp, val, value, w, x, y, yarandom.h, zp | - | 2275 |
+| attraction | 2d | L | ButtonRelease, CapButt, CapRound, Convex, GCCapStyle, XDrawRectangle, XEvent.x, XEvent.xany, XEvent.y, XGCValues.cap_style, XQueryPointer, compute_closed_spline, free_spline, make_color_ramp, make_smooth_colormap, make_spline, spline | - | 1115 |
+| barcode | 2d | L | ButtonRelease, GCBackground, LSBFirst, XCreateImage, XDestroyImage, XEvent.xany, XGCValues.background, XImage, XPutImage, XYBitmap | - | 2055 |
+| binaryhorizon | 2d | L | KeyPress, Pixmap, XCopyArea, XCreatePixmap, XDestroyImage, XEvent.xany, XFreePixmap, XGetImage, XImage, XPutImage, XPutPixel, ZPixmap, time, time_t, visual_depth | pixmaps, readback | 624 |
+| binaryring | 2d | L | KeyPress, Pixmap, XCopyArea, XCreatePixmap, XDestroyImage, XEvent.xany, XFreePixmap, XGetImage, XImage, XPutImage, XPutPixel, ZPixmap, visual_depth | pixmaps, readback | 577 |
+| blitspin | 2d | L | GCBackground, GXand, GXclear, GXor, GXset, GXxor, Pixmap, XCopyArea, XCopyPlane, XCreatePixmap, XDestroyImage, XDisplayHeight, XDisplayWidth, XFreePixmap, XGCValues.background, XGetImage, XPutImage, XScreenNumberOfScreen, XSetClipMask, async_load_state, file_to_pixmap, images/gen/som_png.h, load_image_async_simple, mask, pixmap, pow2.h, screenhack_event_helper, to_pow2, ximage-loader.h | pixmaps, readback, clipmask | 467 |
+| bouboule | 2d | L | Display, GC, GXcopy, GXor, MAX, MIN, MI_BATCHCOUNT, MI_DELTA3D, MI_DISPLAY, MI_GC, MI_HEIGHT, MI_INIT, MI_LEFT_COLOR, MI_NONE_COLOR, MI_NPIXELS, MI_PIXEL, MI_RIGHT_COLOR, MI_SCREEN, MI_SIZE, MI_WIDTH, MI_WINDOW, MI_WIN_BLACK_PIXEL, MI_WIN_HEIGHT, MI_WIN_IS_INSTALL, MI_WIN_IS_USE3D, MI_WIN_WHITE_PIXEL, MI_WIN_WIDTH, M_PI, ModeInfo, ModeSpecOpt, NRAND, NULL, Window, XArc, XClearWindow, XFillArcs, XFillRectangle, XSetForeground, XSetFunction, arc, arcleft, display, gc, oarc, oarcleft, window, xlock.h | xor, needs-xlockmore | 860 |
+| boxfit | 2d | L | GCBackground, Pixmap, XCreatePixmap, XDestroyImage, XDrawArc, XDrawRectangle, XFreePixmap, XGCValues.background, XGetImage, XGetPixel, XImage, XSetWindowBackground, ZPixmap, async_load_state, free_colors, load_image_async_simple, make_smooth_colormap, screenhack_event_helper, ximage-loader.h | pixmaps, readback | 573 |
+| bsod | 2d | L | A2CONTROLLER_DONE, A2CONTROLLER_FREE, A2_GR_FULL, A2_GR_HIRES, A2_GR_LORES, ANALOGTV_DEFAULTS, ANALOGTV_OPTIONS, CapButt, CapRound, FcChar8, GCBackground, JoinMiter, LineSolid, None, Pixmap, XChangeGC, XClearArea, XColor.color, XCopyArea, XCopyPlane, XCreateImage, XCreatePixmap, XCreatePixmapFromBitmapData, XDestroyImage, XDrawRectangle, XFetchName, XFreePixmap, XGCValues.background, XGetImage, XGetPixel, XGlyphInfo, XImage, XPutImage, XPutPixel, XQueryColor, XSetBackground, XSetClipMask, XSetClipOrigin, XSetLineAttributes, XSetPlaneMask, XSetWindowBackground, XStoreName, XYPixmap, XftColor, XftDraw, XftDrawCreate, XftDrawDestroy, XftDrawStringUtf8, XftFont, XftFontClose, XftTextExtentsUtf8, XftTextExtentsUtf8_multi, ZPixmap, a2_cls, a2_goto, a2_init_memory_active, a2_invalidate, a2_poke, a2_printc, a2_printc_noscroll, a2_prints, amiga_png, android_png, apple2.h, apple2_one_frame, apple2_sim_t, apple2_start, apple2_state_t, async_load_state, cswap, em, font, gnome1_png, gnome2_png, hmac_png, i1, i2, image_data_to_pixmap, images/gen/amiga_png.h, images/gen/android_png.h, images/gen/apple_png.h, images/gen/atari_png.h, images/gen/atm_png.h, images/gen/dvd_png.h, images/gen/gnome1_png.h, images/gen/gnome2_png.h, images/gen/hmac_png.h, images/gen/mac_png.h, images/gen/macbomb_png.h, images/gen/osx_10_2_png.h, images/gen/osx_10_3_png.h, images/gen/ransomware_png.h, images/gen/sun_png.h, load_image_async_simple, load_xft_font_retry, mask, osx_10_2_png, osx_10_3_png, ov, ov2, p2, pixmap, screen_number, screenhack_event_helper, sim, st, utf8_decode_combining, utf8wc.h, xft.h, xft_word_wrap, xftwrap.h, ximage-loader.h | pixmaps, readback, clipmask | 7809 |
+| bubbles | 2d | L | BUBBLE_MAGIC, Bubble, Bubble_Step, DELETE_BUBBLE, KEEP_BUBBLE, MAX, MAX_DROPPAGE, MIN, XCopyArea, XDrawArc, XFreePixmap, XSetClipMask, XSetClipOrigin, bubbles.h, default_bubbles, head, image_data_to_pixmap, init_default_bubbles, least, newpix, nextbub, num_default_bubbles, pixmap_list, rv, tmp, tmppix, touch, ximage-loader.h, yarandom.h | pixmaps, clipmask | 1468 |
+| bubbles-default | 2d | L | bubbles.h, images/gen/blood10_png.h, images/gen/blood11_png.h, images/gen/blood1_png.h, images/gen/blood2_png.h, images/gen/blood3_png.h, images/gen/blood4_png.h, images/gen/blood5_png.h, images/gen/blood6_png.h, images/gen/blood7_png.h, images/gen/blood8_png.h, images/gen/blood9_png.h, images/gen/blue10_png.h, images/gen/blue11_png.h, images/gen/blue1_png.h, images/gen/blue2_png.h, images/gen/blue3_png.h, images/gen/blue4_png.h, images/gen/blue5_png.h, images/gen/blue6_png.h, images/gen/blue7_png.h, images/gen/blue8_png.h, images/gen/blue9_png.h, images/gen/glass1_png.h, yarandom.h | - | 155 |
+| bumps | 2d | L | Pixmap, XCreatePixmap, XDestroyImage, XGetImage, XGetPixel, XImage, XParseColor, XQueryColors, XSetWindowBackground, XShmSegmentInfo, XSync, ZPixmap, async_load_state, create_xshm_image, destroy_xshm_image, load_image_async_simple, pScreenImage, put_xshm_image, screenhack_event_helper, xshm.h | pixmaps, readback | 705 |
+| ccurve | 2d | L | GCBackground, Pixmap, XCopyArea, XCreatePixmap, XFreePixmap, XGCValues.background, make_color_loop, screenhack_event_helper | pixmaps | 872 |
+| celtic | 2d | L | CapRound, GCBackground, GCCapStyle, JoinRound, LineSolid, XDrawArc, XGCValues.background, XGCValues.cap_style, XSetLineAttributes, make_smooth_colormap, screenhack_event_helper | - | 1141 |
+| compass | 2d | L | Convex, GCJoinStyle, JoinBevel, Pixmap, XCopyArea, XCreatePixmap, XDrawSegments, XFreePixmap, XGCValues.join_style, XSegment, countof, segs | pixmaps, float-heavy | 999 |
+| crystal | 2d | L | Bool, Colormap, Convex, CoordModeOrigin, Display, ENTRYPOINT, False, GC, GXcopy, GXxor, LRAND, MAX, MIN, MI_BG_PIXEL, MI_BLACK_PIXEL, MI_CLEARWINDOW, MI_COUNT, MI_DISPLAY, MI_FG_PIXEL, MI_HEIGHT, MI_INIT, MI_IS_DRAWN, MI_IS_FULLRANDOM, MI_IS_INSTALL, MI_IS_VERBOSE, MI_NCOLORS, MI_NPIXELS, MI_PIXEL, MI_SCREEN, MI_SIZE, MI_VISUAL, MI_WHITE_PIXEL, MI_WIDTH, MI_WINDOW, M_PI, ModeInfo, NULL, None, OptionStruct, True, Window, XAllocColor, XColor, XCreateColormap, XCreateGC, XDrawLine, XFillPolygon, XFreeColormap, XFreeGC, XGCValues, XInstallColormap, XParseColor, XPoint, XSetForeground, XSetFunction, XSetWindowColormap, XrmOptionDescRec, XrmoptionNoArg, XrmoptionSepArg, argtype, color, color.h, display, fprintf, free_colors, has_writable_cells, make_random_colormap, make_smooth_colormap, make_uniform_colormap, new_xy, rotate_colors, stdout, t_Bool, t_Int, window, xlock.h, xy, xy1, xy_1 | xor, float-heavy, needs-xlockmore | 1286 |
+| cwaves | 2d | L | BlackPixelOfScreen, CapRound, JoinRound, LineSolid, XSetLineAttributes, make_smooth_colormap, screenhack_event_helper, ximage-loader.h | - | 219 |
+| cynosure | 2d | L | XCreateBitmapFromData, XDrawRectangle, XFreePixmap, XSetWindowBackground, make_smooth_colormap, rgb_to_hsv, screenhack_event_helper | - | 457 |
+| decayscreen | 2d | L | Pixmap, XCopyArea, XCreatePixmap, async_load_state, load_image_async_simple, screenhack_event_helper | pixmaps | 392 |
+| deco | 2d | L | CapButt, DisplayOfScreen, JoinBevel, LineSolid, XChangeGC, XDrawRectangle, XSetLineAttributes, XStoreColors, allocate_writable_colors, has_writable_cells, make_smooth_colormap | - | 345 |
+| deluxe | 2d | L | CapProjecting, GCCapStyle, GCJoinStyle, GCPlaneMask, JoinMiter, Pixmap, XCopyArea, XCreatePixmap, XDrawArc, XFreePixmap, XGCValues.cap_style, XGCValues.join_style, XGCValues.plane_mask, allocate_alpha_colors, alpha.h, countof | pixmaps, float-heavy | 480 |
+| demon | 2d | L | XChangeGC, XCreatePixmapFromBitmapData, XFillRectangles, XFreePixmap, automata.h, xlock.h | needs-xlockmore | 953 |
+| distort | 2d | L | BlackPixelOfScreen, Pixmap, XCopyArea, XCreatePixmap, XDestroyImage, XFreePixmap, XGetImage, XGetPixel, XImage, XPutImage, XPutPixel, XShmSegmentInfo, ZPixmap, async_load_state, create_xshm_image, destroy_xshm_image, load_image_async_simple, put_xshm_image, screenhack_event_helper, xshm.h | pixmaps, readback | 894 |
+| droste | 2d | L | BlackPixelOfScreen, GET_PARENT_OBJ, KeyPress, KeySym, Pixmap, THREAD_DEFAULTS, THREAD_OPTIONS, XCreatePixmap, XDestroyImage, XEvent.xkey, XFreePixmap, XGetImage, XGetPixel, XImage, XK_Down, XK_Left, XK_Right, XK_Up, XLookupString, XPutPixel, XShmSegmentInfo, ZPixmap, async_load_state, countof, create_xshm_image, destroy_xshm_image, double_time, doubletime.h, hardware_concurrency, i_log2_fast, keysym, load_image_async_simple, pow2.h, put_xshm_image, screenhack_event_helper, thread_util.h, threadpool, threadpool_create, threadpool_destroy, threadpool_run, threadpool_wait, xshm.h | pixmaps, readback | 686 |
+| epicycle | 2d | L | CapRound, GCCapStyle, GCJoinStyle, JoinRound, XGCValues.cap_style, XGCValues.join_style, free_colors, make_smooth_colormap, screenhack_event_helper | - | 803 |
+| eruption | 2d | L | XEvent.x, XEvent.y, XImage, XPutPixel, XSetWindowBackground, XShmSegmentInfo, ZPixmap, create_xshm_image, destroy_xshm_image, img, put_xshm_image, screenhack_event_helper, xshm.h | - | 608 |
+| ffmpeg-out | 2d | L | AVCodec, AVCodecContext, AVDictionary, AVERROR, AVERROR_EOF, AVFMT_GLOBALHEADER, AVFormatContext, AVFrame, AVIO_FLAG_WRITE, AVMEDIA_TYPE_AUDIO, AVPacket, AVStream, AV_CH_LAYOUT_MONO, AV_CH_LAYOUT_STEREO, AV_CODEC_CAP_VARIABLE_FRAME_SIZE, AV_CODEC_FLAG_GLOBAL_HEADER, AV_CODEC_ID_AAC, AV_CODEC_ID_H264, AV_LOG_ERROR, AV_PIX_FMT_BGR24, AV_PIX_FMT_BGR32, AV_PIX_FMT_YUV420P, AV_SAMPLE_FMT_FLTP, AV_SAMPLE_FMT_NONE, Bool, EAGAIN, FF_PROFILE_H264_HIGH, SWS_BICUBIC, X11/Xlib.h, X11/Xos.h, X11/Xutil.h, XImage, av_compare_ts, av_dict_free, av_dict_set, av_err2str, av_find_best_stream, av_frame_alloc, av_frame_free, av_frame_get_buffer, av_frame_make_writable, av_frame_unref, av_get_channel_layout_nb_channels, av_interleaved_write_frame, av_log_set_level, av_packet_alloc, av_packet_free, av_packet_rescale_ts, av_packet_unref, av_popcount64, av_read_frame, av_register_all, av_rescale, av_samples_set_silence, av_write_trailer, avcodec_alloc_context3, avcodec_find_decoder, avcodec_find_encoder, avcodec_free_context, avcodec_get_name, avcodec_open2, avcodec_parameters_from_context, avcodec_parameters_to_context, avcodec_receive_frame, avcodec_receive_packet, avcodec_send_frame, avcodec_send_packet, avformat_alloc_output_context2, avformat_close_input, avformat_find_stream_info, avformat_free_context, avformat_new_stream, avformat_open_input, avformat_write_header, avio_closep, avio_open, ffmpeg-out.h, ffmpeg_out_state, libavcodec/avcodec.h, libavformat/avformat.h, libavutil/avutil.h, libswresample/swresample.h, libswscale/swscale.h, no_opt, opt, pkt, progname, screenhackI.h, swr_alloc, swr_config_frame, swr_convert_frame, swr_free, swr_get_delay, swr_init, swr_is_initialized, sws_getContext, sws_scale | - | 732 |
+| fiberlamp | 2d | L | XAllocNamedColor, XCopyArea, XCreatePixmap, XFreePixmap, XSetGraphicsExposures, XSetLineAttributes, XTranslateCoordinates, xlock.h | pixmaps, needs-xlockmore | 480 |
+| filmleader | 2d | L | ANALOGTV_DEFAULTS, ANALOGTV_OPTIONS, ANALOGTV_SIGNAL_LEN, ButtonRelease, CapRound, FcChar8, JoinRound, KeyPress, KeySym, LineSolid, Pixmap, XCreateImage, XCreatePixmap, XDestroyImage, XDrawArc, XEvent.xany, XEvent.xkey, XFreePixmap, XGetImage, XGetPixel, XGlyphInfo, XImage, XLookupString, XPutImage, XPutPixel, XSetLineAttributes, XftColor, XftColorAllocName, XftColorFree, XftDraw, XftDrawCreate, XftDrawDestroy, XftDrawStringUtf8, XftFont, XftTextExtentsUtf8, ZPixmap, analogtv, analogtv.h, analogtv_allocate, analogtv_draw, analogtv_input, analogtv_input_allocate, analogtv_load_ximage, analogtv_reception, analogtv_reception_update, analogtv_reconfigure, analogtv_release, analogtv_set_defaults, analogtv_setup_sync, countof, double_time, doubletime.h, extents, img, img1, img2, keysym, load_xft_font_retry, screen_number, screenhack_event_helper, xftfont | pixmaps, readback | 548 |
+| fireworkx | 2d | L | ButtonRelease, ImageByteOrder, MSBFirst, XCreateImage, XDestroyImage, XEvent.x, XEvent.y, XImage, XPutImage, XSync, ZPixmap, make_smooth_colormap | - | 882 |
+| flag | 2d | L | Bool, Display, ENTRYPOINT, False, LRAND, MAXRAND, MI_CYCLES, MI_DISPLAY, MI_GC, MI_INIT, MI_NPIXELS, MI_PIXEL, MI_SCREEN, MI_SIZE, MI_VISUAL, MI_WINDOW, MI_WIN_BLACK_PIXEL, MI_WIN_DEPTH, MI_WIN_HEIGHT, MI_WIN_WHITE_PIXEL, MI_WIN_WIDTH, M_PI, ModeInfo, NRAND, NULL, Pixmap, SINF, True, Window, XClearWindow, XCopyArea, XCreateImage, XCreatePixmap, XDestroyImage, XDrawPoint, XDrawString, XFillArc, XFillRectangle, XFreeFont, XFreePixmap, XGetImage, XGetPixel, XImage, XLoadQueryFont, XPutPixel, XSetForeground, XSetGraphicsExposures, XTextExtents, XYBitmap, display, error, flag.h, flag_bits, flag_height, flag_width, window, xlock.h | pixmaps, readback, text, needs-xlockmore | 570 |
+| flame | 2d | L | GCBackground, XFillRectangles, XGCValues.background, make_smooth_colormap, screenhack_event_helper | - | 457 |
+| flow | 2d | L | XCopyArea, XCreatePixmap, XDrawSegments, XFreePixmap, XSetGraphicsExposures, XSetLineAttributes, xlock.h | pixmaps, needs-xlockmore | 1216 |
+| fluidballs | 2d | L | ButtonRelease, FcChar8, GCBackground, Pixmap, RootWindow, XCopyArea, XCreatePixmap, XEvent.x, XEvent.xany, XEvent.y, XFreePixmap, XGCValues.background, XQueryPointer, XSelectInput, XTranslateCoordinates, XftColor, XftColorAllocName, XftDraw, XftDrawCreate, XftDrawDestroy, XftDrawStringUtf8, XftFont, XftFontClose, gettimeofday, load_xft_font_retry, screen_number | pixmaps | 881 |
+| fontglide | 2d | L | BlackPixelOfScreen, DisplayOfScreen, FcChar8, Pixmap, X11/Intrinsic.h, XCopyArea, XCreateImage, XCreatePixmap, XDestroyImage, XDrawRectangle, XDrawString, XDrawString16, XFreeFont, XFreePixmap, XGetAtomName, XGetGeometry, XGetImage, XGetPixel, XGlyphInfo, XImage, XLoadQueryFont, XLookupString, XPutImage, XPutPixel, XRenderColor, XSetClipMask, XSetClipOrigin, XSetFont, XTextExtents, XTextExtents16, XYPixmap, XftColor, XftColorAllocValue, XftColorFree, XftDraw, XftDrawCreate, XftDrawDestroy, XftDrawStringUtf8, XftFont, XftFontClose, XftTextExtentsUtf8, ZPixmap, bg, extents, fg, in, load_xft_font_retry, mask, out, screen_number, swap, text_data, textclient.h, textclient_close, textclient_getc, textclient_open, utf8_decode_combining, utf8wc.h, xftdraw | pixmaps, readback, text, clipmask | 2474 |
+| forest | 2d | L | CapButt, Display, DoBlue, DoGreen, DoRed, ENTRYPOINT, GC, JoinMiter, LineSolid, MI_DISPLAY, MI_INIT, MI_SCREEN, MI_WINDOW, MI_WIN_HEIGHT, MI_WIN_WIDTH, M_PI_2, ModeInfo, NRAND, NULL, XAllocColor, XArc, XClearWindow, XColor, XDrawLine, XFillArcs, XSetForeground, XSetLineAttributes, display, gc, leaf, xlock.h | needs-xlockmore | 241 |
+| fps | 2d | L | Bool, Display, FcChar8, GCForeground, Window, XCreateGC, XFillRectangle, XFreeGC, XGCValues, XGetWindowAttributes, XGlyphInfo, XWindowAttributes, XftColorAllocName, XftDrawCreate, XftDrawDestroy, XftDrawStringUtf8, XftFont, XftFontClose, XftTextExtentsUtf8, f, fpsI.h, fps_state, gcv, get_boolean_resource, get_pixel_resource, get_string_resource, gettimeofday, load_xft_font_retry, overall, progname, screen_number, screenhackI.h, st, xft.h, xgwa | - | 306 |
+| fuzzyflakes | 2d | L | CapProjecting, GCCapStyle, GCJoinStyle, JoinMiter, Pixmap, XCopyArea, XCreatePixmap, XFreePixmap, XGCValues.background, XGCValues.cap_style, XGCValues.join_style, XParseColor | pixmaps | 655 |
+| galaxy | 2d | L | Bool, COSF, Display, ENTRYPOINT, GC, LRAND, MAXRAND, MI_BATCHCOUNT, MI_CYCLES, MI_DISPLAY, MI_HEIGHT, MI_INIT, MI_NCOLORS, MI_PIXEL, MI_SCREEN, MI_WIDTH, MI_WINDOW, MI_WIN_BLACK_PIXEL, MI_WIN_HEIGHT, MI_WIN_WIDTH, M_PI, ModeInfo, NRAND, NULL, OptionStruct, SINF, Window, XClearWindow, XFillRectangles, XRectangle, XSetForeground, XrmOptionDescRec, XrmoptionNoArg, argtype, display, dummy, gc, newp, oldp, t_Bool, window, xlock.h | needs-xlockmore | 462 |
+| glitchpeg | 2d | L | BitmapBitOrder, ButtonRelease, ImageByteOrder, X11/Intrinsic.h, XCreateImage, XDestroyImage, XEvent.xany, XGetPixel, XImage, XPutImage, XPutPixel, XtAppAddInput, XtDisplayToApplicationContext, XtInputExceptMask, XtInputId, XtInputReadMask, XtPointer, XtRemoveInput, ZPixmap, image, image_data_to_ximage, out, screenhack_event_helper, time, ximage-loader.h | readback | 466 |
+| goop | 2d | L | AllPlanes, DefaultScreenOfDisplay, DisplayOfScreen, GCBackground, GXclear, GXxor, Nonconvex, Pixmap, WhitePixelOfScreen, XCopyArea, XCopyPlane, XCreatePixmap, XGCValues.background, XSetFunction, XSetPlaneMask, allocate_alpha_colors, alpha.h, compute_closed_spline, free_spline, has_writable_cells, make_spline, spline | pixmaps, xor | 651 |
+| greynetic | 2d | L | FillOpaqueStippled, GCBackground, GCFillStyle, GCStipple, Pixmap, XChangeGC, XCreatePixmapFromBitmapData, XGCValues.background, XGCValues.fill_style, XGCValues.stipple | - | 297 |
+| halftone | 2d | L | Pixmap, XCopyArea, XCreatePixmap, XFreePixmap, make_smooth_colormap | pixmaps | 413 |
+| halo | 2d | L | GCBackground, GXxor, Pixmap, XCopyPlane, XCreatePixmap, XFreePixmap, XGCValues.background, XSetBackground, make_smooth_colormap, make_uniform_colormap | pixmaps | 459 |
+| hexadrop | 2d | L | Convex, XSetWindowBackground, countof, free_colors, make_smooth_colormap, screenhack_event_helper | - | 446 |
+| ifs | 2d | L | None, XCopyArea, XCreatePixmap, XFillRectangles, XFreePixmap, countof, make_smooth_colormap, screenhack_event_helper | pixmaps | 560 |
+| imsmap | 2d | L | XCreateImage, XDestroyImage, XImage, XPutImage, XPutPixel, XSetBackground, XYBitmap, free_colors, image, make_smooth_colormap, screenhack_event_helper | - | 426 |
+| interference | 2d | L | GET_PARENT_OBJ, None, Pixmap, THREAD_DEFAULTS, THREAD_OPTIONS, XCopyArea, XCreatePixmap, XFreePixmap, XImage, XPutPixel, XShmGetEventBase, XShmSegmentInfo, ZPixmap, create_xshm_image, destroy_xshm_image, free_colors, gettimeofday, hardware_concurrency, make_color_loop, put_xshm_image, thread_memory_alignment, thread_util.h, threadpool, threadpool_create, threadpool_destroy, threadpool_run, threadpool_wait, visual_pixmap_depth, xshm.h | pixmaps | 1002 |
+| intermomentary | 2d | L | Pixmap, XCopyArea, XCreatePixmap, XFreePixmap, XGCValues.background, XQueryColor, XSetFillStyle, XSetTile, make_color_ramp, rgb_to_hsv | pixmaps | 605 |
+| juggle | 2d | L | XDrawArc, XDrawImageString, XDrawString, XFreeFontInfo, XLoadQueryFont, XSetLineAttributes, XTextWidth, xlock.h | text, float-heavy, needs-xlockmore | 2798 |
+| julia | 2d | L | Bool, Cursor, Display, DoBlue, DoGreen, DoRed, ENTRYPOINT, FillOpaqueStippled, GC, GCBackground, GCForeground, LRAND, MAX, MIN, MI_BATCHCOUNT, MI_CYCLES, MI_DISPLAY, MI_HEIGHT, MI_INIT, MI_NPIXELS, MI_PIXEL, MI_SCREEN, MI_WIDTH, MI_WIN_BLACK_PIXEL, MI_WIN_HEIGHT, MI_WIN_IS_INROOT, MI_WIN_WHITE_PIXEL, MI_WIN_WIDTH, M_PI, ModeInfo, NRAND, NULL, None, Pixmap, Window, XClearWindow, XColor, XCreateGC, XCreatePixmap, XCreatePixmapCursor, XCreatePixmapFromBitmapData, XDefineCursor, XDrawArc, XFillArc, XFillRectangle, XFillRectangles, XFreeCursor, XFreeGC, XFreePixmap, XGCValues, XRectangle, XSetFillStyle, XSetForeground, XSetStipple, XSetTSOrigin, XUndefineCursor, bg_gc, bit, black, display, fg_gc, gc, gcv, new_circle, old_circle, window, xlock.h, xp | pixmaps, float-heavy, needs-xlockmore | 451 |
+| kaleidescope | 2d | L | CapRound, GCCapStyle, JoinRound, LineSolid, XDrawSegments, XGCValues.cap_style, XSegment, XSetLineAttributes | - | 514 |
+| kumppa | 2d | L | XCopyArea, XSetGraphicsExposures, countof | pixmaps | 545 |
+| lcdscrub | 2d | L | Pixmap, XCreateImage, XCreatePixmap, XDestroyImage, XFreePixmap, XGCValues.background, XGetPixel, XImage, XPutImage, XPutPixel, XSetBackground, XSetClipMask, XYPixmap, countof, gettimeofday, p | pixmaps, readback, clipmask | 399 |
+| lmorph | 2d | L | CapButt, CapRound, JoinBevel, JoinRound, LineSolid, XSetLineAttributes | float-heavy | 580 |
+| loop | 2d | L | XChangeGC, XCreatePixmapFromBitmapData, XFillRectangles, XFreePixmap, automata.h, xlock.h | needs-xlockmore | 1700 |
+| m6502 | 2d | L | ANALOGTV_BLACK_LEVEL, ANALOGTV_BOT, ANALOGTV_DEFAULTS, ANALOGTV_OPTIONS, ANALOGTV_TOP, ANALOGTV_VISLINES, ANALOGTV_VIS_END, ANALOGTV_VIS_LEN, ANALOGTV_VIS_START, ANALOGTV_WHITE_LEVEL, Bit8, analogtv, analogtv.h, analogtv_allocate, analogtv_draw, analogtv_draw_solid, analogtv_input, analogtv_input_allocate, analogtv_lcp_to_ntsc, analogtv_reception, analogtv_reception_update, analogtv_reconfigure, analogtv_release, analogtv_set_defaults, analogtv_setup_sync, asm6502.h, countof, double_time, doubletime.h, m6502.h, m6502_build, m6502_destroy6502, m6502_next_eval, m6502_start_eval_file, m6502_start_eval_string, machine_6502, screenhack_event_helper | - | 288 |
+| marbling | 2d | L | DefaultScreenOfDisplay, GET_PARENT_OBJ, KeyPress, KeySym, THREAD_DEFAULTS, THREAD_OPTIONS, XEvent.xany, XEvent.xkey, XImage, XK_Down, XK_Left, XK_Right, XK_Up, XLookupString, XPutPixel, XShmSegmentInfo, ZPixmap, create_xshm_image, destroy_xshm_image, free_colors, hardware_concurrency, keysym, make_smooth_colormap, put_xshm_image, screenhack_event_helper, thread_memory_alignment, thread_util.h, threadpool_create, threadpool_destroy, threadpool_run, threadpool_wait, visual_pixmap_depth, xshm.h | - | 635 |
+| maze | 2d | L | Expose, Pixmap, XCopyArea, XCopyPlane, XFreePixmap, XGetGeometry, XSetBackground, XSetClipMask, XSetClipOrigin, XSetLineAttributes, XSync, image_data_to_pixmap, images/gen/logo-180_png.h, images/gen/logo-360_png.h, images/gen/logo-50_png.h, logo_180_png, logo_360_png, logo_50_png, logo_mask, screenhack_event_helper, ximage-loader.h | pixmaps, clipmask | 1681 |
+| memscroller | 2d | L | FcChar8, GCBackground, XCopyArea, XDrawRectangle, XGCValues.background, XGlyphInfo, XImage, XShmSegmentInfo, XftColor, XftColorAllocName, XftDraw, XftDrawCreate, XftDrawDestroy, XftDrawStringUtf8, XftFont, XftFontClose, XftTextExtentsUtf8, ZPixmap, countof, create_xshm_image, destroy_xshm_image, load_xft_font_retry, overall, put_xshm_image, screen_number, xft.h, xshm.h | pixmaps | 626 |
+| metaballs | 2d | L | BitmapPad, XCreateImage, XDestroyImage, XFree, XImage, XListPixmapFormats, XParseColor, XPutImage, XPutPixel, XSetWindowBackground, ZPixmap | - | 438 |
+| moire | 2d | L | BlackPixelOfScreen, DefaultScreenOfDisplay, WhitePixelOfScreen, XImage, XPutPixel, XQueryColor, XShmSegmentInfo, ZPixmap, create_xshm_image, destroy_xshm_image, make_color_ramp, put_xshm_image, rgb_to_hsv, visual_depth, xshm.h | - | 253 |
+| moire2 | 2d | L | GCBackground, GXor, GXxor, Pixmap, XCopyArea, XCopyPlane, XCreatePixmap, XDrawArc, XFreePixmap, XGCValues.background, XSetBackground, XSetFunction, make_smooth_colormap | pixmaps, xor | 363 |
+| munch | 2d | L | GCBackground, GXxor, XGCValues.background, XSetFunction, i_log2, pow2.h, screenhack_event_helper | xor | 462 |
+| nerverot | 2d | L | XCopyArea, XCreatePixmap, make_color_ramp, rgb_to_hsv | pixmaps, float-heavy | 1367 |
+| noseguy | 2d | L | FcChar8, GCBackground, None, Pixmap, XCopyArea, XCreateImage, XCreatePixmap, XDestroyImage, XDrawRectangle, XFreePixmap, XGCValues.background, XGetImage, XGetPixel, XGlyphInfo, XImage, XPutImage, XPutPixel, XSetClipMask, XSetClipOrigin, XSetLineAttributes, XYPixmap, XftColor, XftColorAllocName, XftDraw, XftDrawCreate, XftDrawDestroy, XftDrawStringUtf8, XftFont, XftFontClose, XftTextExtentsUtf8, ZPixmap, extents, i1, i2, images/gen/nose-f1_png.h, images/gen/nose-f2_png.h, images/gen/nose-f3_png.h, images/gen/nose-f4_png.h, images/gen/nose-l1_png.h, images/gen/nose-l2_png.h, images/gen/nose-r1_png.h, images/gen/nose-r2_png.h, load_xft_font_retry, mask, nose_f1_png, nose_f2_png, nose_f3_png, nose_f4_png, nose_l1_png, nose_l2_png, nose_r1_png, nose_r2_png, p2, pixmap, screen_number, text_data, textclient.h, textclient_close, textclient_getc, textclient_open, textclient_reshape, ximage-loader.h | pixmaps, readback, clipmask | 720 |
+| pacman | 2d | L | XCopyArea, XCreatePixmap, XDrawArc, XDrawString, XFreePixmap, XGetGeometry, XLoadQueryFont, XSetClipMask, XSetClipOrigin, XSetFillStyle, XSetLineAttributes, xlock.h | pixmaps, text, clipmask, needs-xlockmore | 1479 |
+| pacman_ai | 2d | L | False, GETFACTOR, GHOST_TRACE, JAILHEIGHT, JAILWIDTH, LEVHEIGHT, LEVWIDTH, ModeInfo, NOWHERE, NRAND, NULL, TRACEVECS, True, Window, XQueryPointer, c, chasing, fprintf, ghoststruct, goingin, goingout, hiding, inbox, pacman.h, pacman_ai.h, pacman_check_dot, pacman_check_pos, pacman_get_jail_opening, pacman_level.h, pacman_trackmouse, pacmangamestruct, pacmanstruct, ps_chasing, ps_dieing, ps_eating, ps_hiding, ps_random, r, randdir, stderr, tmp_ghost, xlockmoreI.h | - | 879 |
+| pacman_level | 2d | L | False, GETNB, JAILHEIGHT, JAILWIDTH, LEVHEIGHT, LEVWIDTH, MINDOTPERC, NRAND, NULL, NUM_BONUS_DOTS, TESTNB, TILEHEIGHT, TILEWIDTH, True, frmtlev, lev_t, level, pacman.h, pacman_level.h, pacmangamestruct, savedlev, screenhackI.h | - | 774 |
+| penetrate | 2d | L | FcChar8, XDrawArc, XGlyphInfo, XSetLineAttributes, XSync, XftColor, XftColorAllocName, XftDraw, XftDrawCreate, XftDrawDestroy, XftDrawStringUtf8, XftFont, XftFontClose, XftTextExtentsUtf8, load_xft_font_retry, overall, screen_number, usleep | - | 1037 |
+| phosphor | 2d | L | BlackPixelOfScreen, CapRound, DefaultScreenOfDisplay, Expose, FALSE, FcChar8, GCBackground, GCCapStyle, KeyPress, None, Pixmap, TTY_BOLD, TTY_INVERSE, TTY_ITALIC, TTY_SYMBOLS, Time, X11/Intrinsic.h, XCopyArea, XCopyPlane, XCreateImage, XCreatePixmap, XDestroyImage, XEvent.xany, XEvent.xkey, XFreePixmap, XGCValues.background, XGCValues.cap_style, XGetImage, XGetPixel, XGlyphInfo, XImage, XPutImage, XPutPixel, XQueryColor, XSetClipMask, XSetClipOrigin, XWriteBitmapFile, XYBitmap, XYPixmap, XftColor, XftDraw, XftDrawCreate, XftDrawStringUtf8, XftFont, XftTextExtentsUtf8, XtAppAddTimeOut, XtAppContext, XtIntervalId, XtPointer, XtRemoveTimeOut, ZPixmap, ansi-tty.h, ansi_graphics_unicode, ansi_tty, ansi_tty_free, ansi_tty_init, ansi_tty_print, ansi_tty_resize, app, countof, font, font_bits, im, im2, images/gen/6x10font_png.h, load_xft_font_retry, m, make_color_ramp, mm, overall, p, p2, pm_color, rgb_to_hsv, screen_number, tcell, text_data, textclient.h, textclient_close, textclient_getc, textclient_open, textclient_putc_event, textclient_puts, textclient_reshape, tty, tty_char, utf8_encode, utf8_to_latin1, utf8wc.h, xft_fg, xftdraw, xim_color, xim_mono, ximage-loader.h | pixmaps, readback, clipmask | 1260 |
+| piecewise | 2d | L | Pixmap, XArc, XCopyArea, XCreatePixmap, XDrawArcs, make_color_loop | pixmaps | 1036 |
+| polyominoes | 2d | L | XCreateImage, XDestroyImage, XDrawRectangle, XDrawSegments, XFillRectangles, XPutImage, XSetLineAttributes, xlock.h | needs-xlockmore | 2370 |
+| pong | 2d | L | ANALOGTV_BLACK_LEVEL, ANALOGTV_BOT, ANALOGTV_DEFAULTS, ANALOGTV_OPTIONS, ANALOGTV_TOP, ANALOGTV_VISLINES, ANALOGTV_VIS_END, ANALOGTV_VIS_LEN, ANALOGTV_VIS_START, ButtonPressMask, ButtonRelease, ButtonReleaseMask, CurrentTime, Cursor, FocusChangeMask, FocusIn, FocusOut, GrabModeAsync, KeyPress, KeyPressMask, KeyRelease, KeyReleaseMask, KeySym, MotionNotify, None, Pixmap, PointerMotionMask, X11/keysym.h, XCreatePixmap, XCreatePixmapCursor, XDefineCursor, XDestroyImage, XEvent.x, XEvent.xkey, XEvent.xmotion, XGrabPointer, XHeightMMOfScreen, XHeightOfScreen, XK_Down, XK_Up, XLookupString, XQueryPointer, XSelectInput, XUngrabPointer, XWarpPointer, analogtv, analogtv.h, analogtv_allocate, analogtv_draw, analogtv_draw_solid, analogtv_draw_string, analogtv_font, analogtv_font_set_char, analogtv_input, analogtv_input_allocate, analogtv_lcp_to_ntsc, analogtv_make_font, analogtv_reception, analogtv_reception_update, analogtv_reconfigure, analogtv_release, analogtv_set_defaults, analogtv_setup_sync, cursor_pix, double_time, doubletime.h, key | pixmaps | 1109 |
+| popsquares | 2d | L | GCBackground, Pixmap, XCopyArea, XCreatePixmap, XFreePixmap, XGCValues.background, XQueryColor, make_color_ramp, rgb_to_hsv | pixmaps | 310 |
+| qix | 2d | L | CellsOfScreen, DefaultScreenOfDisplay, GCPlaneMask, GXxor, XGCValues.plane_mask, XQueryColor, XSetWindowBackground, allocate_alpha_colors, alpha.h, has_writable_cells, rgb_to_hsv | - | 642 |
+| rdbomb | 2d | L | DefaultScreenOfDisplay, XImage, XListPixmapFormats, XPixmapFormatValues, XSetWindowBackground, XShmSegmentInfo, ZPixmap, create_xshm_image, destroy_xshm_image, has_writable_cells, make_smooth_colormap, pfv, put_xshm_image, visual_depth, xshm.h | - | 571 |
+| recanim | 2d | L | Display, DisplayOfScreen, False, GC, Pixmap, Screen, Window, XCopyArea, XCreateGC, XCreateImage, XCreatePixmap, XDestroyImage, XFetchName, XFreeGC, XFreePixmap, XGCValues, XGetSubImage, XGetWindowAttributes, XImage, XStoreName, XSync, XWindowAttributes, ZPixmap, doubletime.h, dpy, ffmpeg-out.h, ffmpeg_out_add_frame, ffmpeg_out_close, ffmpeg_out_init, ffmpeg_out_state, fprintf, gcv, progname, recanim.h, record_anim_state, screenhackI.h, screenhack_record_anim_free, stderr, unlink | pixmaps | 449 |
+| ripples | 2d | L | XDestroyImage, XGetImage, XGetPixel, XImage, XPutPixel, XQueryColor, XShmSegmentInfo, ZPixmap, async_load_state, create_xshm_image, destroy_xshm_image, load_image_async_simple, make_smooth_colormap, put_xshm_image, screenhack_event_helper, time, time_t, visual_rgb_masks, xshm.h | readback | 1127 |
+| rocks | 2d | L | GCBackground, Nonconvex, Pixmap, XCopyPlane, XCreatePixmap, XFreePixmap, XGCValues.background, XQueryColor, XSetGraphicsExposures, p | pixmaps | 562 |
+| rotzoomer | 2d | L | Pixmap, XCreatePixmap, XDestroyImage, XFreePixmap, XGetImage, XGetPixel, XImage, XPutPixel, XShmSegmentInfo, ZPixmap, async_load_state, create_xshm_image, destroy_xshm_image, load_image_async_simple, put_xshm_image, screenhack_event_helper, time, time_t, xshm.h | pixmaps, readback | 601 |
+| screenhack | 2d | L | Atom, Bool, Boolean, ButtonPress, ButtonPressMask, ButtonReleaseMask, CellsOfScreen, ClientMessage, Colormap, ConfigureNotify, DefaultRootWindow, DefaultScreenOfDisplay, DefaultVisualOfScreen, Display, DisplayOfScreen, False, KeyPress, KeyPressMask, KeyReleaseMask, KeySym, MapNotify, O_RDWR, Pixel, PropModeReplace, PropertyChangeMask, RootWindowOfScreen, Screen, StructureNotifyMask, True, VirtualRootWindowOfScreen, Visual, Widget, Window, X11/CoreP.h, X11/Intrinsic.h, X11/IntrinsicP.h, X11/Shell.h, X11/StringDefs.h, X11/keysym.h, XA_ATOM, XA_CARDINAL, XA_NET_WM_PID, XA_NET_WM_PING, XA_WM_DELETE_WINDOW, XBell, XChangeProperty, XClearWindow, XCreateColormap, XErrorEvent, XEvent, XGetAtomName, XGetWindowAttributes, XIfEvent, XInternAtom, XK_Hyper_R, XK_Shift_L, XLookupString, XNextEvent, XPending, XPointer, XSelectInput, XSendEvent, XSetErrorHandler, XSetWindowBackground, XSetWindowColormap, XSync, XVisualIDFromVisual, XWindowAttributes, XmuPrintDefaultErrorMessage, XrmOptionDescRec, XrmoptionNoArg, XrmoptionSepArg, XtAppContext, XtAppInitialize, XtAppPending, XtAppProcessEvent, XtDestroyApplicationContext, XtDestroyWidget, XtDisplay, XtGetApplicationNameAndClass, XtGrabNone, XtIMXEvent, XtInputMask, XtNbackground, XtNborderColor, XtNcolormap, XtNdepth, XtNheight, XtNinput, XtNmappedWhenManaged, XtNtitle, XtNvisual, XtNwidth, XtNx, XtNy, XtPopup, XtRealizeWidget, XtScreen, XtVaAppCreateShell, XtVaSetValues, XtWindow, app, argp, close, cmap, def_visual_p, desired_visual, dont_clear, dpy, event, fps.h, fps_compute, fps_draw, fps_init, fps_slept, fps_state, fpst, fpst2, get_boolean_resource, get_integer_resource, get_pixel_resource, get_string_resource, get_visual_resource, getpid, has_writable_cells, help_p, keysym, m, new, on_window, open, progname, root_p, screenhackI.h, screensaver_id, topLevelShellWidgetClass, toplevel, toplevel2, usleep, v, version.h, visual, visual_depth, vroot.h, window, window2, xgwa, xmu.h, ya_rand_init | - | 1099 |
+| shadebobs | 2d | L | BlackPixelOfScreen, XCreateImage, XDestroyImage, XFree, XGetPixel, XImage, XListPixmapFormats, XParseColor, XPutImage, XPutPixel, XSetWindowBackground, ZPixmap | readback | 474 |
+| slidescreen | 2d | L | Convex, XCopyArea, XDrawRectangle, XFree, XParseColor, XQueryColors, async_load_state, load_image_async_simple, screenhack_event_helper, time, time_t, visual_cells | pixmaps | 507 |
+| slip | 2d | L | XCopyArea, XCreatePixmap, XFreePixmap, XSetGraphicsExposures, xlock.h | pixmaps, needs-xlockmore | 376 |
+| speedmine | 2d | L | Nonconvex, None, Pixmap, XCopyArea, XCreatePixmap, XFreePixmap, XQueryColor, XSetClipMask, free_colors, gettimeofday, make_color_ramp, rgb_to_hsv | pixmaps, clipmask | 1659 |
+| spotlight | 2d | L | Pixmap, XCopyArea, XCreatePixmap, XDrawRectangle, XFreePixmap, XSetClipMask, XSetClipOrigin, async_load_state, clip_pm, gettimeofday, load_image_async_simple, screenhack_event_helper, time, time_t | pixmaps, clipmask | 355 |
+| starfish | 2d | L | EvenOddRule, GCFillRule, XGCValues.fill_rule, XSetWindowBackground, compute_closed_spline, free_colors, make_smooth_colormap, make_spline, make_uniform_colormap, spline, time, time_t | - | 564 |
+| strange | 2d | L | XCopyArea, XCopyPlane, XCreatePixmap, XDrawPoints, XFillRectangles, XFreePixmap, XPutPixel, XQueryColor, XQueryColors, XSetBackground, XSetFunction, XSetGraphicsExposures, pow2.h, thread_util.h, xlock.h, xshm.h | pixmaps, xor, needs-xlockmore | 1353 |
+| swirl | 2d | L | AllocAll, Bool, Colormap, Display, DoBlue, DoGreen, DoRed, ENTRYPOINT, False, LRAND, MAXRAND, MI_BATCHCOUNT, MI_BG_COLOR, MI_COLORMAP, MI_DISPLAY, MI_FG_COLOR, MI_GC, MI_INIT, MI_NPIXELS, MI_SATURATION, MI_SCREEN, MI_VISUAL, MI_WINDOW, MI_WIN_BLACK_PIXEL, MI_WIN_DEPTH, MI_WIN_HEIGHT, MI_WIN_IS_INWINDOW, MI_WIN_WHITE_PIXEL, MI_WIN_WIDTH, M_PI, ModeInfo, True, Visual, Window, XAllocColor, XClearWindow, XColor, XCreateColormap, XFree, XFreeColormap, XImage, XInstallColormap, XPutPixel, XQueryColor, XSetWMColormapWindows, XSetWindowColormap, XShmSegmentInfo, XStoreColors, ZPixmap, create_xshm_image, dest, destroy_xshm_image, display, done, dpy, hook, orbit, picasso, preserveColors, put_xshm_image, ray, same, setColormap, setupColormap, src, truecolor, value, wheel, window, xlock.h | needs-xlockmore | 1447 |
+| t3d | 2d | L | BlackPixelOfScreen, Button1Mask, Button2Mask, Button3Mask, GXandInverted, GXor, KeyPress, KeySym, Pixmap, XAllocColorCells, XCopyArea, XCreatePixmap, XDrawSegments, XEvent.xkey, XFreePixmap, XGetImage, XLookupString, XPutImage, XQueryPointer, XStoreColors, gettimeofday, keysym | pixmaps, readback, float-heavy | 991 |
+| tessellimage | 2d | L | ButtonRelease, Convex, ITRIANGLE, Pixmap, X11/keysymdef.h, XCopyArea, XCreateImage, XCreatePixmap, XDestroyImage, XEvent.xany, XFreePixmap, XGetGeometry, XGetImage, XGetPixel, XImage, XPutImage, XPutPixel, XQueryColor, XYZ, ZPixmap, async_load_state, countof, delaunay, delaunay.h, delaunay_xyzcompare, dimg, double_time, doubletime.h, img2, load_image_async_simple, p, screenhack_event_helper, tt, v, visual_rgb_masks | pixmaps, readback | 996 |
+| testx11 | 2d | L | BlackPixelOfScreen, CapProjecting, CapRound, Convex, GCBackground, GCCapStyle, GCFont, GXxor, KeyPress, KeySym, NRAND, Pixmap, XClearArea, XCopyArea, XCopyPlane, XCreatePixmap, XCreatePixmapFromBitmapData, XDestroyImage, XDrawArc, XDrawPoints, XDrawRectangle, XDrawSegments, XDrawString, XEvent.x, XEvent.xany, XEvent.xkey, XEvent.y, XFillRectangles, XFreePixmap, XGCValues.background, XGCValues.cap_style, XGCValues.font, XGetImage, XImage, XLoadFont, XLookupString, XPutImage, XPutPixel, XSegment, XSetBackground, XSetClipMask, XSetWindowBackground, XSync, ZPixmap, colorbars.h, countof, draw_colorbars, get_position, get_rotation, glx/rotator.h, image, images/gen/logo-180_png.h, keysym, lines, logo, logo_mask, make_color_loop, make_rotator, pixmap, rotator, seg, ximage-loader.h | pixmaps, readback, text, clipmask | 968 |
+| triangle | 2d | L | Convex, CoordModeOrigin, Display, ENTRYPOINT, GC, LRAND, MAX, MAXRAND, MIN, MI_DISPLAY, MI_GC, MI_INIT, MI_NCOLORS, MI_PAUSE, MI_SCREEN, MI_WINDOW, MI_WIN_BLACK_PIXEL, MI_WIN_HEIGHT, MI_WIN_WHITE_PIXEL, MI_WIN_WIDTH, M_PI_2, ModeInfo, NULL, Window, XClearWindow, XDrawLine, XFillPolygon, XFillRectangle, XPoint, XSetForeground, display, gc, p, window, xlock.h | needs-xlockmore | 355 |
+| truchet | 2d | L | CapRound, JoinRound, LineSolid, Pixmap, XCopyArea, XCreatePixmap, XDrawArc, XGCValues.background, XSetLineAttributes | pixmaps | 541 |
+| twang | 2d | L | Pixmap, XCreatePixmap, XDestroyImage, XFreePixmap, XGetImage, XGetPixel, XImage, XPutPixel, XShmSegmentInfo, ZPixmap, async_load_state, create_xshm_image, destroy_xshm_image, load_image_async_simple, put_xshm_image, screenhack_event_helper, time, time_t, xshm.h | pixmaps, readback | 791 |
+| vfeedback | 2d | L | ANALOGTV_DEFAULTS, ANALOGTV_OPTIONS, ANALOGTV_SIGNAL_LEN, BlackPixelOfScreen, Button1, Button2, Button3, Button4, Button5, Button6, Button7, ButtonRelease, EASE_IN_OUT_SINE, KeyPress, KeySym, MotionNotify, Pixmap, PointerMotionMask, RANDSIGN, XCopyArea, XCreateImage, XCreatePixmap, XDestroyImage, XEvent.state, XEvent.x, XEvent.xany, XEvent.xkey, XEvent.xmotion, XEvent.y, XFreePixmap, XGetImage, XGetPixel, XImage, XK_Down, XK_Left, XK_Right, XK_Up, XLookupString, XPutPixel, XSelectInput, XWindowAttributes.your_event_mask, ZPixmap, analogtv, analogtv.h, analogtv_allocate, analogtv_draw, analogtv_input_allocate, analogtv_load_ximage, analogtv_reception, analogtv_reception_update, analogtv_reconfigure, analogtv_release, analogtv_set_defaults, analogtv_setup_sync, double_time, doubletime.h, ease, easing.h, img, in, keysym, out, screenhack_event_helper | pixmaps, readback | 592 |
+| wander | 2d | L | NRAND, Pixmap, XCopyArea, XCreatePixmap, free_colors, make_color_loop, screenhack_event_helper | pixmaps | 284 |
+| whirlygig | 2d | L | Pixmap, XCopyArea, XCreatePixmap, XDrawString, make_uniform_colormap | pixmaps, text, float-heavy | 741 |
+| worm | 2d | L | COSF, Display, ENTRYPOINT, False, GC, GXcopy, GXor, LRAND, MI_BATCHCOUNT, MI_CYCLES, MI_DELTA3D, MI_DISPLAY, MI_GC, MI_INIT, MI_LEFT_COLOR, MI_NONE_COLOR, MI_NPIXELS, MI_PIXEL, MI_RIGHT_COLOR, MI_SCREEN, MI_SIZE, MI_WINDOW, MI_WIN_HEIGHT, MI_WIN_IS_INSTALL, MI_WIN_IS_USE3D, MI_WIN_WHITE_PIXEL, MI_WIN_WIDTH, M_PI, ModeInfo, NRAND, NULL, NUMCOLORS, SINF, Window, XClearArea, XClearWindow, XFillRectangle, XFillRectangles, XPoint, XRectangle, XSetForeground, XSetFunction, display, gc, window, xlock.h | xor, needs-xlockmore | 434 |
+| wormhole | 2d | L | CapRound, JoinRound, LineSolid, Pixmap, XCopyArea, XCreatePixmap, XFreePixmap, XSetLineAttributes | pixmaps | 734 |
+| xanalogtv | 2d | L | ANALOGTV_DEFAULTS, ANALOGTV_OPTIONS, ANALOGTV_PIC_LEN, ANALOGTV_SCALE, ANALOGTV_SIGNAL_LEN, ANALOGTV_V, ANALOGTV_VIS_LEN, ANALOGTV_VIS_START, KeyPress, KeySym, Pixmap, X11/Intrinsic.h, XCreatePixmap, XDestroyImage, XEvent.xkey, XFreePixmap, XGetImage, XImage, XK_Down, XK_Left, XK_Next, XK_Prior, XK_Right, XK_Up, XLookupString, XrmDatabase, XrmPutResource, XrmValue, ZPixmap, analogtv, analogtv.h, analogtv_allocate, analogtv_draw, analogtv_draw_solid_rel_lcp, analogtv_draw_string_centered, analogtv_font, analogtv_input, analogtv_input_allocate, analogtv_lcp_to_ntsc, analogtv_load_ximage, analogtv_make_font, analogtv_reception, analogtv_reception_update, analogtv_reconfigure, analogtv_release, analogtv_set_defaults, analogtv_setup_sync, analogtv_setup_teletext, db, gethostname, gettimeofday, image, image_data_to_pixmap, images/gen/logo-180_png.h, images/gen/testcard_bbcf_png.h, images/gen/testcard_pm5544_png.h, images/gen/testcard_rca_png.h, inp, input, keysym, load_image_async, localtime, mask, p, rec, screenhack_event_helper, strftime, testcard_bbcf_png, testcard_pm5544_png, testcard_rca_png, time, time_t, value, ximage, ximage-loader.h | pixmaps, readback | 689 |
+| xflame | 2d | L | XCreateImage, XDestroyImage, XGetPixel, XImage, XPutPixel, XQueryColor, XShmSegmentInfo, ZPixmap, bob_png, create_xshm_image, destroy_xshm_image, file_to_ximage, image, image_data_to_ximage, images/gen/bob_png.h, out, put_xshm_image, ximage-loader.h, xshm.h | readback | 826 |
+| ximage-loader | 2d | L | BitmapBitOrder, Bool, Display, GC, GCBackground, GCForeground, ImageByteOrder, Pixmap, Visual, Window, XCreateGC, XCreateImage, XCreatePixmap, XDestroyImage, XFreeGC, XFreePixmap, XGCValues, XGetImage, XGetPixel, XGetWindowAttributes, XImage, XPutImage, XPutPixel, XWindowAttributes, XYPixmap, ZPixmap, gc, gcv, in, mask, out, p2, pixmap, progname, screenhackI.h, xgwa, ximage, ximage-loader.h | pixmaps, readback | 679 |
+| xjack | 2d | L | FcChar8, GCBackground, XClearArea, XCopyArea, XEvent.xany, XGCValues.background, XGlyphInfo, XftColor, XftColorAllocName, XftDraw, XftDrawCreate, XftDrawDestroy, XftDrawStringUtf8, XftFont, XftFontClose, XftTextExtentsUtf8, load_xft_font_retry, overall, screen_number | pixmaps | 508 |
+| xlockmore | 2d | L | GCBackground, ModeInfo, ModeSpecOpt, PointerMotionMask, RootWindowOfScreen, X11/Intrinsic.h, XGCValues.background, XLOCKMORE_NUM_SCREENS, XSelectInput, color_scheme_bright, color_scheme_default, color_scheme_smooth, color_scheme_uniform, countof, erase_window, eraser_free, fps_compute, fps_draw, fps_state, free_colors, make_smooth_colormap, make_uniform_colormap, mi, screenhack_event_helper, t_Bool, t_Float, t_Int, t_String, xlockmoreI.h, xlockmore_opts, ya_rand_init | - | 795 |
+| xlyap | 2d | L | BlackPixelOfScreen, Cursor, GCBackground, KeyPress, KeySym, WhitePixelOfScreen, X11/cursorfont.h, XComposeStatus, XCopyArea, XCreatePixmap, XDrawPoints, XEvent.xkey, XFreePixmap, XGCValues.background, XGetGeometry, XKeyEvent, XLookupString, XPending, XStoreColors, countof, free_colors, make_smooth_colormap, screenhack_event_helper, yarandom.h | pixmaps | 1939 |
+| xmatrix | 2d | L | GCBackground, KeyPress, KeySym, Pixmap, X11/Intrinsic.h, XChangeGC, XCopyArea, XCreateImage, XCreatePixmap, XDestroyImage, XDrawRectangle, XEvent.xany, XEvent.xkey, XFreePixmap, XGCValues.background, XGetImage, XGetPixel, XImage, XLookupString, XPutImage, XPutPixel, XYPixmap, XtAppAddTimeOut, XtAppContext, XtIntervalId, XtPointer, XtRemoveTimeOut, ZPixmap, app, countof, i1, i2, im, image_data_to_pixmap, images/gen/matrix1_png.h, images/gen/matrix1b_png.h, images/gen/matrix2_png.h, images/gen/matrix2b_png.h, keysym, matrix1_png, matrix1b_png, matrix2_png, matrix2b_png, p2, screenhack_event_helper, text_data, textclient.h, textclient_close, textclient_getc, textclient_open, textclient_reshape, ximage-loader.h | pixmaps, readback | 1915 |
+| xscreensaver-getimage | 2d | L | ../driver/prefs.h, AnyPropertyType, Atom, BadDrawable, BadWindow, ConnectionNumber, DefaultColormapOfScreen, DisplayOfScreen, IsViewable, MapNotify, None, PPosition, PSize, Pixmap, PropModeReplace, StructureNotifyMask, Success, TrueColor, USPosition, USSize, VirtualRootWindowOfScreen, Widget, X11/Intrinsic.h, X11/Xatom.h, X11/Xutil.h, XA_STRING, XA_XSCREENSAVER_IMAGE_GEOMETRY, XA_XSCREENSAVER_IMAGE_TITLE, XChangeProperty, XClassHint, XCopyArea, XCreateImage, XCreatePixmap, XDefaultColormapOfScreen, XDeleteProperty, XDestroyImage, XErrorEvent, XErrorHandler, XEvent.xany, XEvent.xvisibility, XFree, XFreePixmap, XGetClassHint, XGetGeometry, XGetImage, XGetPixel, XGetVisualInfo, XGetWMNormalHints, XGetWindowProperty, XIfEvent, XImage, XInstallColormap, XInternAtom, XMapRaised, XPointer, XPutImage, XPutPixel, XQueryColors, XQueryTree, XRootWindowOfScreen, XScreenNumberOfScreen, XSelectInput, XSetErrorHandler, XSetWMNormalHints, XSizeHints, XStoreColors, XSync, XUnmapWindow, XVisualIDFromVisual, XWindowAttributes.map_state, XWindowAttributes.your_event_mask, XmuPrintDefaultErrorMessage, XrmDatabase, XrmPutStringResource, XtAppContext, XtAppInitialize, XtDisplay, XtScreen, ZPixmap, a, blurb, blurb.h, close, colorbars.h, describe_visual, draw_colorbars, dup2, execvp, fork, grabclient.h, h, hints, logo, mask, old_handler, parse_init_file, pipe, resources.h, scaled, screensaver_id, screenshot, screenshot.h, screenshot_load, toplevel, type, unlink, usleep, version.h, visual.h, visual_depth, vroot.h, window_root_offset, ximage, ximage2, xmu.h, ya_rand_init, yarandom.h | pixmaps, readback | 2483 |
+| xsublim | 2d | L | BadMatch, Bool, DefaultScreenOfDisplay, Display, GC, GCBackground, GCFont, GCForeground, GCSubwindowMode, IncludeInferiors, RootWindowOfScreen, Screen, Widget, Window, X11/CoreP.h, X11/Intrinsic.h, X11/IntrinsicP.h, X11/Shell.h, X11/StringDefs.h, X11/Xatom.h, X11/Xlib.h, X11/Xos.h, X11/Xproto.h, X11/Xutil.h, X11/keysym.h, XCreateGC, XDestroyImage, XDrawString, XErrorEvent, XErrorHandler, XFontStruct, XGCValues, XGetImage, XGetWindowAttributes, XGrabServer, XImage, XLoadQueryFont, XPutImage, XRootWindowOfScreen, XSetErrorHandler, XSync, XTextWidth, XUngrabServer, XWindowAttributes, XrmOptionDescRec, XrmoptionNoArg, XrmoptionSepArg, XtAppContext, XtAppInitialize, XtDestroyWidget, XtDisplay, XtGetApplicationNameAndClass, XtScreen, ZPixmap, app, app_App, argp, attr_Win, blurb.h, dpy, font-retry.h, font_Font, gc_GcBack, gc_GcFore, gc_ValBack, gc_ValFore, get_boolean_resource, get_integer_resource, get_pixel_resource, get_string_resource, getpid, image_Image, progname, resources.h, root, s, usleep, usleep.h, vroot, vroot.h, win_Root, xft.h, ya_rand_init, yarandom.h | readback, text | 808 |
+| zoom | 2d | L | Pixmap, XCopyArea, XCreatePixmap, XDestroyImage, XFreePixmap, XGetImage, XGetPixel, XImage, XSetWindowBackground, ZPixmap, async_load_state, gettimeofday, load_image_async_simple, screenhack_event_helper, time, time_t | pixmaps, readback | 290 |
+| apollonian | 2d | M | XDrawArc, XQueryColor, xlock.h | needs-xlockmore | 820 |
+| blaster | 2d | M | XArc, XFillArcs | - | 1208 |
+| braid | 2d | M | XSetLineAttributes, xlock.h | needs-xlockmore | 444 |
+| cloudlife | 2d | M | XDrawPoints, make_smooth_colormap, screenhack_event_helper | - | 440 |
+| coral | 2d | M | XFillRectangles, free_colors, make_uniform_colormap, screenhack_event_helper | - | 328 |
+| critical | 2d | M | XChangeGC, free_colors, make_smooth_colormap, make_uniform_colormap | - | 462 |
+| delaunay | 2d | M | ITRIANGLE, XYZ, delaunay.h, p2 | - | 304 |
+| discrete | 2d | M | XDrawPoints, xlock.h | needs-xlockmore | 442 |
+| drift | 2d | M | XDrawPoints, xlock.h | needs-xlockmore | 674 |
+| euler2d | 2d | M | XDrawArc, XDrawSegments, XSetLineAttributes, xlock.h | float-heavy, needs-xlockmore | 893 |
+| fadeplot | 2d | M | XFillRectangles, xlock.h | needs-xlockmore | 243 |
+| grav | 2d | M | XDrawArc, xlock.h | needs-xlockmore | 360 |
+| hopalong | 2d | M | XFillRectangles, xlock.h | needs-xlockmore | 563 |
+| hyperball | 2d | M | Expose, UnmapNotify | - | 2464 |
+| interaggregate | 2d | M | XGCValues.background, XParseColor, screenhack_event_helper | - | 989 |
+| laser | 2d | M | XChangeGC, xlock.h | needs-xlockmore | 356 |
+| lightning | 2d | M | xlock.h | needs-xlockmore | 602 |
+| lisa | 2d | M | XDrawPoints, XMaxRequestSize, XSetLineAttributes, xlock.h | needs-xlockmore | 744 |
+| lissie | 2d | M | XDrawArc, xlock.h | needs-xlockmore | 323 |
+| mountain | 2d | M | xlock.h | needs-xlockmore | 283 |
+| pedal | 2d | M | GCBackground, XGCValues.background, screenhack_event_helper | - | 339 |
+| penrose | 2d | M | XSetLineAttributes, xlock.h | needs-xlockmore | 1342 |
+| rorschach | 2d | M | XFillRectangles, screenhack_event_helper | - | 227 |
+| rotor | 2d | M | XSetLineAttributes, xlock.h | needs-xlockmore | 394 |
+| scooter | 2d | M | XSetLineAttributes, xlock.h | needs-xlockmore | 975 |
+| sierpinski | 2d | M | XDrawPoints, xlock.h | needs-xlockmore | 215 |
+| sphere | 2d | M | XDrawPoints, xlock.h | needs-xlockmore | 304 |
+| spiral | 2d | M | xlock.h | needs-xlockmore | 331 |
+| squiral | 2d | M | free_colors, make_uniform_colormap, screenhack_event_helper, yarandom.h | - | 335 |
+| substrate | 2d | M | XGCValues.background, XParseColor, screenhack_event_helper | - | 780 |
+| thornbird | 2d | M | XFillRectangles, xlock.h | needs-xlockmore | 270 |
+| vermiculate | 2d | M | XSetWindowBackground, screenhack_event_helper, ya_random | - | 1229 |
+| vines | 2d | M | xlock.h | needs-xlockmore | 190 |
+| whirlwindwarp | 2d | M | XDrawRectangle, gettimeofday | - | 509 |
+| xrayswarm | 2d | M | XSetGraphicsExposures, initTime | - | 1235 |
 | helix | 2d | S | - | - | 358 |
-| hyperball | 2d | S | - | - | 2464 |
 | hypercube | 2d | S | - | - | 576 |
-| lightning | 2d | S | - | needs-xlockmore | 602 |
-| m6502 | 2d | S | - | - | 288 |
-| mountain | 2d | S | - | needs-xlockmore | 283 |
-| pacman_level | 2d | S | - | - | 774 |
-| pedal | 2d | S | - | - | 339 |
 | petri | 2d | S | - | - | 780 |
 | pyro | 2d | S | - | - | 373 |
-| spiral | 2d | S | - | needs-xlockmore | 331 |
-| squiral | 2d | S | - | - | 335 |
-| triangle | 2d | S | - | needs-xlockmore | 355 |
-| vines | 2d | S | - | needs-xlockmore | 190 |
 | webcollage-helper | 2d | S | - | - | 597 |
 | xspirograph | 2d | S | - | - | 338 |
 | antinspect | gl | XL | - | needs-xlockmore | 696 |

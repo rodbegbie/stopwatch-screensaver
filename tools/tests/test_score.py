@@ -86,3 +86,66 @@ def test_table_output_is_lint_clean_markdown():
     assert md.startswith("| Hack |")
     assert md.endswith("\n") and not md.endswith("\n\n")
     assert all(line.startswith("|") for line in md.strip().splitlines())
+
+
+SHIM_INCLUDES = [
+    Path(__file__).resolve().parents[2] / "firmware" / "src",
+    Path(__file__).resolve().parents[2] / "firmware" / "src" / "x11shim" / "include",
+]
+
+
+def test_blockers_clean_source_has_none():
+    assert sh.blockers_for("ok", "int f(void) { return 0; }\n", SHIM_INCLUDES) == []
+
+
+def test_blockers_reports_missing_header_and_keeps_going():
+    src = '#include "nosuch.h"\nint f(void) { return GXnothing; }\n'
+    got = sh.blockers_for("hdr", src, SHIM_INCLUDES)
+    assert "nosuch.h" in got
+    assert "GXnothing" in got
+
+
+def test_blockers_reports_undeclared_function_type_and_member():
+    src = (
+        '#include "screenhack.h"\n'
+        "void f(Display *d) { XNotARealCall(d); XWindowAttributes a; a.bogus = 1;"
+        " NotAType t; }\n"
+    )
+    got = sh.blockers_for("misc", src, SHIM_INCLUDES)
+    assert "XNotARealCall" in got
+    assert "NotAType" in got
+    assert "XWindowAttributes.bogus" in got
+
+
+def test_blockers_pyro_like_hack_compiles_clean_against_shim():
+    pyro = Path(__file__).resolve().parents[2] / "firmware/src/hacks/pyro/pyro.c"
+    assert sh.blockers_for("pyro", pyro.read_text(), SHIM_INCLUDES) == []
+
+
+def test_score_with_blockers_is_not_S_even_if_x_calls_provided():
+    src = "XCreateGC(a,b,c,d);"
+    row = sh.score(Path("hacks/a.c"), src, PROVIDED, blockers=["erase.h"])
+    assert row["effort"] == "M"
+    assert row["gaps"] == ["erase.h"]
+    clean = sh.score(Path("hacks/a.c"), src, PROVIDED, blockers=[])
+    assert clean["effort"] == "S"
+
+
+def test_score_five_or_more_gaps_is_L():
+    row = sh.score(Path("hacks/a.c"), "int x;", PROVIDED, blockers=list("abcde"))
+    assert row["effort"] == "L"
+
+
+def test_score_gl_hack_is_XL_and_not_compiled():
+    row = sh.score(Path("hacks/glx/a.c"), "int x;", PROVIDED, blockers=None)
+    assert row["effort"] == "XL"
+
+
+def test_blockers_anonymous_struct_member_has_clean_name_without_paths():
+    src = (
+        '#include "screenhack.h"\n'
+        "int f(XEvent *e) { return e->xbutton.nosuch; }\n"
+    )
+    got = sh.blockers_for("anon", src, SHIM_INCLUDES)
+    assert "XEvent.nosuch" in got
+    assert not any("unnamed" in g or "/" in g for g in got)

@@ -7,11 +7,14 @@ it with `uv run tools/score_hacks.py`.
 ## How to read this
 
 - **{total} hacks** were scanned: every `hacks/*.c` and `hacks/glx/*.c`.
-- The scan is static and heuristic. It counts Xlib calls in the source and
-  compares them with the calls declared in `firmware/src/x11shim/xshim.h`.
-  It does not run anything, and it does not see helpers that hacks reach
-  through `xlockmore.h` or `utils/`, so treat the effort ratings as a
-  prioritisation aid, not an estimate.
+- The scan is static and heuristic. For each 2D hack it counts the Xlib
+  calls in the source that the shim does not declare, and it also
+  syntax-checks the unmodified source against the shim's headers
+  (`cc -fsyntax-only`). Anything the compiler cannot find is a **shim
+  gap**: a missing header, type, struct field, constant or function.
+  That second check catches helpers hacks reach through `utils/` that a
+  count of Xlib calls cannot see. It does not run anything, so treat the
+  effort ratings as a prioritisation aid, not an estimate.
 - Many files in `hacks/` are shared helpers or support code rather than
   hacks, so the totals overstate the number of distinct screensavers.
 
@@ -19,9 +22,9 @@ it with `uv run tools/score_hacks.py`.
 
 | Rating | Meaning | Count |
 | --- | --- | --- |
-| S | 2D, and every Xlib call is already in the shim | {n_s} |
-| M | 2D, 1-4 missing calls, no pixmaps or pixel read-back | {n_m} |
-| L | 2D, 5+ missing calls, or uses pixmaps or pixel read-back | {n_l} |
+| S | 2D, and the unmodified source compiles against the shim | {n_s} |
+| M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | {n_m} |
+| L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | {n_l} |
 | XL | GL: needs a software rasteriser (see below) | {n_xl} |
 
 ## Flags
