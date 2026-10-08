@@ -1,0 +1,15 @@
+flash away
+
+---
+
+<task-notification>
+<task-id>b9qve74kw</task-id>
+<tool-use-id>toolu_01LNguYaWvUpdTdPs5XGsWU9</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/cd7d24f7-9aab-4dcd-baf1-b0d59d2a6982/tasks/b9qve74kw.output</output-file>
+<status>failed</status>
+<summary>Background command "Capture 4 minutes of serial output in background" failed with exit code 127</summary>
+</task-notification>
+
+---
+
+done
