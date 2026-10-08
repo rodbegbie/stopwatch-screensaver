@@ -10,15 +10,20 @@ extern "C" {
 
 typedef struct {
   int w, h;
-  uint16_t *px; /* px[y * w + x], native RGB565 */
+  uint16_t *px; /* px[y * w + x], RGB565 with the bytes swapped (display order) */
 } Canvas;
 
 /* Returns 0 on success, -1 if alloc returns NULL. */
 int canvas_init(Canvas *c, int w, int h, void *(*alloc)(size_t));
 void canvas_free(Canvas *c);
 
+/* The display wants each pixel's high byte first, but the ESP32 stores a
+ * uint16_t low byte first. Pixels are kept already swapped, so pushing the
+ * canvas costs no per-pixel work. Only code that reads colour bits back (the
+ * logo loader, the host dump) needs px_swap to get ordinary RGB565. */
 uint16_t rgb565(uint8_t r, uint8_t g, uint8_t b);
 uint16_t rgb565_from16(uint16_t r, uint16_t g, uint16_t b);
+uint16_t px_swap(uint16_t v);
 
 /* All drawing is clipped to the canvas; any int coordinates are safe. */
 void canvas_clear(Canvas *c, uint16_t color);

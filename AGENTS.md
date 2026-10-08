@@ -189,14 +189,24 @@ hack, and holds a recipe per trap. The steps:
 ## Gotchas
 
 - M5GFX reads a plain `uint32_t` colour as RGB888. `TFT_RED` and friends are
-  RGB565 constants. `pushImage` with a native-order `uint16_t*` canvas wants
-  `setSwapBytes(true)`. It was `false` until Maze: a hue-sweeping palette
-  stays a rainbow with its bytes swapped (red, green and blue rotate), so no
-  earlier hack showed the fault. Only pure black and white, or a colour you
-  know (Maze's red flame, its green solving path), expose a swap. Host frames
-  cannot show one, since it happens in the push to the display. Pushes went
-  from 31 ms to 41-45 ms on every hack about then (#23): the swap is the
-  suspect, but that is untested.
+  RGB565 constants. The canvas holds pixels already byte-swapped into the
+  display's order (`rgb565()` returns them that way), and the display runs
+  with `setSwapBytes(false)`. A swap done by M5GFX on each push cost 10 ms of
+  every frame (#23: pushes of 41-45 ms became 31 ms). `px_swap()` turns a
+  canvas pixel into ordinary RGB565 and back: only code that reads colour bits
+  needs it (the logo loader, `dump_main.c`, tests). A hue-sweeping palette
+  stays a rainbow with its bytes swapped (red, green and blue rotate), so only
+  pure black and white, or a colour you know (Maze's red flame, its green
+  solving path), expose a wrong order on the device. Host frames cannot,
+  since the swap happens in the push; compare them with `px_swap` applied.
+- A hack that takes colour bits out of pixel values itself (Substrate's alpha
+  blend, in `point2rgb`) breaks on swapped pixels without a compile error and
+  without a crash. `substrate_single.c` swaps at `XAllocColor` and
+  `XSetForeground` so the hack sees ordinary RGB565; its golden-frame test
+  fails if either is missing. Searching for `XGetPixel` finds none of this:
+  dump every hack before and after a pixel-format change and `cmp` the frames.
+  Pyro differs by a few hundred pixels, because it sorts projectiles by pixel
+  value and so draws overlaps in another order.
 - In `platformio.ini` use `platform = platformio/native`; plain `native`
   breaks `pio run`. Native tests need `test_build_src = yes`.
 - Quoted includes resolve beside the including file first, so compile hack
@@ -211,9 +221,10 @@ hack, and holds a recipe per trap. The steps:
   Reading the pin level inside a GPIO interrupt did not work: the release
   bounced and was counted as a second press. Check `press_waited` in the log.
 - The runner caps a hack's delay at 10 s, and the loop credits only the push
-  (31 ms originally, 41-45 ms now, #23) against it, because a hack's delay is
-  its pause after drawing. Compare device numbers with a baseline from the same
-  build, not with old rows: Pyro fell from 30 to 23 fps with no change to Pyro.
+  (31 ms; it was 41-45 ms between the byte-order fix and #23) against it,
+  because a hack's delay is its pause after drawing. Compare device numbers
+  with a baseline from the same build, not with old rows: Pyro fell from 30 to
+  23 fps with no change to Pyro.
 - `runner_start` paints the canvas in the hack's `background` resource before
   `init`, as `screenhack.c` paints the window, or black if it has none.
   Substrate is white; every other hack asks for black or nothing.

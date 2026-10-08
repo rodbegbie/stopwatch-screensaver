@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sanitizer/allocator_interface.h>
@@ -231,6 +232,40 @@ void test_substrate_restarts_do_not_leak(void) {
   TEST_ASSERT_TRUE_MESSAGE(after < before + 256 * 1024, "allocated bytes grew");
 }
 
+/* FNV-1a over the frame as ordinary RGB565 bytes, low byte first. */
+static uint64_t frame_hash(void) {
+  uint64_t h = 0xcbf29ce484222325ull;
+  for (long i = 0; i < (long)cv.w * cv.h; i++) {
+    uint16_t v = px_swap(cv.px[i]);
+    h = (h ^ (v & 0xFF)) * 0x100000001b3ull;
+    h = (h ^ (v >> 8)) * 0x100000001b3ull;
+  }
+  return h;
+}
+
+/* Substrate blends each crack's colour into the picture by pulling the red,
+ * green and blue bits out of pixel values itself, assuming ordinary RGB565.
+ * Canvas pixels are byte-swapped, so its wrapper swaps wherever a pixel crosses
+ * between Substrate and the shim. Seeded, 200 frames must give exactly the
+ * picture drawn before pixels were byte-swapped (a swap missed anywhere gives
+ * a different one). The hash comes from the dump tool on that build. If a
+ * libm update changes it, regenerate it the same way after checking the
+ * frames by eye. */
+void test_substrate_draws_what_it_drew_before_pixels_were_swapped(void) {
+  const HackEntry *substrate = NULL;
+  for (int i = 0; i < g_hack_count; i++)
+    if (strcmp(g_hacks[i]->name, "Substrate") == 0) substrate = g_hacks[i];
+  TEST_ASSERT_NOT_NULL(substrate);
+  const HackEntry *const hacks[] = {substrate};
+
+  srandom(1);
+  HackRunner *r = runner_create_with(&cv, hacks, 1);
+  runner_start(r, 0);
+  for (int f = 0; f < 200; f++) runner_step(r);
+  runner_destroy(r);
+  TEST_ASSERT_EQUAL_UINT64(0xb0001ae2c830b47cull, frame_hash());
+}
+
 void test_prev_from_first_wraps_to_last_hack(void) {
   HackRunner *r = runner_create(&cv);
   runner_start(r, 0);
@@ -251,6 +286,7 @@ int main(void) {
   RUN_TEST(test_galaxy_restarts_do_not_leak_with_its_registered_overrides);
   RUN_TEST(test_maze_cycles_do_not_leak);
   RUN_TEST(test_substrate_restarts_do_not_leak);
+  RUN_TEST(test_substrate_draws_what_it_drew_before_pixels_were_swapped);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
   return UNITY_END();
 }

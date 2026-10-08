@@ -22,8 +22,10 @@ void canvas_free(Canvas *c) {
   c->px = NULL;
 }
 
+uint16_t px_swap(uint16_t v) { return (uint16_t)((v << 8) | (v >> 8)); }
+
 uint16_t rgb565(uint8_t r, uint8_t g, uint8_t b) {
-  return (uint16_t)(((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3));
+  return px_swap((uint16_t)(((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3)));
 }
 
 uint16_t rgb565_from16(uint16_t r, uint16_t g, uint16_t b) {

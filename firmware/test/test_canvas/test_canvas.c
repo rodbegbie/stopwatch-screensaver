@@ -22,15 +22,25 @@ static uint16_t at(int x, int y) { return c.px[y * c.w + x]; }
 
 static void *failing_alloc(size_t n) { (void)n; return NULL; }
 
+/* Pixels are RGB565 with the two bytes swapped: that is the order the display
+ * wants, so the push needs no byte swap. */
 void test_rgb565_white_black_red(void) {
   TEST_ASSERT_EQUAL_HEX16(0xFFFF, rgb565(255, 255, 255));
   TEST_ASSERT_EQUAL_HEX16(0x0000, rgb565(0, 0, 0));
-  TEST_ASSERT_EQUAL_HEX16(0xF800, rgb565(255, 0, 0));
+  TEST_ASSERT_EQUAL_HEX16(0x00F8, rgb565(255, 0, 0));
+  TEST_ASSERT_EQUAL_HEX16(0xE007, rgb565(0, 255, 0));
+  TEST_ASSERT_EQUAL_HEX16(0x1F00, rgb565(0, 0, 255));
 }
 
 void test_rgb565_from16_matches_8bit(void) {
-  TEST_ASSERT_EQUAL_HEX16(0xF800, rgb565_from16(0xFFFF, 0, 0));
+  TEST_ASSERT_EQUAL_HEX16(0x00F8, rgb565_from16(0xFFFF, 0, 0));
   TEST_ASSERT_EQUAL_HEX16(0xFFFF, rgb565_from16(0xFFFF, 0xFFFF, 0xFFFF));
+}
+
+void test_px_swap_converts_between_display_and_native_order(void) {
+  TEST_ASSERT_EQUAL_HEX16(0xF800, px_swap(0x00F8));
+  TEST_ASSERT_EQUAL_HEX16(0x3412, px_swap(0x1234));
+  TEST_ASSERT_EQUAL_HEX16(0x1234, px_swap(px_swap(0x1234)));
 }
 
 void test_init_failing_alloc_returns_minus_one(void) {
@@ -347,6 +357,7 @@ int main(void) {
   RUN_TEST(test_polygon_keeps_every_crossing_when_a_scanline_has_over_64);
   RUN_TEST(test_rgb565_white_black_red);
   RUN_TEST(test_rgb565_from16_matches_8bit);
+  RUN_TEST(test_px_swap_converts_between_display_and_native_order);
   RUN_TEST(test_init_failing_alloc_returns_minus_one);
   RUN_TEST(test_point_inside_sets_pixel);
   RUN_TEST(test_point_outside_is_ignored);

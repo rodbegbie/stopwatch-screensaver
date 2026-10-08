@@ -22,7 +22,10 @@ int main(int argc, char **argv) {
   for (int i = 0; i < frames; i++) runner_step(r);
   FILE *f = fopen(argv[3], "wb");
   if (!f) return 1;
-  fwrite(cv.px, sizeof(uint16_t), (size_t)cv.w * cv.h, f);
+  for (size_t i = 0; i < (size_t)cv.w * cv.h; i++) {
+    uint16_t v = px_swap(cv.px[i]);
+    fwrite(&v, sizeof v, 1, f);
+  }
   fclose(f);
   runner_destroy(r);
   canvas_free(&cv);

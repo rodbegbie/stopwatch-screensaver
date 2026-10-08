@@ -36,7 +36,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Drift | 22.0-23.0 | 11-13 ms | 31.5 ms | 0 ms | about 16 KB |
 | Lightning | 29.4 | 1.8-1.9 ms | 31.2 ms | 0 ms | none measurable |
 | Maze | 6.0-28.8 | 0.1-1.3 ms | 31.2-33.4 ms | 0-256 ms | not measured |
-| Blaster | 20.4-20.8 | 3.6-4.0 ms | 43.4-44.4 ms | 0 ms | not measured |
+| Blaster | 27.8 | 3.6-3.7 ms | 31.2-31.3 ms | 0 ms | not measured |
 | Substrate | 12.4-20.6 | 2.9-43.9 ms | 41.1-44.4 ms | 0 ms | about 1.74 MB |
 
 Maze's row is 26 five-second readings over 160 seconds, taken on a build that
@@ -49,14 +49,13 @@ is no PSRAM baseline for this build yet, so its roughly 125 KB of state is
 not split out, and the log does not show whether the allocator put it in PSRAM
 or in internal heap.
 
-Blaster's row is 32 five-second readings over 160 seconds. It is limited by
-the push, not by the hack: its step is 4 ms and its wait is 0. Its push is
-about 12 ms slower than the 31 ms of the earlier rows, and that has not been
-investigated, so the cause is unknown. Free heap held between 338,352 and
-338,440 bytes and free PSRAM at 7,424,155 throughout, and no stack canary,
-panic or reboot appeared. There is no PSRAM baseline for this build, so its
-extra PSRAM is not split out. This run used a build with the byte-order fix,
-which was applied locally before it reached `main`.
+Blaster's row is three steady five-second readings, taken after the canvas
+moved to display byte order (issue #23; see below). It is limited by the push,
+not by the hack: its step is under 4 ms and its wait is 0. Free heap held
+between 337,988 and 338,372 bytes and free PSRAM at 7,424,155 throughout, and
+no stack canary, panic or reboot appeared. Before that change its push took
+43.4-44.4 ms and it ran at 20.4-20.8 fps. There is no PSRAM baseline for this
+build, so its extra PSRAM is not split out.
 
 Substrate is built in single precision (`hacks/substrate_single.c`), and its
 row is 30 five-second readings of that build. It starts near 20 fps with a
@@ -76,11 +75,33 @@ bytes, plus a few KB), so plain `malloc` put both in PSRAM. Free heap stayed
 between 336,228 and 339,524 bytes. No stack canary, panic or reboot appeared in
 any run.
 
-In an earlier capture Pyro and HyperCube pushed in 41-45 ms and ran at 20-23
-fps, against 31 ms and 28-30 fps in their rows above. So push time is longer on
-the current build for every hack, not just Substrate or Blaster. The cause has
-not been tested (issue #23). The slower pushes began after the byte-order fix,
-but other changes landed at the same time.
+For a while after the byte-order fix, every hack pushed in 41-45 ms and ran
+at 20-23 fps where the rows above show 31 ms and 28-30 fps. Issue #23 found the
+cause: with `setSwapBytes(true)`, M5GFX swapped the bytes of all 217,156 pixels
+on every push, which cost 9.8 ms (Pyro pushed in 31.2 ms with the swap off and
+41.0 ms with it on). The canvas now holds pixels in the display's byte order
+and the swap is off. Steady readings on the device after that change, with the
+rotation off:
+
+| Hack | push | fps |
+| --- | --- | --- |
+| Pyro | 31.2 ms | 30.0 |
+| HyperCube | 31.5 ms | 28.0 |
+| Blaster | 31.2-31.3 ms | 27.8 |
+| Substrate | 31.1-31.2 ms | 28.6-29.0 early on, 18.0 once its step grew to 24 ms |
+| Maze | 31.1 ms | 8.0-10.6 (paced by its own delays) |
+
+Substrate's capture was only 22 seconds, so its row above, which covers the
+whole build-up, still shows the earlier push of 41.1-44.4 ms and the frame
+rates that went with it. Its steps are unchanged. Rows measured before the
+byte-order fix and not repeated are unaffected.
+
+Pushing part of the canvas scales with its area. On Pyro, with the swap on,
+the top half took 20.6 ms (of 41.0) and a quarter-size block pushed row by row
+took 13.7 ms. Each separate `pushImage` call costs about 12 microseconds, so a
+row-by-row push of the whole canvas took 46.8 ms and a row-by-row push of the
+inscribed circle took 38.7 ms, against 41.0 ms for one call. That is the
+groundwork for issue #6.
 
 Free heap and free PSRAM return to exactly the same values every time a
 hack is switched back to, so switching does not leak.
