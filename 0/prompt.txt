@@ -1,0 +1,9 @@
+Push to origin. There's probably a couple of other things I'll do before we open a PR.
+
+---
+
+Yeah, let's add hypercube so I can set the flipping between different hacks.  Maybe also xspirograph and petri since they're also S.
+
+---
+
+Yeah, let's add hypercube so I can test the flipping between different hacks.  Maybe also xspirograph and petri since they're also S.
