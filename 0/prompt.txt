@@ -1,0 +1,17 @@
+Yes, push it
+
+---
+
+OK, the trail is approved.  Merge it.
+
+---
+
+Don't worry about waiting for the gate. My approval is enough.
+
+---
+
+/claude-md-management:revise-claude-md
+
+---
+
+Yes, apply them and commit to main
