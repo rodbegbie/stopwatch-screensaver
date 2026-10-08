@@ -2,7 +2,9 @@
 #include <string.h>
 #include <unity.h>
 
+#include "colors.h"
 #include "core/canvas.h"
+#include "erase.h"
 #include "x11shim/xshim.h"
 
 static Canvas cv;
@@ -138,6 +140,94 @@ void test_pixel_resource_black_white_hex(void) {
   TEST_ASSERT_EQUAL_HEX(0xF800, get_pixel_resource(dpy, 1, "c", "C"));
 }
 
+void test_gc_accepts_function_and_line_width_fields(void) {
+  XGCValues v;
+  v.function = GXcopy;
+  v.line_width = 3;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground | GCFunction | GCLineWidth, &v);
+  TEST_ASSERT_NOT_NULL(gc);
+  XDrawPoint(dpy, win, gc, 1, 1);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(1, 1));
+  XFreeGC(dpy, gc);
+}
+
+void test_window_attributes_have_depth_visual_screen(void) {
+  XWindowAttributes a;
+  XGetWindowAttributes(dpy, win, &a);
+  TEST_ASSERT_EQUAL_INT(16, a.depth);
+  Visual *vis = a.visual;
+  Screen *scr = a.screen;
+  (void)vis;
+  (void)scr;
+}
+
+void test_button_press_event_fields_exist(void) {
+  XEvent e;
+  e.type = ButtonPress;
+  e.xbutton.button = 2;
+  TEST_ASSERT_EQUAL_INT(ButtonPress, e.type);
+  TEST_ASSERT_EQUAL_UINT(2, e.xbutton.button);
+}
+
+void test_xrectangle_type_exists(void) {
+  XRectangle r = {1, 2, 3, 4};
+  TEST_ASSERT_EQUAL_INT(3, r.width);
+}
+
+void test_progname_is_set(void) {
+  TEST_ASSERT_NOT_NULL(progname);
+  TEST_ASSERT_TRUE(strlen(progname) > 0);
+}
+
+void test_pixel_resource_x11_colour_names(void) {
+  static const char *const names[] = {"*a: magenta", "*b: yellow", "*c: green",
+                                      "*d: red", "*e: blue", "*f: cyan",
+                                      "*g: orange", 0};
+  xshim_set_defaults(names);
+  TEST_ASSERT_EQUAL_HEX(0xF81F, get_pixel_resource(dpy, 1, "a", "A"));
+  TEST_ASSERT_EQUAL_HEX(0xFFE0, get_pixel_resource(dpy, 1, "b", "B"));
+  TEST_ASSERT_EQUAL_HEX(0x07E0, get_pixel_resource(dpy, 1, "c", "C"));
+  TEST_ASSERT_EQUAL_HEX(0xF800, get_pixel_resource(dpy, 1, "d", "D"));
+  TEST_ASSERT_EQUAL_HEX(0x001F, get_pixel_resource(dpy, 1, "e", "E"));
+  TEST_ASSERT_EQUAL_HEX(0x07FF, get_pixel_resource(dpy, 1, "f", "F"));
+  TEST_ASSERT_EQUAL_HEX(0xFD20, get_pixel_resource(dpy, 1, "g", "G"));
+}
+
+void test_pixel_resource_names_are_case_insensitive(void) {
+  static const char *const names[] = {"*a: Magenta", 0};
+  xshim_set_defaults(names);
+  TEST_ASSERT_EQUAL_HEX(0xF81F, get_pixel_resource(dpy, 1, "a", "A"));
+}
+
+void test_erase_window_clears_and_reports_done(void) {
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XFillRectangle(dpy, win, gc, 0, 0, 16, 16);
+  eraser_state *st = erase_window(dpy, win, NULL);
+  TEST_ASSERT_NULL(st);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  eraser_free(NULL);
+  XFreeGC(dpy, gc);
+}
+
+void test_make_random_colormap_fills_colours_in_rgb565(void) {
+  XColor colors[8];
+  memset(colors, 0, sizeof(colors));
+  int n = 8;
+  make_random_colormap(NULL, NULL, 1, colors, &n, True, True, NULL, False);
+  TEST_ASSERT_EQUAL_INT(8, n);
+  int distinct = 0;
+  for (int i = 0; i < n; i++) {
+    TEST_ASSERT_EQUAL_HEX(rgb565_from16(colors[i].red, colors[i].green, colors[i].blue),
+                          colors[i].pixel);
+    TEST_ASSERT_TRUE(colors[i].pixel != 0);
+    if (i > 0 && colors[i].pixel != colors[i - 1].pixel) distinct++;
+  }
+  TEST_ASSERT_TRUE(distinct >= 2);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_white_and_black_pixel);
@@ -151,5 +241,14 @@ int main(void) {
   RUN_TEST(test_resources_parse_star_and_dot_prefixes_and_tabs);
   RUN_TEST(test_resources_missing_integer_returns_zero);
   RUN_TEST(test_pixel_resource_black_white_hex);
+  RUN_TEST(test_gc_accepts_function_and_line_width_fields);
+  RUN_TEST(test_window_attributes_have_depth_visual_screen);
+  RUN_TEST(test_button_press_event_fields_exist);
+  RUN_TEST(test_xrectangle_type_exists);
+  RUN_TEST(test_progname_is_set);
+  RUN_TEST(test_pixel_resource_x11_colour_names);
+  RUN_TEST(test_pixel_resource_names_are_case_insensitive);
+  RUN_TEST(test_erase_window_clears_and_reports_done);
+  RUN_TEST(test_make_random_colormap_fills_colours_in_rgb565);
   return UNITY_END();
 }

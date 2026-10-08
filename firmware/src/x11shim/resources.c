@@ -24,6 +24,15 @@ static const char *lookup(const char *name) {
   return NULL;
 }
 
+static const struct {
+  const char *name;
+  uint8_t r, g, b;
+} kColours[] = {
+    {"black", 0, 0, 0},     {"white", 255, 255, 255}, {"red", 255, 0, 0},
+    {"green", 0, 255, 0},   {"blue", 0, 0, 255},      {"yellow", 255, 255, 0},
+    {"magenta", 255, 0, 255}, {"cyan", 0, 255, 255},  {"orange", 255, 165, 0},
+};
+
 static void warn_missing(const char *name) {
   fprintf(stderr, "xshim: no default for resource '%s'\n", name);
 }
@@ -76,8 +85,12 @@ unsigned long get_pixel_resource(Display *dpy, Colormap cmap, const char *name,
     warn_missing(name);
     return 0;
   }
-  if (strncasecmp(v, "white", 5) == 0) return 0xFFFF;
-  if (strncasecmp(v, "black", 5) == 0) return 0x0000;
+  size_t tok = 0;
+  while (v[tok] && !isspace((unsigned char)v[tok])) tok++;
+  for (size_t i = 0; i < sizeof(kColours) / sizeof(kColours[0]); i++)
+    if (strlen(kColours[i].name) == tok &&
+        strncasecmp(v, kColours[i].name, tok) == 0)
+      return rgb565(kColours[i].r, kColours[i].g, kColours[i].b);
   if (*v == '#' && strlen(v) >= 7) {
     unsigned r, g, b;
     if (sscanf(v + 1, "%2x%2x%2x", &r, &g, &b) == 3)

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 Bool mono_p = False;
+const char *progname = "stopwatch-screensaver";
 
 Display *xshim_open_display(Canvas *canvas) {
   Display *dpy = (Display *)calloc(1, sizeof(*dpy));
@@ -37,6 +38,9 @@ Status XGetWindowAttributes(Display *dpy, Window w, XWindowAttributes *a) {
   a->x = a->y = 0;
   a->width = dpy->canvas->w;
   a->height = dpy->canvas->h;
+  a->depth = 16;
+  a->visual = NULL;
+  a->screen = NULL;
   a->colormap = 1;
   return 1;
 }

@@ -27,8 +27,15 @@ typedef struct XshimGC {
   unsigned long foreground;
 } *GC;
 
+typedef struct XshimScreen Screen;
+typedef struct XshimVisual Visual;
+
+/* function and line_width are accepted but ignored: drawing is always
+ * GXcopy with 1-pixel lines. */
 typedef struct {
   unsigned long foreground;
+  int function;
+  int line_width;
 } XGCValues;
 
 typedef struct {
@@ -41,6 +48,9 @@ typedef struct {
 typedef struct {
   int x, y;
   int width, height;
+  int depth;
+  Visual *visual;
+  Screen *screen;
   Colormap colormap;
 } XWindowAttributes;
 
@@ -49,7 +59,16 @@ typedef struct {
 } XPoint;
 
 typedef struct {
+  short x, y;
+  unsigned short width, height;
+} XRectangle;
+
+typedef union {
   int type;
+  struct {
+    int type;
+    unsigned int button;
+  } xbutton;
 } XEvent;
 
 typedef struct {
@@ -61,7 +80,11 @@ typedef struct {
 
 enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
 
+#define GCFunction (1L << 0)
 #define GCForeground (1L << 2)
+#define GCLineWidth (1L << 4)
+#define GXcopy 0x3
+#define ButtonPress 4
 #define DoRed 1
 #define DoGreen 2
 #define DoBlue 4
@@ -73,6 +96,7 @@ enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
 #define BlackPixel(dpy, scr) ((void)(dpy), (void)(scr), 0x0000UL)
 
 extern Bool mono_p;
+extern const char *progname;
 
 Display *xshim_open_display(Canvas *canvas);
 void xshim_close_display(Display *dpy);
