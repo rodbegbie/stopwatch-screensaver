@@ -19,3 +19,7 @@ OK, I restarted the device and now it's working.  The TglSpike hack started.  It
 ---
 
 One other thought on something I'm curious about -- would turning on the "wireframe" option on the hack make a difference?
+
+---
+
+Yes, commit and push this spike branch to the origin so we have it in our back pocket.  Then yes, see if there are any other GL hacks that you think might have a higher chance of success.  (I'd quite like flyingtoasters but I think it uses textures which might make things even slower or harder. tell me what you think)
