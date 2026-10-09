@@ -1,0 +1,1 @@
+Read th elog. Pedal's images show up faster, and clear after a second on-screen -- but that actually feels pretty fast to clear. Can we extend the on-screen time?
