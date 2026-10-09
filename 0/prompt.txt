@@ -1,0 +1,9 @@
+Great.  My overall goal is to create and install some firmware which runs on the stopwatch displaying some of the xscreensaver "hacks".  The latest source bundle for xscreensaver is in the vendor folder.
+
+We don't have to port *everything*. In fact, probably starting small with a couple of simple modules is a good idea, and then we can increase our ambition.  It's fine if the device just displays using each hack's default settings.
+
+This is primarily a learning exercise for me.  I want to learn a bit about creating software that runs on embedded devices.  This just seemed like a nice fun way to do it.
+
+I haven't installed any development tools on my Mac, so I'll probably need some guidance from you on doing that. Ideally we'll just install things into this folder, rather than globally to my Mac, so I can clean-up easily later. But that's not a hard requirement.
+
+My stopwatch is connected to my Mac via USB. @/dev/cu.usbmodem112401 is the serial port.
