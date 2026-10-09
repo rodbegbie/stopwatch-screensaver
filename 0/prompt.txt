@@ -1,0 +1,90 @@
+This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Summary:
+1. Primary Request and Intent:
+   Rod's repo `/Users/rod/build/stopwatch-screensaver` runs xscreensaver "hacks" on an M5Stack StopWatch (ESP32-S3, 466×466 round AMOLED) through an X11 shim. Rod asked to work on the "xlock.h gap" (top row of docs/porting-assessment.md). This became: (A) fix the scorer (define STANDALONE), (B) add xlockmore framework support (copy xlockmore.c/h/I.h byte-identical + function-table adapter) and port Hopalong, both of which are now DONE and merged to main (PRs #10 and #11); then (batch 1) Rod said "Yeah, let's worth through those 10" — port the ten newly compile-clean xlockmore hacks. Rod approved the per-hack plan and said: "I approve this plan.  I'll be AFK until the morning, but we'll flash and test it then." So: build everything locally now; flash, serial measurement and push/PR happen in the morning with Rod present, only with his go-ahead.
+
+   Standing constraints (must persist): never flash/erase/write the device without asking Rod (serial port `/dev/cu.usbmodem112401`; leave `/dev/cu.usbmodem14201` alone; keep `app3M_fat9M_16MB` partitions, never touch `ffat`); never push/post/create undrafted PRs without express approval (draft PRs via `entire trail create` only when authorised); copied hacks stay byte-identical (verify with `cmp`), shim code is ours (don't copy xscreensaver `utils/`); every copied file keeps its header and gets a THIRD_PARTY_NOTICES.md row, `tools/check_notices.py` must pass; test-first on host, mutation-check tests; report "compiles", "host tests pass", "runs on device" separately (only Rod can confirm the screen); use named paths with `git add` (never -A); commits end with `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>` and `Claude-Session: https://claude.ai/code/session_01JryMiZiAFtfZgZ6hJ1JxtE`; PR bodies end with `🤖 Generated with [Claude Code](https://claude.com/claude-code)` and the session URL; invoke `/markdown` skill before writing Markdown; Rod approves/merges (merge commit) and merged branches are deleted (remote + local) without asking and main fast-forwarded; never force-push (a push sometimes fails once; retry immediately); use `NO_COLOR=1` on pio output; Rod's pronouns/spelling: British idioms, address as "Rod".
+
+2. Key Technical Concepts:
+   - xlockmore framework: hacks built on `xlockmore.h` (ModeInfo, MI_* macros, ModeSpecOpt, `XSCREENSAVER_MODULE`/`_2` macros building `NAME_xscreensaver_function_table` with `setup_cb = xlockmore_setup`); `xlockmore_setup` fills `progclass`, `options`, `defaults`, `init_cb`, `draw_cb`, etc. `init_cb` is declared 2-arg but is really `xlockmore_init(dpy, window, xlmft)`; screenhack.c casts and passes `setup_arg` as third arg (screenhack.c:595-604).
+   - `-DSTANDALONE` (hacks include xlockmore.h rather than xlock.h) and `-DHAVE_MOBILE` (makes `XSCREENSAVER_LINK` a no-op so multiple hacks don't each define global `xscreensaver_function_table`; only other effects: inert `*ignoreRotation: True` defaults, resize handling unused).
+   - Adapter: `HackEntry.xsft` pointer; runner `callbacks_for()` calls `setup_cb` once (while `init_cb == NULL`), passes `setup_arg` as hidden 3rd arg to init via cast; plain hacks unchanged. Registry macro `XLOCKMORE_HACK(NAME, CLASS)`.
+   - Shim framework resources fall back to `kFrameworkDefaults` in resources.c after hack's own defaults.
+   - Unity double asserts disabled (use TEST_ASSERT_TRUE for double compares). Native tests use ASan; `pio test -e native` runs every registered hack for 3000 frames and requires drawing within 2000 frames.
+   - Device facts: push of canvas costs steady ~31 ms (≈31 fps ceiling); 16 KB loop stack; ESP32 `long` is 32-bit; xlock permission notice (Naughton wording) shared by the xlockmore hacks under different copyright lines.
+   - Workflow skills used: brainstorming → writing-plans → executing-plans (inline "native"), TDD, markdown; scorer `tools/score_hacks.py` rates by compile check (S = compiles clean, not necessarily fast/running well).
+   - Tooling: `source tools/env.sh`; `pio test -e native`, `pio run -e stopwatch`, `pio run -e dump` then `.pio/build/dump/program <index> <frames> out.raw` + `uv run tools/rgb565_to_png.py out.raw 466 466 out.png`; serial capture with pyserial script `.venv/bin/python -I` in scratchpad; `entire trail create/finding list/resolve`; `gh pr`.
+
+3. Files and Code Sections:
+   - `tools/score_hacks.py` (merged): `blockers_for` cmd `[cc, "-fsyntax-only", "-w", "-ferror-limit=0", "-DSTANDALONE"]`; new `default_includes(root)` returning `firmware/src`, `firmware/src/x11shim/include`, `firmware/src/xs_support`; `run()` uses it.
+   - `tools/tests/test_score.py`: tests `test_blockers_define_standalone_like_the_real_build`, `test_ported_xlockmore_hack_is_clean_under_the_default_includes`.
+   - `tools/check_notices.py`: NOTICE_PHRASES gained `"permission to use, copy, modify, and distribute this software"`; test `test_naughton_xlock_notice_passes` in `tools/tests/test_check_notices.py`.
+   - `firmware/src/runner/hack_entry.h`: forward-declares `struct xscreensaver_function_table;` HackEntry has last field `struct xscreensaver_function_table *xsft;`.
+   - `firmware/src/runner/hack_runner.c`: `Callbacks` struct (defaults, init, draw, free, setup_arg, has_setup_arg) and `callbacks_for()`; runner_start uses 3-arg cast `init3` when `has_setup_arg`.
+   - `firmware/src/x11shim/include/screenhackI.h` (our own struct xscreensaver_function_table + XSCREENSAVER_LINK; includes erase.h, fps.h, yarandom.h, xshim.h), `fps.h` (typedef + no-op declarations), `yarandom.h` (LRAND/NRAND/MAXRAND, `ya_rand_init`), `utils.h` (countof), `screenhack.h` (includes yarandom.h), `X11/Intrinsic.h` (empty stand-in).
+   - `firmware/src/x11shim/xshim.h/.c`: RootWindowOfScreen, PointerMotionMask, XSelectInput, `your_event_mask`, `char *` XrmOptionDescRec strings, `progclass`, fps no-ops, `ya_rand_init(seed)` (srandom if non-zero).
+   - `firmware/src/x11shim/resources.c`: `kFrameworkDefaults` fallback table consulted in `lookup()` after hack defaults.
+   - `firmware/src/xs_support/xlockmore.c|h`, `xlockmoreI.h`: byte-identical vendor copies (xscreensaver 6.16).
+   - `firmware/platformio.ini`: all three envs have `-Isrc/xs_support`, `-DSTANDALONE`, `-DHAVE_MOBILE` (HAVE_MOBILE only on batch branch).
+   - `firmware/src/hacks/registry.c`: `XLOCKMORE_HACK(hopalong,"Hopalong")` etc. plus entries in `g_hacks[]`; on batch branch now also vines, sierpinski, fadeplot, thornbird, spiral, sphere, discrete, galaxy, drift, lightning (indices 14–23 in that order; Hopalong index 13).
+   - `firmware/test/test_hacks/test_hacks.c`: expected class-name list extended per hack ("Hopalong", "Vines", "Sierpinski", "FadePlot", "Thornbird", "Spiral", "Sphere", "Discrete", "Galaxy", "Drift", "Lightning").
+   - `firmware/test/test_runner_xsft/test_runner_xsft.c`, `firmware/test/test_xshim/test_xshim.c`: new tests for adapter/shim additions.
+   - `THIRD_PARTY_NOTICES.md`: section retitled "xlock permission notice (Flame and the xlockmore hacks)"; rows per hack with "xlock permission notice (below)" (copyrights: vines Tracy Camp 1997; sierpinski Desmond Daignault 1996; fadeplot Charles Vidal 1996; thornbird Tim Auckland 1996; spiral Darrick Brown 1994; sphere Sun Microsystems 1988; discrete Tim Auckland 1996; galaxy "No copyright line; the header credits Uli Siegmund, Harald Backert and Hubert Feyrer (1997)"; drift Patrick J. Naughton 1991; lightning Keith Romberg 1996).
+   - `AGENTS.md`: documents STANDALONE/HAVE_MOBILE, XLOCKMORE_HACK, setup_arg hidden third arg, kFrameworkDefaults, updated stack-usage cc flags. (markdownlint MD041 on AGENTS.md line 2 is pre-existing.)
+   - `tools/assessment_measured.md`: "Fourteen hacks", Hopalong row `| Hopalong | 19.2-25.2 | 7.3-20.1 ms | 31.2-31.3 ms | 0 ms | about 8 KB |` (MD041 pre-existing, file is a fragment).
+   - Scratchpad (`/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/7818bbd0-37b3-4a75-bc5a-3c69d7ab38a5/scratchpad`): addhack.sh, check.sh, commit.sh, batch.sh, readserial.py, frame PNGs, sheet.png/sheet2.png montages.
+   - `docs/superpowers/specs/2026-10-07-xlockmore-design.md` and `docs/superpowers/plans/2026-10-07-xlockmore.md`: exist only on local branch `wip/xlockmore-planning` (not merged to main by design).
+
+4. Errors and fixes:
+   - Spike: fatal missing includes masked errors → supplied scratch stubs/screenhackI.h to get a count.
+   - Task 1 mutation step: BSD `sed -i` failed and `git checkout -- tools/score_hacks.py` reverted my fix; used as mutation check (test failed), reapplied fix; suite 62 passed.
+   - Native link failure: undefined `progclass` after copying xlockmore.c → added `progclass` to shim (test first).
+   - Unity "Double Precision Disabled" → boolean asserts.
+   - xlockmore.c compile errors: yarandom macros missing via screenhack.h, `XrmOptionDescRec` const strings, `X11/Intrinsic.h` missing → fixed in shim test-first.
+   - hopalong include errors: needed -DSTANDALONE and -Isrc/xs_support in platformio envs.
+   - hopalong SIGABRT/EXC_BAD_ACCESS in xlockmore_read_resources: init_cb hidden third arg missing → runner now passes setup_arg (test `test_init_receives_the_tables_setup_arg`, RED then GREEN).
+   - Hopalong resource warnings (delta3d, left3d, right3d, both3d, none3d, size) → kFrameworkDefaults fallback (tests added).
+   - check_notices rejected Naughton wording → extended phrase list test-first.
+   - First flash upload piped through `head -12` may have been killed by SIGPIPE → re-ran upload with output to file; verified hashes.
+   - Scorer still showed hopalong gaps because xs_support not on default include path → `default_includes` added, test-first.
+   - First `entire trail create` for PR #11 failed to push; immediate retry succeeded (no force-push).
+   - Batch: duplicate symbol `_xscreensaver_function_table` linking vines+hopalong → `-DHAVE_MOBILE` in platformio.ini (ruling).
+   - Residual (not fixed, deferred): shim prints "no default for resource 'cycles'/'count'" for vines, drift, sphere, lightning (real framework returns 0; noise only).
+
+5. Problem Solving:
+   Solved: xlock.h gap diagnosed as scorer artifact; framework copied and adapter built; Hopalong ported and device-verified; PRs #10 and #11 merged; batch-1 ten hacks all ported locally with full green suite, notices ok, device build compiles, frames sampled at several frame counts look plausible. Unverified until morning: actual on-device behaviour/fps/heap of the ten hacks and whether Rod thinks each looks right. Deferred minors: missing-resource warnings for cycles/count; size fallback 0 untestable by value; 3D colour fallbacks are from memory of XScreenSaver.ad.
+
+6. All user messages:
+   - "/remote-control" (command, empty args)
+   - "Let's work on the xlock.h gap"
+   - "Yeah, let's spike. 3"
+   - "Yes, go ahead with option 1"
+   - "Yes, write the spec"
+   - "Approved. Carry on"
+   - "Native, go ahead"
+   - "flash it please."
+   - "Hopalong is running, looks good to me"
+   - "Yup, do Stage A"
+   - "OK, trail 4 is approved, so merge the PR and continue with the steps" (as sent: "OK, trail 4 is approved, so merge the PR and continue with the steps")
+   - "ok, the trail is approved. Merge and clean up."
+   - "Yeah, let's worth through those 10"
+   - "I approve this plan.  I'll be AFK until the morning, but we'll flash and test it then."
+   (A system-generated task-notification about the serial capture completing was not user input; the final "CRITICAL: Respond with TEXT ONLY" message is the summary request.)
+
+7. Pending Tasks:
+   - In the morning, with Rod present and with his go-ahead: flash `feature/xlockmore-batch-1` build (`pio run -e stopwatch -t upload`, redirecting output to a file, not piping through head), capture serial log (pyserial script, ~90s+ per session) while Rod cycles through hacks 14–23 (Vines, Sierpinski, FadePlot, Thornbird, Spiral, Sphere, Discrete, Galaxy, Drift, Lightning); read `run <hack> fps= step= push= wait=` and `switch -> <hack> press_waited= heap= psram=` lines, check for "Stack canary"/panic; Rod confirms what each looks like.
+   - Record per-hack fps/step/push/wait/PSRAM in `tools/assessment_measured.md`; regenerate `docs/porting-assessment.md` (`uv run tools/score_hacks.py`), markdownlint; only drop hacks that crash on device; for merely slow hacks list numbers and let Rod decide.
+   - Deliver batch: with Rod's go-ahead, `entire trail create` (draft PR, body synced with `gh pr edit N --body-file`, ends with the Claude Code attribution + session URL), Rod approves/merges; then delete merged branch (remote+local) and fast-forward main. Planning artifacts (spec/plan) stay off main.
+   - Optional/deferred: silence "no default for resource 'cycles'/'count'" noise if Rod wants; `wip/xlockmore-planning` local branch can be deleted with `git branch -D` if Rod doesn't want it; `.entire/settings.json` modification is Entire's own — leave alone.
+
+8. Current Work:
+   Immediately before the summary request I had just finished all offline work for batch 1 on branch `feature/xlockmore-batch-1` (cut from main at 3266cc2): 12 commits ahead of main — a4197db (generalise xlock notice section), f2f8375 (Define HAVE_MOBILE), then "Port vines" 3cc1c89, "Port sierpinski" 9f31e70, "Port fadeplot" 793dd05, "Port thornbird" ae3d404, "Port spiral" f8d164f, "Port sphere" 2d8ea6d, "Port discrete" 3e90651, "Port galaxy" 14e4622, "Port drift" 2f366e2, "Port lightning" 8374edc. Final verification output: `pio run -e stopwatch` SUCCESS (Flash 19.4%, RAM 7.7%), `pytest tools/tests` 64 passed, `check_notices` exit 0, markdownlint THIRD_PARTY_NOTICES.md ok, `git status` shows only `.entire/settings.json` modified. Nothing pushed, nothing flashed for this batch. I was about to report status to Rod (host tests 106/106, device build compiles, frames sampled and plausible, not yet run on device) and wait for the morning.
+
+9. Optional Next Step:
+   No further action until Rod returns. When he does (his words: "I'll be AFK until the morning, but we'll flash and test it then."), report the batch status (compiles ✔, host tests pass ✔ 106/106, runs on device — not yet), then ask/confirm go-ahead before flashing, e.g. flash `feature/xlockmore-batch-1` and capture serial while he cycles from Hopalong (index 13) through Vines…Lightning (indices 14–23). Do not flash or push before that confirmation.
+
+If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/rod/.claude/projects/-Users-rod-build-stopwatch-screensaver/7818bbd0-37b3-4a75-bc5a-3c69d7ab38a5.jsonl
+Continue the conversation from where it left off without asking the user any further questions. Resume directly — do not acknowledge the summary, do not recap what was happening, do not preface with "I'll continue" or similar. Pick up the last task as if the break never happened.
+
+The messages after this summary are the most recent messages from before compaction, kept verbatim. The summary was written without seeing them, so something it says has not happened yet may already have happened in them.
