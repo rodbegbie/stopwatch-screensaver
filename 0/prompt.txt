@@ -1,0 +1,1 @@
+OK, I've approved the trail, so merge the PR.  And since we're working on overlays, let's look at issue #38
