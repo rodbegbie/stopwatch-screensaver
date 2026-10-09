@@ -199,3 +199,10 @@ computed path. Run plain commands with literal paths, for example
   Read `step`, `push`, `wait`, heap and PSRAM, and any "Stack canary".
 - Compare with a baseline from the same build, not with old rows: pushes became
   41-45 ms on every hack after the byte-order fix, against 31 ms before (#23).
+- Pinning a frame hash: set the new hack's `kBaseline` entry to `1`, run
+  `pio test -f test_hacks`, read `Was N` in the failure and convert with
+  `python3 -c "print('0x%016xull' % N)"`. Pin only after looking at the frame
+  (and never type the hex by hand: one was wrong).
+- Showing Rod a hack: flash `-DSTART_HACK=\"first\" -DROTATE_SECONDS=25` with
+  `XS_LOGO=...` so the new ones come up in order, then tell him which, and that
+  the button steps backwards (from Pyro it wraps to the last hack).

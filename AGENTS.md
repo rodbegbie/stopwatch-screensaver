@@ -35,6 +35,8 @@ embedded-specific choices as you make them. See `README.md` for setup and
 - `.claude/skills/port-hack/`: the order of work for porting a hack, and a
   recipe per trap (`techniques.md`). Use it when porting or fixing a ported
   hack. `m5stack-stopwatch/` is the board guide.
+- `.agents/skills/`: symlinks to `.claude/skills/` so non-Claude agents find
+  the skills. Leave it alone.
 - `vendor/`, `backups/`, `.venv/`, `.platformio/` are git-ignored and local.
 
 ## Commands
@@ -60,7 +62,9 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
   25, Substrate 26): look it up, and check the dumped hack by name before
   trusting a comparison. With 0 frames it starts and stops the hack, which
   shows at once whether one survives being freed before its first draw (an
-  exit code of 139 is a crash).
+  exit code of 139 is a crash). `pio test` and `pio run -e stopwatch` delete
+  `.pio/build/dump/program`: rebuild `-e dump` before `dump stats` or
+  `tools/speed_backtest.py`.
 - To compare frames side by side, write a small `uv run` script with an inline
   `pillow` dependency; the system Python has no PIL.
 - Serial log: read `/dev/cu.usbmodem112401` at 115200 for N seconds into a file
@@ -130,7 +134,8 @@ Set `NO_COLOR=1` on `pio` output you parse.
   Keep the `app3M_fat9M_16MB` partition scheme and never touch `ffat`. Serial
   port is `/dev/cu.usbmodem112401`; leave `/dev/cu.usbmodem14201` alone.
 - Report "compiles", "host tests pass" and "runs on the device" separately.
-  Only Rod can confirm what the screen shows.
+  Only Rod can confirm what the screen shows: say when you want him to look,
+  which hack, and what to check (colours on a picture whose colours you know).
 - Python: 3.13+, `uv`, ruff, pytest. Markdown: invoke the `/markdown` skill.
 - Commits end with the `Co-Authored-By` trailer from the session reminder.
   Use named paths with `git add`, never `-A`.
@@ -164,6 +169,10 @@ hack, and holds a recipe per trap. The steps:
    counts. A resource
    override can skip a hack's restart cleanup: Galaxy leaked at `count: 2`, so
    leak-test any override.
+8. If Rod drops a port after seeing it (Celtic): remove it from `g_hacks[]`, the
+   expected list, its hash and its leak test; keep the source and notices row;
+   add `name: reason` (short: it is printed as a bullet) to
+   `tools/failed_ports.txt`; file an issue.
 
 ## Delivering a branch
 
@@ -183,7 +192,12 @@ hack, and holds a recipe per trap. The steps:
   is refused there: run `git merge --ff-only origin/main` in it, only if
   `git status` shows no tracked changes.
 - Merge with `gh pr merge N --merge` once Rod approves. His approval is
-  enough: do not wait for the Entire Gates check to finish.
+  enough: do not wait for the Entire Gates check to finish. A stacked PR's gate
+  can fail "Up to date: 1 commit behind" once its parent merges: if approvals
+  and findings pass and the PR is mergeable, merge it, with no rebase.
+- `entire agent-help` says trails are unavailable; `entire trail create` works.
+  Write a PR body to a file for `gh pr edit --body-file` (an apostrophe in an
+  inline `--body '...'` must be `'"'"'`).
 - `gh pr edit N --body-file` replaces the whole body, including the
   `<!-- entire-trail-link-start -->` ... `-end -->` block at the top. Keep that
   block in the file, or the PR loses its trail.
@@ -396,6 +410,11 @@ hack, and holds a recipe per trap. The steps:
   chains with a computed path). A worktree an agent works in (`isolation:
   "worktree"`) starts from `origin/main`, not from your branch, and has no
   vendor or toolchain until you link them.
+  It also refuses heredocs, `git -C` and `cd` into another worktree: use the
+  Edit and Write tools. Parallel calls can race (a `uv run` in the root
+  disturbed `.venv` while `pio` ran: "../.venv/bin/pio: no such file"), so run
+  `uv` and `pio` one at a time. To fast-forward `main` or remove the worktree,
+  leave it first with `ExitWorktree keep`.
 - zsh does not word-split `$var`: loop over file lists with `bash -c`. It also
   stops on a glob that matches nothing, so quote `--include='*.c'`, and
   `grep` needs `-e` for a pattern that starts with a dash (`-e '->px'`).
@@ -415,5 +434,8 @@ hack, and holds a recipe per trap. The steps:
   with lap 1. PSRAM should match exactly on every visit.
 - Mutation-checking wrap-around code: a mutation that just reorders unsigned
   arithmetic can be equivalent and survive. Use `int64_t` to break it for real.
+- After a mutation check, `grep` that the change applied: a `sed` that matches
+  nothing leaves the tests green and proves nothing. Restore the file and
+  confirm with `cmp` or `git diff`.
 - Board details (pins, power, recovery) are in
   `.claude/skills/m5stack-stopwatch/`.
