@@ -29,9 +29,9 @@ hack drew are sent to the display, so a hack that draws little costs little.
 - `firmware/src/runner/` starts, steps and switches hacks, painting each
   hack's background colour before it starts, as xscreensaver does.
 - `firmware/src/main.cpp` pushes the canvas to the display each frame,
-  draws the name and fps overlays, and handles the buttons and touch. A small
-  task on core 0 watches both buttons, so a press made while a hack is in a
-  long draw step is kept, not lost.
+  draws the name, fps and battery overlays, and handles the buttons and
+  touch. A small task on core 0 watches both buttons, so a press made while a
+  hack is in a long draw step is kept, not lost.
 
 The same code builds natively on the Mac, which is how the tests run and how
 frames are dumped to PNG without any hardware.
@@ -75,7 +75,8 @@ The device starts on a random hack and moves on to the next one every 90
 seconds. Button A starts the next hack and button B the previous one, wrapping
 around at either end, and either press restarts the 90 second count. The
 hack's name shows for a few seconds as it starts, and a tap on the screen
-toggles an fps readout.
+cycles a readout below it: nothing (the default at boot), the frame rate, then
+the battery level. The choice stays when the hack changes.
 
 Two build flags change this (set them with `PLATFORMIO_BUILD_FLAGS`, and
 rebuild without them afterwards, since the define sticks to the build):
