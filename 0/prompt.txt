@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bmrv6ys3s</task-id>
+<tool-use-id>toolu_01QBAYsbA83Z7AByhRriopo1</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/cd7d24f7-9aab-4dcd-baf1-b0d59d2a6982/tasks/bmrv6ys3s.output</output-file>
+<status>completed</status>
+<summary>Background command "Poll the trail until the findings gate leaves pending" completed (exit code 0)</summary>
+</task-notification>
