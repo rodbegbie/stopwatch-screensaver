@@ -65,6 +65,7 @@ implied warranty.
 | `firmware/src/hacks/mountain/mountain.c` | Copyright (c) 1995 Pascal Pensa | xlock permission notice (below) |
 | `firmware/src/hacks/epicycle/epicycle.c` | Copyright (c) 1998 James Youngman | jwz permission notice (above) |
 | `firmware/src/hacks/kaleidescope/kaleidescope.c` | Copyright (c) 1997, 2006 Ron Tapia | jwz permission notice (above) |
+| `firmware/src/hacks/celtic/celtic.c` | Copyright (c) 2006 Max Froumentin | jwz permission notice (above) |
 
 Each copied file keeps its own header unchanged; the notice text above is
 reproduced here to satisfy the "supporting documentation" requirement.
