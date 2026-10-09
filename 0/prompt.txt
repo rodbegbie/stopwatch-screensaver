@@ -1,0 +1,1 @@
+Help me understand this a bit better. You say "internal RAM is 327 KB" but the hardward spec says "8MB of PSRAM"  (The m5stack-stopwatch skill has the hardware details)
