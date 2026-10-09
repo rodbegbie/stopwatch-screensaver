@@ -1,0 +1,1 @@
+Galaxy feels the slowest.  Discrete was OK -- the slow updates felt in-line with other hacks that are deliberately slower to update. Drift was all good.
