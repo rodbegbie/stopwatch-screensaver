@@ -22,7 +22,11 @@ GC XCreateGC(Display *dpy, Drawable d, unsigned long mask, XGCValues *v) {
   (void)dpy;
   (void)d;
   GC gc = (GC)calloc(1, sizeof(*gc));
-  if (gc) gc->foreground = (mask & GCForeground) ? v->foreground : 0xFFFF;
+  if (!gc) return NULL;
+  gc->foreground = (mask & GCForeground) ? v->foreground : 0xFFFF;
+  gc->cap_style = CapButt;
+  gc->join_style = JoinMiter;
+  XChangeGC(dpy, gc, mask & ~GCForeground, v);
   return gc;
 }
 
@@ -42,6 +46,18 @@ int XSetForeground(Display *dpy, GC gc, unsigned long pixel) {
 int XChangeGC(Display *dpy, GC gc, unsigned long mask, XGCValues *v) {
   (void)dpy;
   if (mask & GCForeground) gc->foreground = v->foreground;
+  if (mask & GCLineWidth) gc->line_width = v->line_width;
+  if (mask & GCCapStyle) gc->cap_style = v->cap_style;
+  if (mask & GCJoinStyle) gc->join_style = v->join_style;
+  return 0;
+}
+
+int XSetLineAttributes(Display *dpy, GC gc, unsigned int width, int line_style,
+                       int cap_style, int join_style) {
+  (void)dpy, (void)line_style;
+  gc->line_width = width > 0x7FFFFFFF ? 0x7FFFFFFF : (int)width;
+  gc->cap_style = cap_style;
+  gc->join_style = join_style;
   return 0;
 }
 

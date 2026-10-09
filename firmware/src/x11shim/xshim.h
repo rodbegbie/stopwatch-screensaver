@@ -33,19 +33,22 @@ typedef struct XshimGC {
   unsigned long background;
   struct XshimPixmap *clip;
   int clip_x, clip_y;
+  int line_width, cap_style, join_style;
 } *GC;
 
 typedef struct XshimScreen Screen;
 typedef struct XshimVisual Visual;
 
-/* background, function and line_width are accepted but ignored here (set a
- * background with XSetBackground): drawing is always GXcopy with 1-pixel
- * lines. */
+/* function is accepted but ignored: drawing is always GXcopy. Lines honour
+ * line_width, cap_style and join_style (width 0 or 1 draws a plain
+ * one-pixel line). */
 typedef struct {
   unsigned long foreground;
   unsigned long background;
   int function;
   int line_width;
+  int cap_style;
+  int join_style;
 } XGCValues;
 
 typedef struct {
@@ -101,6 +104,18 @@ enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
 #define GCForeground (1L << 2)
 #define GCBackground (1L << 3)
 #define GCLineWidth (1L << 4)
+#define GCCapStyle (1L << 6)
+#define GCJoinStyle (1L << 7)
+#define LineSolid 0
+#define CapNotLast 0
+#define CapButt 1
+#define CapRound 2
+#define CapProjecting 3
+#define JoinMiter 0
+#define JoinRound 1
+#define JoinBevel 2
+#define Nonconvex 1
+#define Convex 2
 #define GXcopy 0x3
 #define ButtonPress 4
 #define Expose 12
@@ -130,8 +145,12 @@ void xshim_close_display(Display *dpy);
 GC XCreateGC(Display *, Drawable, unsigned long mask, XGCValues *);
 int XFreeGC(Display *, GC);
 int XSetForeground(Display *, GC, unsigned long pixel);
-/* Only GCForeground is honoured; the rest of the mask is ignored. */
+/* Honours GCForeground, GCLineWidth, GCCapStyle and GCJoinStyle; the rest of
+ * the mask is ignored (set a background with XSetBackground). */
 int XChangeGC(Display *, GC, unsigned long mask, XGCValues *);
+/* line_style is ignored: lines are always solid. */
+int XSetLineAttributes(Display *, GC, unsigned int width, int line_style,
+                       int cap_style, int join_style);
 Status XGetWindowAttributes(Display *, Window, XWindowAttributes *);
 int XClearWindow(Display *, Window);
 int XDrawPoint(Display *, Drawable, GC, int x, int y);

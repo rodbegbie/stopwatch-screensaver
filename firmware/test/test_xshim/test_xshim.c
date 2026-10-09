@@ -806,6 +806,58 @@ void test_parse_color_rejects_unknown_specs(void) {
   TEST_ASSERT_EQUAL_INT(0, XParseColor(dpy, 1, "#GG0000", &c));
 }
 
+void test_gc_defaults_are_width_0_butt_miter(void) {
+  XGCValues v;
+  v.foreground = 1;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  TEST_ASSERT_EQUAL_INT(0, gc->line_width);
+  TEST_ASSERT_EQUAL_INT(CapButt, gc->cap_style);
+  TEST_ASSERT_EQUAL_INT(JoinMiter, gc->join_style);
+  XFreeGC(dpy, gc);
+}
+
+void test_create_gc_reads_line_width_cap_and_join_from_the_mask(void) {
+  XGCValues v;
+  v.foreground = 1;
+  v.line_width = 4;
+  v.cap_style = CapRound;
+  v.join_style = JoinBevel;
+  GC gc = XCreateGC(dpy, win,
+                    GCForeground | GCLineWidth | GCCapStyle | GCJoinStyle, &v);
+  TEST_ASSERT_EQUAL_INT(4, gc->line_width);
+  TEST_ASSERT_EQUAL_INT(CapRound, gc->cap_style);
+  TEST_ASSERT_EQUAL_INT(JoinBevel, gc->join_style);
+  XFreeGC(dpy, gc);
+}
+
+void test_change_gc_updates_only_the_masked_line_fields(void) {
+  XGCValues v;
+  v.foreground = 1;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  v.line_width = 5;
+  v.cap_style = CapProjecting;
+  v.join_style = JoinRound;
+  XChangeGC(dpy, gc, GCLineWidth, &v);
+  TEST_ASSERT_EQUAL_INT(5, gc->line_width);
+  TEST_ASSERT_EQUAL_INT(CapButt, gc->cap_style);
+  TEST_ASSERT_EQUAL_INT(JoinMiter, gc->join_style);
+  XChangeGC(dpy, gc, GCCapStyle | GCJoinStyle, &v);
+  TEST_ASSERT_EQUAL_INT(CapProjecting, gc->cap_style);
+  TEST_ASSERT_EQUAL_INT(JoinRound, gc->join_style);
+  XFreeGC(dpy, gc);
+}
+
+void test_set_line_attributes_sets_all_three(void) {
+  XGCValues v;
+  v.foreground = 1;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XSetLineAttributes(dpy, gc, 7, LineSolid, CapRound, JoinBevel);
+  TEST_ASSERT_EQUAL_INT(7, gc->line_width);
+  TEST_ASSERT_EQUAL_INT(CapRound, gc->cap_style);
+  TEST_ASSERT_EQUAL_INT(JoinBevel, gc->join_style);
+  XFreeGC(dpy, gc);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_image_data_to_pixmap_makes_a_colour_pixmap_and_a_mask);
@@ -873,5 +925,9 @@ int main(void) {
   RUN_TEST(test_xrm_option_strings_are_writable_like_xscreensavers);
   RUN_TEST(test_parse_color_reads_hex_and_names_into_16_bit_channels);
   RUN_TEST(test_parse_color_rejects_unknown_specs);
+  RUN_TEST(test_gc_defaults_are_width_0_butt_miter);
+  RUN_TEST(test_create_gc_reads_line_width_cap_and_join_from_the_mask);
+  RUN_TEST(test_change_gc_updates_only_the_masked_line_fields);
+  RUN_TEST(test_set_line_attributes_sets_all_three);
   return UNITY_END();
 }
