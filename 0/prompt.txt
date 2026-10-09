@@ -1,0 +1,1 @@
+Functionality is spot on, but the text is _very_ flickery.  Both labels.  I think we want to take the other approach you proposed.
