@@ -361,8 +361,7 @@ Mountain, Epicycle, Kaleidescope and Celtic were ported to test the host Speed
 bands, which were fitted to the first 29 hacks. Predictions were committed
 before any port (`docs/speed-predictions.md`, which also has the verdicts),
 and each was flashed unmodified, pinned with the rotation off, for 180 seconds
-(29-35 five-second windows, the first dropped). Rod has not yet looked at
-them on the screen.
+(29-35 five-second windows, the first dropped).
 
 - **Mountain** (low band, 0.0005 ms on the host): step median 0.1 ms, 0-0.4,
   paced by its own 20 ms delay at 44-45 fps; it idles at 0.0 ms between

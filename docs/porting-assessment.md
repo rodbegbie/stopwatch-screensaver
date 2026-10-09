@@ -451,8 +451,7 @@ Mountain, Epicycle, Kaleidescope and Celtic were ported to test the host Speed
 bands, which were fitted to the first 29 hacks. Predictions were committed
 before any port (`docs/speed-predictions.md`, which also has the verdicts),
 and each was flashed unmodified, pinned with the rotation off, for 180 seconds
-(29-35 five-second windows, the first dropped). Rod has not yet looked at
-them on the screen.
+(29-35 five-second windows, the first dropped).
 
 - **Mountain** (low band, 0.0005 ms on the host): step median 0.1 ms, 0-0.4,
   paced by its own 20 ms delay at 44-45 fps; it idles at 0.0 ms between
@@ -502,15 +501,15 @@ needing few additions come first.
 | euler2d | 2d | S | high (0.29 ms) | - | - | float-heavy, needs-xlockmore | 893 |
 | forest | 2d | S | high (0.15 ms) | - | - | needs-xlockmore | 241 |
 | fuzzyflakes | 2d | S | high (1.8 ms) | - | - | pixmaps | 655 |
-| grav | 2d | S | low (0.0039 ms) | - | - | needs-xlockmore | 360 |
+| grav | 2d | S | low (0.004 ms) | - | - | needs-xlockmore | 360 |
 | halftone | 2d | S | high (2.1 ms) | - | - | pixmaps | 413 |
 | ifs | 2d | S | high (0.35 ms) | - | - | pixmaps | 560 |
-| interaggregate | 2d | S | high (0.65 ms) | - | - | - | 989 |
+| interaggregate | 2d | S | high (0.66 ms) | - | - | - | 989 |
 | laser | 2d | S | high (0.14 ms) | - | - | needs-xlockmore | 356 |
-| lissie | 2d | S | low (0.0042 ms) | - | - | needs-xlockmore | 323 |
+| lissie | 2d | S | low (0.0043 ms) | - | - | needs-xlockmore | 323 |
 | lmorph | 2d | S | high (0.28 ms) | - | - | float-heavy | 580 |
 | rotor | 2d | S | low (0.0011 ms) | - | - | needs-xlockmore | 394 |
-| scooter | 2d | S | high (0.18 ms) | - | - | needs-xlockmore | 975 |
+| scooter | 2d | S | high (0.19 ms) | - | - | needs-xlockmore | 975 |
 | truchet | 2d | S | high (3.1 ms) | - | - | pixmaps | 541 |
 | wormhole | 2d | S | high (1.6 ms) | - | - | pixmaps | 734 |
 | abstractile | 2d | M | - | - | `BlackPixelOfScreen`, `make_color_loop`, `make_color_ramp`, `rgb_to_hsv` | - | 1625 |
