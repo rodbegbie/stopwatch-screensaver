@@ -1,0 +1,24 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4GRJFXCT77A3S6BSX8EBAHJ",
+  "strategy": "manual-commit",
+  "branch": "feature/braid",
+  "checkpoints_count": 3,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 114,
+    "cache_creation_tokens": 110715,
+    "cache_read_tokens": 5824403,
+    "output_tokens": 27736,
+    "api_call_count": 57
+  }
+}
