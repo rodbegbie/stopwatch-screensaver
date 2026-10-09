@@ -1,0 +1,1 @@
+MIT license is the right one for this project.  Since I'm not committing the vendor/ directory, let's add a script to the tools directory to fetch the latest source tarball from https://www.jwz.org/xscreensaver/ and extract it into there.
