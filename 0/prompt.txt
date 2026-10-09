@@ -1,0 +1,1 @@
+Yeah, let's add hypercube so I can test the flipping between different hacks.  Maybe also xspirograph and petri since they're also S.
