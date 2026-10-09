@@ -1,0 +1,1 @@
+File a Github issue to review README.md and update anything in there that's out of date (e.g. the list of "thirteen hacks") and consider adding updating the README to the hack porting skill
