@@ -1,0 +1,96 @@
+Base directory for this skill: /Users/rod/.claude/skills/claude-md-optimizer
+
+# CLAUDE.md Optimizer
+
+Audit the instruction files Claude Code loads for a project and move each
+piece of content to the place where it works best. Read
+`references/optimization-rules.md` when you need the source for a claim or
+the meaning of a check id; it tags every rule `[docs]` or `[heuristic]`.
+
+## How loading works
+
+- CLAUDE.md files, `CLAUDE.local.md`, rules without `paths:`, their `@path`
+  imports and MEMORY.md (first 200 lines or 25KB) load at session start.
+  Never describe this as a cost that recurs on every request or grows with
+  the number of turns.
+- Imported files load at launch together with the file that imports them,
+  so splitting a file into imports only reorganises it. A plain pointer
+  such as "see docs/x.md" loads nothing by itself; Claude reads the file
+  only if it decides the pointer applies.
+- Content loads later only through mechanisms Claude Code runs itself: a
+  rule with `paths:` frontmatter, a nested CLAUDE.md in a subdirectory, or
+  a skill.
+- CLAUDE.md is context, not enforced configuration: no wording or emphasis
+  guarantees Claude follows it. Only a hook runs every time.
+- Anthropic recommends under 200 lines per CLAUDE.md file. Every other
+  threshold is this tool's own and lives in the script, not in advice.
+
+## Workflow
+
+1. Run the analyser (the `scripts/` directory sits next to this file):
+
+   ```bash
+   python3 scripts/analyze_claude_md.py <project-dir>
+   ```
+
+   Add `--json` for machine-readable output. The report lists each file
+   with its load mode (always, conditional, on demand, dormant, excluded or
+   skipped), estimated tokens by mode, the auto memory directory, the
+   limits that are still unverified, findings grouped into docs-backed and
+   heuristic, every deduction, and a score.
+1. Read the findings by source. A docs finding cites an Anthropic page. A
+   heuristic finding is this tool's judgement: offer it as a suggestion the
+   user may decline. The score starts at 100 and only goes down. It is this
+   tool's own measure, not an Anthropic metric, so never propose a change
+   just to raise it.
+1. Read every always-on file yourself. The checks match patterns and miss
+   things, such as an architecture overview written as prose. Choose a
+   destination for each section from the table below before acting on any
+   finding about its form; a section you delete needs no rewording.
+1. Propose each change against a named existing line or section, with its
+   reason, and apply only what the user approves.
+1. Re-run the analyser. Then ask the user to run `/context` in a new session
+   and check that the Memory files list shows what they expect.
+
+Claude Code's built-in `/doctor` complements this: its checkup proposes
+trims for a checked-in CLAUDE.md, and `/doctor prompt-audit` looks for
+outdated or conflicting instructions.
+
+## Destinations
+
+| Content | Destination |
+| --- | --- |
+| Needed in every session | Stays in CLAUDE.md |
+| Applies to some paths only | `paths:` rule or nested CLAUDE.md |
+| Occasional task knowledge | A skill |
+| Must happen every time | A hook in settings |
+| Claude can derive it from code | Delete, with approval |
+| Notes for human maintainers | A block-level HTML comment |
+| Personal notes for this project | `CLAUDE.local.md` |
+
+- Derivable content means directory trees, dependency lists, architecture
+  overviews and file-by-file descriptions. Delete it outright. Do not keep a
+  condensed version or move it to another file. A single line recording a
+  decision or constraint the code cannot show may stay.
+- For a rule that has to hold every time, propose a hook: for example
+  `PostToolUse` to run a check once an edit lands, or `PreToolUse` to block an
+  edit or a command. Tell the user the CLAUDE.md line alone is advisory.
+- Do not create new imports or sub-documents to shrink context. Use the
+  mechanisms in the table, which Claude Code loads for you when they apply.
+  Correct any text that claims an import loads on demand.
+- If the analyser finds nothing and no row above applies, say the file is in
+  good shape and leave it. Do not add sections, reformat or reorder lines,
+  or suggest splits for some future size. Every proposed change needs a
+  functional reason.
+
+## Safety rules
+
+- Never modify a file without the user's explicit approval.
+- Back up the original files before restructuring.
+- Move content verbatim. Never summarise or paraphrase while moving it.
+- After each extraction, verify zero information loss: every line is still
+  present, moved verbatim, or deleted with approval.
+- Keep unlock instructions inline. If an instruction is needed to reach or
+  use other content (for example how to decrypt or authenticate first), it
+  stays next to that content.
+- Keep content that CI or scripts parse, in the form they expect.
