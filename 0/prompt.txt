@@ -1,0 +1,1 @@
+Still too slow. Let's try one more round of optimisations.  If we can't get it to 10+fps, that's when I think we move on and see what we can learn from this to improve our scoring assessments.
