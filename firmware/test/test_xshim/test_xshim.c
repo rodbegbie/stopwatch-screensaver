@@ -1624,6 +1624,40 @@ void test_copy_area_within_one_pixmap_reads_before_it_overwrites(void) {
   XFreePixmap(dpy, p);
 }
 
+void test_collinear_points_with_projecting_caps_draw_the_same_as_one_segment(void) {
+  const XPoint lines[][3] = {{{10, 20}, {25, 20}, {40, 20}},
+                             {{40, 20}, {25, 20}, {10, 20}},
+                             {{20, 10}, {20, 25}, {20, 40}},
+                             {{20, 40}, {20, 25}, {20, 10}}};
+  int bad = -1;
+  for (int width = 2; width <= 9; width++)
+    for (int k = 0; k < 4; k++) {
+      use_canvas(64);
+      GC gc = wide_gc(width, CapProjecting, JoinMiter);
+      XDrawLine(dpy, win, gc, lines[k][0].x, lines[k][0].y, lines[k][2].x, lines[k][2].y);
+      uint16_t *want = snapshot();
+      use_canvas(64);
+      draw_path(gc, lines[k], 3);
+      if (bad < 0 && memcmp(want, cv.px, (size_t)64 * 64 * sizeof(uint16_t)) != 0)
+        bad = width * 10 + k;
+      free(want);
+      XFreeGC(dpy, gc);
+    }
+  TEST_ASSERT_EQUAL_INT_MESSAGE(-1, bad, "first differing case is width * 10 + line");
+}
+
+void test_a_slanted_projecting_cap_reaches_half_the_width_past_the_end(void) {
+  use_canvas(64);
+  GC gc = wide_gc(5, CapProjecting, JoinMiter);
+  XDrawLine(dpy, win, gc, 10, 10, 30, 30);
+  /* Along the diagonal a pixel centre (x, y) is 1.41 * (x - 30.5) past the end. */
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(31, 31));
+  TEST_ASSERT_EQUAL_HEX16_MESSAGE(0, at(32, 32), "2.83 past the end is beyond half the width (2.5)");
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(9, 9));
+  TEST_ASSERT_EQUAL_HEX16(0, at(8, 8));
+  XFreeGC(dpy, gc);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_image_data_to_pixmap_makes_a_colour_pixmap_and_a_mask);
@@ -1719,6 +1753,8 @@ int main(void) {
   RUN_TEST(test_repeated_points_do_not_change_the_picture);
   RUN_TEST(test_180_degree_turn_has_no_gap);
   RUN_TEST(test_collinear_points_draw_the_same_as_one_segment);
+  RUN_TEST(test_collinear_points_with_projecting_caps_draw_the_same_as_one_segment);
+  RUN_TEST(test_a_slanted_projecting_cap_reaches_half_the_width_past_the_end);
   RUN_TEST(test_draw_rectangle_wide_has_mitered_corners);
   RUN_TEST(test_width_0_and_1_polyline_and_rectangle_match_the_old_ones);
   RUN_TEST(test_draw_segments_draws_each_segment_independently);

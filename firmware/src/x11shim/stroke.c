@@ -128,11 +128,11 @@ static vec2 vertex(int x, int y, int w) {
 }
 
 /* A segment between two vertices already in pixel coordinates, as a quad. An
- * end with a cap is lengthened enough to cover the pixel at the vertex (half a
- * pixel on an axis-aligned line; up to 0.71 on a diagonal when the width is
- * even and the vertex is a pixel corner), and by half the width more for a
- * projecting cap. An end that meets another segment (STROKE_NO_CAP) is not
- * lengthened at all. */
+ * end with a butt or round cap is lengthened enough to cover the pixel at the
+ * vertex (half a pixel on an axis-aligned line; up to 0.71 on a diagonal when
+ * the width is even and the vertex is a pixel corner). A projecting cap is
+ * half the width past the vertex. An end that meets another segment
+ * (STROKE_NO_CAP) is not lengthened at all. */
 static void segment_quad(Canvas *c, vec2 a, vec2 b, int cap1, int cap2, int w,
                          uint16_t colour) {
   const float dx = b.x - a.x, dy = b.y - a.y;
@@ -141,10 +141,15 @@ static void segment_quad(Canvas *c, vec2 a, vec2 b, int cap1, int cap2, int w,
   const float ux = dx / len, uy = dy / len;
   const float half = (float)w / 2.0f;
   const float pixel_along = (0.5f - centre_offset(w)) * (ux + uy);
-  const float e1 = cap1 == STROKE_NO_CAP ? 0.0f
-                   : fmaxf(0.5f, -pixel_along) + (cap1 == CapProjecting ? half : 0.0f);
-  const float e2 = cap2 == STROKE_NO_CAP ? 0.0f
-                   : fmaxf(0.5f, pixel_along) + (cap2 == CapProjecting ? half : 0.0f);
+  /* A butt cap must reach the vertex pixel (at least half a pixel). A
+   * projecting cap reaches half the width past the vertex, which covers it,
+   * plus the vertex pixel's offset when that is past the vertex. */
+  const float e1 = cap1 == STROKE_NO_CAP     ? 0.0f
+                   : cap1 == CapProjecting   ? half + fmaxf(0.0f, -pixel_along)
+                                             : fmaxf(0.5f, -pixel_along);
+  const float e2 = cap2 == STROKE_NO_CAP     ? 0.0f
+                   : cap2 == CapProjecting   ? half + fmaxf(0.0f, pixel_along)
+                                             : fmaxf(0.5f, pixel_along);
   const float nx = -uy * half, ny = ux * half;
   const vec2 p = {a.x - ux * e1, a.y - uy * e1};
   const vec2 q = {b.x + ux * e2, b.y + uy * e2};
@@ -159,7 +164,12 @@ static void segment_quad(Canvas *c, vec2 a, vec2 b, int cap1, int cap2, int w,
 static void slanted(Canvas *c, wide_t ix1, wide_t iy1, wide_t ix2, wide_t iy2,
                     int cap1, int cap2, int w, uint16_t colour) {
   double x1 = (double)ix1, y1 = (double)iy1, x2 = (double)ix2, y2 = (double)iy2;
-  if (!clip_to_canvas(c, (wide_t)w + 2, &x1, &y1, &x2, &y2)) return;
+  /* The clip is in double, which the S3 does in software, and floats are exact
+   * well past any canvas, so only ends far outside need it. */
+  const wide_t near = (wide_t)1 << 20;
+  const int small = ix1 > -near && ix1 < near && iy1 > -near && iy1 < near &&
+                    ix2 > -near && ix2 < near && iy2 > -near && iy2 < near;
+  if (!small && !clip_to_canvas(c, (wide_t)w + 2, &x1, &y1, &x2, &y2)) return;
   const float o = centre_offset(w);
   segment_quad(c, (vec2){(float)x1 + o, (float)y1 + o},
                (vec2){(float)x2 + o, (float)y2 + o}, cap1, cap2, w, colour);
