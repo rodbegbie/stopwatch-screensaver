@@ -378,7 +378,9 @@ and each was flashed unmodified, pinned with the rotation off, for 180 seconds
   pattern: the first held about 300 KB of the 325 KB of free internal heap
   (free heap read 25,684 bytes), the next two 232,436 and 247,516, and it
   returned to 328,556 between pictures. Nothing aborted, but the first picture
-  left little margin.
+  left little margin. Three windows drew nothing (rows=0) yet took 844-1,025 ms
+  a step, so much of the cost is computing, not drawing. Rod took it out of
+  the rotation (issue #37); it is no longer in `g_hacks[]`.
 
 None showed a stack canary, panic or reboot, and free PSRAM was constant
 within each run (Mountain's 20 KB is its offset from the idle figure).

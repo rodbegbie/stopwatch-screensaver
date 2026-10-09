@@ -73,6 +73,13 @@ Verdicts on the claims:
 5. **Held on the medians.** Every median is inside its range, apart from the two
    epicycle windows above.
 
+After the four were measured, Rod looked at them on the display and took Celtic
+out of the rotation: some of its pictures drew quickly and others barely drew
+anything. It is still in the tree, unregistered, and listed in
+`tools/failed_ports.txt`; issue #37 tracks looking for optimisations. Its
+result stays in the backtest, probed standalone, because it is the one slow
+hack in this set.
+
 All five claims passed. What that does and does not show:
 
 - Four hacks with wide ranges can only fail a prediction, not confirm the

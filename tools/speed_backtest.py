@@ -76,6 +76,28 @@ def measure_host(program: Path, index: int) -> float:
     return statistics.median(times)
 
 
+def probe_shelved(
+    names: list[str],
+    measured: dict[str, tuple[float, float]],
+    root: Path,
+    probe=probe_hacks.probe,
+) -> dict[str, float]:
+    """Host times for hacks that were ported, measured on the device and then
+    taken out of the registry (tools/failed_ports.txt). The harness cannot run
+    them, but their source is still in firmware/src/hacks, and the standalone
+    probe agrees with the harness (0.73-1.43x on 20 hacks)."""
+    host = {}
+    for name in names:
+        source = root / "firmware" / "src" / "hacks" / name / f"{name}.c"
+        if name not in measured or not source.exists():
+            continue
+        result = probe(name, source.read_text(errors="replace"), root)
+        if "error" in result:
+            raise BacktestError(f"{name}: {result['error']}")
+        host[name] = result["host_ms"]
+    return host
+
+
 def join_rows(
     names: list[str],
     host: dict[str, float],
@@ -236,6 +258,7 @@ def main(argv: list[str], root: Path | None = None) -> int:
     )
     parser.add_argument("--registry", default=str(root / "firmware/src/hacks/registry.c"))
     parser.add_argument("--measured", default=str(root / "tools/assessment_measured.md"))
+    parser.add_argument("--failed-ports", default=str(root / "tools/failed_ports.txt"))
     parser.add_argument("--out", default=str(root / "docs/speed-backtest.md"))
     args = parser.parse_args(argv)
     try:
@@ -247,7 +270,14 @@ def main(argv: list[str], root: Path | None = None) -> int:
         names = registry_names(Path(args.registry).read_text())
         measured = probe_hacks.parse_measured(Path(args.measured).read_text())
         host = {name: measure_host(program, i) for i, name in enumerate(names)}
-        rows = join_rows(names, host, measured)
+        failed_path = Path(args.failed_ports)
+        shelved = (
+            list(score_hacks.read_failed_ports(failed_path.read_text()))
+            if failed_path.exists()
+            else []
+        )
+        host.update(probe_shelved(shelved, measured, root))
+        rows = join_rows(names + shelved, host, measured)
         Path(args.out).write_text(render(rows))
         fitted = summarise([r for r in rows if r["name"] not in HOLDOUT])
         held_rows = [r for r in rows if r["name"] in HOLDOUT]

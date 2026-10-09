@@ -11,7 +11,7 @@ The bands were fitted to the 29 hacks in this section, so these
 figures are in-sample.
 
 - Host time ranks the device step with a Spearman correlation of
-  0.88.
+  0.89.
 - Bands (host ms per step): low is under 0.015, medium is under
   0.05, high is 0.05 or more.
 - The slowest hack in the low band took 13.7 ms on the device
@@ -47,37 +47,37 @@ uses its midpoint.
 
 | Hack | Set | Host ms | Band | Device step ms | Device / host |
 | --- | --- | --- | --- | --- | --- |
-| celtic | held out | 1.125 | high | 29-1025 | 469 |
-| pedal | fitted | 1.120 | high | 126-519 | 288 |
-| braid | fitted | 1.635 | high | 95-296 | 120 |
-| discrete | fitted | 1.532 | high | 149-160 | 101 |
-| vines | fitted | 0.098 | high | 133-160 | 1498 |
-| flame | fitted | 0.306 | high | 26-107 | 217 |
-| galaxy | fitted | 0.181 | high | 58-75 | 367 |
-| xspirograph | fitted | 0.060 | high | 54-56 | 918 |
-| substrate | fitted | 0.108 | high | 2.9-43.9 | 216 |
+| celtic | held out | 1.120 | high | 29-1025 | 470 |
+| pedal | fitted | 1.125 | high | 126-519 | 287 |
+| braid | fitted | 1.644 | high | 95-296 | 119 |
+| discrete | fitted | 1.520 | high | 149-160 | 102 |
+| vines | fitted | 0.099 | high | 133-160 | 1483 |
+| flame | fitted | 0.304 | high | 26-107 | 219 |
+| galaxy | fitted | 0.182 | high | 58-75 | 366 |
+| xspirograph | fitted | 0.061 | high | 54-56 | 900 |
+| substrate | fitted | 0.108 | high | 2.9-43.9 | 217 |
 | coral | fitted | 0.095 | high | 15-25 | 211 |
-| whirlwindwarp | fitted | 0.022 | medium | 6.2-26.4 | 744 |
-| hopalong | fitted | 0.014 | low | 7.3-20.1 | 1007 |
-| drift | fitted | 0.100 | high | 11-13 | 120 |
-| cloudlife | fitted | 0.126 | high | 8.8-8.9 | 70 |
+| whirlwindwarp | fitted | 0.022 | medium | 6.2-26.4 | 748 |
+| hopalong | fitted | 0.014 | low | 7.3-20.1 | 1000 |
+| drift | fitted | 0.098 | high | 11-13 | 122 |
+| cloudlife | fitted | 0.127 | high | 8.8-8.9 | 70 |
 | kaleidescope | held out | 0.069 | high | 7-9.8 | 122 |
-| blaster | fitted | 0.010 | low | 3.6-3.7 | 351 |
-| fadeplot | fitted | 0.048 | medium | 2.9-3.2 | 63 |
-| sierpinski | fitted | 0.020 | medium | 1.8-4 | 148 |
-| hypercube | fitted | 0.034 | medium | 2.7-2.9 | 83 |
-| thornbird | fitted | 0.003 | low | 2-2.2 | 808 |
-| lightning | fitted | 0.016 | medium | 1.8-1.9 | 113 |
+| blaster | fitted | 0.011 | low | 3.6-3.7 | 344 |
+| fadeplot | fitted | 0.047 | medium | 2.9-3.2 | 65 |
+| sierpinski | fitted | 0.020 | medium | 1.8-4 | 146 |
+| hypercube | fitted | 0.034 | medium | 2.7-2.9 | 82 |
+| thornbird | fitted | 0.003 | low | 2-2.2 | 840 |
+| lightning | fitted | 0.016 | medium | 1.8-1.9 | 115 |
 | pacman | fitted | 0.010 | low | 1.3-1.9 | 158 |
 | helix | fitted | 0.017 | medium | 0.9-2.1 | 87 |
-| petri | fitted | 0.017 | medium | 0.3-2.5 | 84 |
+| petri | fitted | 0.016 | medium | 0.3-2.5 | 86 |
 | epicycle | held out | 0.001 | low | 0.3-2.1 | 1333 |
-| rorschach | fitted | 0.016 | medium | 0.6-1.7 | 71 |
-| spiral | fitted | 0.001 | low | 0.9-1.2 | 1167 |
-| pyro | fitted | 0.005 | low | 0.8-1.1 | 207 |
-| sphere | fitted | 0.002 | low | 0.6-1.1 | 370 |
-| maze | fitted | 0.004 | low | 0.1-1.3 | 194 |
-| critical | fitted | 0.008 | low | 0.7 | 85 |
+| rorschach | fitted | 0.016 | medium | 0.6-1.7 | 72 |
+| spiral | fitted | 0.001 | low | 0.9-1.2 | 1050 |
+| pyro | fitted | 0.005 | low | 0.8-1.1 | 176 |
+| sphere | fitted | 0.002 | low | 0.6-1.1 | 354 |
+| maze | fitted | 0.004 | low | 0.1-1.3 | 189 |
+| critical | fitted | 0.008 | low | 0.7 | 84 |
 | mountain | held out | 0.001 | low | 0-0.4 | 400 |
 | squiral | fitted | 0.001 | low | 0.1-0.3 | 222 |
 

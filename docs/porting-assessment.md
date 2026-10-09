@@ -31,11 +31,11 @@ it with `uv run tools/score_hacks.py`.
 
 | Rating | Meaning | Count |
 | --- | --- | --- |
-| S | 2D, and the unmodified source compiles against the shim | 17 |
+| S | 2D, and the unmodified source compiles against the shim | 18 |
 | M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 13 |
 | L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 80 |
 | XL | GL: needs a software rasteriser (see below) | 140 |
-| Ported | Already running on the device, so no rating | 33 |
+| Ported | Already running on the device, so no rating | 32 |
 
 ## Speed
 
@@ -468,7 +468,9 @@ and each was flashed unmodified, pinned with the rotation off, for 180 seconds
   pattern: the first held about 300 KB of the 325 KB of free internal heap
   (free heap read 25,684 bytes), the next two 232,436 and 247,516, and it
   returned to 328,556 between pictures. Nothing aborted, but the first picture
-  left little margin.
+  left little margin. Three windows drew nothing (rows=0) yet took 844-1,025 ms
+  a step, so much of the cost is computing, not drawing. Rod took it out of
+  the rotation (issue #37); it is no longer in `g_hacks[]`.
 
 None showed a stack canary, panic or reboot, and free PSRAM was constant
 within each run (Mountain's 20 KB is its offset from the idle figure).
@@ -497,6 +499,7 @@ needing few additions come first.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | anemone | 2d | S | high (2 ms) | - | - | pixmaps | 458 |
 | anemotaxis | 2d | S | high (1.6 ms) | - | - | pixmaps | 760 |
+| celtic | 2d | S | high (1.2 ms) | ❌ | - | - | 1141 |
 | compass | 2d | S | high (1.7 ms) | - | - | pixmaps, float-heavy | 999 |
 | euler2d | 2d | S | high (0.29 ms) | - | - | float-heavy, needs-xlockmore | 893 |
 | forest | 2d | S | high (0.15 ms) | - | - | needs-xlockmore | 241 |
@@ -506,11 +509,11 @@ needing few additions come first.
 | ifs | 2d | S | high (0.35 ms) | - | - | pixmaps | 560 |
 | interaggregate | 2d | S | high (0.66 ms) | - | - | - | 989 |
 | laser | 2d | S | high (0.14 ms) | - | - | needs-xlockmore | 356 |
-| lissie | 2d | S | low (0.0043 ms) | - | - | needs-xlockmore | 323 |
+| lissie | 2d | S | low (0.0042 ms) | - | - | needs-xlockmore | 323 |
 | lmorph | 2d | S | high (0.28 ms) | - | - | float-heavy | 580 |
 | rotor | 2d | S | low (0.0011 ms) | - | - | needs-xlockmore | 394 |
-| scooter | 2d | S | high (0.19 ms) | - | - | needs-xlockmore | 975 |
-| truchet | 2d | S | high (3.1 ms) | - | - | pixmaps | 541 |
+| scooter | 2d | S | high (0.18 ms) | - | - | needs-xlockmore | 975 |
+| truchet | 2d | S | high (3 ms) | - | - | pixmaps | 541 |
 | wormhole | 2d | S | high (1.6 ms) | - | - | pixmaps | 734 |
 | abstractile | 2d | M | - | - | `BlackPixelOfScreen`, `make_color_loop`, `make_color_ramp`, `rgb_to_hsv` | - | 1625 |
 | bouboule | 2d | M | - | - | `GXor`, `XSetFunction` | xor, needs-xlockmore | 860 |
@@ -747,7 +750,6 @@ needing few additions come first.
 | xshadertoy | gl | XL | - | - | `XFetchName`, `XStoreName` | needs-xlockmore | 1192 |
 | blaster | 2d | - | 3.6-3.7 ms measured | ✅ | - | - | 1208 |
 | braid | 2d | - | 95-296 ms measured | ✅ | - | needs-xlockmore | 444 |
-| celtic | 2d | - | 29-1025 ms measured | ✅ | - | - | 1141 |
 | cloudlife | 2d | - | 8.8-8.9 ms measured | ✅ | - | - | 440 |
 | coral | 2d | - | 15-25 ms measured | ✅ | - | - | 328 |
 | critical | 2d | - | 0.7 ms measured | ✅ | - | - | 462 |
@@ -778,6 +780,10 @@ needing few additions come first.
 | whirlwindwarp | 2d | - | 6.2-26.4 ms measured | ✅ | - | - | 509 |
 | xspirograph | 2d | - | 54-56 ms measured | ✅ | - | - | 338 |
 | pacman | 2d | - | 1.3-1.9 ms measured | ✅ | `BLUE`, `GHOSTS`, `GHOST_DANGER`, `JAILHEIGHT`, `LEVHEIGHT`, `LEVWIDTH`, `MAXGDIR`, `MAXGFLASH`, `MAXGWAG`, `MAXMOUTH`, `MINGRIDSIZE`, `MINSIZE`, `NOWHERE`, `NUM_BONUS_DOTS`, `PAC_DEATH_FRAMES`, `START`, `XDrawString`, `XLoadQueryFont`, `chasing`, `error: expected expression`, `error: invalid application of 'sizeof' to an incomplete type 'argtype[]'`, `ghoststruct`, `goingin`, `goingout`, `hiding`, `images/gen/pacman_png.h`, `inbox`, `pacman.h`, `pacman_ai.h`, `pacman_bonus_dot_eaten`, `pacman_bonus_dot_pos`, `pacman_createnewlevel`, `pacman_eat_bonus_dot`, `pacman_ghost_update`, `pacman_is_bonus_dot`, `pacman_level.h`, `pacman_png`, `pacman_trackmouse`, `pacman_update`, `pacmangamestruct`, `pp`, `ps_chasing`, `ps_dieing`, `ps_eating` | pixmaps, text, clipmask, needs-xlockmore | 1479 |
+
+## Failed ports
+
+- **celtic**: shelved at 1.2 fps and 300 KB of heap, see issue #37
 
 ## Excluded files
 

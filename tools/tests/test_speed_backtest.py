@@ -110,6 +110,47 @@ def test_there_is_no_held_out_section_without_held_out_hacks():
     assert "## Out of sample" not in sb.render(_rows(), holdout=frozenset())
 
 
+def _hack_source(root, name):
+    path = root / "firmware" / "src" / "hacks" / name / f"{name}.c"
+    path.parent.mkdir(parents=True)
+    path.write_text(f"/* {name} */\n")
+
+
+def test_a_shelved_hack_with_source_and_a_measured_step_is_probed(tmp_path):
+    _hack_source(tmp_path, "celtic")
+    seen = []
+
+    def fake(name, source, root):
+        seen.append((name, source, root))
+        return {"host_ms": 1.1}
+
+    got = sb.probe_shelved(["celtic"], {"celtic": (29.0, 1025.0)}, tmp_path, fake)
+    assert got == {"celtic": 1.1}
+    assert seen == [("celtic", "/* celtic */\n", tmp_path)]
+
+
+def test_a_shelved_hack_without_a_measured_step_or_source_is_skipped(tmp_path):
+    _hack_source(tmp_path, "unmeasured")
+
+    def fake(name, source, root):
+        raise AssertionError("must not be probed")
+
+    got = sb.probe_shelved(
+        ["unmeasured", "nosource"], {"nosource": (1.0, 2.0)}, tmp_path, fake
+    )
+    assert got == {}
+
+
+def test_a_shelved_hack_that_cannot_be_probed_is_an_error(tmp_path):
+    _hack_source(tmp_path, "celtic")
+
+    def fake(name, source, root):
+        return {"error": "does not link: XFoo"}
+
+    with pytest.raises(sb.BacktestError, match="celtic: does not link"):
+        sb.probe_shelved(["celtic"], {"celtic": (1.0, 2.0)}, tmp_path, fake)
+
+
 def _script(tmp_path, body):
     path = tmp_path / "program"
     path.write_text("#!/bin/sh\n" + body)

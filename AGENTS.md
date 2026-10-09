@@ -370,7 +370,11 @@ hack, and holds a recipe per trap. The steps:
   clear a hack that does software `double` maths: the device ran 60-1,500
   times the host time, most for the double-bound ones. It says nothing about
   memory: Celtic held about 300 KB of the 325 KB of free heap and its
-  `assert()` aborts on a failed allocation. Measure on the device, and read
+  `assert()` aborts on a failed allocation, and it ran at 1.2 fps, so it is
+  shelved (issue #37): its source stays in `firmware/src/hacks/celtic/`, it is
+  not in `g_hacks[]`, and `failed_ports.txt` lists it. A failed port that has
+  its source and a measured row still counts in `speed_backtest.py`, probed
+  standalone. Measure on the device, and read
   `docs/speed-backtest.md` before trusting a band. A hack with gaps (M and
   above) cannot be built, so it has no Speed.
 - `pio test` runs every registered hack for 3000 frames under ASan (about 15 s);
