@@ -1,0 +1,1 @@
+Can you kill the process that is running, and tell me the command, and I'll see if I can run it interactively. That might provide more useful information.
