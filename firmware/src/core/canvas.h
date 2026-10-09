@@ -1,6 +1,7 @@
 #ifndef CORE_CANVAS_H
 #define CORE_CANVAS_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -11,6 +12,9 @@ extern "C" {
 typedef struct {
   int w, h;
   uint16_t *px; /* px[y * w + x], RGB565 with the bytes swapped (display order) */
+  /* Per row, the leftmost and rightmost x written since the last
+   * canvas_clear_dirty; a row is clean when dirty_x0[y] > dirty_x1[y]. */
+  int16_t *dirty_x0, *dirty_x1;
 } Canvas;
 
 /* Returns 0 on success, -1 if alloc returns NULL. */
@@ -24,6 +28,12 @@ void canvas_free(Canvas *c);
 uint16_t rgb565(uint8_t r, uint8_t g, uint8_t b);
 uint16_t rgb565_from16(uint16_t r, uint16_t g, uint16_t b);
 uint16_t px_swap(uint16_t v);
+
+/* What the next push to the display must cover. A new canvas is dirty in full,
+ * since the display still shows whatever was there before. */
+void canvas_mark_dirty(Canvas *c, int x, int y, int w, int h);
+bool canvas_dirty_row(const Canvas *c, int y, int *x0, int *x1); /* x1 inclusive */
+void canvas_clear_dirty(Canvas *c);
 
 /* All drawing is clipped to the canvas; any int coordinates are safe. */
 void canvas_clear(Canvas *c, uint16_t color);

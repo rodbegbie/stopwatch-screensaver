@@ -3,6 +3,7 @@
 
 extern "C" {
 #include "core/canvas.h"
+#include "core/push_plan.h"
 #include "hacks/registry.h"
 #include "runner/button_latch.h"
 #include "runner/hack_runner.h"
@@ -64,7 +65,8 @@ static Overlay overlay;
 static Rotation rotation;
 static uint32_t frames;
 static uint32_t statsAt;
-static uint32_t stepUs, pushUs, waitUs;
+static uint32_t stepUs, pushUs, waitUs, rowsPushed;
+static PushRow pushRows[kSize];
 
 static void halt(const char *msg) {
   Serial.println(msg);
@@ -76,20 +78,24 @@ static void halt(const char *msg) {
 }
 
 static void resetStats() {
-  frames = stepUs = pushUs = waitUs = 0;
+  frames = stepUs = pushUs = waitUs = rowsPushed = 0;
   statsAt = millis();
 }
 
 /* step/push/wait are mean milliseconds per frame spent in the hack, in
  * pushImage, and waiting out what is left of the hack's requested delay after
- * the push (including button polling). */
+ * the push (including button polling). rows is the mean number of canvas rows
+ * sent to the display per frame (466 is a full push), counting overlay redraws
+ * made while waiting. */
 static void printStats(const char *tag) {
   float n = frames ? (float)frames : 1.0f;
   Serial.printf(
-      "%s %s fps=%.1f step=%.1fms push=%.1fms wait=%.1fms heap=%u psram=%u\n",
+      "%s %s fps=%.1f step=%.1fms push=%.1fms wait=%.1fms rows=%.0f heap=%u "
+      "psram=%u\n",
       tag, g_hacks[runner_index(runner)]->name,
       frames * 1000.0f / kStatsEveryMs, stepUs / n / 1000.0f,
-      pushUs / n / 1000.0f, waitUs / n / 1000.0f, (unsigned)ESP.getFreeHeap(),
+      pushUs / n / 1000.0f, waitUs / n / 1000.0f, rowsPushed / n,
+      (unsigned)ESP.getFreeHeap(),
       (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
 }
 
@@ -127,12 +133,25 @@ static void stampText(Patch *p, const char *text, int cx, int cy,
       if (dx || dy) stamp.drawString(text, cx + dx, cy + dy);
   stamp.setTextColor(0xFFFFFF);
   stamp.drawString(text, cx, cy);
+  canvas_mark_dirty(&canvas, p->x, p->y, p->w, p->h);
 }
 
 static void unstamp(Patch *p) {
   if (p->w) canvas_paste_rect(&canvas, p->x, p->y, p->w, p->h, p->saved);
   p->w = 0;
 }
+
+/* Whole rows are sent inside one startWrite: each call then costs about 5 us
+ * instead of 16. */
+static void sinkBegin(void *) { M5.Display.startWrite(); }
+static void sinkEnd(void *) { M5.Display.endWrite(); }
+static void sinkRow(void *, int y, int x0, int x1) {
+  M5.Display.pushImage(x0, y, x1 - x0 + 1, 1, canvas.px + y * kSize + x0);
+}
+static void sinkAll(void *) {
+  M5.Display.pushImage(0, 0, kSize, kSize, canvas.px);
+}
+static const PushSink pushSink = {nullptr, sinkBegin, sinkRow, sinkAll, sinkEnd};
 
 static void present() {
   uint32_t now = millis();
@@ -145,7 +164,7 @@ static void present() {
     stampText(&fpsPatch, text, kSize / 2, kFpsY, &fonts::DejaVu18);
   }
   overlay_drawn(&overlay, now);
-  M5.Display.pushImage(0, 0, kSize, kSize, canvas.px);
+  rowsPushed += push_present(&canvas, pushRows, &pushSink);
   unstamp(&fpsPatch);
   unstamp(&namePatch);
 }
