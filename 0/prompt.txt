@@ -1,0 +1,1 @@
+Looks good to me -- since the device is connected and charging, it's showing 100%.  I'll test it later disconnected.  Open the PR thanks.
