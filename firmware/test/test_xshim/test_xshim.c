@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <math.h>
 #include <sanitizer/allocator_interface.h>
 #include <stdlib.h>
@@ -858,6 +859,214 @@ void test_set_line_attributes_sets_all_three(void) {
   XFreeGC(dpy, gc);
 }
 
+/* Wide-line tests draw on a 64 by 64 canvas, in white on black. */
+static void use_canvas(int n) {
+  canvas_free(&cv);
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&cv, n, n, malloc));
+  dpy->canvas = &cv;
+}
+
+static GC wide_gc(int width, int cap, int join) {
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XSetLineAttributes(dpy, gc, width, LineSolid, cap, join);
+  return gc;
+}
+
+void test_wide_horizontal_line_butt_caps(void) {
+  use_canvas(64);
+  GC gc = wide_gc(3, CapButt, JoinMiter);
+  XDrawLine(dpy, win, gc, 10, 10, 20, 10);
+  TEST_ASSERT_EQUAL_INT(33, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(10, 9));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(20, 11));
+  TEST_ASSERT_EQUAL_HEX16(0, at(9, 10));
+  TEST_ASSERT_EQUAL_HEX16(0, at(21, 10));
+  TEST_ASSERT_EQUAL_HEX16(0, at(15, 8));
+  TEST_ASSERT_EQUAL_HEX16(0, at(15, 12));
+  XFreeGC(dpy, gc);
+}
+
+void test_wide_even_width_starts_half_before(void) {
+  use_canvas(64);
+  GC gc = wide_gc(2, CapButt, JoinMiter);
+  XDrawLine(dpy, win, gc, 10, 10, 20, 10);
+  TEST_ASSERT_EQUAL_INT(22, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(15, 9));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(15, 10));
+  TEST_ASSERT_EQUAL_HEX16(0, at(15, 11));
+  TEST_ASSERT_EQUAL_HEX16(0, at(15, 8));
+  XFreeGC(dpy, gc);
+}
+
+void test_wide_vertical_line_butt_caps(void) {
+  use_canvas(64);
+  GC gc = wide_gc(3, CapButt, JoinMiter);
+  XDrawLine(dpy, win, gc, 30, 40, 30, 20);
+  TEST_ASSERT_EQUAL_INT(63, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(29, 20));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(31, 40));
+  TEST_ASSERT_EQUAL_HEX16(0, at(30, 19));
+  TEST_ASSERT_EQUAL_HEX16(0, at(30, 41));
+  XFreeGC(dpy, gc);
+}
+
+void test_projecting_caps_extend_half_the_width(void) {
+  use_canvas(64);
+  GC gc = wide_gc(3, CapProjecting, JoinMiter);
+  XDrawLine(dpy, win, gc, 10, 10, 20, 10);
+  TEST_ASSERT_EQUAL_INT(39, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(9, 9));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(21, 11));
+  TEST_ASSERT_EQUAL_HEX16(0, at(8, 10));
+  TEST_ASSERT_EQUAL_HEX16(0, at(22, 10));
+  XFreeGC(dpy, gc);
+}
+
+void test_round_caps_width_6_have_tip_but_no_corner(void) {
+  use_canvas(64);
+  GC gc = wide_gc(6, CapRound, JoinMiter);
+  XDrawLine(dpy, win, gc, 20, 20, 40, 20);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(18, 20));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(42, 20));
+  TEST_ASSERT_EQUAL_HEX16(0, at(17, 17));
+  TEST_ASSERT_EQUAL_HEX16(0, at(43, 23));
+  XFreeGC(dpy, gc);
+}
+
+void test_diagonal_wide_line_covers_the_centre_line_and_is_about_width_thick(void) {
+  use_canvas(64);
+  GC gc = wide_gc(4, CapButt, JoinMiter);
+  XDrawLine(dpy, win, gc, 5, 5, 40, 25);
+  int first_miss = -1;
+  for (int i = 0; i <= 35 && first_miss < 0; i++)
+    if (at(5 + i, 5 + (i * 20 + 17) / 35) != 0xFFFF) first_miss = i;
+  TEST_ASSERT_EQUAL_INT(-1, first_miss);
+  const int n = count_set();
+  TEST_ASSERT_TRUE_MESSAGE(n >= 137 && n <= 185, "area is about length times width");
+  XFreeGC(dpy, gc);
+}
+
+void test_zero_length_wide_line_round_cap_is_a_dot_butt_is_nothing_wider_than_a_point(void) {
+  use_canvas(64);
+  GC round = wide_gc(6, CapRound, JoinMiter);
+  XDrawLine(dpy, win, round, 30, 30, 30, 30);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(30, 30));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(28, 30));
+  TEST_ASSERT_TRUE(count_set() > 10);
+  XFreeGC(dpy, round);
+  use_canvas(64);
+  GC butt = wide_gc(6, CapButt, JoinMiter);
+  XDrawLine(dpy, win, butt, 30, 30, 30, 30);
+  TEST_ASSERT_TRUE(count_set() <= 1);
+  XFreeGC(dpy, butt);
+}
+
+void test_wide_line_far_off_canvas_draws_nothing_and_does_not_overflow(void) {
+  use_canvas(64);
+  GC gc = wide_gc(5, CapRound, JoinMiter);
+  XDrawLine(dpy, win, gc, INT_MAX, INT_MAX, INT_MAX - 10, INT_MAX);
+  XDrawLine(dpy, win, gc, INT_MIN, INT_MIN, INT_MIN + 10, INT_MIN + 3);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XFreeGC(dpy, gc);
+}
+
+void test_wide_line_across_the_whole_int_range_still_crosses_the_canvas(void) {
+  use_canvas(64);
+  GC gc = wide_gc(5, CapButt, JoinMiter);
+  XDrawLine(dpy, win, gc, -INT_MAX, 5, INT_MAX, 5);
+  TEST_ASSERT_EQUAL_INT(64 * 5, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(0, 3));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(63, 7));
+  TEST_ASSERT_EQUAL_HEX16(0, at(0, 2));
+  TEST_ASSERT_EQUAL_HEX16(0, at(0, 8));
+  XFreeGC(dpy, gc);
+  use_canvas(64);
+  GC diag = wide_gc(3, CapButt, JoinMiter);
+  XDrawLine(dpy, win, diag, -INT_MAX, -INT_MAX, INT_MAX, INT_MAX);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(32, 32));
+  TEST_ASSERT_EQUAL_HEX16(0, at(32, 40));
+  XFreeGC(dpy, diag);
+}
+
+void test_an_enormous_width_is_bounded_not_a_hang_or_overflow(void) {
+  use_canvas(64);
+  GC gc = wide_gc(INT_MAX, CapButt, JoinMiter);
+  XDrawLine(dpy, win, gc, 10, 10, 20, 10);
+  XDrawLine(dpy, win, gc, 10, 10, 20, 30);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(15, 0));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(15, 63));
+  XFreeGC(dpy, gc);
+}
+
+void test_wide_line_clips_at_the_canvas_edge_and_marks_dirty_rows(void) {
+  use_canvas(64);
+  GC gc = wide_gc(3, CapButt, JoinMiter);
+  canvas_clear_dirty(&cv);
+  XDrawLine(dpy, win, gc, 0, 0, 30, 0);
+  int x0, x1;
+  TEST_ASSERT_TRUE(canvas_dirty_row(&cv, 0, &x0, &x1));
+  TEST_ASSERT_TRUE(canvas_dirty_row(&cv, 1, &x0, &x1));
+  TEST_ASSERT_FALSE(canvas_dirty_row(&cv, 2, &x0, &x1));
+  TEST_ASSERT_EQUAL_INT(0, x0);
+  TEST_ASSERT_EQUAL_INT(30, x1);
+  TEST_ASSERT_EQUAL_INT(62, count_set());
+  XFreeGC(dpy, gc);
+}
+
+void test_diagonal_wide_line_marks_dirty_rows_it_touches(void) {
+  use_canvas(64);
+  GC gc = wide_gc(4, CapButt, JoinMiter);
+  canvas_clear_dirty(&cv);
+  XDrawLine(dpy, win, gc, 5, 5, 40, 25);
+  int x0, x1;
+  for (int y = 0; y < 64; y++) {
+    int touched = 0;
+    for (int x = 0; x < 64; x++) touched |= at(x, y) != 0;
+    TEST_ASSERT_EQUAL_INT(touched, canvas_dirty_row(&cv, y, &x0, &x1));
+  }
+  XFreeGC(dpy, gc);
+}
+
+void test_width_0_and_1_match_the_old_line(void) {
+  for (int width = 0; width <= 1; width++) {
+    use_canvas(64);
+    canvas_line(&cv, 3, 2, 12, 9, 0xFFFF);
+    canvas_line(&cv, 50, 60, 4, 8, 0xFFFF);
+    uint16_t *want = (uint16_t *)malloc(64 * 64 * sizeof(uint16_t));
+    memcpy(want, cv.px, 64 * 64 * sizeof(uint16_t));
+    use_canvas(64);
+    GC gc = wide_gc(width, CapRound, JoinRound);
+    XDrawLine(dpy, win, gc, 3, 2, 12, 9);
+    XDrawLine(dpy, win, gc, 50, 60, 4, 8);
+    TEST_ASSERT_EQUAL_MEMORY(want, cv.px, 64 * 64 * sizeof(uint16_t));
+    free(want);
+    XFreeGC(dpy, gc);
+  }
+}
+
+void test_a_45_degree_wide_line_is_symmetric_about_its_diagonal(void) {
+  for (int width = 2; width <= 5; width++) {
+    use_canvas(64);
+    GC gc = wide_gc(width, CapButt, JoinMiter);
+    XDrawLine(dpy, win, gc, 10, 10, 40, 40);
+    for (int y = 0; y < 64; y++)
+      for (int x = 0; x < y; x++) TEST_ASSERT_EQUAL_HEX16(at(x, y), at(y, x));
+    TEST_ASSERT_TRUE(count_set() > 30 * width);
+    XFreeGC(dpy, gc);
+  }
+}
+
+void test_an_enormous_width_with_round_caps_neither_hangs_nor_overflows(void) {
+  use_canvas(64);
+  GC gc = wide_gc(INT_MAX, CapRound, JoinMiter);
+  XDrawLine(dpy, win, gc, 10, 10, 20, 10);
+  XDrawLine(dpy, win, gc, 10, 10, 20, 30);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(15, 10));
+  XFreeGC(dpy, gc);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_image_data_to_pixmap_makes_a_colour_pixmap_and_a_mask);
@@ -929,5 +1138,20 @@ int main(void) {
   RUN_TEST(test_create_gc_reads_line_width_cap_and_join_from_the_mask);
   RUN_TEST(test_change_gc_updates_only_the_masked_line_fields);
   RUN_TEST(test_set_line_attributes_sets_all_three);
+  RUN_TEST(test_wide_horizontal_line_butt_caps);
+  RUN_TEST(test_wide_even_width_starts_half_before);
+  RUN_TEST(test_wide_vertical_line_butt_caps);
+  RUN_TEST(test_projecting_caps_extend_half_the_width);
+  RUN_TEST(test_round_caps_width_6_have_tip_but_no_corner);
+  RUN_TEST(test_diagonal_wide_line_covers_the_centre_line_and_is_about_width_thick);
+  RUN_TEST(test_zero_length_wide_line_round_cap_is_a_dot_butt_is_nothing_wider_than_a_point);
+  RUN_TEST(test_wide_line_far_off_canvas_draws_nothing_and_does_not_overflow);
+  RUN_TEST(test_wide_line_across_the_whole_int_range_still_crosses_the_canvas);
+  RUN_TEST(test_an_enormous_width_is_bounded_not_a_hang_or_overflow);
+  RUN_TEST(test_wide_line_clips_at_the_canvas_edge_and_marks_dirty_rows);
+  RUN_TEST(test_diagonal_wide_line_marks_dirty_rows_it_touches);
+  RUN_TEST(test_width_0_and_1_match_the_old_line);
+  RUN_TEST(test_a_45_degree_wide_line_is_symmetric_about_its_diagonal);
+  RUN_TEST(test_an_enormous_width_with_round_caps_neither_hangs_nor_overflows);
   return UNITY_END();
 }

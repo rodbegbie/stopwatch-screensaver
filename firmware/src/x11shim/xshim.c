@@ -4,6 +4,7 @@
 
 #include "fps.h"
 #include "x11shim/pixmap.h"
+#include "x11shim/stroke.h"
 #include "yarandom.h"
 
 Bool mono_p = False;
@@ -96,7 +97,10 @@ int XDrawPoints(Display *dpy, Drawable d, GC gc, XPoint *pts, int n,
 int XDrawLine(Display *dpy, Drawable d, GC gc, int x1, int y1, int x2,
               int y2) {
   (void)d;
-  canvas_line(dpy->canvas, x1, y1, x2, y2, (uint16_t)gc->foreground);
+  if (gc->line_width > 1)
+    stroke_segment(dpy->canvas, gc, x1, y1, x2, y2);
+  else
+    canvas_line(dpy->canvas, x1, y1, x2, y2, (uint16_t)gc->foreground);
   return 0;
 }
 
