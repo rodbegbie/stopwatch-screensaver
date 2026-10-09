@@ -1,0 +1,11 @@
+<task-notification>
+<task-id>a4844de9717d80a31</task-id>
+<tool-use-id>toolu_01VZxK2ioBQQz6PybnBYeStC</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/fb2cd8f8-4072-436e-987b-c6410cbd4e25/tasks/a4844de9717d80a31.output</output-file>
+<status>completed</status>
+<summary>Agent "Dinesh round 1 defense" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>This agent's report was delivered to you as a message from "a4844de9717d80a31" (its SubagentHandback call). Read it there; it is not repeated here.
+</result>
+<usage><subagent_tokens>77979</subagent_tokens><tool_uses>9</tool_uses><duration_ms>69022</duration_ms></usage>
+</task-notification>
