@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>b8ky60sp7</task-id>
+<tool-use-id>toolu_01JXqV6zDaKhAmxT9C6SsPNx</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/cd7d24f7-9aab-4dcd-baf1-b0d59d2a6982/tasks/b8ky60sp7.output</output-file>
+<status>completed</status>
+<summary>Background command "Poll for up to 15 more minutes for the bot review" completed (exit code 0)</summary>
+</task-notification>
