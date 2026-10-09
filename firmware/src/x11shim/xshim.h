@@ -170,10 +170,15 @@ int XDrawSegments(Display *, Drawable, GC, XSegment *segs, int n);
 int XFillRectangle(Display *, Drawable, GC, int x, int y, unsigned int w,
                    unsigned int h);
 int XFillRectangles(Display *, Drawable, GC, XRectangle *rects, int n);
-/* Only full ellipses (angle2 >= 360*64) are drawn; partial arcs are ignored. */
+/* Angles are in 64ths of a degree from three o'clock, counter-clockwise; a
+ * sweep of 360 degrees or more is a full ellipse. A partial arc fills as a pie
+ * slice. */
+int XDrawArc(Display *, Drawable, GC, int x, int y, unsigned int w,
+             unsigned int h, int angle1, int angle2);
+int XDrawArcs(Display *, Drawable, GC, XArc *arcs, int n);
 int XFillArc(Display *, Drawable, GC, int x, int y, unsigned int w,
              unsigned int h, int angle1, int angle2);
-/* Each arc goes through XFillArc, so the same full-ellipse limit applies. */
+/* Each arc goes through XFillArc. */
 int XFillArcs(Display *, Drawable, GC, XArc *arcs, int n);
 int XFillPolygon(Display *, Drawable, GC, XPoint *pts, int n, int shape,
                  int mode);

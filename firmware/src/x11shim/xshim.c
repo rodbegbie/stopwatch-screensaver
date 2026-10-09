@@ -1,8 +1,10 @@
 #include "x11shim/xshim.h"
 
+#include <math.h>
 #include <stdlib.h>
 
 #include "fps.h"
+#include "x11shim/arc.h"
 #include "x11shim/pixmap.h"
 #include "x11shim/stroke.h"
 #include "yarandom.h"
@@ -178,14 +180,63 @@ Bool screenhack_event_helper(Display *dpy, Window w, XEvent *event) {
   return event->type == ButtonPress;
 }
 
+#define FULL_ARC (360 * 64)
+
+/* Room for the points of an arc on the stack; a bigger arc uses the heap. */
+#define ARC_STACK_POINTS 128
+
+int XDrawArc(Display *dpy, Drawable d, GC gc, int x, int y, unsigned int w,
+             unsigned int h, int angle1, int angle2) {
+  (void)d;
+  const int n = arc_point_count(w, h, angle2);
+  if (n < 2) return 0;
+  int stack_xy[2 * ARC_STACK_POINTS];
+  int *xy = stack_xy;
+  if (n > ARC_STACK_POINTS) {
+    xy = (int *)malloc((size_t)n * 2 * sizeof(int));
+    if (!xy) return 0;
+  }
+  arc_points(x, y, w, h, angle1, angle2, xy, n);
+  if (gc->line_width > 1) {
+    stroke_polyline(dpy->canvas, gc, xy, n, angle2 >= FULL_ARC || angle2 <= -FULL_ARC);
+  } else {
+    for (int i = 1; i < n; i++)
+      canvas_line(dpy->canvas, xy[2 * i - 2], xy[2 * i - 1], xy[2 * i],
+                  xy[2 * i + 1], (uint16_t)gc->foreground);
+  }
+  if (xy != stack_xy) free(xy);
+  return 0;
+}
+
+int XDrawArcs(Display *dpy, Drawable d, GC gc, XArc *arcs, int n) {
+  for (int i = 0; i < n; i++)
+    XDrawArc(dpy, d, gc, arcs[i].x, arcs[i].y, arcs[i].width, arcs[i].height,
+             arcs[i].angle1, arcs[i].angle2);
+  return 0;
+}
+
 int XFillArc(Display *dpy, Drawable d, GC gc, int x, int y, unsigned int w,
              unsigned int h, int angle1, int angle2) {
   (void)d;
-  (void)angle1;
-  if (angle2 < 360 * 64) return 0;
-  canvas_fill_ellipse(dpy->canvas, x, y, w > 0x7FFFFFFF ? 0x7FFFFFFF : (int)w,
-                      h > 0x7FFFFFFF ? 0x7FFFFFFF : (int)h,
-                      (uint16_t)gc->foreground);
+  if (angle2 >= FULL_ARC || angle2 <= -FULL_ARC) {
+    canvas_fill_ellipse(dpy->canvas, x, y, w > 0x7FFFFFFF ? 0x7FFFFFFF : (int)w,
+                        h > 0x7FFFFFFF ? 0x7FFFFFFF : (int)h,
+                        (uint16_t)gc->foreground);
+    return 0;
+  }
+  const int n = arc_point_count(w, h, angle2);
+  if (n < 2) return 0;
+  int stack_xy[2 * (ARC_STACK_POINTS + 1)];
+  int *xy = stack_xy;
+  if (n + 1 > ARC_STACK_POINTS + 1) {
+    xy = (int *)malloc((size_t)(n + 1) * 2 * sizeof(int));
+    if (!xy) return 0;
+  }
+  xy[0] = (int)lrintf((float)x + (float)w / 2.0f);
+  xy[1] = (int)lrintf((float)y + (float)h / 2.0f);
+  arc_points(x, y, w, h, angle1, angle2, xy + 2, n);
+  canvas_fill_polygon(dpy->canvas, xy, n + 1, (uint16_t)gc->foreground);
+  if (xy != stack_xy) free(xy);
   return 0;
 }
 

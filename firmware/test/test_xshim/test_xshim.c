@@ -11,6 +11,7 @@
 #include "fps.h"
 #include "screenhack.h"
 #include "utils.h"
+#include "x11shim/arc.h"
 #include "x11shim/xshim.h"
 #include "ximage-loader.h"
 
@@ -100,16 +101,12 @@ void test_draw_line_and_lines_connect_points(void) {
   XFreeGC(dpy, gc);
 }
 
-void test_fill_arc_full_circle_draws_partial_arc_does_not(void) {
+void test_fill_arc_full_circle_draws(void) {
   XGCValues v;
   v.foreground = 0xFFFF;
   GC gc = XCreateGC(dpy, win, GCForeground, &v);
   XFillArc(dpy, win, gc, 2, 2, 7, 7, 0, 360 * 64);
-  int full = count_set();
-  TEST_ASSERT_TRUE(full > 20);
-  XClearWindow(dpy, win);
-  XFillArc(dpy, win, gc, 2, 2, 7, 7, 0, 90 * 64);
-  TEST_ASSERT_EQUAL_INT(0, count_set());
+  TEST_ASSERT_TRUE(count_set() > 20);
   XFreeGC(dpy, gc);
 }
 
@@ -1271,6 +1268,163 @@ void test_draw_segments_wide_uses_caps_not_joins(void) {
   XFreeGC(dpy, gc);
 }
 
+static void reference_ellipse_check(int x, int y, unsigned w, unsigned h) {
+  const int n = arc_point_count(w, h, 360 * 64);
+  int *xy = (int *)malloc((size_t)n * 2 * sizeof(int));
+  TEST_ASSERT_EQUAL_INT(n, arc_points(x, y, w, h, 0, 360 * 64, xy, n));
+  const double cx = x + w / 2.0, cy = y + h / 2.0, rx = w / 2.0, ry = h / 2.0;
+  const double rmin = rx < ry ? rx : ry;
+  int worst_x100 = 0;
+  for (int i = 0; i < n; i++) {
+    const double u = (xy[2 * i] - cx) / rx, v = (xy[2 * i + 1] - cy) / ry;
+    const int off = (int)(fabs(sqrt(u * u + v * v) - 1.0) * rmin * 100);
+    if (off > worst_x100) worst_x100 = off;
+  }
+  free(xy);
+  TEST_ASSERT_TRUE_MESSAGE(worst_x100 <= 75, "a point is more than 0.75 px off the ellipse");
+}
+
+void test_arc_points_lie_within_a_pixel_of_the_ellipse(void) {
+  reference_ellipse_check(10, 10, 40, 40);
+  reference_ellipse_check(5, 5, 60, 30);
+  reference_ellipse_check(0, 0, 11, 25);
+}
+
+void test_arc_points_start_and_end_at_the_requested_angles(void) {
+  int xy[2 * 2048];
+  int n = arc_point_count(40, 40, 90 * 64);
+  TEST_ASSERT_TRUE(n >= 2 && n <= 2048);
+  TEST_ASSERT_EQUAL_INT(n, arc_points(10, 10, 40, 40, 90 * 64, 90 * 64, xy, n));
+  TEST_ASSERT_EQUAL_INT(30, xy[0]);
+  TEST_ASSERT_EQUAL_INT(10, xy[1]);
+  TEST_ASSERT_EQUAL_INT(10, xy[2 * (n - 1)]);
+  TEST_ASSERT_EQUAL_INT(30, xy[2 * (n - 1) + 1]);
+}
+
+void test_negative_angle2_runs_clockwise(void) {
+  int xy[2 * 2048];
+  int n = arc_point_count(40, 40, -90 * 64);
+  TEST_ASSERT_EQUAL_INT(n, arc_points(10, 10, 40, 40, 0, -90 * 64, xy, n));
+  TEST_ASSERT_EQUAL_INT(50, xy[0]);
+  TEST_ASSERT_EQUAL_INT(30, xy[1]);
+  TEST_ASSERT_EQUAL_INT(30, xy[2 * (n - 1)]);
+  TEST_ASSERT_EQUAL_INT(50, xy[2 * (n - 1) + 1]);
+}
+
+void test_angle2_above_360_degrees_is_a_full_ellipse(void) {
+  TEST_ASSERT_EQUAL_INT(arc_point_count(40, 40, 360 * 64), arc_point_count(40, 40, 720 * 64));
+  TEST_ASSERT_EQUAL_INT(arc_point_count(40, 40, 360 * 64), arc_point_count(40, 40, -720 * 64));
+  TEST_ASSERT_EQUAL_INT(0, arc_point_count(40, 40, 0));
+}
+
+void test_draw_arc_quarter_draws_only_that_quadrant(void) {
+  use_canvas(64);
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XDrawArc(dpy, win, gc, 10, 10, 40, 40, 0, 90 * 64);
+  TEST_ASSERT_TRUE(count_set() > 20);
+  for (int y = 0; y < 64; y++)
+    for (int x = 0; x < 64; x++)
+      if (at(x, y)) TEST_ASSERT_TRUE_MESSAGE(x >= 30 && y <= 30, "pixel outside the quadrant");
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(50, 30));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(30, 10));
+  XFreeGC(dpy, gc);
+}
+
+void test_draw_arc_full_ellipse_is_a_closed_outline(void) {
+  use_canvas(64);
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XDrawArc(dpy, win, gc, 10, 10, 40, 40, 0, 360 * 64);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(10, 30));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(50, 30));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(30, 10));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(30, 50));
+  TEST_ASSERT_EQUAL_HEX16(0, at(30, 30));
+  XFreeGC(dpy, gc);
+}
+
+void test_draw_arc_wide_uses_the_stroke_code(void) {
+  use_canvas(64);
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC thin = XCreateGC(dpy, win, GCForeground, &v);
+  XDrawArc(dpy, win, thin, 10, 10, 40, 40, 0, 360 * 64);
+  const int one = count_set();
+  use_canvas(64);
+  GC wide = wide_gc(3, CapButt, JoinRound);
+  XDrawArc(dpy, win, wide, 10, 10, 40, 40, 0, 360 * 64);
+  TEST_ASSERT_TRUE(count_set() > 2 * one);
+  XFreeGC(dpy, thin);
+  XFreeGC(dpy, wide);
+}
+
+void test_fill_arc_half_fills_a_half_disc(void) {
+  use_canvas(64);
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XFillArc(dpy, win, gc, 10, 10, 40, 40, 0, 180 * 64);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(30, 15));
+  TEST_ASSERT_EQUAL_HEX16(0, at(30, 45));
+  const int n = count_set();
+  TEST_ASSERT_TRUE_MESSAGE(n >= 565 && n <= 690, "about half of pi * 20 * 20");
+  XFreeGC(dpy, gc);
+}
+
+void test_fill_arc_full_still_matches_the_old_ellipse(void) {
+  use_canvas(64);
+  canvas_fill_ellipse(&cv, 10, 12, 31, 25, 0xFFFF);
+  uint16_t *want = snapshot();
+  use_canvas(64);
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XFillArc(dpy, win, gc, 10, 12, 31, 25, 0, 360 * 64);
+  TEST_ASSERT_EQUAL_MEMORY(want, cv.px, (size_t)64 * 64 * sizeof(uint16_t));
+  free(want);
+  XFreeGC(dpy, gc);
+}
+
+void test_zero_size_and_zero_sweep_arcs_draw_nothing_much(void) {
+  use_canvas(64);
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XDrawArc(dpy, win, gc, 20, 20, 0, 0, 0, 360 * 64);
+  XFillArc(dpy, win, gc, 20, 20, 0, 0, 0, 180 * 64);
+  XDrawArc(dpy, win, gc, 10, 10, 40, 40, 0, 0);
+  XFillArc(dpy, win, gc, 10, 10, 40, 40, 0, 0);
+  TEST_ASSERT_TRUE(count_set() <= 1);
+  XFreeGC(dpy, gc);
+}
+
+void test_huge_arcs_return_without_hanging_or_overflowing(void) {
+  use_canvas(64);
+  GC gc = wide_gc(3, CapRound, JoinRound);
+  XDrawArc(dpy, win, gc, -1000000, -1000000, 65535, 65535, 0, 360 * 64);
+  XDrawArc(dpy, win, gc, INT_MAX, INT_MAX, 65535, 65535, 0, 90 * 64);
+  XFillArc(dpy, win, gc, -1000000, -1000000, 65535, 65535, 0, 270 * 64);
+  XFillArc(dpy, win, gc, INT_MIN, INT_MIN, 65535, 65535, 0, 270 * 64);
+  XFreeGC(dpy, gc);
+}
+
+void test_fill_arc_quarter_is_a_pie_slice_including_the_centre(void) {
+  use_canvas(64);
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XFillArc(dpy, win, gc, 10, 10, 40, 40, 0, 90 * 64);
+  TEST_ASSERT_EQUAL_HEX16_MESSAGE(0xFFFF, at(32, 28), "near the centre, far from the chord");
+  TEST_ASSERT_EQUAL_HEX16(0, at(25, 28));
+  TEST_ASSERT_EQUAL_HEX16(0, at(32, 35));
+  const int n = count_set();
+  TEST_ASSERT_TRUE_MESSAGE(n >= 280 && n <= 350, "about a quarter of pi * 20 * 20");
+  XFreeGC(dpy, gc);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_image_data_to_pixmap_makes_a_colour_pixmap_and_a_mask);
@@ -1306,7 +1460,7 @@ int main(void) {
   RUN_TEST(test_get_window_attributes_reports_canvas_size);
   RUN_TEST(test_clear_window_uses_black_background);
   RUN_TEST(test_draw_line_and_lines_connect_points);
-  RUN_TEST(test_fill_arc_full_circle_draws_partial_arc_does_not);
+  RUN_TEST(test_fill_arc_full_circle_draws);
   RUN_TEST(test_fill_arcs_fills_each_full_arc_in_the_gc_colour);
   RUN_TEST(test_fill_polygon_fills_triangle);
   RUN_TEST(test_fill_polygon_draws_with_1000_points);
@@ -1371,5 +1525,17 @@ int main(void) {
   RUN_TEST(test_draw_segments_draws_each_segment_independently);
   RUN_TEST(test_draw_segments_with_zero_count_draws_nothing);
   RUN_TEST(test_draw_segments_wide_uses_caps_not_joins);
+  RUN_TEST(test_arc_points_lie_within_a_pixel_of_the_ellipse);
+  RUN_TEST(test_arc_points_start_and_end_at_the_requested_angles);
+  RUN_TEST(test_negative_angle2_runs_clockwise);
+  RUN_TEST(test_angle2_above_360_degrees_is_a_full_ellipse);
+  RUN_TEST(test_draw_arc_quarter_draws_only_that_quadrant);
+  RUN_TEST(test_draw_arc_full_ellipse_is_a_closed_outline);
+  RUN_TEST(test_draw_arc_wide_uses_the_stroke_code);
+  RUN_TEST(test_fill_arc_half_fills_a_half_disc);
+  RUN_TEST(test_fill_arc_quarter_is_a_pie_slice_including_the_centre);
+  RUN_TEST(test_fill_arc_full_still_matches_the_old_ellipse);
+  RUN_TEST(test_zero_size_and_zero_sweep_arcs_draw_nothing_much);
+  RUN_TEST(test_huge_arcs_return_without_hanging_or_overflowing);
   return UNITY_END();
 }
