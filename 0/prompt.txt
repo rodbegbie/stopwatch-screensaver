@@ -1,0 +1,5 @@
+This makes a lot of sense.  Regarding your questions:
+
+1. It sounds like multiple hacks set line width, so it's probably worth doing right.
+2. What's the cost of doing this?  Is it just implementation cost, or are you worried about performance or resource usage?
+3. Let's try extending and see how it goes!
