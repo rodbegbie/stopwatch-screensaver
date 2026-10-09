@@ -162,34 +162,40 @@ row-by-row push of the whole canvas took 46.8 ms and a row-by-row push of the
 inscribed circle took 38.7 ms, against 41.0 ms for one call.
 
 Issue #6 then sent only the rows a hack drew. The canvas keeps the leftmost and
-rightmost pixel written in each row, and the firmware pushes those spans in one
-`startWrite`, where a call costs about 5 microseconds instead of 16, or one
-full push when the rows would cost more. Steady readings on the device, with
-the rotation off (previous push 31 ms and 28-30 fps):
+rightmost pixel written in each row, and the planner pushes those spans, or one
+full push when that is cheaper. M5GFX keeps a framebuffer for this panel, and
+`endWrite` flushes one bounding box around everything written in the batch. So
+rows are grouped into batches by a cost model fitted to device probes, and rows
+far apart get their own: on Pyro, two corner pixels in one batch took 11.7 ms
+and 0.1 ms in separate ones, and 20 scattered rows of 40 pixels took 1.8 ms
+batched and 0.5 ms apart, while 20 adjacent rows took 0.2 ms batched. A first
+version that put every row in one batch left Squiral at 9.3 ms for 20 rows
+(thought at the time to be a floor between display updates; it was a flush box
+spanning the screen). Steady readings on the device with the grouped batches
+and the rotation off (previous push 31 ms and 28-30 fps):
 
 | Hack | push | fps | rows per frame |
 | --- | --- | --- | --- |
-| Pyro | 4.1-4.5 ms | 83 | 58-72 |
-| Squiral | 9.3-10.3 ms | 87 | 20 |
-| Lightning | 4.3-4.6 ms | 64 | 85-91 |
+| Pyro | 1.1-1.5 ms | 83 | 56-74 |
+| Squiral | 0.5 ms | 88 | 20-21 |
+| Lightning | 4.3-4.5 ms | 64 | 85-91 |
 | Maze | 0.5-4.3 ms | 6-29 | 24-76 |
-| HyperCube | 11.6-13.0 ms | 57-61 | 286-306 |
-| Blaster | 13.5 ms | 54 | 253 |
-| CloudLife | 27.7 ms | 26.6 | 464 |
+| HyperCube | 12.1-13.4 ms | 55-59 | 287-305 |
+| Blaster | 5.1-5.5 ms | 67 | 248-259 |
+| CloudLife | 27.7 ms | 26.4 | 464 |
 | Pedal | 19.6-33.9 ms | 0.2-0.4 | 348-495 |
 
-Maze, Lightning and Pyro are held back by their own delays, not the push.
-Substrate's early frames pushed in 1.7-6.8 ms (45 fps) and its later ones in
-6-10 ms. CloudLife and Pedal redraw nearly every row, so they gain little. The
-host estimates (a lower bound, since they counted only pixels that changed
-colour) were too low for hacks that redraw unchanged pixels: Blaster was
-estimated at 3.3 ms and took 13.5. Squiral pushes about 20 rows but takes
-10 ms each time; every push of 17-25 rows took 10.2-11.3 ms whatever the row
-count, which looks like a floor between display updates when frames come back
-to back. That has not been tested. Pyro's step stayed at 0.8 ms and
-Substrate's first readings at 2.8-3.0 ms, as before, so the marking costs
+Pedal's row is from the first version and was not repeated. Maze, Lightning and
+Pyro are held back by their own delays, not the push, and the fps column shows
+that for every hack that waits. Substrate's early frames pushed in 1.0-5.0 ms
+(44 fps) and its later ones in 3.7-6.4 ms as its picture filled. CloudLife and
+Pedal redraw nearly every row, so they gain little. The host estimates (a lower
+bound, since they counted only pixels that changed colour) were too low for
+hacks that redraw unchanged pixels. Pyro's step stayed at 0.7-0.9 ms and
+Substrate's first readings at 2.6-3.0 ms, as before, so the marking costs
 nothing visible on the hot path. Rod checked Maze, the name and fps labels and
-several hacks on the screen: correct colours, no stale pixels.
+several hacks on the screen with the first version; the grouped version needs
+the same look.
 
 Free heap and free PSRAM return to exactly the same values every time a
 hack is switched back to, so switching does not leak.
@@ -198,7 +204,7 @@ hack is switched back to, so switching does not leak.
 
 - A full push of the 434 KB canvas costs a steady 31 ms, but the firmware now
   sends only the rows a hack drew (issue #6), so the ceiling depends on the
-  hack: about 30 fps for hacks that redraw most of the screen, and 60-90 fps
+  hack: about 30 fps for hacks that redraw most of the screen, and 55-90 fps
   for sparse ones (see the table above).
 - A hack's delay is the pause after it draws, and the firmware credits only
   the 31 ms push against it. Hacks that ask for 10-20 ms therefore run at the
