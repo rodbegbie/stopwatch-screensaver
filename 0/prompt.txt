@@ -1,0 +1,1 @@
+Yeah, I like this plan.  Grab the icon and put it in the vendor folder for now.  Then I'll ask for it to be used spcifically in builds, rather than it being in the repo.
