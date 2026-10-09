@@ -1,0 +1,1 @@
+Eyeballing Maze, it's looking great.  Colours are correct, and the display is smooth and updating correctly.  Name label & FPS labels appear/disappear as expected. No display bugs that I can spot across different hacks. And the performance improvement is REAL!  Nice one!
