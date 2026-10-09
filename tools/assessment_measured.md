@@ -1,6 +1,6 @@
 ## Measured on the device
 
-Twenty-nine hacks have been run so far (default settings, 466×466 canvas
+Thirty-three hacks have been run so far (default settings, 466×466 canvas
 pushed to the display every frame, canvas held in PSRAM). The firmware times
 each frame in three parts, averaged over 5 seconds: **step** is the hack's own
 draw call, **push** is sending the canvas to the display, and **wait** is what
@@ -40,6 +40,10 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Substrate | 12.4-20.6 | 2.9-43.9 ms | 41.1-44.4 ms | 0 ms | about 1.74 MB |
 | Pacman | 75.6-79.2 | 1.3-1.9 ms | 0.8-1.4 ms | 10.0-10.6 ms | about 580 KB |
 | Braid | 3.2-8.6 | 95-296 ms | 19.5-22.7 ms | 0 ms | none measurable |
+| Mountain | 44.0-45.2 | 0-0.4 ms | 0.1-0.4 ms | 21.9-22.1 ms | about 20 KB |
+| Epicycle | 22.8-44.0 | 0.3-2.1 ms | 0.3-0.8 ms | 22.0-59.5 ms | none measurable |
+| Kaleidescope | 27.8-34.4 | 7.0-9.8 ms | 17.7-25.5 ms | 0-3.7 ms | none measurable |
+| Celtic | 1.0-20.4 | 29-1025 ms | 0.1-5.5 ms | 7.9-928 ms | none measurable |
 
 Maze's row is 26 five-second readings over 160 seconds, taken on a build that
 includes the overlay stamping. Its steps are cheap, and its frame rate is set
@@ -350,3 +354,32 @@ Free PSRAM was 7,417,507 bytes throughout, and free internal heap 325,196
 bytes (326,220 before the disc table, which takes 1 KB of static memory). No
 stack canary, panic or reboot appeared in any capture. Not measured: runs over
 three minutes, and Braid's restart on the device beyond the three braids seen.
+
+## Four ports that test the Speed bands
+
+Mountain, Epicycle, Kaleidescope and Celtic were ported to test the host Speed
+bands, which were fitted to the first 29 hacks. Predictions were committed
+before any port (`docs/speed-predictions.md`, which also has the verdicts),
+and each was flashed unmodified, pinned with the rotation off, for 180 seconds
+(29-35 five-second windows, the first dropped). Rod has not yet looked at
+them on the screen.
+
+- **Mountain** (low band, 0.0005 ms on the host): step median 0.1 ms, 0-0.4,
+  paced by its own 20 ms delay at 44-45 fps; it idles at 0.0 ms between
+  pictures. It takes about 20 KB of PSRAM (7,404,051 free against 7,424,155).
+- **Epicycle** (low band, 0.0009 ms, 31 `double`s): step median 0.4 ms, 0.3-2.1,
+  with two of 34 windows over 1.4 ms (1.5 and 2.1 ms; the other 32 are 0.3-0.8
+  ms), probably the windows holding a restart. Free heap 327,220-327,612.
+- **Kaleidescope** (high band, 0.0695 ms): step median 8.3 ms, 7.0-9.8, at
+  27.8-34.4 fps with a 17.7-25.5 ms push. Free heap sat at 219,416-219,556 bytes,
+  about 105 KB below an idle build, with PSRAM untouched.
+- **Celtic** (high band, 1.12 ms, 42 `double`s, wide round-capped lines):
+  step median 832 ms, 29-1,025, at about 1.2 fps. Its `assert()` calls
+  `abort()` on a failed allocation, and a picture's memory depends on the
+  pattern: the first held about 300 KB of the 325 KB of free internal heap
+  (free heap read 25,684 bytes), the next two 232,436 and 247,516, and it
+  returned to 328,556 between pictures. Nothing aborted, but the first picture
+  left little margin.
+
+None showed a stack canary, panic or reboot, and free PSRAM was constant
+within each run (Mountain's 20 KB is its offset from the idle figure).

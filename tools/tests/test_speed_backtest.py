@@ -68,8 +68,46 @@ def test_the_table_is_slowest_first_with_the_ratio():
     )
     table = sb.render_table(rows).splitlines()
     assert table[0].startswith("| Hack |")
-    assert table[2].startswith("| pedal | 1.100 | high | 126-519 | ")
-    assert table[3].startswith("| pyro | 0.005 | low | 0.8-1.1 | ")
+    assert table[2].startswith("| pedal | fitted | 1.100 | high | 126-519 | ")
+    assert table[3].startswith("| pyro | fitted | 0.005 | low | 0.8-1.1 | ")
+
+
+def test_a_held_out_hack_is_marked_in_the_table():
+    rows = sb.join_rows(["pyro"], {"pyro": 0.005}, {"pyro": (0.8, 1.1)})
+    table = sb.render_table(rows, holdout={"pyro"}).splitlines()
+    assert table[2].startswith("| pyro | held out | 0.005 | low | ")
+
+
+def _rows():
+    def full(name, host_ms, device, band):
+        return {**row(name, host_ms, device, device), "device_mid": float(device),
+                "band": band, "ratio": device / host_ms}
+
+    return [
+        full("a", 0.001, 1, "low"),
+        full("b", 0.002, 2, "low"),
+        full("c", 1.0, 300, "high"),
+        full("miss", 0.0005, 900, "low"),
+        full("fine", 0.07, 8, "high"),
+    ]
+
+
+def test_the_fit_figures_leave_the_held_out_hacks_out():
+    text = sb.render(_rows(), holdout={"miss", "fine"})
+    result = " ".join(text.split("## Result")[1].split("## Out of sample")[0].split())
+    assert "correlation of 1.00." in result
+    assert "slowest hack in the low band took 2.0 ms" in result
+
+
+def test_the_held_out_hacks_get_their_own_section_with_the_misses():
+    text = sb.render(_rows(), holdout={"miss", "fine"})
+    held = " ".join(text.split("## Out of sample")[1].split("## Table")[0].split())
+    assert "Missed: miss." in held
+    assert "High band but under 50 ms on the device: fine." in held
+
+
+def test_there_is_no_held_out_section_without_held_out_hacks():
+    assert "## Out of sample" not in sb.render(_rows(), holdout=frozenset())
 
 
 def _script(tmp_path, body):

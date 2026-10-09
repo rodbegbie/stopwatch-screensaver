@@ -55,14 +55,17 @@ shim fills them and its Speed is a dash.
 
 A ported hack shows the step measured on the device instead.
 
-The host time ranks the device step well (a Spearman correlation of 0.89 over
-the hacks measured, and all seven with a device step of 50 ms or more are in
-the high band) but it is not a prediction in milliseconds: the device took
-60 to 1,500 times as long. The ratio is highest for hacks that still do
-software double-precision maths, so a low band does not clear a hack that
-does a lot of `double` arithmetic. The bands were fitted to the same hacks, so
-those figures are in-sample. See [speed-backtest.md](speed-backtest.md) for
-the table and its limits.
+The host time ranks the device step well (a Spearman correlation of about 0.9
+over the 29 hacks the bands were fitted to, and all seven of those with a
+device step of 50 ms or more are in the high band) but it is not a prediction
+in milliseconds: the device took 60 to 1,500 times as long. The ratio is
+highest for hacks that still do software double-precision maths, so a low band
+does not clear a hack that does a lot of `double` arithmetic. Those figures
+are in-sample. Four hacks ported afterwards, with their predictions committed
+first, all fell where predicted: two low-band hacks under 1 ms, a high-band
+hack at 8 ms and a heavy one at 830 ms
+([speed-predictions.md](speed-predictions.md)). See
+[speed-backtest.md](speed-backtest.md) for the table and its limits.
 
 ## Flags
 

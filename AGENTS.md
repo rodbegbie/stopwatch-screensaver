@@ -153,7 +153,10 @@ hack, and holds a recipe per trap. The steps:
 6. Regenerate the assessment and add measurements to
    `tools/assessment_measured.md`, then re-run the speed backtest: each port
    adds a point to the check of the Speed bands, which were fitted to the first
-   29 hacks and so are untested on new ones.
+   29 hacks. To make a port a real test, commit its host time and predicted
+   range first (`docs/speed-predictions.md` shows the form), flash it as copied,
+   and add its name to `HOLDOUT` in `tools/speed_backtest.py`. The first four
+   (Mountain, Epicycle, Kaleidescope, Celtic) all fell where predicted.
 7. If a hack is slow and `double`-heavy (many `double`s, `sqrt`, `sin`/`cos`,
    `pow`), try a single-precision wrapper like `hacks/galaxy_single.c` (for a
    plain screenhack, `hacks/substrate_single.c`; the recipe is in the skill's
@@ -362,11 +365,14 @@ hack, and holds a recipe per trap. The steps:
 - `score_hacks.py` rates effort by call sites, not loop trips: Flame (all
   `double` maths) is rated S but runs at 2-7 fps, and Braid was rated S and
   runs at 3-9 fps. The Speed column runs the hack on the host instead and ranks
-  the device step well (Spearman 0.89 over the 29 measured hacks), but a low
-  band does not clear a hack that does software `double` maths: the device ran
-  60-1,500 times the host time, most for the double-bound ones. Measure on the
-  device, and read `docs/speed-backtest.md` before trusting a band. A hack
-  with gaps (M and above) cannot be built, so it has no Speed.
+  the device step well (Spearman about 0.9 over the 29 hacks it was fitted to,
+  and four more ported since fell where predicted), but a low band does not
+  clear a hack that does software `double` maths: the device ran 60-1,500
+  times the host time, most for the double-bound ones. It says nothing about
+  memory: Celtic held about 300 KB of the 325 KB of free heap and its
+  `assert()` aborts on a failed allocation. Measure on the device, and read
+  `docs/speed-backtest.md` before trusting a band. A hack with gaps (M and
+  above) cannot be built, so it has no Speed.
 - `pio test` runs every registered hack for 3000 frames under ASan (about 15 s);
   a hack that is slow on the host slows the whole suite.
 - Host leak tests: LeakSanitizer does not run on macOS, so compare
