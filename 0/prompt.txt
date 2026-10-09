@@ -1,0 +1,1 @@
+Let's do some performance work.  Issues #6 and #23 are good places to start, since they could potentially improve perf for many (all?) of the hacks.
