@@ -14,7 +14,9 @@ embedded-specific choices as you make them. See `README.md` for setup and
 
 ## Layout
 
-- `firmware/src/core/`: RGB565 `Canvas` and clipped drawing primitives (C).
+- `firmware/src/core/`: RGB565 `Canvas` and clipped drawing primitives, which
+  also record the dirty span of each row, and `push_plan` (C), which decides
+  what to send the display.
 - `firmware/src/x11shim/`: Xlib look-alike drawing into the canvas, resource
   lookups from each hack's defaults table, and `include/` stand-ins for
   xscreensaver's `screenhack.h`, `utils.h`, `hsv.h`, `erase.h`, `colors.h`.
@@ -103,6 +105,10 @@ Set `NO_COLOR=1` on `pio` output you parse.
   with the runner broken (Pyro clears its own window), and "20 non-black
   pixels" passed on Substrate's white canvas before it drew. Test shared
   behaviour with stub hacks, and compare with the canvas the hack started on.
+  Counting distinct colours could not see a consistent byte swap (a swap maps
+  colours one to one): pin a hash of the frame instead, taken from a build you
+  trust, and call `srandom(1)` first, because `random()` carries over between
+  tests.
 - Changing what every hack sees (the runner, a default, a shared helper) is not
   filling a shim gap: ask Rod first.
 - Verify a delegated port yourself: `cmp` the hack, run the full suite, build
@@ -147,7 +153,9 @@ hack, and holds a recipe per trap. The steps:
 - `entire trail create --title ... --type feature --body ...` pushes the branch
   and opens a linked DRAFT PR. The PR body is not synced from the trail: update
   both (`entire trail update --body`, `gh pr edit N --body-file`). Put
-  `Fixes #N` in the body.
+  `Fixes #N` in the body, then read the PR back (`gh pr view N --json body`):
+  #27 merged with the generic body, so `Fixes #23` never reached GitHub and
+  the issue stayed open until it was closed by hand.
 - Rod approves and merges (merge commit). Afterwards delete the merged branch
   (remote and local) without asking and fast-forward `main`. Confirm the merge
   after a fresh `git fetch`: a stale `origin/main` says "not merged". Remove
@@ -171,7 +179,7 @@ hack, and holds a recipe per trap. The steps:
 - Stacked PR: `entire trail create --base <parent-branch>`. When the parent
   merges, `gh pr edit N --base main` before deleting its branch, then
   `git rebase --onto origin/main <old parent tip>`. The rebased push needs
-  `--force-with-lease`: ask Rod first.
+  `--force-with-lease` (ask Rod first), unless the branch was never pushed.
 - `docs/porting-assessment.md` conflicts on rebase: `git checkout --theirs`
   it to continue, then rerun `tools/score_hacks.py` and amend the result in.
 - Two ports in flight both append to `g_hacks[]`, so whichever merges second
@@ -285,7 +293,11 @@ hack, and holds a recipe per trap. The steps:
   image, shrunk to fit 50 px, without committing it: `firmware/logo_override.py`
   writes the header into the build dir, where `maze_patched.c` finds it
   before the committed one. Unset, it deletes that header. Needs `uv`. A
-  third-party logo kept under `vendor/` stays out of git that way.
+  third-party logo kept under `vendor/` stays out of git that way. The WorkOS
+  icon is `vendor/workos/workos-icon-256.png`. A plain flash with it is
+  `unset PLATFORMIO_BUILD_FLAGS` then `XS_LOGO=vendor/workos/workos-icon-256.png
+  pio run -e stopwatch -t upload`: build flags stick, so a leftover pin from
+  an earlier probe would survive. The logo shows in Maze only.
 - Maze fills the whole 466 by 466 square, so its corners and the exit marker
   fall outside the round display's visible circle.
 - `check_notices.py` reads 100 lines of header: Maze's licence follows a long
@@ -319,7 +331,9 @@ hack, and holds a recipe per trap. The steps:
   chains with a computed path). A worktree an agent works in (`isolation:
   "worktree"`) starts from `origin/main`, not from your branch, and has no
   vendor or toolchain until you link them.
-- zsh does not word-split `$var`: loop over file lists with `bash -c`.
+- zsh does not word-split `$var`: loop over file lists with `bash -c`. It also
+  stops on a glob that matches nothing, so quote `--include='*.c'`, and
+  `grep` needs `-e` for a pattern that starts with a dash (`-e '->px'`).
 - jwz.org returns 403 to Python's default User-Agent.
 - `esptool` reads of the 16 MB flash need `--baud 921600` (about 3.5 minutes)
   and show no progress when piped.
@@ -329,6 +343,8 @@ hack, and holds a recipe per trap. The steps:
   pixels under it are restored. Drawing on the display after `pushImage`
   flickered badly, because the next push erases it. The canvas must end each
   frame exactly as the hack left it.
+- Read `push=` from a hack's second 5 s window on: the name overlay is stamped
+  inside the push timing while it shows, so the first window reads high.
 - Leak-testing with `-DROTATE_SECONDS=5`: internal heap falls about 26 KB
   during the first lap and then stays flat. Compare lap 2 with lap 3, not
   with lap 1. PSRAM should match exactly on every visit.
