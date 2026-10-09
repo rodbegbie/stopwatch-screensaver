@@ -84,6 +84,37 @@
         "label": "Skill: superpowers:using-git-worktrees",
         "default_collapsed": true
       }
+    },
+    {
+      "id": "claude-skill-toolu_01B9wbkE3towfjJtwMJzCsMf",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "1b5c7ac8f0f6",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 1533,
+        "end": 1534,
+        "entry_ids": [
+          "29c1730b-3a5d-468b-abfd-beb4be7f1e2a"
+        ],
+        "tool_use_id": "toolu_01B9wbkE3towfjJtwMJzCsMf"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01B9wbkE3towfjJtwMJzCsMf"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
     }
   ],
   "session_metrics": {
