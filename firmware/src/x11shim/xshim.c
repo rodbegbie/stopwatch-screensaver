@@ -149,6 +149,12 @@ int XDrawLines(Display *dpy, Drawable d, GC gc, XPoint *pts, int n, int mode) {
   return 0;
 }
 
+int XDrawSegments(Display *dpy, Drawable d, GC gc, XSegment *segs, int n) {
+  for (int i = 0; i < n; i++)
+    XDrawLine(dpy, d, gc, segs[i].x1, segs[i].y1, segs[i].x2, segs[i].y2);
+  return 0;
+}
+
 int XFillRectangle(Display *dpy, Drawable d, GC gc, int x, int y,
                    unsigned int w, unsigned int h) {
   (void)d;

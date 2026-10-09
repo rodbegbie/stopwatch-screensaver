@@ -1238,6 +1238,39 @@ void test_width_0_and_1_polyline_and_rectangle_match_the_old_ones(void) {
   }
 }
 
+void test_draw_segments_draws_each_segment_independently(void) {
+  use_canvas(64);
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XSegment segs[] = {{5, 5, 15, 5}, {5, 10, 5, 20}};
+  XDrawSegments(dpy, win, gc, segs, 2);
+  TEST_ASSERT_EQUAL_INT(22, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(15, 5));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(5, 20));
+  XFreeGC(dpy, gc);
+}
+
+void test_draw_segments_with_zero_count_draws_nothing(void) {
+  use_canvas(64);
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XDrawSegments(dpy, win, gc, NULL, 0);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XFreeGC(dpy, gc);
+}
+
+void test_draw_segments_wide_uses_caps_not_joins(void) {
+  use_canvas(64);
+  GC gc = wide_gc(4, CapButt, JoinMiter);
+  XSegment segs[] = {{10, 30, 30, 30}, {30, 30, 30, 10}};
+  XDrawSegments(dpy, win, gc, segs, 2);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(29, 29));
+  TEST_ASSERT_EQUAL_HEX16_MESSAGE(0, at(31, 31), "no join between separate segments");
+  XFreeGC(dpy, gc);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_image_data_to_pixmap_makes_a_colour_pixmap_and_a_mask);
@@ -1335,5 +1368,8 @@ int main(void) {
   RUN_TEST(test_collinear_points_draw_the_same_as_one_segment);
   RUN_TEST(test_draw_rectangle_wide_has_mitered_corners);
   RUN_TEST(test_width_0_and_1_polyline_and_rectangle_match_the_old_ones);
+  RUN_TEST(test_draw_segments_draws_each_segment_independently);
+  RUN_TEST(test_draw_segments_with_zero_count_draws_nothing);
+  RUN_TEST(test_draw_segments_wide_uses_caps_not_joins);
   return UNITY_END();
 }

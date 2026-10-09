@@ -83,6 +83,10 @@ typedef struct {
   short angle1, angle2;
 } XArc;
 
+typedef struct {
+  short x1, y1, x2, y2;
+} XSegment;
+
 typedef union {
   int type;
   struct {
@@ -161,6 +165,8 @@ int XDrawLine(Display *, Drawable, GC, int x1, int y1, int x2, int y2);
 int XDrawRectangle(Display *, Drawable, GC, int x, int y, unsigned int w,
                    unsigned int h);
 int XDrawLines(Display *, Drawable, GC, XPoint *pts, int n, int mode);
+/* Each segment is drawn on its own, with the GC's caps and no joins. */
+int XDrawSegments(Display *, Drawable, GC, XSegment *segs, int n);
 int XFillRectangle(Display *, Drawable, GC, int x, int y, unsigned int w,
                    unsigned int h);
 int XFillRectangles(Display *, Drawable, GC, XRectangle *rects, int n);
