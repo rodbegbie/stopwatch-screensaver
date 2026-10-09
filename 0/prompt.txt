@@ -1,0 +1,3 @@
+The logo shows, but I think the colours are wrong.  The flame is blue, but it's red in the original image.
+
+For the line colours, the successful history is red, the backtracked history is purple, and the blocked areas are green. Is that what you'd expect?
