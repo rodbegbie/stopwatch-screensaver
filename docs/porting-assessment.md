@@ -30,11 +30,11 @@ it with `uv run tools/score_hacks.py`.
 
 | Rating | Meaning | Count |
 | --- | --- | --- |
-| S | 2D, and the unmodified source compiles against the shim | 22 |
+| S | 2D, and the unmodified source compiles against the shim | 21 |
 | M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 13 |
 | L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 80 |
 | XL | GL: needs a software rasteriser (see below) | 140 |
-| Ported | Already running on the device, so no rating | 28 |
+| Ported | Already running on the device, so no rating | 29 |
 
 ## Flags
 
@@ -382,7 +382,6 @@ needing few additions come first.
 | --- | --- | --- | --- | --- | --- | --- |
 | anemone | 2d | S | - | - | pixmaps | 458 |
 | anemotaxis | 2d | S | - | - | pixmaps | 760 |
-| braid | 2d | S | - | - | needs-xlockmore | 444 |
 | celtic | 2d | S | - | - | - | 1141 |
 | compass | 2d | S | - | - | pixmaps, float-heavy | 999 |
 | epicycle | 2d | S | - | - | - | 803 |
@@ -636,6 +635,7 @@ needing few additions come first.
 | worldpieces | gl | XL | - | `XDestroyImage` | float-heavy, needs-xlockmore | 2194 |
 | xshadertoy | gl | XL | - | `XFetchName`, `XStoreName` | needs-xlockmore | 1192 |
 | blaster | 2d | - | ✅ | - | - | 1208 |
+| braid | 2d | - | ✅ | - | needs-xlockmore | 444 |
 | cloudlife | 2d | - | ✅ | - | - | 440 |
 | coral | 2d | - | ✅ | - | - | 328 |
 | critical | 2d | - | ✅ | - | - | 462 |
