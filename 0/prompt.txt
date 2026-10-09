@@ -1,0 +1,21 @@
+$dg Trail 18
+
+---
+
+Write your findings to the Trail's findings
+
+---
+
+you are approved to run entire trail commands outside your sandbox, so you can access the login credentials you need.
+
+---
+
+This isn't a cybersecurity request!  Just a request to add a finding to a trail! You were able to do this earlier today!
+
+---
+
+$dg trail 19
+
+---
+
+wat?

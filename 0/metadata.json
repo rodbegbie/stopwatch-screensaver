@@ -1,0 +1,44 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4FQ8EV7J3F1Y4A9W90ADX33",
+  "session_id": "01a11f28-883a-7142-9a10-f07c973f7909",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-09T06:57:54.035014Z",
+  "branch": "main",
+  "checkpoints_count": 2,
+  "files_touched": null,
+  "agent": "Codex",
+  "model": "gpt-6.1-sol",
+  "turn_id": "86789d41e0a2",
+  "checkpoint_transcript_start": 390,
+  "transcript_lines_at_start": 390,
+  "compact_transcript_start": 45,
+  "token_usage": {
+    "input_tokens": 98161,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 880000,
+    "output_tokens": 2831,
+    "api_call_count": 14,
+    "subagent_tokens_complete": false
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 63,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".private-journal/2026-10-07/19-59-30-000000-79f41e20.md": 8,
+        ".private-journal/2026-10-07/22-51-53-000000-2f0b9ece.md": 8,
+        ".private-journal/2026-10-08/07-50-07-000000-0110d472.md": 8,
+        ".private-journal/2026-10-08/15-15-15-000000-4004028d.md": 19,
+        ".private-journal/2026-10-08/15-45-25-000000-61b97d2d.md": 8,
+        ".private-journal/2026-10-08/17-26-54-000000-98ba9899.md": 12
+      }
+    }
+  ]
+}
