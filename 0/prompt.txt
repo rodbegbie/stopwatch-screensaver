@@ -1,0 +1,1 @@
+I've committed that .agents folder. It's just for other non-Claude agents to help them find the skills.  OK, before we wrap up for now, can you revise AGENTS.md with the revise-claude-md skill?
