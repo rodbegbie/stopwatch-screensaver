@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>blwxg4g43</task-id>
+<tool-use-id>toolu_012d43KrrMomqA7CizDNNYLZ</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/437dd4b5-5204-45dd-b066-462ffcce9ff7/tasks/blwxg4g43.output</output-file>
+<status>completed</status>
+<summary>Background command "Capture 75 seconds of serial in background" completed (exit code 0)</summary>
+</task-notification>
