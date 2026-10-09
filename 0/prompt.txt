@@ -1,0 +1,1 @@
+When you create a trail with a branch, Entire automatically creates a linked PR.  Let's push the first branch, work through its trail, then once it's merged rebase the sceond branch on top of main and go through the trail/PR cycle again for it.
