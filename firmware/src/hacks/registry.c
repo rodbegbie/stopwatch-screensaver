@@ -41,6 +41,7 @@ XLOCKMORE_HACK(drift, "Drift");
 XLOCKMORE_HACK(lightning, "Lightning");
 XLOCKMORE_HACK(pacman, "Pacman");
 XLOCKMORE_HACK(braid, "Braid");
+XLOCKMORE_HACK(mountain, "Mountain");
 extern const HackEntry substrate_hack;
 
 const HackEntry *const g_hacks[] = {
@@ -62,5 +63,6 @@ const HackEntry *const g_hacks[] = {
     &blaster_hack,
     &substrate_hack,
     &pacman_hack,
-    &braid_hack};
+    &braid_hack,
+    &mountain_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);

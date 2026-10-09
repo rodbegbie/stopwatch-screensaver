@@ -46,7 +46,8 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Blaster",
                                          "Substrate",
                                          "Pacman",
-                                         "Braid"};
+                                         "Braid",
+                                         "Mountain"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -352,6 +353,7 @@ static const uint64_t kBaseline[] = {
     0xb90b3ccdac009a41ull, /* Substrate */
     0x30f53883f531c363ull, /* Pacman: taken on its own branch, after looking at the frames */
     0x9b6e044ecec355d5ull, /* Braid: taken after looking at the frames */
+    0x8ce46510f0e0360cull, /* Mountain: taken after looking at the frames */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -468,16 +470,16 @@ void test_pacman_start_and_stop_do_not_leak(void) {
   TEST_ASSERT_TRUE_MESSAGE(after < before + 512, "allocated bytes grew");
 }
 
-/* Braid starts a new braid every `cycles` frames (100 by default) by calling
- * its init again, and its state belongs to xlockmore's MI_INIT. With `cycles: 1`
- * it restarts on every frame, so this catches a restart that allocates, and
- * start and stop catches state the framework fails to free. */
-void test_braid_restarts_and_stops_do_not_leak(void) {
-  const int braid = index_of("Braid");
-  TEST_ASSERT_TRUE(braid >= 0);
+/* An xlockmore hack starts a new picture every `cycles` frames by calling its
+ * init again, and its state belongs to xlockmore's MI_INIT. With `cycles: 1` it
+ * restarts on every frame, so this catches a restart that allocates, and start
+ * and stop catches state the framework fails to free. */
+static void check_restarts_and_stops_do_not_leak(const char *name) {
+  const int hack = index_of(name);
+  TEST_ASSERT_TRUE_MESSAGE(hack >= 0, name);
 
   const char *merged[2] = {"*cycles: 1", NULL};
-  HackEntry fast = *g_hacks[braid];
+  HackEntry fast = *g_hacks[hack];
   fast.overrides = merged;
   const HackEntry *const hacks[] = {&fast};
   HackRunner *fr = runner_create_with(&cv, hacks, 1);
@@ -492,17 +494,25 @@ void test_braid_restarts_and_stops_do_not_leak(void) {
 
   HackRunner *r = runner_create(&cv);
   for (int i = 0; i < 3; i++) {
-    runner_start(r, braid);
+    runner_start(r, hack);
     runner_step(r);
   }
   const size_t before = __sanitizer_get_current_allocated_bytes();
   for (int i = 0; i < 40; i++) {
-    runner_start(r, braid);
+    runner_start(r, hack);
     runner_step(r);
   }
   const size_t after = __sanitizer_get_current_allocated_bytes();
   runner_destroy(r);
   TEST_ASSERT_TRUE_MESSAGE(after < before + 512, "allocated bytes grew over start and stop");
+}
+
+void test_braid_restarts_and_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Braid");
+}
+
+void test_mountain_restarts_and_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Mountain");
 }
 
 /* Braid calls sin and cos for every segment, and the S3's libm does them in
@@ -580,6 +590,7 @@ int main(void) {
   RUN_TEST(test_pacman_stays_within_the_loop_task_stack);
   RUN_TEST(test_pacman_ghosts_take_the_same_routes_home);
   RUN_TEST(test_braid_restarts_and_stops_do_not_leak);
+  RUN_TEST(test_mountain_restarts_and_stops_do_not_leak);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
   return UNITY_END();
