@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4FJS3TGX0YF625EDR7V08JG",
+  "strategy": "manual-commit",
+  "branch": "feature/pacman",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/src/x11shim/include/screenhackI.h",
+    "firmware/src/x11shim/pixmap.c",
+    "firmware/src/x11shim/pixmap.h",
+    "firmware/src/x11shim/xshim.c",
+    "firmware/src/x11shim/xshim.h",
+    "firmware/test/test_xshim/test_xshim.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 75503,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2037120,
+    "output_tokens": 3811,
+    "api_call_count": 30,
+    "subagent_tokens_complete": false
+  }
+}
