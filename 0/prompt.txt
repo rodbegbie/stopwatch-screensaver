@@ -1,0 +1,1 @@
+Cool.  OK, the next hack I'd like to try porting is `pacman`.  What do you think about taking that on?
