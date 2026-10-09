@@ -25,7 +25,8 @@ embedded-specific choices as you make them. See `README.md` for setup and
 - `firmware/src/xs_support/`: other copied xscreensaver files (`hsv.c`).
 - `firmware/src/runner/` and `main.cpp`: start, step and switch hacks; the
   device loop. `firmware/native/dump_main.c` renders frames on the Mac.
-- `tools/`: fetch, notices check, assessment scorer, PNG converter (Python).
+- `tools/`: fetch, notices check, assessment scorer, PNG converter, build-time
+  patches (`maze_patch.py`, `pacman_patch.py`, `float_literals.py`) (Python).
   `tools/failed_ports.txt` lists abandoned ports (`name: reason`); the scorer
   marks them ❌, and ✅ comes from `g_hacks[]` in `registry.c`.
 - `.claude/skills/port-hack/`: the order of work for porting a hack, and a
@@ -295,8 +296,24 @@ hack, and holds a recipe per trap. The steps:
 - Wide lines (`line_width` above 1), arcs and pixmap writes live in
   `x11shim/stroke.c`, `arc.c` and `pixmap.c`. Width 0 and 1 keep the old
   `canvas_line` path, so hacks that set no wide width are pixel-identical (every
-  hack's frame is pinned in `test_hacks.c`). No registered hack draws a wide
-  line yet: Maze's width 2 is under `HAVE_JWXYZ`.
+  hack's frame is pinned in `test_hacks.c`). Braid is the one registered hack
+  that draws wide lines (random width 1-7; Maze's width 2 is under
+  `HAVE_JWXYZ`). A round-capped segment draws a disc at each end, so
+  `stroke.c` keeps each width's rows in a table (widths to 16) rather than
+  calling `canvas_fill_ellipse`, whose `double` maths is software on the S3. A
+  test pins the pixels to `canvas_fill_ellipse`.
+- `single_precision.h` renames the keyword `double`, not literals: `0.5 * x`
+  is still software double. Braid's wrapper includes a copy of the hack with
+  every decimal literal suffixed `f`, written at build time by
+  `firmware/patch_float_literals.py` (`tools/float_literals.py`). Check a
+  wrapper's object for `__muldf3` and friends with `xtensa-esp32s3-elf-nm`.
+  The older wrappers (Galaxy, Drift, Discrete, Flame, Substrate) have not been
+  checked.
+- Braid runs at 3-9 fps (0.8-2 before four rounds of work): it redraws every
+  segment of the braid each frame to spin the colours. A host profile put its
+  disc fill at 6% and the board spent most of its time there, because the Mac
+  does `double` at full speed. Split a slow hack's step on the device with a
+  temporary flag that returns early from the expensive call.
 - Host tests cannot prove the 16 KB loop stack: `ulimit -s` sees only the
   shallow first level of a random recursion, and AddressSanitizer inflates
   frames. Use `stack_used_by` in `test_hacks.c` (a painted pthread stack) and,

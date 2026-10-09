@@ -37,11 +37,48 @@ The ESP32-S3 has a single-precision FPU only, so double runs in software.
   `build_src_filter` of all three environments.
 - `M_PI` is a double literal, so the angle arithmetic stays double: put
   `#undef M_PI` and a float definition after the header. Literals such as
-  `0.81` stay double, and a header cannot change them.
+  `0.81` stay double too, and a header cannot change them: `0.5 * x` with a
+  float `x` is software double maths. Check the wrapper's object for soft-double
+  helpers with `xtensa-esp32s3-elf-nm braid.o | grep ' U __.*df'` (compile with
+  `-Os -mlongcalls` and the shim's include paths). If any remain, rewrite the
+  literals at build time as Braid does: `tools/float_literals.py` (tested, skips
+  strings and comments) run by `firmware/patch_float_literals.py`, and the
+  wrapper includes `<name>_floatlit.c` from the build directory. GCC's
+  `-fsingle-precision-constant` does the same, but Apple clang ignores it, so
+  host tests would run other arithmetic than the board.
+- Galaxy, Drift, Discrete, Flame and Substrate were wrapped before this check
+  and have not been looked at for double literals.
+- Hand-written `sin` and `cos` (`hacks/fast_trig.h`) moved Braid by 5%. Do the
+  literals first.
 - Compare double and float frames at several counts. Early frames match; a
   chaotic hack diverges later but should keep its look.
 - Results: Galaxy 5 to 14 fps. Substrate step 119-121 ms to 37-38 ms, 6.2 to
   12.5 fps.
+
+## Slow hack
+
+When: a ported hack runs under about 10 fps and the push is not the cause
+(`step` in the serial line is large).
+
+- Do not trust a host profile (`sample` on the dump program) for where the
+  time goes. A Mac does `double` at full speed, so software-double code looks
+  cheap there: Braid's disc fill was 6% on the host and the largest cost on the
+  board.
+- Split the step on the device with a temporary build flag that makes the
+  expensive call return at once (Braid: `XDrawLine`). The step left is the
+  hack's own cost; the difference is the drawing. Remove the flag before
+  committing.
+- Count what is called per frame (segments, calls, rows) before guessing,
+  and look at the object file for soft-double helpers (see "Single precision").
+- Change one thing, pin that the pixels did not move (`cmp` frames at several
+  counts, or the pinned hash), flash, and compare second windows. Braid's four
+  changes were worth 2.7-3.2 times, 1.05, and 1.3.
+- Wide lines (`line_width` above 1) are the costly path: a quad filled a row at
+  a time, plus two discs for round caps. `stroke.c` keeps a table of disc rows
+  by width up to 16.
+- A hack that redraws its whole picture every frame to animate colour (Braid)
+  costs its full draw each frame whatever the push does. Check this before
+  porting; the scorer does not flag it yet.
 
 ## Stack check
 
