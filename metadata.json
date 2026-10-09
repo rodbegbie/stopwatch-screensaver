@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4FJYEG7Y4HESFVQQ4HCY237",
+  "strategy": "manual-commit",
+  "branch": "feature/pacman",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "THIRD_PARTY_NOTICES.md",
+    "firmware/pacman_sprites.py",
+    "firmware/platformio.ini",
+    "firmware/src/hacks/pacman/pacman.c",
+    "firmware/src/hacks/pacman/pacman.h",
+    "firmware/src/hacks/pacman/pacman_ai.c",
+    "firmware/src/hacks/pacman/pacman_ai.h",
+    "firmware/src/hacks/pacman/pacman_level.c",
+    "firmware/src/hacks/pacman/pacman_level.h",
+    "firmware/src/hacks/registry.c",
+    "firmware/test/test_hacks/test_hacks.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 7847,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1037440,
+    "output_tokens": 3250,
+    "api_call_count": 13,
+    "subagent_tokens_complete": false
+  }
+}
