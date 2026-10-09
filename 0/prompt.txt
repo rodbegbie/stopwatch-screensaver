@@ -1,0 +1,1 @@
+Reflash the device with a build from main, which uses the WorkOS icon in the vendor folder as the logo
