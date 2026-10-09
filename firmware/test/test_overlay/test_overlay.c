@@ -35,18 +35,76 @@ void test_the_name_time_survives_the_millisecond_counter_wrapping(void) {
   TEST_ASSERT_FALSE(overlay_name_visible(&ov, 4000));
 }
 
-void test_fps_starts_off_and_a_tap_toggles_it(void) {
+void test_info_starts_as_nothing_and_taps_cycle_fps_battery_nothing(void) {
   TEST_ASSERT_FALSE(overlay_fps_visible(&ov));
-  overlay_toggle_fps(&ov);
+  TEST_ASSERT_FALSE(overlay_battery_visible(&ov));
+  overlay_cycle_info(&ov);
   TEST_ASSERT_TRUE(overlay_fps_visible(&ov));
-  overlay_toggle_fps(&ov);
+  TEST_ASSERT_FALSE(overlay_battery_visible(&ov));
+  overlay_cycle_info(&ov);
   TEST_ASSERT_FALSE(overlay_fps_visible(&ov));
+  TEST_ASSERT_TRUE(overlay_battery_visible(&ov));
+  overlay_cycle_info(&ov);
+  TEST_ASSERT_FALSE(overlay_fps_visible(&ov));
+  TEST_ASSERT_FALSE(overlay_battery_visible(&ov));
 }
 
 void test_fps_stays_on_when_a_new_hack_starts(void) {
-  overlay_toggle_fps(&ov);
+  overlay_cycle_info(&ov);
   overlay_hack_started(&ov, 100);
   TEST_ASSERT_TRUE(overlay_fps_visible(&ov));
+}
+
+void test_battery_stays_on_when_a_new_hack_starts(void) {
+  overlay_cycle_info(&ov);
+  overlay_cycle_info(&ov);
+  overlay_hack_started(&ov, 100);
+  TEST_ASSERT_TRUE(overlay_battery_visible(&ov));
+}
+
+void test_battery_text_is_a_whole_percentage(void) {
+  char buf[16];
+  overlay_set_battery(&ov, 91);
+  overlay_battery_text(&ov, buf, sizeof buf);
+  TEST_ASSERT_EQUAL_STRING("91%", buf);
+  overlay_set_battery(&ov, 0);
+  overlay_battery_text(&ov, buf, sizeof buf);
+  TEST_ASSERT_EQUAL_STRING("0%", buf);
+}
+
+void test_battery_text_is_a_placeholder_until_a_level_is_known(void) {
+  char buf[16];
+  overlay_battery_text(&ov, buf, sizeof buf);
+  TEST_ASSERT_EQUAL_STRING("--%", buf);
+}
+
+void test_battery_level_is_clamped_to_0_to_100(void) {
+  char buf[16];
+  overlay_set_battery(&ov, 130);
+  overlay_battery_text(&ov, buf, sizeof buf);
+  TEST_ASSERT_EQUAL_STRING("100%", buf);
+}
+
+void test_a_negative_reading_before_any_good_one_stays_unknown(void) {
+  char buf[16];
+  overlay_set_battery(&ov, -5);
+  overlay_battery_text(&ov, buf, sizeof buf);
+  TEST_ASSERT_EQUAL_STRING("--%", buf);
+}
+
+void test_a_failed_reading_keeps_the_last_good_level(void) {
+  char buf[16];
+  overlay_set_battery(&ov, 64);
+  overlay_set_battery(&ov, -1);
+  overlay_battery_text(&ov, buf, sizeof buf);
+  TEST_ASSERT_EQUAL_STRING("64%", buf);
+}
+
+void test_battery_text_never_overruns_a_small_buffer(void) {
+  char buf[3];
+  overlay_set_battery(&ov, 100);
+  overlay_battery_text(&ov, buf, sizeof buf);
+  TEST_ASSERT_EQUAL_UINT(2, strlen(buf));
 }
 
 void test_fps_text_is_a_placeholder_until_a_second_of_frames(void) {
@@ -100,13 +158,30 @@ void test_a_redraw_is_wanted_when_the_name_expires(void) {
   TEST_ASSERT_FALSE(overlay_wants_redraw(&ov, 9000));
 }
 
-void test_a_redraw_is_wanted_when_fps_is_toggled_either_way(void) {
+void test_a_redraw_is_wanted_whenever_the_info_mode_changes(void) {
+  for (int i = 0; i < 3; i++) {
+    overlay_drawn(&ov, 0);
+    overlay_cycle_info(&ov);
+    TEST_ASSERT_TRUE(overlay_wants_redraw(&ov, 0));
+  }
+}
+
+void test_a_redraw_is_wanted_when_the_shown_battery_level_changes(void) {
+  overlay_cycle_info(&ov);
+  overlay_cycle_info(&ov);
+  overlay_set_battery(&ov, 90);
   overlay_drawn(&ov, 0);
-  overlay_toggle_fps(&ov);
+  overlay_set_battery(&ov, 90);
+  TEST_ASSERT_FALSE(overlay_wants_redraw(&ov, 0));
+  overlay_set_battery(&ov, 89);
   TEST_ASSERT_TRUE(overlay_wants_redraw(&ov, 0));
+}
+
+void test_a_battery_change_needs_no_redraw_while_it_is_not_shown(void) {
+  overlay_set_battery(&ov, 90);
   overlay_drawn(&ov, 0);
-  overlay_toggle_fps(&ov);
-  TEST_ASSERT_TRUE(overlay_wants_redraw(&ov, 0));
+  overlay_set_battery(&ov, 89);
+  TEST_ASSERT_FALSE(overlay_wants_redraw(&ov, 0));
 }
 
 int main(void) {
@@ -115,14 +190,23 @@ int main(void) {
   RUN_TEST(test_the_name_shows_for_exactly_the_name_time_after_a_start);
   RUN_TEST(test_switching_hacks_restarts_the_name_time);
   RUN_TEST(test_the_name_time_survives_the_millisecond_counter_wrapping);
-  RUN_TEST(test_fps_starts_off_and_a_tap_toggles_it);
+  RUN_TEST(test_info_starts_as_nothing_and_taps_cycle_fps_battery_nothing);
   RUN_TEST(test_fps_stays_on_when_a_new_hack_starts);
+  RUN_TEST(test_battery_stays_on_when_a_new_hack_starts);
+  RUN_TEST(test_battery_text_is_a_whole_percentage);
+  RUN_TEST(test_battery_text_is_a_placeholder_until_a_level_is_known);
+  RUN_TEST(test_battery_level_is_clamped_to_0_to_100);
+  RUN_TEST(test_a_negative_reading_before_any_good_one_stays_unknown);
+  RUN_TEST(test_a_failed_reading_keeps_the_last_good_level);
+  RUN_TEST(test_battery_text_never_overruns_a_small_buffer);
   RUN_TEST(test_fps_text_is_a_placeholder_until_a_second_of_frames);
   RUN_TEST(test_fps_text_reports_frames_per_second_over_a_second);
   RUN_TEST(test_fps_text_keeps_one_decimal_for_slow_hacks);
   RUN_TEST(test_a_new_hack_forgets_the_previous_hacks_fps);
   RUN_TEST(test_fps_text_never_overruns_a_small_buffer);
   RUN_TEST(test_a_redraw_is_wanted_when_the_name_expires);
-  RUN_TEST(test_a_redraw_is_wanted_when_fps_is_toggled_either_way);
+  RUN_TEST(test_a_redraw_is_wanted_whenever_the_info_mode_changes);
+  RUN_TEST(test_a_redraw_is_wanted_when_the_shown_battery_level_changes);
+  RUN_TEST(test_a_battery_change_needs_no_redraw_while_it_is_not_shown);
   return UNITY_END();
 }

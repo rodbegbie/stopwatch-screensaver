@@ -28,6 +28,7 @@ static const char *const kForcedStart = nullptr;
 
 static const uint32_t kStatsEveryMs = 5000;
 static const uint32_t kNameShownMs = 5000;
+static const uint32_t kBatteryEveryMs = 30000;
 
 /* Seconds before moving on to the next hack; build with -DROTATE_SECONDS=5 to
  * shorten it for leak testing, or 0 to stay put. */
@@ -114,7 +115,7 @@ struct Patch {
 };
 
 static M5Canvas stamp;
-static Patch namePatch, fpsPatch;
+static Patch namePatch, infoPatch;
 
 static void stampText(Patch *p, const char *text, int cx, int cy,
                       const lgfx::IFont *font) {
@@ -158,14 +159,17 @@ static void present() {
   if (overlay_name_visible(&overlay, now))
     stampText(&namePatch, g_hacks[runner_index(runner)]->name, kSize / 2,
               kNameY, &fonts::DejaVu24);
-  if (overlay_fps_visible(&overlay)) {
+  if (overlay_fps_visible(&overlay) || overlay_battery_visible(&overlay)) {
     char text[16];
-    overlay_fps_text(&overlay, text, sizeof text);
-    stampText(&fpsPatch, text, kSize / 2, kFpsY, &fonts::DejaVu18);
+    if (overlay_fps_visible(&overlay))
+      overlay_fps_text(&overlay, text, sizeof text);
+    else
+      overlay_battery_text(&overlay, text, sizeof text);
+    stampText(&infoPatch, text, kSize / 2, kFpsY, &fonts::DejaVu18);
   }
   overlay_drawn(&overlay, now);
   rowsPushed += push_present(&canvas, pushRows, &pushSink);
-  unstamp(&fpsPatch);
+  unstamp(&infoPatch);
   unstamp(&namePatch);
 }
 
@@ -212,10 +216,23 @@ static bool pollRotation() {
   return true;
 }
 
-/* A tap anywhere toggles the fps readout. Call right after M5.update(), which
- * is the only place the touch edge is recorded. */
+/* A tap anywhere cycles the readout: nothing, fps, battery. Call right after
+ * M5.update(), which is the only place the touch edge is recorded. */
 static void pollTouch() {
-  if (M5.Touch.getDetail().wasPressed()) overlay_toggle_fps(&overlay);
+  if (M5.Touch.getDetail().wasPressed()) overlay_cycle_info(&overlay);
+}
+
+/* The fuel gauge is read over I2C through the power chip, which can fail the
+ * first transaction after idle, so read it every 30 s, not every frame. A
+ * failed read is negative and the overlay keeps the last good level. */
+static void pollBattery() {
+  static uint32_t lastReadMs;
+  static bool readOnce;
+  uint32_t now = millis();
+  if (readOnce && now - lastReadMs < kBatteryEveryMs) return;
+  readOnce = true;
+  lastReadMs = now;
+  overlay_set_battery(&overlay, M5.Power.getBatteryLevel());
 }
 
 void setup() {
@@ -232,8 +249,8 @@ void setup() {
     halt("PSRAM alloc failed");
   stamp.setBuffer(canvas.px, kSize, kSize, 16);
   namePatch.saved = (uint16_t *)ps_malloc(kSize * kPatchMaxH * sizeof(uint16_t));
-  fpsPatch.saved = (uint16_t *)ps_malloc(kSize * kPatchMaxH * sizeof(uint16_t));
-  if (!namePatch.saved || !fpsPatch.saved) halt("PSRAM alloc failed");
+  infoPatch.saved = (uint16_t *)ps_malloc(kSize * kPatchMaxH * sizeof(uint16_t));
+  if (!namePatch.saved || !infoPatch.saved) halt("PSRAM alloc failed");
   runner = runner_create(&canvas);
   if (!runner) halt("hack start failed");
   int first = start_pick_index(g_hacks, g_hack_count, kForcedStart, esp_random());
@@ -252,6 +269,7 @@ void loop() {
   M5.update();
   if (!pollButtons()) pollRotation();
   pollTouch();
+  pollBattery();
 
   uint32_t t0 = micros();
   unsigned long delayUs = runner_step(runner);
@@ -276,7 +294,10 @@ void loop() {
     waitedUs += slice;
     M5.update();
     switched = pollButtons() || pollRotation();
-    if (!switched) pollTouch();
+    if (!switched) {
+      pollTouch();
+      pollBattery();
+    }
     if (!switched && overlay_wants_redraw(&overlay, millis())) present();
   }
   if (!switched) waitUs += micros() - t2;
