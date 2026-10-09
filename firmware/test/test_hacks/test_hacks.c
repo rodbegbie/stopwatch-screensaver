@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -315,7 +316,7 @@ static const uint64_t kBaseline[] = {
     0, /* Maze: see test_maze_frame_matches_main */
     0x1472437ef1d9a798ull, /* Blaster */
     0xb90b3ccdac009a41ull, /* Substrate */
-    0x08a8895ef4d1943cull, /* Pacman: taken on its own branch, after looking at the frames */
+    0x30f53883f531c363ull, /* Pacman: taken on its own branch, after looking at the frames */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -347,6 +348,62 @@ void test_pacman_levels_do_not_leak(void) {
   TEST_ASSERT_TRUE_MESSAGE(after < before + 60 * 1024, "allocated bytes grew");
 }
 
+/* Runs Pacman on a thread whose stack was painted first, and reports how much
+ * of it was touched. The board's loop task has 16 KB. `ulimit -s` cannot show
+ * this: a level's depth depends on the random numbers drawn, and the first level
+ * is a shallow one. */
+#define STACK_PROBE_BYTES (1024 * 1024)
+#define STACK_PAINT 0xA5
+static int probe_seed, probe_frames, probe_hack;
+
+static void *probe_run(void *arg) {
+  (void)arg;
+  srandom(probe_seed);
+  HackRunner *r = runner_create(&cv);
+  runner_start(r, probe_hack);
+  for (int f = 0; f < probe_frames; f++) runner_step(r);
+  runner_destroy(r);
+  return NULL;
+}
+
+static long stack_used_by(int hack, int seed, int frames) {
+  void *mem = NULL;
+  if (posix_memalign(&mem, 16384, STACK_PROBE_BYTES) != 0) return -1;
+  unsigned char *stack = (unsigned char *)mem;
+  memset(stack, STACK_PAINT, STACK_PROBE_BYTES);
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  if (pthread_attr_setstack(&attr, stack, STACK_PROBE_BYTES) != 0) return -2;
+  probe_hack = hack;
+  probe_seed = seed;
+  probe_frames = frames;
+  pthread_t t;
+  if (pthread_create(&t, &attr, probe_run, NULL) != 0) return -3;
+  pthread_join(t, NULL);
+  long untouched = 0;
+  while (untouched < STACK_PROBE_BYTES && stack[untouched] == STACK_PAINT) untouched++;
+  free(stack);
+  return STACK_PROBE_BYTES - untouched;
+}
+
+/* Pacman's level generator recurses once per tile with a 1.3 KB copy of the
+ * level in each frame, and reached 236 KB (median) to 315 KB (worst) here; the
+ * build patches it out. The patched Pacman uses about 68 KB on this build, which
+ * is AddressSanitizer inflating every frame (the device's own gauge showed
+ * 9 KB of the loop task's 16). So this cannot prove 16 KB. It catches the
+ * generator coming back, which the 160 KB bound separates cleanly. */
+void test_pacman_does_not_recurse_like_its_level_generator(void) {
+  const int pacman = index_of("Pacman");
+  TEST_ASSERT_TRUE(pacman >= 0);
+  long worst = 0;
+  for (int seed = 1; seed <= 3; seed++) {
+    const long used = stack_used_by(pacman, seed, 20000);
+    TEST_ASSERT_TRUE_MESSAGE(used >= 0, "could not run the probe");
+    if (used > worst) worst = used;
+  }
+  TEST_ASSERT_TRUE_MESSAGE(worst < 160 * 1024, "Pacman used 160 KB of stack or more");
+}
+
 void test_prev_from_first_wraps_to_last_hack(void) {
   HackRunner *r = runner_create(&cv);
   runner_start(r, 0);
@@ -371,6 +428,7 @@ int main(void) {
   RUN_TEST(test_frames_of_every_hack_but_maze_match_main);
   RUN_TEST(test_maze_frame_matches_main);
   RUN_TEST(test_pacman_levels_do_not_leak);
+  RUN_TEST(test_pacman_does_not_recurse_like_its_level_generator);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
   return UNITY_END();
 }
