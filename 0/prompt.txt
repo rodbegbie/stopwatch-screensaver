@@ -1,0 +1,22 @@
+Review profile: general
+
+Task: Review this change for correctness, regressions, API design, missing tests, maintainability, and user-facing behavior changes. Return only real, actionable defects with concrete evidence and an exact code pointer. No praise, summaries, speculation, style preferences, or nice-to-have refactors.
+
+Output format:
+- Start with one verdict line: approve / approve with nits / request changes, plus a short reason.
+- Then list actionable findings only. Each finding MUST be a separate top-level Markdown bullet starting with [high], [medium], or [low].
+- Include an exact file:line pointer in each finding when possible, plus the bug, impact, and fix in one concise paragraph.
+- Do not combine multiple defects in one bullet or paragraph. Do not emit severity-heading paragraphs like "**[HIGH] ...**" without a leading bullet.
+- If there are no actionable findings, output only the verdict line.
+- Keep the report compact: quote only the minimal relevant snippet (a few lines) per finding. Never paste whole files, full diffs, or large logs, and skip decorative formatting like tables or ASCII art — it wastes effort and is not rendered.
+
+Scope: review the commits unique to this branch vs origin/HEAD, plus any uncommitted changes in the working tree. Ignore code outside this scope.
+
+Checkpoint context from commits in scope:
+- 01M4EQ3RPVE6J76P2QWEY39DG6: checkpoint metadata unavailable
+- 01M4EPJH1FHXDCTAMA0MQA2GDG: checkpoint metadata unavailable
+- 01M4EBDS8MSC3RRM36N6GTCJ2V: prompt: While that's running, there were a couple of low priority findings added to the Maze trail.
+- 01M4EAXJZP2H4JKAEX3FE1RPRR: checkpoint metadata unavailable
+- 01M4E94KG3BT33H80Z01K8NBPV: prompt: <task-notification> <task-id>boxk63gxa</task-id> <tool-use-id>toolu_0116z1n47ApkDNBUrydxcGif</tool-use-id> <output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/55911a95-94f2-4d02-bde2-fa3ebd532a21/tasks/boxk63gxa.output</output-file> <status>completed</status> <summary>Background command "Capt...
+
+Use `entire checkpoint explain <id>` for full checkpoint context, or `entire checkpoint explain <id> --raw-transcript` for raw transcripts.
