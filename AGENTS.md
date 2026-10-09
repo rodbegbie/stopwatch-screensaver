@@ -65,7 +65,9 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
   `run <hack> fps= step= push= wait= rows=` (ms per frame in the hack, the
   push and the wait; mean canvas rows sent per frame, 466 being a full push,
   though overlay redraws made while waiting can push it higher)
-  and `switch -> <hack> press_waited=`.
+  and `switch -> <hack> press_waited=`. An empty capture, or "Device not
+  configured", means the USB port went away and came back (a flash, a crash):
+  reopen it in a loop.
 - Flash with `pio run -e stopwatch -t upload > file 2>&1`, never piped through
   `head`, and check for "Hash of data verified". The button steps backwards
   (Pyro, then Lightning, then Drift...). Work out how long a restart takes
@@ -283,9 +285,28 @@ hack, and holds a recipe per trap. The steps:
   `tools/maze_patch.py`, which fails loudly if upstream's `#define`s change.
   `hacks/maze_small.c` includes that copy and the original is excluded from
   `build_src_filter`. A `gridSize` below 7 would overflow the 80 by 80 arrays.
-- The shim's pixmaps are read-only sources for `XCopyArea`/`XCopyPlane`, and
-  the GC keeps its own copy of a clip mask because hacks free the pixmap right
-  after `XSetClipMask`. There is no PNG decoder: `image_data_to_pixmap` reads
+- Pacman has two build-time patches (`tools/pacman_patch.py`, run by
+  `firmware/patch_pacman.py`; wrappers `hacks/pacman_stdlevel.c` and
+  `hacks/pacman_loop_ai.c`): it always plays the fixed level, because the
+  random generator recursed to ~315 KB and boot-looped the board, and the
+  ghosts' route search is a loop (it was 453 levels deep). Each patch checks
+  what it replaces. Its sprite sheet is built from `vendor/` into the build dir
+  by `firmware/pacman_sprites.py` and never committed (3 MB as C text).
+- Wide lines (`line_width` above 1), arcs and pixmap writes live in
+  `x11shim/stroke.c`, `arc.c` and `pixmap.c`. Width 0 and 1 keep the old
+  `canvas_line` path, so hacks that set no wide width are pixel-identical (every
+  hack's frame is pinned in `test_hacks.c`). No registered hack draws a wide
+  line yet: Maze's width 2 is under `HAVE_JWXYZ`.
+- Host tests cannot prove the 16 KB loop stack: `ulimit -s` sees only the
+  shallow first level of a random recursion, and AddressSanitizer inflates
+  frames. Use `stack_used_by` in `test_hacks.c` (a painted pthread stack) and,
+  on the device, `uxTaskGetStackHighWaterMark` in the stats line (temporary).
+- Only `XCopyArea` writes into a pixmap (`XCreatePixmap`, same depth); drawing
+  primitives given a pixmap still draw on the canvas. The display tracks every
+  pixmap a hack holds and the runner frees what a stopped hack left behind
+  (Pacman leaked 514 KB per start). The GC keeps its own copy of a clip mask
+  because hacks free the pixmap right after `XSetClipMask`. There is no PNG
+  decoder: `image_data_to_pixmap` reads
   the raw blob described in `ximage-loader.h`, made by
   `tools/make_logo_blob.py` (`uv run`, needs Pillow). The `logo_180`/`360`
   headers are aliases of the 50 px data, as a 466 px screen only picks 50.

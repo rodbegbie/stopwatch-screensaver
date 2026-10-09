@@ -16,6 +16,12 @@ When: the hack's own constants make it too big for the board. Maze keeps a
   includes that copy, and the original is excluded in `build_src_filter` of
   all three environments (`stopwatch`, `native`, `dump`).
 - Maze's limits went from 1000 to 80: about 125 KB.
+- A patch can switch off a branch (Pacman's `NRAND (2) == 0` becomes `0`) or
+  replace a whole function (its route search becomes a loop). Check the
+  original's SHA-256 so an upstream edit fails the build. Before a rewrite, pin
+  a long-run fingerprint taken with the original (30,000 frames, every ghost's
+  position every 100), show the code ran, and mutate the order to watch the pin
+  fail.
 
 ## Single precision
 
@@ -44,6 +50,14 @@ AGENTS.md) and keep each frame well under the 16 KB loop stack. Host tests
 cannot see an overflow: Rorschach's 9.6 KB array rebooted the device on its
 first frame, and only the serial log's "Stack canary" showed it.
 
+Recursion: replay it, don't guess. Run the hack on a pthread with a painted
+1 MB stack over several seeds and thousands of frames (Pacman's generator: 236
+KB median, 315 KB worst; `ulimit -s` saw only the first, shallow level). Read a
+frame's size from the ELF (`xtensa-esp32s3-elf-objdump -d`, `entry a1, N`), and
+decode a panic backtrace with `xtensa-esp32s3-elf-addr2line` against an ELF
+rebuilt with the same flags. A recursion over a grid is bounded by its cells:
+replay it from every start.
+
 ## Large allocations
 
 When: one allocation of 100 KB or more, or the hack calls `exit()` if it fails.
@@ -59,11 +73,14 @@ When: one allocation of 100 KB or more, or the hack calls `exit()` if it fails.
 
 ## Images
 
-The shim's pixmaps are read-only sources for `XCopyArea` and `XCopyPlane`.
-There is no PNG decoder: `image_data_to_pixmap` reads a raw RGB565 blob and
+Only `XCopyArea` writes into a pixmap; `XCopyPlane` reads one. There is no PNG
+decoder: `image_data_to_pixmap` reads a raw RGB565 blob and
 mask (format in `ximage-loader.h`), made by `tools/make_logo_blob.py`.
 `XS_LOGO=<image>` (relative to the repository root) swaps the logo for a local
 image at build time. Keep a third-party logo under `vendor/`, out of git.
+
+A big blob (Pacman's is 3 MB as C text) is built from `vendor/` by a `pre:`
+script and never committed; write it to a `.partial` file and rename it.
 
 ## Restart leak test
 
@@ -72,6 +89,9 @@ example `*maxCycles: 3`), compare `__sanitizer_get_current_allocated_bytes()`
 before and after many restarts, and prove the test sees a leak by removing a
 `free` in a temporary copy or leaking from a shim function. Never leave the
 hack changed: `cmp` it afterwards.
+
+Measure the growth first, then set the tolerance just above it (Pacman: exactly
+0, so 512 bytes). A loose one passes a leaked GC; mutation-check by leaking one.
 
 On the device, work out how long a restart takes: cycles times the frame time.
 Substrate's 10,000 cycles at about 160 ms is 27 minutes, and the restart showed
