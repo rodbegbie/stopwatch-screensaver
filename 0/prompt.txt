@@ -1,0 +1,1 @@
+B assuming we think the on-device performance will be roughly equivalent.  I'm less worried about the implementation cost, than "correctness" or "performance" hits when making trade-offs.
