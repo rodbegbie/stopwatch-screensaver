@@ -1,0 +1,1 @@
+On a worktree, let's try porting a meatier hack.  `maze` is one I love.  Can you have a go at porting it and see how we get along?
