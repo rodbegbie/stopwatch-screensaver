@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sanitizer/allocator_interface.h>
@@ -266,6 +267,68 @@ void test_substrate_draws_what_it_drew_before_pixels_were_swapped(void) {
   TEST_ASSERT_EQUAL_UINT64(0xb0001ae2c830b47cull, frame_hash());
 }
 
+/* A hack can be blank at any one frame (Lightning, Pedal), so fold in a frame
+ * hash every `frames / 4` frames. */
+static uint64_t hash_after(int index, int frames) {
+  srandom(1);
+  HackRunner *r = runner_create(&cv);
+  runner_start(r, index);
+  uint64_t chain = 0xcbf29ce484222325ull;
+  for (int f = 1; f <= frames; f++) {
+    runner_step(r);
+    if (f % (frames / 4) == 0) chain = (chain ^ frame_hash()) * 0x100000001b3ull;
+  }
+  runner_destroy(r);
+  return chain;
+}
+
+/* Frame hashes taken on main before the shim learned line width, arcs and
+ * writable pixmaps. A hack that sets no width above 1 must still draw exactly
+ * this. If a libm update changes one, regenerate it after checking the frames
+ * by eye. */
+static const uint64_t kBaseline[] = {
+    0xc09cdcfa9b3be138ull, /* Pyro */
+    0x63c3673ca39d844full, /* HyperCube */
+    0xd259e4a8a0989583ull, /* XSpirograph */
+    0x9b337f3f1305e6d1ull, /* Petri */
+    0x8ae10273e493330dull, /* Helix */
+    0x335fcd65811fe911ull, /* Rorschach */
+    0xa4f79500bd791711ull, /* Pedal */
+    0, /* Coral reads the clock: not deterministic, so not pinned */
+    0xdabd390a15578da4ull, /* Squiral */
+    0x19c5b220193ad705ull, /* Critical */
+    0x80bcaaef5d53f475ull, /* CloudLife */
+    0x9fc760a330da4c12ull, /* WhirlWindWarp */
+    0x9ade65fba7afeb1aull, /* Flame */
+    0x29a9c8bcad390b11ull, /* Hopalong */
+    0xc85b7a1763d1d294ull, /* Vines */
+    0x3703b4d6790c0143ull, /* Sierpinski */
+    0x39d159495623cf2bull, /* FadePlot */
+    0x574c61de3bb517afull, /* Thornbird */
+    0xca8ae65ff2d713aeull, /* Spiral */
+    0x9748fd2017af52e5ull, /* Sphere */
+    0x03e9544d12dae5ddull, /* Discrete */
+    0x4815a4e22a59c710ull, /* Galaxy */
+    0x7b230f32b354922bull, /* Drift */
+    0xe97dd56bf15d2b99ull, /* Lightning */
+    0, /* Maze: see test_maze_frame_matches_main */
+    0x1472437ef1d9a798ull, /* Blaster */
+    0xb90b3ccdac009a41ull, /* Substrate */
+};
+
+void test_frames_of_every_hack_but_maze_match_main(void) {
+  TEST_ASSERT_EQUAL_INT((int)(sizeof kBaseline / sizeof kBaseline[0]), g_hack_count);
+  for (int i = 0; i < g_hack_count; i++) {
+    if (kBaseline[i] == 0) continue;
+    TEST_ASSERT_EQUAL_UINT64_MESSAGE(kBaseline[i], hash_after(i, 200),
+                                     g_hacks[i]->name);
+  }
+}
+
+void test_maze_frame_matches_main(void) {
+  TEST_ASSERT_EQUAL_UINT64(0x0693082a4399bc39ull, hash_after(index_of("Maze"), 200));
+}
+
 void test_prev_from_first_wraps_to_last_hack(void) {
   HackRunner *r = runner_create(&cv);
   runner_start(r, 0);
@@ -287,6 +350,8 @@ int main(void) {
   RUN_TEST(test_maze_cycles_do_not_leak);
   RUN_TEST(test_substrate_restarts_do_not_leak);
   RUN_TEST(test_substrate_draws_what_it_drew_before_pixels_were_swapped);
+  RUN_TEST(test_frames_of_every_hack_but_maze_match_main);
+  RUN_TEST(test_maze_frame_matches_main);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
   return UNITY_END();
 }
