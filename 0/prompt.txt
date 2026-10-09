@@ -1,0 +1,1 @@
+While we wait for review… do you think there would be value in taking what you've learned about porting a hack and creating a /port-hack skill from it?
