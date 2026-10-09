@@ -1,6 +1,7 @@
 #include "x11shim/stroke.h"
 
 #include <math.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -15,13 +16,54 @@ static wide_t clamp_w(wide_t v, wide_t lo, wide_t hi) {
   return v < lo ? lo : v > hi ? hi : v;
 }
 
+static void fill_box(Canvas *c, wide_t x0, wide_t y0, wide_t x1, wide_t y1,
+                     uint16_t colour);
+
+/* The rows of a disc of each diameter up to DISC_MAX_W, relative to its corner.
+ * canvas_fill_ellipse works each row out in double precision, which the S3 does
+ * in software, and a round-capped line draws two discs per segment. A disc's
+ * rows do not depend on where it sits, so they are worked out once per width.
+ * A row with xb < xa is empty. */
+#define DISC_MAX_W 16
+typedef struct {
+  int16_t xa, xb;
+} disc_row;
+static disc_row g_disc_rows[DISC_MAX_W + 1][DISC_MAX_W];
+static bool g_disc_built[DISC_MAX_W + 1];
+
+/* The same arithmetic as canvas_fill_ellipse, for an ellipse at the origin. */
+static void build_disc(int w) {
+  const double centre = (w - 1) / 2.0, radius = w / 2.0;
+  for (int row = 0; row < w; row++) {
+    const double ny = (row - centre) / radius;
+    const double t = 1.0 - ny * ny;
+    disc_row d = {0, -1};
+    if (t >= 0) {
+      const double half = radius * sqrt(t);
+      const int xa = (int)ceil(centre - half), xb = (int)floor(centre + half);
+      if (xb >= xa) d = (disc_row){(int16_t)xa, (int16_t)xb};
+    }
+    g_disc_rows[w][row] = d;
+  }
+  g_disc_built[w] = true;
+}
+
 /* A disc of diameter w centred on the pixel (cx, cy). Skipped when it cannot
  * reach the canvas. */
 static void disc(Canvas *c, wide_t cx, wide_t cy, int w, uint16_t colour) {
   if (cx < -(wide_t)w || cy < -(wide_t)w || cx > (wide_t)c->w + w ||
       cy > (wide_t)c->h + w)
     return;
-  canvas_fill_ellipse(c, (int)(cx - w / 2), (int)(cy - w / 2), w, w, colour);
+  const wide_t x = cx - w / 2, y = cy - w / 2;
+  if (w < 1 || w > DISC_MAX_W) {
+    canvas_fill_ellipse(c, (int)x, (int)y, w, w, colour);
+    return;
+  }
+  if (!g_disc_built[w]) build_disc(w);
+  for (int row = 0; row < w; row++) {
+    const disc_row d = g_disc_rows[w][row];
+    if (d.xb >= d.xa) fill_box(c, x + d.xa, y + row, x + d.xb, y + row, colour);
+  }
 }
 
 /* Fills x0..x1 by y0..y1 (inclusive), clipped to the canvas first so the

@@ -30,11 +30,11 @@ it with `uv run tools/score_hacks.py`.
 
 | Rating | Meaning | Count |
 | --- | --- | --- |
-| S | 2D, and the unmodified source compiles against the shim | 22 |
+| S | 2D, and the unmodified source compiles against the shim | 21 |
 | M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 13 |
 | L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 80 |
 | XL | GL: needs a software rasteriser (see below) | 140 |
-| Ported | Already running on the device, so no rating | 28 |
+| Ported | Already running on the device, so no rating | 29 |
 
 ## Flags
 
@@ -59,7 +59,7 @@ performance numbers exist yet, so this stays a separate future project.
 
 ## Measured on the device
 
-Twenty-eight hacks have been run so far (default settings, 466×466 canvas
+Twenty-nine hacks have been run so far (default settings, 466×466 canvas
 pushed to the display every frame, canvas held in PSRAM). The firmware times
 each frame in three parts, averaged over 5 seconds: **step** is the hack's own
 draw call, **push** is sending the canvas to the display, and **wait** is what
@@ -98,6 +98,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Blaster | 27.8 | 3.6-3.7 ms | 31.2-31.3 ms | 0 ms | not measured |
 | Substrate | 12.4-20.6 | 2.9-43.9 ms | 41.1-44.4 ms | 0 ms | about 1.74 MB |
 | Pacman | 75.6-79.2 | 1.3-1.9 ms | 0.8-1.4 ms | 10.0-10.6 ms | about 580 KB |
+| Braid | 3.2-8.6 | 95-296 ms | 19.5-22.7 ms | 0 ms | none measurable |
 
 Maze's row is 26 five-second readings over 160 seconds, taken on a build that
 includes the overlay stamping. Its steps are cheap, and its frame rate is set
@@ -358,6 +359,57 @@ Not measured: runs longer than four minutes pinned, and the stack gauge only
 saw the loop task while ghosts followed routes home, which the host pin shows
 they do but the log does not mark.
 
+## Braid
+
+Braid is too slow to be a good screensaver, and four rounds of work took it
+from 0.8-2.0 fps to 3.2-8.6 fps. Rod judged the colours and the wide strands
+right on the screen, and the colour spin too slow. Each braid lasts 100 frames
+and the next is random, so the rate steps between plateaus (strand count and
+line width set the cost). One light braid ran at 21.2 fps. Readings are second
+windows of 5 seconds, pinned with the rotation off, at 150-180 seconds each.
+
+Braid redraws every segment of the braid on every frame (up to about 7,500
+`XDrawLine` calls) to spin the colours, and a random width of 1-7 pixels sends
+most of them through the stroker.
+
+| Build | First braid | Second | Third |
+| --- | --- | --- | --- |
+| As copied | 2.0 fps, 482 ms | 1.2 fps, 828 ms | 0.8 fps, 1,422 ms |
+| Single-precision wrapper | 2.8 fps, 350 ms | 1.6 fps, 634 ms | 1.0 fps, 1,142 ms |
+| Disc rows cached by width | 6.6 fps, 130 ms | 4.2 fps, 223 ms | 2.8 fps, 357 ms |
+| Fast `sin` and `cos` | 7.0 fps, 123 ms | 4.4 fps, 212 ms | 2.8 fps, 342 ms |
+| Literals made floats | 8.6 fps, 95 ms | 5.2 fps, 176 ms | 3.2 fps, 296 ms |
+
+The step is the hack's draw call; the push stayed at 19.5-22.7 ms (377-405
+rows a frame). What each change was worth, and how it was found:
+
+- **Wide-line discs.** A width above 3 gets round caps, and
+  `canvas_fill_ellipse` works every row out in `double` (a division, `sqrt`,
+  `ceil`, `floor`), which the S3 does in software. A round-capped segment draws
+  two discs. The host profile showed the ellipse at 6% of the time, because a
+  Mac does `double` at full speed; on the board it was the largest cost, 2.7 to
+  3.2 times. `stroke.c` now builds each width's rows once (widths to 16) and a
+  test pins the pixels to `canvas_fill_ellipse`.
+- **Literals.** `single_precision.h` renames the keyword `double`, but
+  `0.5 * (1.0 + sinf(x)) * r2` and `t / theta * M_PI` were still software
+  double: the object file called `__muldf3`, `__adddf3` and `__divdf3`. A probe
+  build with
+  `XDrawLine` returning at once showed the hack's own step was 45-90 ms,
+  and swapping in a fast `sin` and `cos` alone moved it by about 5%. Rewriting
+  the literals as floats at build time (`tools/float_literals.py`) removed the
+  helpers and took the first braid from 123 to 95 ms. Frames stayed identical.
+- **Still slow.** The rest is drawing: each wide segment is a quad filled a row
+  at a time (a float division per edge per row, then a rectangle fill per row)
+  plus two discs. A braid with many strands and width 7 still takes about 300
+  ms. Braid's own `applywordbackto` runs inside the inner loop and cannot be
+  changed, because the hack stays byte-identical. Reaching 10 fps would need the
+  stroker's per-row cost cut by more than half, which has not been tried.
+
+Free PSRAM was 7,417,507 bytes throughout, and free internal heap 325,196
+bytes (326,220 before the disc table, which takes 1 KB of static memory). No
+stack canary, panic or reboot appeared in any capture. Not measured: runs over
+three minutes, and Braid's restart on the device beyond the three braids seen.
+
 ## Suggested order for shim stage 2
 
 Shim gaps across 2D hacks, ranked so gaps that block hacks
@@ -382,7 +434,6 @@ needing few additions come first.
 | --- | --- | --- | --- | --- | --- | --- |
 | anemone | 2d | S | - | - | pixmaps | 458 |
 | anemotaxis | 2d | S | - | - | pixmaps | 760 |
-| braid | 2d | S | - | - | needs-xlockmore | 444 |
 | celtic | 2d | S | - | - | - | 1141 |
 | compass | 2d | S | - | - | pixmaps, float-heavy | 999 |
 | epicycle | 2d | S | - | - | - | 803 |
@@ -636,6 +687,7 @@ needing few additions come first.
 | worldpieces | gl | XL | - | `XDestroyImage` | float-heavy, needs-xlockmore | 2194 |
 | xshadertoy | gl | XL | - | `XFetchName`, `XStoreName` | needs-xlockmore | 1192 |
 | blaster | 2d | - | ✅ | - | - | 1208 |
+| braid | 2d | - | ✅ | - | needs-xlockmore | 444 |
 | cloudlife | 2d | - | ✅ | - | - | 440 |
 | coral | 2d | - | ✅ | - | - | 328 |
 | critical | 2d | - | ✅ | - | - | 462 |
