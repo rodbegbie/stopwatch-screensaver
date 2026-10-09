@@ -1,0 +1,1 @@
+Yes, but before we do that: In the world where we have the skill, should we move the rules from AGENTS.md *to* the skill?  That would keep it out of the general context if the agent is doing something else.
