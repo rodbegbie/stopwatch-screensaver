@@ -1,0 +1,1 @@
+<bash-stdout>Deleted branch wip/xlockmore-planning (was 58448b4).</bash-stdout><bash-stderr></bash-stderr>
