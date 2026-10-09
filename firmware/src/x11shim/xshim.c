@@ -183,7 +183,7 @@ Bool screenhack_event_helper(Display *dpy, Window w, XEvent *event) {
 #define FULL_ARC (360 * 64)
 
 /* Room for the points of an arc on the stack; a bigger arc uses the heap. */
-#define ARC_STACK_POINTS 128
+#define ARC_STACK_POINTS 64
 
 int XDrawArc(Display *dpy, Drawable d, GC gc, int x, int y, unsigned int w,
              unsigned int h, int angle1, int angle2) {
