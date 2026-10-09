@@ -417,13 +417,13 @@ static long stack_used_by(int hack, int seed, int frames) {
   return STACK_PROBE_BYTES - untouched;
 }
 
-/* Pacman's level generator recurses once per tile with a 1.3 KB copy of the
- * level in each frame, and reached 236 KB (median) to 315 KB (worst) here; the
- * build patches it out. The patched Pacman uses about 68 KB on this build, which
- * is AddressSanitizer inflating every frame (the device's own gauge showed
- * 9 KB of the loop task's 16). So this cannot prove 16 KB. It catches the
- * generator coming back, which the 160 KB bound separates cleanly. */
-void test_pacman_does_not_recurse_like_its_level_generator(void) {
+/* Pacman has two recursions, both patched out by the build: the level
+ * generator (up to 315 KB: a 1.3 KB copy of the level in each of ~200 frames)
+ * and the ghosts' route search (453 levels, about 22 KB on the device). With
+ * both gone it uses about 12 KB here. This build's frames are inflated by
+ * AddressSanitizer (the device's frames are smaller), so staying under the loop
+ * task's 16 KB here means staying under it there. */
+void test_pacman_stays_within_the_loop_task_stack(void) {
   const int pacman = index_of("Pacman");
   TEST_ASSERT_TRUE(pacman >= 0);
   long worst = 0;
@@ -432,7 +432,7 @@ void test_pacman_does_not_recurse_like_its_level_generator(void) {
     TEST_ASSERT_TRUE_MESSAGE(used >= 0, "could not run the probe");
     if (used > worst) worst = used;
   }
-  TEST_ASSERT_TRUE_MESSAGE(worst < 160 * 1024, "Pacman used 160 KB of stack or more");
+  TEST_ASSERT_TRUE_MESSAGE(worst < 16 * 1024, "Pacman used 16 KB of stack or more");
 }
 
 /* Pacman loads and scales its sprite sheet in init, so start and stop is where
@@ -512,7 +512,7 @@ int main(void) {
   RUN_TEST(test_maze_frame_matches_main);
   RUN_TEST(test_pacman_levels_do_not_leak);
   RUN_TEST(test_pacman_start_and_stop_do_not_leak);
-  RUN_TEST(test_pacman_does_not_recurse_like_its_level_generator);
+  RUN_TEST(test_pacman_stays_within_the_loop_task_stack);
   RUN_TEST(test_pacman_ghosts_take_the_same_routes_home);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
   return UNITY_END();

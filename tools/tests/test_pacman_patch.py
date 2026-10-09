@@ -69,3 +69,57 @@ def test_the_copied_source_patches_cleanly():
     out = pp.patch_pacman_level(PACMAN_LEVEL_C.read_text())
     assert out.count("if (0) {") >= 1
     assert "NRAND (2) == 0" not in out
+
+
+PACMAN_AI_C = ROOT / "firmware" / "src" / "hacks" / "pacman" / "pacman_ai.c"
+
+
+def _real_ai() -> str:
+    return PACMAN_AI_C.read_text()
+
+
+def test_the_recursive_route_search_is_replaced():
+    out = pp.patch_pacman_ai(_real_ai())
+    assert "static int\nrecur_back_track (" in out
+    assert "recur_back_track ( pp, g, new_row, new_col )" not in out
+    assert "bt_frame" in out
+
+
+def test_the_replacement_keeps_name_and_signature():
+    out = pp.patch_pacman_ai(_real_ai())
+    assert (
+        "recur_back_track ( pacmangamestruct * pp, ghoststruct *g, int row, int col )"
+        in out
+    )
+    assert "recur_back_track ( pp, tmp_ghost, r, c )" in out  # find_home's call
+
+
+def test_nothing_outside_the_function_changes():
+    src = _real_ai()
+    out = pp.patch_pacman_ai(src)
+    head = src[: src.index("static int\nrecur_back_track (")]
+    tail = src[src.index("static void\nfind_home")]
+    assert out.startswith(head)
+    assert out.endswith(src[src.index("static void\nfind_home") :])
+    assert tail
+
+
+def test_a_missing_function_is_an_error():
+    src = _real_ai().replace("recur_back_track (", "other_search (")
+    with pytest.raises(ValueError, match="recur_back_track"):
+        pp.patch_pacman_ai(src)
+
+
+def test_a_changed_body_is_an_error():
+    src = _real_ai().replace("pos_down, &new_row", "pos_right, &new_row", 1)
+    assert src != _real_ai()
+    with pytest.raises(ValueError, match="changed"):
+        pp.patch_pacman_ai(src)
+
+
+def test_two_copies_are_an_error():
+    src = _real_ai()
+    a = src.index("static int\nrecur_back_track (")
+    b = src.index("static void\nfind_home")
+    with pytest.raises(ValueError, match="found 2"):
+        pp.patch_pacman_ai(src[:b] + src[a:b] + src[b:])
