@@ -7,6 +7,9 @@
 #include <unity.h>
 
 #include "core/canvas.h"
+#include "screenhack.h"
+#include "xlockmore.h"
+#include "hacks/pacman/pacman.h"
 #include "hacks/registry.h"
 #include "runner/hack_runner.h"
 
@@ -453,6 +456,36 @@ void test_pacman_start_and_stop_do_not_leak(void) {
   TEST_ASSERT_TRUE_MESSAGE(after < before + 64 * 1024, "allocated bytes grew");
 }
 
+/* Pacman's ghosts find their way home with a depth-first search (find_home)
+ * that recurses up to 453 levels. The build rewrites it with an explicit stack,
+ * so this pins what the ghosts do over 30,000 frames: every ghost's position
+ * every 100 frames, and the frame every 1,000, taken with the original
+ * recursion. `trips` counts the frames a ghost was following a route home, so
+ * the pin cannot pass without the search having run. */
+void test_pacman_ghosts_take_the_same_routes_home(void) {
+  const int pacman = index_of("Pacman");
+  TEST_ASSERT_TRUE(pacman >= 0);
+  srandom(1);
+  HackRunner *r = runner_create(&cv);
+  runner_start(r, pacman);
+  uint64_t chain = 0xcbf29ce484222325ull;
+  long trips = 0;
+  for (int f = 1; f <= 30000; f++) {
+    runner_step(r);
+    const pacmangamestruct *pp = &pacman_games[0];
+    for (unsigned g = 0; g < pp->nghosts; g++) {
+      if (pp->ghosts[g].home_count > 0) trips++;
+      if (f % 100 == 0) {
+        chain = (chain ^ (uint64_t)(pp->ghosts[g].row * 4099 + pp->ghosts[g].col)) * 0x100000001b3ull;
+      }
+    }
+    if (f % 1000 == 0) chain = (chain ^ frame_hash()) * 0x100000001b3ull;
+  }
+  runner_destroy(r);
+  TEST_ASSERT_TRUE_MESSAGE(trips > 0, "no ghost ever followed a route home");
+  TEST_ASSERT_EQUAL_UINT64(2287115883820344180ull, chain);
+}
+
 void test_prev_from_first_wraps_to_last_hack(void) {
   HackRunner *r = runner_create(&cv);
   runner_start(r, 0);
@@ -480,6 +513,7 @@ int main(void) {
   RUN_TEST(test_pacman_levels_do_not_leak);
   RUN_TEST(test_pacman_start_and_stop_do_not_leak);
   RUN_TEST(test_pacman_does_not_recurse_like_its_level_generator);
+  RUN_TEST(test_pacman_ghosts_take_the_same_routes_home);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
   return UNITY_END();
 }
