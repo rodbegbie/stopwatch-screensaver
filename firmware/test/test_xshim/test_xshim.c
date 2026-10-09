@@ -960,6 +960,35 @@ void test_zero_length_wide_line_round_cap_is_a_dot_butt_is_nothing_wider_than_a_
   XFreeGC(dpy, butt);
 }
 
+/* A round cap is a disc of the line's width. The stroker may keep its own table
+ * of disc rows, so every width and every position (partly off the canvas too)
+ * must give exactly the pixels canvas_fill_ellipse gives. */
+void test_round_cap_dot_matches_canvas_fill_ellipse_at_every_width_and_position(void) {
+  enum { N = 64 };
+  Canvas want;
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&want, N, N, malloc));
+  int mismatches = 0;
+  use_canvas(N);
+  for (int w = 2; w <= 40; w++) {
+    GC gc = wide_gc(w, CapRound, JoinMiter);
+    for (int pos = -w - 2; pos <= N + w + 2; pos++) {
+      canvas_clear(&cv, 0);
+      canvas_clear(&want, 0);
+      canvas_fill_ellipse(&want, pos - w / 2, 20 - w / 2, w, w, 0xFFFF);
+      XDrawLine(dpy, win, gc, pos, 20, pos, 20);
+      if (memcmp(want.px, cv.px, sizeof(uint16_t) * N * N) != 0) mismatches++;
+      canvas_clear(&cv, 0);
+      canvas_clear(&want, 0);
+      canvas_fill_ellipse(&want, 30 - w / 2, pos - w / 2, w, w, 0xFFFF);
+      XDrawLine(dpy, win, gc, 30, pos, 30, pos);
+      if (memcmp(want.px, cv.px, sizeof(uint16_t) * N * N) != 0) mismatches++;
+    }
+    XFreeGC(dpy, gc);
+  }
+  canvas_free(&want);
+  TEST_ASSERT_EQUAL_INT(0, mismatches);
+}
+
 void test_wide_line_far_off_canvas_draws_nothing_and_does_not_overflow(void) {
   use_canvas(64);
   GC gc = wide_gc(5, CapRound, JoinMiter);
@@ -1806,6 +1835,7 @@ int main(void) {
   RUN_TEST(test_round_caps_width_6_have_tip_but_no_corner);
   RUN_TEST(test_diagonal_wide_line_covers_the_centre_line_and_is_about_width_thick);
   RUN_TEST(test_zero_length_wide_line_round_cap_is_a_dot_butt_is_nothing_wider_than_a_point);
+  RUN_TEST(test_round_cap_dot_matches_canvas_fill_ellipse_at_every_width_and_position);
   RUN_TEST(test_wide_line_far_off_canvas_draws_nothing_and_does_not_overflow);
   RUN_TEST(test_wide_line_across_the_whole_int_range_still_crosses_the_canvas);
   RUN_TEST(test_an_enormous_width_is_bounded_not_a_hang_or_overflow);
