@@ -1,0 +1,1 @@
+I suppose it doesn't really make sense for ported hacks to have a "S" rating, since they're already ported!  So remove the "S" for them.  Other than that, I think this looks good.
