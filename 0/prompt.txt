@@ -1,0 +1,1 @@
+Substrate: Use a white background to match the original.
