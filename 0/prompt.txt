@@ -1,0 +1,1 @@
+Still running pretty slow. Feels like the device is struggling.  Any other settings on the hack we could try overriding that might help? Or optimizations we might be able to make?  Otherwise, we probably need to drop it.
