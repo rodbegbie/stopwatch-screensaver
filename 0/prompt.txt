@@ -1,0 +1,1 @@
+OK, I've approved Trail 2.  Merge it and let's rebase the batch2 branch.  Then let's work on issue #8 on that branch.
