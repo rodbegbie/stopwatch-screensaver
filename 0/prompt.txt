@@ -1,0 +1,4 @@
+1. Yes, add this runner call.
+2. A build-time patch is probably better than a potential crash.
+
+The colours look good.  One other thought: Could we have the level-generator patch have more than one design, and pick one at random? (This is probably a follow-up issue, not something we do right now)
