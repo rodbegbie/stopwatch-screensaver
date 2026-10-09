@@ -5,9 +5,10 @@ description: Use when adding an xscreensaver hack to the StopWatch firmware, cho
 
 # Porting an xscreensaver hack
 
-The rules live in `AGENTS.md` ("Rules", "Adding a hack", "Gotchas"). This skill
-sets the order of work and the points to stop. The recipes it names are in
-`techniques.md`, next to this file.
+The rules live in `AGENTS.md` ("Rules", "Gotchas") and the path-scoped notes in
+`.claude/rules/`. This skill sets the order of work and the points to stop. The
+numbered steps are in `adding-a-hack.md` and the recipes it names are in
+`techniques.md`, both next to this file.
 
 ## 1. Pick, then read the source
 
@@ -38,7 +39,7 @@ in "Worktree setup".
 
 ## 3. Red, copy, green
 
-Follow "Adding a hack" in AGENTS.md. Show the registry test failing before
+Follow `adding-a-hack.md`. Show the registry test failing before
 copying. Fill each shim gap test-first, then break the code on purpose and
 watch the test fail ("Tests that cannot be fooled"). Filling a missing
 function is a shim gap. Changing what every hack sees (the runner, a default, a
@@ -65,7 +66,8 @@ is still slow, say so and suggest dropping it. Record the numbers in
 Commit named paths. Open the draft PR with `entire trail create` and put what
 is unverified in its body. After a rebase, a push needs `--force-with-lease`:
 ask Rod each time. Rod approves and merges; then delete the branch and
-fast-forward `main`. New gotchas go in `AGENTS.md` in the same PR, and deferred
+fast-forward `main`. New gotchas go in the matching `.claude/rules/` file (or
+`AGENTS.md` if they apply everywhere) in the same PR, and deferred
 ideas become issues.
 
 ## Red flags

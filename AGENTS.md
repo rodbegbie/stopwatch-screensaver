@@ -14,23 +14,9 @@ embedded-specific choices as you make them. See `README.md` for setup and
 
 ## Layout
 
-- `firmware/src/core/`: RGB565 `Canvas` and clipped drawing primitives, which
-  also record the dirty span of each row, and `push_plan` (C), which decides
-  what to send the display.
-- `firmware/src/x11shim/`: Xlib look-alike drawing into the canvas, resource
-  lookups from each hack's defaults table, and `include/` stand-ins for
-  xscreensaver's `screenhack.h`, `utils.h`, `hsv.h`, `erase.h`, `colors.h`.
 - `firmware/src/hacks/<name>/`: hack sources copied from xscreensaver.
   `hacks/registry.[ch]` (ours) lists them in button order.
-- `firmware/src/xs_support/`: other copied xscreensaver files (`hsv.c`).
-- `firmware/src/runner/` and `main.cpp`: start, step and switch hacks; the
-  device loop. `firmware/native/dump_main.c` renders frames on the Mac, and
-  its `stats` mode prints the host milliseconds per step.
-- `tools/`: fetch, notices check, assessment scorer, host speed probe
-  (`probe_hacks.py`) and its backtest (`speed_backtest.py`), PNG converter,
-  build-time patches (`maze_patch.py`, `pacman_patch.py`, `float_literals.py`)
-  (Python).
-  `tools/failed_ports.txt` lists abandoned ports (`name: reason`); the scorer
+- `tools/failed_ports.txt` lists abandoned ports (`name: reason`); the scorer
   marks them ❌, and ✅ comes from `g_hacks[]` in `registry.c`.
 - `.claude/skills/port-hack/`: the order of work for porting a hack, and a
   recipe per trap (`techniques.md`). Use it when porting or fixing a ported
@@ -142,255 +128,27 @@ Set `NO_COLOR=1` on `pio` output you parse.
 
 ## Adding a hack
 
-The `port-hack` skill orders this work, says what to read for before copying a
-hack, and holds a recipe per trap. The steps:
-
-1. Check its row in `docs/porting-assessment.md` (effort and Speed band) and
-   read its licence header.
-2. Update the expected list in `firmware/test/test_hacks/test_hacks.c` and see
-   it fail.
-3. Copy the file to `firmware/src/hacks/<name>/<name>.c`, add the notices row
-   and an `extern` plus entry in `hacks/registry.c`.
-4. Fill shim gaps test-first in `firmware/test/test_xshim/`. The compile
-   check in `score_hacks.py` shows what is missing.
-5. Host tests pass, dump a frame and look at it, then (with Rod's go-ahead)
-   flash and measure fps and free heap/PSRAM over serial.
-6. Regenerate the assessment and add measurements to
-   `tools/assessment_measured.md`, then re-run the speed backtest: each port
-   adds a point to the check of the Speed bands, which were fitted to the first
-   29 hacks. To make a port a real test, commit its host time and predicted
-   range first (`docs/speed-predictions.md` shows the form), flash it as copied,
-   and add its name to `HOLDOUT` in `tools/speed_backtest.py`. The first four
-   (Mountain, Epicycle, Kaleidescope, Celtic) all fell where predicted.
-7. If a hack is slow and `double`-heavy (many `double`s, `sqrt`, `sin`/`cos`,
-   `pow`), try a single-precision wrapper like `hacks/galaxy_single.c` (for a
-   plain screenhack, `hacks/substrate_single.c`; the recipe is in the skill's
-   `techniques.md`), and compare double and float frames at several frame
-   counts. A resource
-   override can skip a hack's restart cleanup: Galaxy leaked at `count: 2`, so
-   leak-test any override.
-8. If Rod drops a port after seeing it (Celtic): remove it from `g_hacks[]`, the
-   expected list, its hash and its leak test; keep the source and notices row;
-   add `name: reason` (short: it is printed as a bullet) to
-   `tools/failed_ports.txt`; file an issue.
+Use the `port-hack` skill. Its `adding-a-hack.md` holds the numbered steps.
 
 ## Delivering a branch
 
-- `entire trail create --title ... --type feature --body ...` pushes the branch
-  and opens a linked DRAFT PR. The PR body is not synced from the trail: update
-  both (`entire trail update --body`, `gh pr edit N --body-file`). Put
-  `Fixes #N` in the body, then read the PR back (`gh pr view N --json body`):
-  #27 merged with the generic body, so `Fixes #23` never reached GitHub and
-  the issue stayed open until it was closed by hand.
-- Rod approves and merges (merge commit). Afterwards delete the merged branch
-  (remote and local) without asking and fast-forward `main`. Confirm the merge
-  after a fresh `git fetch`: a stale `origin/main` says "not merged". Remove
-  the branch's worktree first (a checked-out branch cannot be deleted), and
-  note that `git branch -d` refuses while local `main` is behind, so check
-  `git merge-base --is-ancestor <tip> origin/main` and then use `-D`. `main` is
-  usually checked out in Rod's main checkout, so `git fetch origin main:main`
-  is refused there: run `git merge --ff-only origin/main` in it, only if
-  `git status` shows no tracked changes.
-- Merge with `gh pr merge N --merge` once Rod approves. His approval is
-  enough: do not wait for the Entire Gates check to finish. A stacked PR's gate
-  can fail "Up to date: 1 commit behind" once its parent merges: if approvals
-  and findings pass and the PR is mergeable, merge it, with no rebase.
-- `entire agent-help` says trails are unavailable; `entire trail create` works.
-  Write a PR body to a file for `gh pr edit --body-file` (an apostrophe in an
-  inline `--body '...'` must be `'"'"'`).
-- `gh pr edit N --body-file` replaces the whole body, including the
-  `<!-- entire-trail-link-start -->` ... `-end -->` block at the top. Keep that
-  block in the file, or the PR loses its trail.
-- Findings: `entire trail finding list N`, then `... resolve N <id> -m "..."`.
-  Bot reviews can lag about 20 minutes. `N` is the trail number (PR #12 was
-  trail 6), not the PR number. For a false positive or upstream behaviour in a
-  byte-identical hack, use `entire trail finding dismiss N <id> -m "<reason>"`.
-- `entire trail update --body` takes no number and acts on the current
-  branch (`entire trail update 8` errors).
-- Stacked PR: `entire trail create --base <parent-branch>`. When the parent
-  merges, `gh pr edit N --base main` before deleting its branch, then
-  `git rebase --onto origin/main <old parent tip>`. The rebased push needs
-  `--force-with-lease` (ask Rod first), unless the branch was never pushed.
-- `docs/porting-assessment.md` conflicts on rebase: `git checkout --theirs`
-  it to continue, then rerun `tools/score_hacks.py` and amend the result in.
-- Two ports in flight both append to `g_hacks[]`, so whichever merges second
-  conflicts in `registry.c`, the expected list in `test_hacks.c`,
-  `THIRD_PARTY_NOTICES.md`, `tools/assessment_measured.md` (rows, paragraphs and
-  the hack count) and the three `build_src_filter` lines in `platformio.ini`,
-  as well as the generated assessment. Keep both sides, put the newer hack
-  last, and regenerate the assessment. A rebased published branch needs
-  `--force-with-lease` (ask Rod), and GitHub can reject that push once too.
-- A finding that says the code "does not exist" can be stale after a rebase
-  (the skill PR was reviewed before the Blaster and Substrate code it referred
-  to had landed). Check it against `main` before dismissing, and put the
-  evidence in the dismissal. Entire's approvals gate once showed "no reviewers
-  have approved" right after a force push, though Rod had approved; his word is
-  enough, so say so and go ahead.
+Use the `deliver-branch` skill.
 
 ## Gotchas
 
-- M5GFX reads a plain `uint32_t` colour as RGB888. `TFT_RED` and friends are
-  RGB565 constants. The canvas holds pixels already byte-swapped into the
-  display's order (`rgb565()` returns them that way), and the display runs
-  with `setSwapBytes(false)`. A swap done by M5GFX on each push cost 10 ms of
-  every frame (#23: pushes of 41-45 ms became 31 ms). `px_swap()` turns a
-  canvas pixel into ordinary RGB565 and back: only code that reads colour bits
-  needs it (the logo loader, `dump_main.c`, tests). A hue-sweeping palette
-  stays a rainbow with its bytes swapped (red, green and blue rotate), so only
-  pure black and white, or a colour you know (Maze's red flame, its green
-  solving path), expose a wrong order on the device. Host frames cannot,
-  since the swap happens in the push; compare them with `px_swap` applied.
-- A hack that takes colour bits out of pixel values itself (Substrate's alpha
-  blend, in `point2rgb`) breaks on swapped pixels without a compile error and
-  without a crash. `substrate_single.c` swaps at `XAllocColor` and
-  `XSetForeground` so the hack sees ordinary RGB565; its golden-frame test
-  fails if either is missing. Searching for `XGetPixel` finds none of this:
-  dump every hack before and after a pixel-format change and `cmp` the frames.
-  Pyro differs by a few hundred pixels, because it sorts projectiles by pixel
-  value and so draws overlaps in another order.
-- The display only gets the rows a hack drew. Every canvas write must go
-  through `canvas_clear`, `canvas_point`, `hspan` or `canvas_paste_rect`
-  (which record a span per row), or call `canvas_mark_dirty`, or the screen
-  keeps the old pixels. The overlay text in `main.cpp` is the one deliberate
-  bypass: it is written straight into `px`, marked by hand, and restored with
-  `canvas_paste_rect`, which marks it again so the next push erases it.
-  `test_push_present` replays every hack into a shadow display to catch a
-  missed mark. M5GFX keeps a framebuffer for this panel and `endWrite` flushes
-  one bounding box around everything written in a `startWrite` batch, so rows
-  far apart must not share a batch (two corner pixels cost 11.7 ms together,
-  0.1 ms apart). `push_plan` groups rows with a cost model fitted to device
-  probes; its calibration shapes must include scattered rows, since compact
-  rectangles cannot tell the models apart. Hacks that redraw unchanged pixels
-  (CloudLife, Pedal) dirty nearly every row and gain little.
+Gotchas tied to one area live in `.claude/rules/` and load when Claude reads
+files there: `device-display.md` (main.cpp, core, runner), `x11shim.md`,
+`hacks.md` and `tools-scoring.md`. Add a new gotcha to the matching file. The
+ones below apply everywhere.
+
 - In `platformio.ini` use `platform = platformio/native`; plain `native`
   breaks `pio run`. Native tests need `test_build_src = yes`.
 - Quoted includes resolve beside the including file first, so compile hack
   copies from a temp dir when checking them against the shim.
-- Hacks run on the Arduino `loopTask`, now set to a 16 KB stack in `main.cpp`.
-  A hack with big local arrays can still overflow it (Rorschach's 9.6 KB did
-  at 8 KB): the device reboots on that hack's first frame, and host tests
-  cannot see it. Check the serial log for "Stack canary".
-- `M5.update()` samples the buttons only when it runs and keeps no edge, so a
-  press during a long hack step vanishes. `main.cpp` runs a 5 ms polling task
-  on core 0 into `button_latch`, which needs the pin to hold a level for 30 ms.
-  Reading the pin level inside a GPIO interrupt did not work: the release
-  bounced and was counted as a second press. Check `press_waited` in the log.
-- The runner caps a hack's delay at 10 s, and the loop credits only the push
-  (31 ms; it was 41-45 ms between the byte-order fix and #23) against it,
-  because a hack's delay is its pause after drawing. Compare device numbers
-  with a baseline from the same build, not with old rows: Pyro fell from 30 to
-  23 fps with no change to Pyro.
-- `runner_start` paints the canvas in the hack's `background` resource before
-  `init`, as `screenhack.c` paints the window, or black if it has none.
-  Substrate is white; every other hack asks for black or nothing.
-- `unsigned long` is 4 bytes on the device and 8 on the host, so a hack that
-  allocates arrays of it (Substrate's two 466 by 466 buffers) is twice the size
-  on the host, and host leak numbers are twice the device's. On the device,
-  plain `malloc`/`realloc` of about 868 KB reached PSRAM (free PSRAM fell by
-  1.74 MB) and came back on restart; internal heap barely moved.
-- xlockmore hacks (the 40 that include `xlockmore.h`) need `-DSTANDALONE`,
-  which every PlatformIO env and `score_hacks.py` set; without it they
-  include `xlock.h` instead. The envs also define `HAVE_MOBILE`, because
-  otherwise each hack's `XSCREENSAVER_LINK` defines the same global
-  `xscreensaver_function_table` and two hacks fail to link; the only other
-  effect is an inert `*ignoreRotation: True` default. Register one in
-  `hacks/registry.c` with `XLOCKMORE_HACK(<name>, "<Class>")`. The runner runs
-  the hack's `setup_cb` once and passes `setup_arg` as `init_cb`'s hidden third
-  argument, as xscreensaver's `screenhack.c` does. Its table is empty until
-  then. Resources the framework reads but a hack does not define
-  (`delta3d`, `size`, ...) fall back to `kFrameworkDefaults` in
-  `x11shim/resources.c`. A `HackEntry`'s `overrides` list beats the hack's own
-  defaults (Galaxy runs with `count: -3`, at most three galaxies; a count of
-  -2 or above skips the hack's restart cleanup and leaks); register it with
-  `XLOCKMORE_HACK_WITH`. Galaxy, Drift, Discrete and Flame are built through
-  `hacks/<name>_single.c`, which includes the framework headers, then
-  `hacks/single_precision.h` (`double` and the libm calls become `float` and
-  the `f` versions; the S3's FPU is single-precision only), then the unmodified
-  hack; the original `.c` is excluded from each env's `build_src_filter`.
-- Maze keeps a 1000 by 1000 maze and three 1,000,000-entry move lists in one
-  `calloc` (about 20 MB; the board has 8 MB of PSRAM). `hacks/maze/maze.c`
-  stays byte-identical: `firmware/patch_maze.py` (a PlatformIO `pre:` script
-  in every env) writes a copy with both limits at 80 into the build dir, using
-  `tools/maze_patch.py`, which fails loudly if upstream's `#define`s change.
-  `hacks/maze_small.c` includes that copy and the original is excluded from
-  `build_src_filter`. A `gridSize` below 7 would overflow the 80 by 80 arrays.
-- Pacman has two build-time patches (`tools/pacman_patch.py`, run by
-  `firmware/patch_pacman.py`; wrappers `hacks/pacman_stdlevel.c` and
-  `hacks/pacman_loop_ai.c`): it always plays the fixed level, because the
-  random generator recursed to ~315 KB and boot-looped the board, and the
-  ghosts' route search is a loop (it was 453 levels deep). Each patch checks
-  what it replaces. Its sprite sheet is built from `vendor/` into the build dir
-  by `firmware/pacman_sprites.py` and never committed (3 MB as C text).
-- Wide lines (`line_width` above 1), arcs and pixmap writes live in
-  `x11shim/stroke.c`, `arc.c` and `pixmap.c`. Width 0 and 1 keep the old
-  `canvas_line` path, so hacks that set no wide width are pixel-identical (every
-  hack's frame is pinned in `test_hacks.c`). Braid is the one registered hack
-  that draws wide lines (random width 1-7; Maze's width 2 is under
-  `HAVE_JWXYZ`). A round-capped segment draws a disc at each end, so
-  `stroke.c` keeps each width's rows in a table (widths to 16) rather than
-  calling `canvas_fill_ellipse`, whose `double` maths is software on the S3. A
-  test pins the pixels to `canvas_fill_ellipse`.
-- `single_precision.h` renames the keyword `double`, not literals: `0.5 * x`
-  is still software double. Braid's wrapper includes a copy of the hack with
-  every decimal literal suffixed `f`, written at build time by
-  `firmware/patch_float_literals.py` (`tools/float_literals.py`). Check a
-  wrapper's object for `__muldf3` and friends with `xtensa-esp32s3-elf-nm`.
-  The older wrappers (Galaxy, Drift, Discrete, Flame, Substrate) have not been
-  checked.
-- Braid runs at 3-9 fps (0.8-2 before four rounds of work): it redraws every
-  segment of the braid each frame to spin the colours. A host profile put its
-  disc fill at 6% and the board spent most of its time there, because the Mac
-  does `double` at full speed. Split a slow hack's step on the device with a
-  temporary flag that returns early from the expensive call.
 - Host tests cannot prove the 16 KB loop stack: `ulimit -s` sees only the
   shallow first level of a random recursion, and AddressSanitizer inflates
   frames. Use `stack_used_by` in `test_hacks.c` (a painted pthread stack) and,
   on the device, `uxTaskGetStackHighWaterMark` in the stats line (temporary).
-- Only `XCopyArea` writes into a pixmap (`XCreatePixmap`, same depth); drawing
-  primitives given a pixmap still draw on the canvas. The display tracks every
-  pixmap a hack holds and the runner frees what a stopped hack left behind
-  (Pacman leaked 514 KB per start). The GC keeps its own copy of a clip mask
-  because hacks free the pixmap right after `XSetClipMask`. There is no PNG
-  decoder: `image_data_to_pixmap` reads
-  the raw blob described in `ximage-loader.h`, made by
-  `tools/make_logo_blob.py` (`uv run`, needs Pillow). The `logo_180`/`360`
-  headers are aliases of the 50 px data, as a 466 px screen only picks 50.
-  `XS_LOGO=<image>` (relative to the repo root) swaps the logo for a local
-  image, shrunk to fit 50 px, without committing it: `firmware/logo_override.py`
-  writes the header into the build dir, where `maze_patched.c` finds it
-  before the committed one. Unset, it deletes that header. Needs `uv`. A
-  third-party logo kept under `vendor/` stays out of git that way. The WorkOS
-  icon is `vendor/workos/workos-icon-256.png`. A plain flash with it is
-  `unset PLATFORMIO_BUILD_FLAGS` then `XS_LOGO=vendor/workos/workos-icon-256.png
-  pio run -e stopwatch -t upload`: build flags stick, so a leftover pin from
-  an earlier probe would survive. The logo shows in Maze only.
-- Maze fills the whole 466 by 466 square, so its corners and the exit marker
-  fall outside the round display's visible circle.
-- `check_notices.py` reads 100 lines of header: Maze's licence follows a long
-  modification history.
-- A hack can be freed before its first draw: two quick presses, or a press
-  with the 90 s rotation. `test_every_hack_can_be_stopped_before_its_first_frame`
-  runs every hack through it. Blaster's free dereferenced NULL (it sizes a loop
-  in init but allocates in draw), so `hacks/blaster_safe.c` includes the
-  unmodified hack with `XSCREENSAVER_MODULE` emptied and registers it with a
-  free that zeroes `NUM_ROBOTS` when `robots` is NULL.
-- Don't declare `xrealloc` or `xmalloc` in the shim: cloudlife defines its own
-  static `xrealloc`, which would clash.
-- `score_hacks.py` rates effort by call sites, not loop trips: Flame (all
-  `double` maths) is rated S but runs at 2-7 fps, and Braid was rated S and
-  runs at 3-9 fps. The Speed column runs the hack on the host instead and ranks
-  the device step well (Spearman about 0.9 over the 29 hacks it was fitted to,
-  and four more ported since fell where predicted), but a low band does not
-  clear a hack that does software `double` maths: the device ran 60-1,500
-  times the host time, most for the double-bound ones. It says nothing about
-  memory: Celtic held about 300 KB of the 325 KB of free heap and its
-  `assert()` aborts on a failed allocation, and it ran at 1.2 fps, so it is
-  shelved (issue #37): its source stays in `firmware/src/hacks/celtic/`, it is
-  not in `g_hacks[]`, and `failed_ports.txt` lists it. A failed port that has
-  its source and a measured row still counts in `speed_backtest.py`, probed
-  standalone. Measure on the device, and read
-  `docs/speed-backtest.md` before trusting a band. A hack with gaps (M and
-  above) cannot be built, so it has no Speed.
 - `pio test` runs every registered hack for 3000 frames under ASan (about 15 s);
   a hack that is slow on the host slows the whole suite.
 - Host leak tests: LeakSanitizer does not run on macOS, so compare
@@ -423,10 +181,6 @@ hack, and holds a recipe per trap. The steps:
   and show no progress when piped.
 - A push to GitHub is sometimes rejected once and succeeds on an immediate
   retry; never force-push for this.
-- Overlay text (`main.cpp`) is stamped into the canvas, pushed, then the
-  pixels under it are restored. Drawing on the display after `pushImage`
-  flickered badly, because the next push erases it. The canvas must end each
-  frame exactly as the hack left it.
 - Read `push=` from a hack's second 5 s window on: the name overlay is stamped
   inside the push timing while it shows, so the first window reads high.
 - Leak-testing with `-DROTATE_SECONDS=5`: internal heap falls about 26 KB
