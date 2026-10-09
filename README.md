@@ -4,28 +4,34 @@ xscreensaver "hacks" running on the M5Stack StopWatch (SKU C152, ESP32-S3,
 466×466 round AMOLED), through a small X11 shim. A learning project in
 embedded development.
 
-Right now it runs thirteen hacks, unmodified from xscreensaver 6.16: **Pyro**
-(fireworks), **HyperCube**, **XSpirograph**, **Petri** (mould growth),
-**Helix**, **Rorschach**, **Pedal**, **Coral**, **Squiral**, **Critical**,
-**CloudLife**, **WhirlWindWarp** and **Flame**. Frame rates run from under 1
-to about 30 fps, mostly set by the delay each hack asks for (some hold each
-finished picture for seconds, and Flame, which does its maths in double
-precision, manages 2 to 7); pushing a frame to the display costs 31 ms. The
-[porting assessment](docs/porting-assessment.md) rates every other hack by
-porting effort and lists the measurements.
+The hack sources are copied byte for byte from xscreensaver 6.16, and the
+shim is extended to run them rather than the hacks being edited. A few are
+built through a thin wrapper: single precision for the `double`-heavy ones
+(the ESP32-S3's FPU handles only `float`), a build-time patched copy of Maze
+to fit its maze in memory, and a safe `free` for Blaster. The full list, in
+button order, is `g_hacks[]` in `firmware/src/hacks/registry.c`. The
+[porting assessment](docs/porting-assessment.md) rates every xscreensaver hack
+by porting effort and lists the measurements taken on the device.
+
+Frame rates run from under 1 to dozens of fps, mostly set by the delay each
+hack asks for: some hold each finished picture for seconds. Only the rows a
+hack drew are sent to the display, so a hack that draws little costs little.
 
 ## How it works
 
 - `firmware/src/core/` is a 466×466 RGB565 canvas with clipped drawing
   primitives, held in PSRAM.
 - `firmware/src/x11shim/` implements the Xlib calls hacks use, drawing into
-  that canvas, and serves each hack's default settings as its resources.
+  that canvas (including pixmaps and clip masks), and serves each hack's
+  default settings as its resources.
 - `firmware/src/hacks/` holds the copied hack sources. They compile
   unmodified against the shim's own `screenhack.h`.
-- `firmware/src/runner/` starts, steps and switches hacks.
-- `firmware/src/main.cpp` pushes the canvas to the display each frame and
-  handles the buttons. A small task on core 0 watches both buttons, so a
-  press made while a hack is in a long draw step is kept, not lost.
+- `firmware/src/runner/` starts, steps and switches hacks, painting each
+  hack's background colour before it starts, as xscreensaver does.
+- `firmware/src/main.cpp` pushes the canvas to the display each frame,
+  draws the name and fps overlays, and handles the buttons and touch. A small
+  task on core 0 watches both buttons, so a press made while a hack is in a
+  long draw step is kept, not lost.
 
 The same code builds natively on the Mac, which is how the tests run and how
 frames are dumped to PNG without any hardware.
@@ -65,13 +71,28 @@ cd .. && uv run tools/rgb565_to_png.py /tmp/pyro.raw 466 466 /tmp/pyro.png
 
 ## Controls
 
-Button A starts the next hack and button B the previous one, wrapping
-around at either end. The order is Pyro, HyperCube, XSpirograph, Petri, Helix,
-Rorschach, Pedal, Coral, Squiral, Critical, CloudLife, WhirlWindWarp, Flame.
+The device starts on a random hack and moves on to the next one every 90
+seconds. Button A starts the next hack and button B the previous one, wrapping
+around at either end, and either press restarts the 90 second count. The
+hack's name shows for a few seconds as it starts, and a tap on the screen
+toggles an fps readout.
 
-A press made during a long draw step takes effect when the step ends (up to
-about half a second on Flame). Extra presses in that wait count as one, and
-holding a button does not repeat.
+Two build flags change this (set them with `PLATFORMIO_BUILD_FLAGS`, and
+rebuild without them afterwards, since the define sticks to the build):
+
+- `-DSTART_HACK=\"galaxy\"` always starts on that hack.
+- `-DROTATE_SECONDS=5` changes the rotation time, and `0` turns it off.
+
+A press made during a long draw step takes effect when the step ends. Extra
+presses in that wait count as one, and holding a button does not repeat.
+
+## Porting a hack
+
+To add another hack, pick an easy one from the
+[porting assessment](docs/porting-assessment.md), then follow the
+`port-hack` skill in `.claude/skills/port-hack/`, which gives the order of
+work and a recipe for each trap. `AGENTS.md` holds the rules (copied hacks stay
+byte-identical, every copied file gets a licence entry) and the gotchas.
 
 ## Restoring the original firmware
 
