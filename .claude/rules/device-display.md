@@ -60,6 +60,13 @@ Moved verbatim from the Gotchas section of AGENTS.md.
 - `runner_start` paints the canvas in the hack's `background` resource before
   `init`, as `screenhack.c` paints the window, or black if it has none.
   Substrate is white; every other hack asks for black or nothing.
+- Overlay modes cycle on a tap: nothing, name badge, fps, battery. The badge
+  and the info line share the stamp/unstamp path, and `kPatchMaxH` (100) must
+  cover the tallest glyph plus its outline. The battery is polled every 30 s
+  (`M5.Power.getBatteryLevel()`; negative means a failed read, so the last
+  good level stays). The badge stamps 48 outline copies per frame and adds
+  about 16 to 20 ms to `push=`. Read `wait=` as well as fps: a hack with delay
+  slack (Galaxy) hides it, one running flat out (Squiral) does not.
 - Overlay text (`main.cpp`) is stamped into the canvas, pushed, then the
   pixels under it are restored. Drawing on the display after `pushImage`
   flickered badly, because the next push erases it. The canvas must end each

@@ -41,6 +41,10 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
   pinned build still rotates, so add `=0` to measure one hack.
   The log prints `rotate -> <hack> heap= psram=` at each change. Combine flags
   in one `PLATFORMIO_BUILD_FLAGS` string.
+  `-DBADGE_NAME=\"Rod\ B.\"` sets the name badge text (default "Rod"). Check a
+  flag reached the binary with
+  `strings -a -n 3 .pio/build/stopwatch/firmware.elf | grep -c '^Rod B\.$'`:
+  plain `strings` skips anything under 4 characters.
 - `pio run -e dump`, then `.pio/build/dump/program <index> <frames> out.raw`,
   then `uv run tools/rgb565_to_png.py out.raw 466 466 out.png` to see a frame.
   The index is the hack's 0-based position in `g_hacks[]` in
@@ -61,7 +65,12 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
   though overlay redraws made while waiting can push it higher)
   and `switch -> <hack> press_waited=`. An empty capture, or "Device not
   configured", means the USB port went away and came back (a flash, a crash):
-  reopen it in a loop.
+  reopen it in a loop. Opening the port resets the board
+  (`rst:0x15 USB_UART_CHIP_RESET`, even with DTR/RTS held low): the overlay
+  returns to nothing and a random hack starts. To measure one hack, flash a
+  pinned build (`START_HACK` plus `ROTATE_SECONDS=0`), start the capture, then
+  tap during it: the early windows are the baseline, the later ones have the
+  overlay.
 - Flash with `pio run -e stopwatch -t upload > file 2>&1`, never piped through
   `head`, and check for "Hash of data verified". The button steps backwards
   (Pyro, then Lightning, then Drift...). Work out how long a restart takes
