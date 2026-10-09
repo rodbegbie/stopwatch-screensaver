@@ -1,0 +1,1 @@
+OK, let's finish up the skill.  Rebase that branch onto main and make your addition. Also, there was a finding left on the trail, but I suspect that was a false positive because the skill referenced code that hadn't landed on the branch yet.  Take a look, and dismiss the finding if that's the case.
