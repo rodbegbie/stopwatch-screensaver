@@ -3,7 +3,7 @@
   "checkpoint_id": "01M4FJYEG7Y4HESFVQQ4HCY237",
   "strategy": "manual-commit",
   "branch": "feature/pacman",
-  "checkpoints_count": 1,
+  "checkpoints_count": 3,
   "files_touched": [
     "THIRD_PARTY_NOTICES.md",
     "firmware/pacman_sprites.py",
@@ -24,14 +24,21 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 7847,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 1037440,
-    "output_tokens": 3250,
-    "api_call_count": 13,
+    "input_tokens": 7859,
+    "cache_creation_tokens": 6881,
+    "cache_read_tokens": 3745798,
+    "output_tokens": 8645,
+    "api_call_count": 19,
     "subagent_tokens_complete": false
   }
 }
