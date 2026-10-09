@@ -115,6 +115,11 @@ int XDrawRectangle(Display *dpy, Drawable d, GC gc, int x, int y,
                    unsigned int w, unsigned int h) {
   int x2 = clamp_coord((int64_t)x + w);
   int y2 = clamp_coord((int64_t)y + h);
+  if (gc->line_width > 1) {
+    const int xy[8] = {x, y, x2, y, x2, y2, x, y2};
+    stroke_polyline(dpy->canvas, gc, xy, 4, 1);
+    return 0;
+  }
   XDrawLine(dpy, d, gc, x, y, x2, y);
   XDrawLine(dpy, d, gc, x2, y, x2, y2);
   XDrawLine(dpy, d, gc, x2, y2, x, y2);
@@ -124,6 +129,21 @@ int XDrawRectangle(Display *dpy, Drawable d, GC gc, int x, int y,
 
 int XDrawLines(Display *dpy, Drawable d, GC gc, XPoint *pts, int n, int mode) {
   (void)mode;
+  if (gc->line_width > 1 && n > 0) {
+    int stack_xy[2 * 64];
+    int *xy = stack_xy;
+    if (n > 64) {
+      xy = (int *)malloc((size_t)n * 2 * sizeof(int));
+      if (!xy) return 0;
+    }
+    for (int i = 0; i < n; i++) {
+      xy[2 * i] = pts[i].x;
+      xy[2 * i + 1] = pts[i].y;
+    }
+    stroke_polyline(dpy->canvas, gc, xy, n, 0);
+    if (xy != stack_xy) free(xy);
+    return 0;
+  }
   for (int i = 1; i < n; i++)
     XDrawLine(dpy, d, gc, pts[i - 1].x, pts[i - 1].y, pts[i].x, pts[i].y);
   return 0;

@@ -1067,6 +1067,177 @@ void test_an_enormous_width_with_round_caps_neither_hangs_nor_overflows(void) {
   XFreeGC(dpy, gc);
 }
 
+static void draw_path(GC gc, const XPoint *pts, int n) {
+  XDrawLines(dpy, win, gc, (XPoint *)pts, n, CoordModeOrigin);
+}
+
+static uint16_t *snapshot(void) {
+  uint16_t *copy = (uint16_t *)malloc((size_t)cv.w * cv.h * sizeof(uint16_t));
+  memcpy(copy, cv.px, (size_t)cv.w * cv.h * sizeof(uint16_t));
+  return copy;
+}
+
+void test_miter_join_fills_the_outer_corner(void) {
+  use_canvas(64);
+  GC gc = wide_gc(4, CapButt, JoinMiter);
+  const XPoint path[] = {{10, 30}, {30, 30}, {30, 10}};
+  draw_path(gc, path, 3);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(30, 30));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(31, 31));
+  TEST_ASSERT_EQUAL_HEX16(0, at(32, 31));
+  TEST_ASSERT_EQUAL_HEX16(0, at(31, 32));
+  XFreeGC(dpy, gc);
+}
+
+void test_bevel_join_leaves_the_outer_corner_unset(void) {
+  use_canvas(64);
+  GC gc = wide_gc(4, CapButt, JoinBevel);
+  const XPoint path[] = {{10, 30}, {30, 30}, {30, 10}};
+  draw_path(gc, path, 3);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(30, 30));
+  TEST_ASSERT_EQUAL_HEX16(0, at(31, 31));
+  XFreeGC(dpy, gc);
+}
+
+void test_round_join_fills_a_disc_at_the_vertex(void) {
+  use_canvas(64);
+  GC gc = wide_gc(8, CapButt, JoinRound);
+  const XPoint path[] = {{10, 30}, {30, 30}, {30, 10}};
+  draw_path(gc, path, 3);
+  TEST_ASSERT_EQUAL_HEX16_MESSAGE(0xFFFF, at(32, 32), "inside the disc, outside a bevel");
+  TEST_ASSERT_EQUAL_HEX16_MESSAGE(0, at(33, 33), "outside the disc, inside a miter");
+  XFreeGC(dpy, gc);
+  use_canvas(64);
+  GC miter = wide_gc(8, CapButt, JoinMiter);
+  draw_path(miter, path, 3);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(33, 33));
+  XFreeGC(dpy, miter);
+}
+
+void test_sharp_angle_miter_falls_back_to_bevel(void) {
+  use_canvas(64);
+  GC gc = wide_gc(4, CapButt, JoinMiter);
+  const XPoint path[] = {{10, 30}, {50, 30}, {10, 32}};
+  draw_path(gc, path, 3);
+  for (int y = 0; y < 64; y++)
+    for (int x = 54; x < 64; x++) TEST_ASSERT_EQUAL_HEX16(0, at(x, y));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(49, 30));
+  XFreeGC(dpy, gc);
+}
+
+void test_polyline_with_two_points_equals_a_segment(void) {
+  for (int width = 2; width <= 5; width++) {
+    const XPoint lines[][2] = {{{10, 10}, {40, 10}}, {{10, 10}, {10, 40}},
+                               {{10, 10}, {40, 25}}};
+    for (int k = 0; k < 3; k++) {
+      use_canvas(64);
+      GC gc = wide_gc(width, CapProjecting, JoinMiter);
+      XDrawLine(dpy, win, gc, lines[k][0].x, lines[k][0].y, lines[k][1].x, lines[k][1].y);
+      uint16_t *want = snapshot();
+      use_canvas(64);
+      draw_path(gc, lines[k], 2);
+      TEST_ASSERT_EQUAL_MEMORY(want, cv.px, (size_t)64 * 64 * sizeof(uint16_t));
+      free(want);
+      XFreeGC(dpy, gc);
+    }
+  }
+}
+
+void test_polyline_n_0_and_1_draw_nothing_wide(void) {
+  use_canvas(64);
+  GC butt = wide_gc(4, CapButt, JoinMiter);
+  const XPoint one[] = {{30, 30}};
+  draw_path(butt, one, 0);
+  draw_path(butt, one, 1);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XFreeGC(dpy, butt);
+  GC round = wide_gc(6, CapRound, JoinMiter);
+  draw_path(round, one, 1);
+  TEST_ASSERT_TRUE(count_set() > 10);
+  XFreeGC(dpy, round);
+}
+
+void test_repeated_points_do_not_change_the_picture(void) {
+  use_canvas(64);
+  GC gc = wide_gc(3, CapRound, JoinRound);
+  const XPoint plain[] = {{10, 10}, {20, 10}};
+  draw_path(gc, plain, 2);
+  uint16_t *want = snapshot();
+  use_canvas(64);
+  const XPoint repeated[] = {{10, 10}, {10, 10}, {20, 10}, {20, 10}, {20, 10}};
+  draw_path(gc, repeated, 5);
+  TEST_ASSERT_EQUAL_MEMORY(want, cv.px, (size_t)64 * 64 * sizeof(uint16_t));
+  free(want);
+  XFreeGC(dpy, gc);
+}
+
+void test_180_degree_turn_has_no_gap(void) {
+  use_canvas(64);
+  GC gc = wide_gc(3, CapButt, JoinMiter);
+  const XPoint path[] = {{10, 20}, {30, 20}, {10, 20}};
+  draw_path(gc, path, 3);
+  TEST_ASSERT_EQUAL_INT(63, count_set());
+  XFreeGC(dpy, gc);
+}
+
+void test_collinear_points_draw_the_same_as_one_segment(void) {
+  const XPoint lines[][3] = {{{10, 20}, {25, 20}, {40, 20}},
+                             {{20, 10}, {20, 25}, {20, 40}},
+                             {{5, 5}, {15, 15}, {25, 25}},
+                             {{5, 5}, {17, 11}, {29, 17}}};
+  int bad = -1;
+  for (int width = 2; width <= 6; width++)
+    for (int k = 0; k < 4; k++) {
+      use_canvas(64);
+      GC gc = wide_gc(width, CapButt, JoinMiter);
+      XDrawLine(dpy, win, gc, lines[k][0].x, lines[k][0].y, lines[k][2].x, lines[k][2].y);
+      uint16_t *want = snapshot();
+      use_canvas(64);
+      draw_path(gc, lines[k], 3);
+      if (bad < 0 && memcmp(want, cv.px, (size_t)64 * 64 * sizeof(uint16_t)) != 0)
+        bad = width * 10 + k;
+      free(want);
+      XFreeGC(dpy, gc);
+    }
+  TEST_ASSERT_EQUAL_INT_MESSAGE(-1, bad, "first differing case is width * 10 + line");
+}
+
+void test_draw_rectangle_wide_has_mitered_corners(void) {
+  use_canvas(64);
+  GC gc = wide_gc(3, CapButt, JoinMiter);
+  XDrawRectangle(dpy, win, gc, 10, 10, 20, 20);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(9, 9));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(31, 9));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(31, 31));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(9, 31));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(20, 10));
+  TEST_ASSERT_EQUAL_HEX16(0, at(20, 20));
+  TEST_ASSERT_EQUAL_HEX16(0, at(12, 12));
+  TEST_ASSERT_EQUAL_HEX16(0, at(8, 8));
+  XFreeGC(dpy, gc);
+}
+
+void test_width_0_and_1_polyline_and_rectangle_match_the_old_ones(void) {
+  for (int width = 0; width <= 1; width++) {
+    use_canvas(64);
+    canvas_line(&cv, 5, 5, 20, 9, 0xFFFF);
+    canvas_line(&cv, 20, 9, 12, 30, 0xFFFF);
+    canvas_line(&cv, 40, 40, 50, 40, 0xFFFF);
+    canvas_line(&cv, 50, 40, 50, 55, 0xFFFF);
+    canvas_line(&cv, 50, 55, 40, 55, 0xFFFF);
+    canvas_line(&cv, 40, 55, 40, 40, 0xFFFF);
+    uint16_t *want = snapshot();
+    use_canvas(64);
+    GC gc = wide_gc(width, CapRound, JoinRound);
+    const XPoint path[] = {{5, 5}, {20, 9}, {12, 30}};
+    draw_path(gc, path, 3);
+    XDrawRectangle(dpy, win, gc, 40, 40, 10, 15);
+    TEST_ASSERT_EQUAL_MEMORY(want, cv.px, (size_t)64 * 64 * sizeof(uint16_t));
+    free(want);
+    XFreeGC(dpy, gc);
+  }
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_image_data_to_pixmap_makes_a_colour_pixmap_and_a_mask);
@@ -1153,5 +1324,16 @@ int main(void) {
   RUN_TEST(test_width_0_and_1_match_the_old_line);
   RUN_TEST(test_a_45_degree_wide_line_is_symmetric_about_its_diagonal);
   RUN_TEST(test_an_enormous_width_with_round_caps_neither_hangs_nor_overflows);
+  RUN_TEST(test_miter_join_fills_the_outer_corner);
+  RUN_TEST(test_bevel_join_leaves_the_outer_corner_unset);
+  RUN_TEST(test_round_join_fills_a_disc_at_the_vertex);
+  RUN_TEST(test_sharp_angle_miter_falls_back_to_bevel);
+  RUN_TEST(test_polyline_with_two_points_equals_a_segment);
+  RUN_TEST(test_polyline_n_0_and_1_draw_nothing_wide);
+  RUN_TEST(test_repeated_points_do_not_change_the_picture);
+  RUN_TEST(test_180_degree_turn_has_no_gap);
+  RUN_TEST(test_collinear_points_draw_the_same_as_one_segment);
+  RUN_TEST(test_draw_rectangle_wide_has_mitered_corners);
+  RUN_TEST(test_width_0_and_1_polyline_and_rectangle_match_the_old_ones);
   return UNITY_END();
 }
