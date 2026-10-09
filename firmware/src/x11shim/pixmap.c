@@ -38,6 +38,29 @@ static struct XshimPixmap *pixmap_new(int w, int h, int depth) {
   return pm;
 }
 
+static void track(Display *dpy, struct XshimPixmap *pm) {
+  pm->prev = NULL;
+  pm->next = dpy->pixmaps;
+  if (dpy->pixmaps) dpy->pixmaps->prev = pm;
+  dpy->pixmaps = pm;
+}
+
+static void untrack(Display *dpy, struct XshimPixmap *pm) {
+  if (pm->prev)
+    pm->prev->next = pm->next;
+  else
+    dpy->pixmaps = pm->next;
+  if (pm->next) pm->next->prev = pm->prev;
+}
+
+void xshim_release_pixmaps(Display *dpy) {
+  while (dpy->pixmaps) {
+    struct XshimPixmap *pm = dpy->pixmaps;
+    untrack(dpy, pm);
+    pixmap_free(pm);
+  }
+}
+
 static int bit_at(const struct XshimPixmap *pm, int x, int y) {
   return (pm->bits[y * pm->stride + x / 8] >> (7 - x % 8)) & 1;
 }
@@ -47,7 +70,7 @@ static unsigned le16(const unsigned char *p) { return p[0] | (p[1] << 8); }
 Pixmap image_data_to_pixmap(Display *dpy, Window win, const unsigned char *data,
                             unsigned long size, int *width_ret,
                             int *height_ret, Pixmap *mask_ret) {
-  (void)dpy, (void)win;
+  (void)win;
   *width_ret = *height_ret = 0;
   *mask_ret = None;
   if (size < 8 || memcmp(data, "565M", 4) != 0) return None;
@@ -67,6 +90,8 @@ Pixmap image_data_to_pixmap(Display *dpy, Window win, const unsigned char *data,
   for (unsigned i = 0; i < w * h; i++) colour->rgb[i] = px_swap((uint16_t)le16(data + 8 + 2 * i));
   memcpy(mask->bits, data + 8 + pixel_bytes, (size_t)mask_bytes);
 
+  track(dpy, colour);
+  track(dpy, mask);
   *width_ret = (int)w;
   *height_ret = (int)h;
   *mask_ret = (Pixmap)(uintptr_t)mask;
@@ -74,8 +99,9 @@ Pixmap image_data_to_pixmap(Display *dpy, Window win, const unsigned char *data,
 }
 
 int XFreePixmap(Display *dpy, Pixmap p) {
-  (void)dpy;
-  pixmap_free(pixmap_of(p));
+  struct XshimPixmap *pm = pixmap_of(p);
+  if (pm) untrack(dpy, pm);
+  pixmap_free(pm);
   return 0;
 }
 
@@ -149,10 +175,11 @@ static int64_t max64(int64_t a, int64_t b) { return a > b ? a : b; }
 
 Pixmap XCreatePixmap(Display *dpy, Drawable d, unsigned int w, unsigned int h,
                      unsigned int depth) {
-  (void)dpy, (void)d;
+  (void)d;
   if (w == 0 || h == 0 || (uint64_t)w * h > MAX_PIXMAP_PIXELS) return None;
   struct XshimPixmap *pm = pixmap_new((int)w, (int)h, depth == 1 ? 1 : 16);
   if (!pm) return None;
+  track(dpy, pm);
   if (pm->bits)
     memset(pm->bits, 0, (size_t)pm->stride * (size_t)pm->h);
   else

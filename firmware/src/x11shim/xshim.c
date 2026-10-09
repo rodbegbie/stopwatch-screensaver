@@ -19,7 +19,11 @@ Display *xshim_open_display(Canvas *canvas) {
   return dpy;
 }
 
-void xshim_close_display(Display *dpy) { free(dpy); }
+void xshim_close_display(Display *dpy) {
+  if (!dpy) return;
+  xshim_release_pixmaps(dpy);
+  free(dpy);
+}
 
 GC XCreateGC(Display *dpy, Drawable d, unsigned long mask, XGCValues *v) {
   (void)dpy;
@@ -53,6 +57,25 @@ int XChangeGC(Display *dpy, GC gc, unsigned long mask, XGCValues *v) {
   if (mask & GCCapStyle) gc->cap_style = v->cap_style;
   if (mask & GCJoinStyle) gc->join_style = v->join_style;
   return 0;
+}
+
+int XSetFillStyle(Display *dpy, GC gc, int fill_style) {
+  (void)dpy, (void)gc, (void)fill_style;
+  return 0;
+}
+
+Bool XQueryPointer(Display *dpy, Window w, Window *root_return,
+                   Window *child_return, int *root_x, int *root_y, int *win_x,
+                   int *win_y, unsigned int *mask_return) {
+  (void)dpy, (void)w;
+  if (root_return) *root_return = 0;
+  if (child_return) *child_return = 0;
+  if (root_x) *root_x = 0;
+  if (root_y) *root_y = 0;
+  if (win_x) *win_x = 0;
+  if (win_y) *win_y = 0;
+  if (mask_return) *mask_return = 0;
+  return False;
 }
 
 int XSetLineAttributes(Display *dpy, GC gc, unsigned int width, int line_style,
