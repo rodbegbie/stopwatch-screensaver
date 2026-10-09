@@ -1,0 +1,43 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4F0SN5259V7Q47B5X62QM3Z",
+  "session_id": "01a11dc1-2877-78c0-b157-e602e4a3b6c9",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-09T00:25:20.253375Z",
+  "branch": "chore/agents-md-lessons",
+  "checkpoints_count": 2,
+  "files_touched": [],
+  "agent": "Codex",
+  "model": "gpt-6.1-sol",
+  "turn_id": "efbd5ff1d9e3",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 111874,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 3647360,
+    "output_tokens": 8154,
+    "api_call_count": 43,
+    "subagent_tokens_complete": false
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 571,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".private-journal/2026-10-07/19-59-30-000000-79f41e20.md": 8,
+        ".private-journal/2026-10-07/22-51-53-000000-2f0b9ece.md": 8,
+        ".private-journal/2026-10-08/07-50-07-000000-0110d472.md": 8,
+        ".private-journal/2026-10-08/15-15-15-000000-4004028d.md": 19,
+        ".private-journal/2026-10-08/15-45-25-000000-61b97d2d.md": 8,
+        "docs/superpowers/plans/2026-10-08-dirty-row-push.md": 389,
+        "docs/superpowers/specs/2026-10-08-dirty-row-push-design.md": 131
+      }
+    }
+  ]
+}
