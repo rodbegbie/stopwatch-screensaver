@@ -55,6 +55,12 @@ implied warranty.
 | `firmware/src/x11shim/include/images/gen/logo-50_png.h` | The xscreensaver logo, designed by Angela Goodman; this is `utils/images/logo-50.gif` converted to raw pixels by `tools/make_logo_blob.py`. The image carries no copyright line | The image states no licence. See "The Maze logo" below |
 | `firmware/src/hacks/blaster/blaster.c` | Copyright (c) 1999 Jonathan H. Lin | jwz permission notice (above) |
 | `firmware/src/hacks/substrate/substrate.c` | dragorn (dragorn@kismetwireless.net), ported from j.tarbell's Substrate (complexification.net, 2004); based on xscreensaver, Copyright (c) 1997, 1998, 2002 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/pacman/pacman.c` | Copyright (c) 2002 Edwin de Jong | xlock permission notice (below) |
+| `firmware/src/hacks/pacman/pacman.h` | Copyright (c) 2002 Edwin de Jong | xlock permission notice (below) |
+| `firmware/src/hacks/pacman/pacman_ai.c` | Copyright (c) 2002 Edwin de Jong | xlock permission notice (below) |
+| `firmware/src/hacks/pacman/pacman_ai.h` | Copyright (c) 2002 Edwin de Jong | xlock permission notice (below) |
+| `firmware/src/hacks/pacman/pacman_level.c` | Copyright (c) 2002 Edwin de Jong | xlock permission notice (below) |
+| `firmware/src/hacks/pacman/pacman_level.h` | Copyright (c) 2002 Edwin de Jong | xlock permission notice (below) |
 
 Each copied file keeps its own header unchanged; the notice text above is
 reproduced here to satisfy the "supporting documentation" requirement.
@@ -143,3 +149,12 @@ permission notice (above) for its code, and asks that the logo not be
 altered: "The logo is xscreensaver's identity". To use a different picture
 in a local build without committing it, set `XS_LOGO` to the image file (see
 `AGENTS.md`). The blob format is in `ximage-loader.h`.
+
+### The Pacman sprites
+
+Pacman draws its characters from `hacks/images/pacman.png` in xscreensaver
+6.16, a 64 by 3840 sprite sheet. The file has no licence text of its own, and
+this repository does not contain it. `firmware/pacman_sprites.py` reads it from
+`vendor/` at build time and converts it to the raw blob described in
+`ximage-loader.h` (3 MB as C text) in the build directory. The sprites are not
+part of the MIT-licensed code in this repository.

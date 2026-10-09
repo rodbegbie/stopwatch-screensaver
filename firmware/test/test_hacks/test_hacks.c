@@ -38,7 +38,8 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Lightning",
                                          "Maze",
                                          "Blaster",
-                                         "Substrate"};
+                                         "Substrate",
+                                         "Pacman"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -314,6 +315,7 @@ static const uint64_t kBaseline[] = {
     0, /* Maze: see test_maze_frame_matches_main */
     0x1472437ef1d9a798ull, /* Blaster */
     0xb90b3ccdac009a41ull, /* Substrate */
+    0x08a8895ef4d1943cull, /* Pacman: taken on its own branch, after looking at the frames */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -327,6 +329,22 @@ void test_frames_of_every_hack_but_maze_match_main(void) {
 
 void test_maze_frame_matches_main(void) {
   TEST_ASSERT_EQUAL_UINT64(0x0693082a4399bc39ull, hash_after(index_of("Maze"), 200));
+}
+
+/* Pacman restarts its level after the last dot is eaten or the third death,
+ * several times in 60,000 frames (checked by watching the dots come back). */
+void test_pacman_levels_do_not_leak(void) {
+  const int pacman = index_of("Pacman");
+  TEST_ASSERT_TRUE(pacman >= 0);
+  srandom(1);
+  HackRunner *r = runner_create(&cv);
+  runner_start(r, pacman);
+  for (int f = 0; f < 5000; f++) runner_step(r);
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  for (int f = 0; f < 60000; f++) runner_step(r);
+  const size_t after = __sanitizer_get_current_allocated_bytes();
+  runner_destroy(r);
+  TEST_ASSERT_TRUE_MESSAGE(after < before + 60 * 1024, "allocated bytes grew");
 }
 
 void test_prev_from_first_wraps_to_last_hack(void) {
@@ -352,6 +370,7 @@ int main(void) {
   RUN_TEST(test_substrate_draws_what_it_drew_before_pixels_were_swapped);
   RUN_TEST(test_frames_of_every_hack_but_maze_match_main);
   RUN_TEST(test_maze_frame_matches_main);
+  RUN_TEST(test_pacman_levels_do_not_leak);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
   return UNITY_END();
 }
