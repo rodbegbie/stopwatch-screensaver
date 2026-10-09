@@ -1,0 +1,1 @@
+There were some Pedal pictures that took a while to load, sitting on the black screen, then were almost immediately erased.  A quick profiling might be helpful.
