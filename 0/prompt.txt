@@ -1,0 +1,1 @@
+Celtic is the outlier.  Some draw quite quickly, and others barely draw anything at all.  Let's take it out of the rotation, and file an issue to come back and see if there are optimisations to be made.
