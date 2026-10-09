@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4FGXZ876CT4Y6JKV8S8ZM0F",
+  "strategy": "manual-commit",
+  "branch": "feature/shim-thick-lines-arcs-pixmaps",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/src/x11shim/xshim.c",
+    "firmware/src/x11shim/xshim.h",
+    "firmware/test/test_xshim/test_xshim.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 4,
+    "cache_creation_tokens": 3466,
+    "cache_read_tokens": 610820,
+    "output_tokens": 2872,
+    "api_call_count": 2
+  }
+}
