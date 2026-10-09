@@ -26,6 +26,14 @@ static const char *const kForcedStart = START_HACK;
 static const char *const kForcedStart = nullptr;
 #endif
 
+/* The name badge text; build with -DBADGE_NAME=\"Ann\" to change it. Text wider
+ * than the screen is clipped. */
+#ifndef BADGE_NAME
+#define BADGE_NAME "Rod"
+#endif
+static const char *const kBadgeName = BADGE_NAME;
+static const int kBadgeScale = 10;
+
 static const uint32_t kStatsEveryMs = 5000;
 static const uint32_t kNameShownMs = 5000;
 static const uint32_t kBatteryEveryMs = 30000;
@@ -106,8 +114,7 @@ static void printStats(const char *tag) {
  * as the hack left it, since hacks draw incrementally. M5Canvas wraps the
  * canvas buffer so M5GFX's fonts can draw into it; the DejaVu fonts are 1-bit,
  * so only pure black and white are written (the same in either byte order). */
-static const int kPatchMaxH = 48;
-static const int kPatchMargin = 2;
+static const int kPatchMaxH = 100;
 
 struct Patch {
   int x, y, w, h;
@@ -117,23 +124,29 @@ struct Patch {
 static M5Canvas stamp;
 static Patch namePatch, infoPatch;
 
+/* The outline is a black copy of the text at every offset within `outline`
+ * pixels, which grows with the text size so it stays visible. */
 static void stampText(Patch *p, const char *text, int cx, int cy,
-                      const lgfx::IFont *font) {
+                      const lgfx::IFont *font, int scale = 1) {
+  int outline = 1 + scale / 4;
+  int margin = outline + 1;
   stamp.setFont(font);
+  stamp.setTextSize(scale);
   stamp.setTextDatum(middle_center);
-  int w = stamp.textWidth(text) + 2 * kPatchMargin;
-  int h = stamp.fontHeight() + 2 * kPatchMargin;
+  int w = stamp.textWidth(text) + 2 * margin;
+  int h = stamp.fontHeight() + 2 * margin;
   p->w = w < kSize ? w : kSize;
   p->h = h < kPatchMaxH ? h : kPatchMaxH;
   p->x = cx - p->w / 2;
   p->y = cy - p->h / 2;
   canvas_copy_rect(&canvas, p->x, p->y, p->w, p->h, p->saved);
   stamp.setTextColor(0x000000);
-  for (int dy = -1; dy <= 1; dy++)
-    for (int dx = -1; dx <= 1; dx++)
+  for (int dy = -outline; dy <= outline; dy++)
+    for (int dx = -outline; dx <= outline; dx++)
       if (dx || dy) stamp.drawString(text, cx + dx, cy + dy);
   stamp.setTextColor(0xFFFFFF);
   stamp.drawString(text, cx, cy);
+  stamp.setTextSize(1);
   canvas_mark_dirty(&canvas, p->x, p->y, p->w, p->h);
 }
 
@@ -159,6 +172,9 @@ static void present() {
   if (overlay_name_visible(&overlay, now))
     stampText(&namePatch, g_hacks[runner_index(runner)]->name, kSize / 2,
               kNameY, &fonts::DejaVu24);
+  if (overlay_badge_visible(&overlay))
+    stampText(&namePatch, kBadgeName, kSize / 2, kSize / 2,
+              &fonts::Font8x8C64, kBadgeScale);
   if (overlay_fps_visible(&overlay) || overlay_battery_visible(&overlay)) {
     char text[16];
     if (overlay_fps_visible(&overlay))
@@ -216,8 +232,9 @@ static bool pollRotation() {
   return true;
 }
 
-/* A tap anywhere cycles the readout: nothing, fps, battery. Call right after
- * M5.update(), which is the only place the touch edge is recorded. */
+/* A tap anywhere cycles the readout: nothing, name badge, fps, battery. Call
+ * right after M5.update(), which is the only place the touch edge is
+ * recorded. */
 static void pollTouch() {
   if (M5.Touch.getDetail().wasPressed()) overlay_cycle_info(&overlay);
 }

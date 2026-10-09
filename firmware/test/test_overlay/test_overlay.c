@@ -7,6 +7,10 @@
 
 static Overlay ov;
 
+static void show(OverlayInfo mode) {
+  while (ov.info != mode) overlay_cycle_info(&ov);
+}
+
 void setUp(void) { overlay_init(&ov, NAME_MS); }
 void tearDown(void) {}
 
@@ -35,31 +39,50 @@ void test_the_name_time_survives_the_millisecond_counter_wrapping(void) {
   TEST_ASSERT_FALSE(overlay_name_visible(&ov, 4000));
 }
 
-void test_info_starts_as_nothing_and_taps_cycle_fps_battery_nothing(void) {
-  TEST_ASSERT_FALSE(overlay_fps_visible(&ov));
-  TEST_ASSERT_FALSE(overlay_battery_visible(&ov));
-  overlay_cycle_info(&ov);
-  TEST_ASSERT_TRUE(overlay_fps_visible(&ov));
-  TEST_ASSERT_FALSE(overlay_battery_visible(&ov));
-  overlay_cycle_info(&ov);
-  TEST_ASSERT_FALSE(overlay_fps_visible(&ov));
-  TEST_ASSERT_TRUE(overlay_battery_visible(&ov));
-  overlay_cycle_info(&ov);
-  TEST_ASSERT_FALSE(overlay_fps_visible(&ov));
-  TEST_ASSERT_FALSE(overlay_battery_visible(&ov));
+static void expect_only(bool badge, bool fps, bool battery) {
+  TEST_ASSERT_EQUAL(badge, overlay_badge_visible(&ov));
+  TEST_ASSERT_EQUAL(fps, overlay_fps_visible(&ov));
+  TEST_ASSERT_EQUAL(battery, overlay_battery_visible(&ov));
 }
 
-void test_fps_stays_on_when_a_new_hack_starts(void) {
+void test_info_starts_as_nothing_and_taps_cycle_badge_fps_battery_nothing(void) {
+  expect_only(false, false, false);
   overlay_cycle_info(&ov);
-  overlay_hack_started(&ov, 100);
-  TEST_ASSERT_TRUE(overlay_fps_visible(&ov));
+  expect_only(true, false, false);
+  overlay_cycle_info(&ov);
+  expect_only(false, true, false);
+  overlay_cycle_info(&ov);
+  expect_only(false, false, true);
+  overlay_cycle_info(&ov);
+  expect_only(false, false, false);
 }
 
-void test_battery_stays_on_when_a_new_hack_starts(void) {
-  overlay_cycle_info(&ov);
-  overlay_cycle_info(&ov);
-  overlay_hack_started(&ov, 100);
-  TEST_ASSERT_TRUE(overlay_battery_visible(&ov));
+void test_the_chosen_readout_stays_when_a_new_hack_starts(void) {
+  OverlayInfo modes[] = {INFO_NAME, INFO_FPS, INFO_BATTERY};
+  for (int i = 0; i < 3; i++) {
+    show(modes[i]);
+    overlay_hack_started(&ov, 100);
+    TEST_ASSERT_EQUAL(modes[i], ov.info);
+  }
+}
+
+void test_the_hack_name_is_hidden_only_in_badge_mode(void) {
+  overlay_hack_started(&ov, 0);
+  TEST_ASSERT_TRUE(overlay_name_visible(&ov, 100));
+  show(INFO_NAME);
+  TEST_ASSERT_FALSE(overlay_name_visible(&ov, 100));
+  show(INFO_FPS);
+  TEST_ASSERT_TRUE(overlay_name_visible(&ov, 100));
+  show(INFO_BATTERY);
+  TEST_ASSERT_TRUE(overlay_name_visible(&ov, 100));
+}
+
+void test_the_hack_name_returns_when_leaving_badge_mode_within_its_time(void) {
+  overlay_hack_started(&ov, 0);
+  show(INFO_NAME);
+  show(INFO_FPS);
+  TEST_ASSERT_TRUE(overlay_name_visible(&ov, 4999));
+  TEST_ASSERT_FALSE(overlay_name_visible(&ov, 5000));
 }
 
 void test_battery_text_is_a_whole_percentage(void) {
@@ -159,7 +182,7 @@ void test_a_redraw_is_wanted_when_the_name_expires(void) {
 }
 
 void test_a_redraw_is_wanted_whenever_the_info_mode_changes(void) {
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 4; i++) {
     overlay_drawn(&ov, 0);
     overlay_cycle_info(&ov);
     TEST_ASSERT_TRUE(overlay_wants_redraw(&ov, 0));
@@ -167,8 +190,7 @@ void test_a_redraw_is_wanted_whenever_the_info_mode_changes(void) {
 }
 
 void test_a_redraw_is_wanted_when_the_shown_battery_level_changes(void) {
-  overlay_cycle_info(&ov);
-  overlay_cycle_info(&ov);
+  show(INFO_BATTERY);
   overlay_set_battery(&ov, 90);
   overlay_drawn(&ov, 0);
   overlay_set_battery(&ov, 90);
@@ -190,9 +212,10 @@ int main(void) {
   RUN_TEST(test_the_name_shows_for_exactly_the_name_time_after_a_start);
   RUN_TEST(test_switching_hacks_restarts_the_name_time);
   RUN_TEST(test_the_name_time_survives_the_millisecond_counter_wrapping);
-  RUN_TEST(test_info_starts_as_nothing_and_taps_cycle_fps_battery_nothing);
-  RUN_TEST(test_fps_stays_on_when_a_new_hack_starts);
-  RUN_TEST(test_battery_stays_on_when_a_new_hack_starts);
+  RUN_TEST(test_info_starts_as_nothing_and_taps_cycle_badge_fps_battery_nothing);
+  RUN_TEST(test_the_chosen_readout_stays_when_a_new_hack_starts);
+  RUN_TEST(test_the_hack_name_is_hidden_only_in_badge_mode);
+  RUN_TEST(test_the_hack_name_returns_when_leaving_badge_mode_within_its_time);
   RUN_TEST(test_battery_text_is_a_whole_percentage);
   RUN_TEST(test_battery_text_is_a_placeholder_until_a_level_is_known);
   RUN_TEST(test_battery_level_is_clamped_to_0_to_100);
