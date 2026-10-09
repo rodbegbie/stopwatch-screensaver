@@ -1,0 +1,1 @@
+Agree with A, and with the X11 shim approach.  I don't know what the other serial port is.
