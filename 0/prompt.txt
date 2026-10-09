@@ -1,0 +1,1 @@
+Try option 1, the stroke.c speed-up. And you have permission to keep flashing the device
