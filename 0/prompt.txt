@@ -1,0 +1,3 @@
+OK, I've tested and it's working as designed.  Text is a good size and clear. Chunky pixel font looks nice.  Cycling through overlays is working.  And I unplugged it for a while too, and can confirm that the battery overlay seems to be working correctly.  It dropped down to 94% before I plugged it back in.
+
+It's now connected, and displaying my name, so run your log capture.
