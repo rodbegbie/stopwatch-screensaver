@@ -24,9 +24,12 @@ embedded-specific choices as you make them. See `README.md` for setup and
   `hacks/registry.[ch]` (ours) lists them in button order.
 - `firmware/src/xs_support/`: other copied xscreensaver files (`hsv.c`).
 - `firmware/src/runner/` and `main.cpp`: start, step and switch hacks; the
-  device loop. `firmware/native/dump_main.c` renders frames on the Mac.
-- `tools/`: fetch, notices check, assessment scorer, PNG converter, build-time
-  patches (`maze_patch.py`, `pacman_patch.py`, `float_literals.py`) (Python).
+  device loop. `firmware/native/dump_main.c` renders frames on the Mac, and
+  its `stats` mode prints the host milliseconds per step.
+- `tools/`: fetch, notices check, assessment scorer, host speed probe
+  (`probe_hacks.py`) and its backtest (`speed_backtest.py`), PNG converter,
+  build-time patches (`maze_patch.py`, `pacman_patch.py`, `float_literals.py`)
+  (Python).
   `tools/failed_ports.txt` lists abandoned ports (`name: reason`); the scorer
   marks them ❌, and ✅ comes from `g_hacks[]` in `registry.c`.
 - `.claude/skills/port-hack/`: the order of work for porting a hack, and a
@@ -83,7 +86,12 @@ From the repo root:
 - `uv run --with pytest --with pillow pytest tools/tests` (without Pillow the
   logo converter's tests are skipped, not run)
 - `uv run tools/check_notices.py`
-- `uv run tools/score_hacks.py` regenerates `docs/porting-assessment.md`.
+- `uv run tools/score_hacks.py` regenerates `docs/porting-assessment.md`. It
+  also builds each unported S hack with the shim and runs it on the host for the
+  Speed column (`tools/probe_hacks.py`, about a minute); `--no-probe` skips it.
+- `(cd firmware && pio run -e dump) && uv run tools/speed_backtest.py`
+  regenerates `docs/speed-backtest.md`: host time against the step measured on
+  the device, for every registered hack.
 - `markdownlint <files>` (config in `.markdownlint.json`). Run it from here:
   from `firmware/` it misses the config and reports line-length errors.
 
@@ -132,7 +140,8 @@ Set `NO_COLOR=1` on `pio` output you parse.
 The `port-hack` skill orders this work, says what to read for before copying a
 hack, and holds a recipe per trap. The steps:
 
-1. Check its row in `docs/porting-assessment.md` and read its licence header.
+1. Check its row in `docs/porting-assessment.md` (effort and Speed band) and
+   read its licence header.
 2. Update the expected list in `firmware/test/test_hacks/test_hacks.c` and see
    it fail.
 3. Copy the file to `firmware/src/hacks/<name>/<name>.c`, add the notices row
@@ -142,7 +151,9 @@ hack, and holds a recipe per trap. The steps:
 5. Host tests pass, dump a frame and look at it, then (with Rod's go-ahead)
    flash and measure fps and free heap/PSRAM over serial.
 6. Regenerate the assessment and add measurements to
-   `tools/assessment_measured.md`.
+   `tools/assessment_measured.md`, then re-run the speed backtest: each port
+   adds a point to the check of the Speed bands, which were fitted to the first
+   29 hacks and so are untested on new ones.
 7. If a hack is slow and `double`-heavy (many `double`s, `sqrt`, `sin`/`cos`,
    `pow`), try a single-precision wrapper like `hacks/galaxy_single.c` (for a
    plain screenhack, `hacks/substrate_single.c`; the recipe is in the skill's
@@ -348,8 +359,14 @@ hack, and holds a recipe per trap. The steps:
   free that zeroes `NUM_ROBOTS` when `robots` is NULL.
 - Don't declare `xrealloc` or `xmalloc` in the shim: cloudlife defines its own
   static `xrealloc`, which would clash.
-- `score_hacks.py` rates hacks by call sites, not loop trips: Flame (all
-  `double` maths) is rated S but runs at 2-7 fps. Measure on the device.
+- `score_hacks.py` rates effort by call sites, not loop trips: Flame (all
+  `double` maths) is rated S but runs at 2-7 fps, and Braid was rated S and
+  runs at 3-9 fps. The Speed column runs the hack on the host instead and ranks
+  the device step well (Spearman 0.89 over the 29 measured hacks), but a low
+  band does not clear a hack that does software `double` maths: the device ran
+  60-1,500 times the host time, most for the double-bound ones. Measure on the
+  device, and read `docs/speed-backtest.md` before trusting a band. A hack
+  with gaps (M and above) cannot be built, so it has no Speed.
 - `pio test` runs every registered hack for 3000 frames under ASan (about 15 s);
   a hack that is slow on the host slows the whole suite.
 - Host leak tests: LeakSanitizer does not run on macOS, so compare

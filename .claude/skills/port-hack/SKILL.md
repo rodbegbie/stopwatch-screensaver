@@ -11,9 +11,13 @@ sets the order of work and the points to stop. The recipes it names are in
 
 ## 1. Pick, then read the source
 
-Take S-rated rows from `docs/porting-assessment.md` first. The rating counts
-missing shim calls, not memory, speed or stack, so read the hack's source
-before copying it, and look for:
+Take S-rated rows from `docs/porting-assessment.md` first, and prefer a low
+**Speed** band: the table runs each unported S hack on the host. The effort
+rating counts missing shim calls, not memory, speed or stack (Braid was S, and
+would have shown as high). A high band is a hack that will probably run slowly
+on the board; a low band is not a guarantee, because a hack still doing
+software `double` maths runs far slower on the device than on the host. Read
+the hack's source before copying it, and look for:
 
 | The source has | Technique (seen in) |
 | --- | --- |

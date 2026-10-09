@@ -251,7 +251,7 @@ def test_main_explicit_vendor_works_without_a_default_one(tmp_path, capsys):
     registry.write_text("const HackEntry *const g_hacks[] = {&demo_hack};\n")
     out = tmp_path / "out.md"
     argv = ["--vendor", str(vendor), "--header", str(header), "--intro", str(intro),
-            "--registry", str(registry), "--out", str(out)]
+            "--registry", str(registry), "--out", str(out), "--no-probe"]
     for d in SHIM_INCLUDES:
         argv += ["--shim-include", str(d)]
     assert sh.main(argv, root=tmp_path) == 0
@@ -271,7 +271,7 @@ def test_table_renders_gaps_as_code_and_escapes_pipes():
     data_line = table.strip().splitlines()[-1]
     assert "`error: unknown type 'Display *'`" in data_line
     assert "`a\\|b`" in data_line
-    assert data_line.replace("\\|", "").count("|") == 8
+    assert data_line.replace("\\|", "").count("|") == 9
 
 
 def test_ranking_renders_gaps_as_code():
@@ -374,7 +374,7 @@ def test_main_marks_registered_hacks_as_ported(tmp_path):
     failed.write_text("other: would not run\n")
     out = tmp_path / "out.md"
     argv = ["--vendor", str(vendor), "--header", str(header), "--intro", str(intro),
-            "--registry", str(registry), "--failed-ports", str(failed), "--out", str(out)]
+            "--registry", str(registry), "--failed-ports", str(failed), "--out", str(out), "--no-probe"]
     for d in SHIM_INCLUDES:
         argv += ["--shim-include", str(d)]
     assert sh.main(argv, root=tmp_path) == 0
@@ -430,7 +430,7 @@ def test_main_counts_only_unported_hacks_per_rating(tmp_path):
     registry.write_text("const HackEntry *const g_hacks[] = {&done_hack};\n")
     out = tmp_path / "out.md"
     argv = ["--vendor", str(vendor), "--header", str(header), "--intro", str(intro),
-            "--registry", str(registry), "--out", str(out)]
+            "--registry", str(registry), "--out", str(out), "--no-probe"]
     for d in SHIM_INCLUDES:
         argv += ["--shim-include", str(d)]
     assert sh.main(argv, root=tmp_path) == 0
@@ -438,3 +438,56 @@ def test_main_counts_only_unported_hacks_per_rating(tmp_path):
     counts, ported = line.removeprefix("counts=").split(" ported=")
     assert sum(int(n) for n in counts.split()) == 1
     assert ported == "1"
+
+
+def _speed_cell(row, **kwargs):
+    return _cells(sh.render_table([row], **kwargs))[0]["Speed"]
+
+
+def test_a_probed_hack_shows_its_band_and_host_time():
+    row = {**_row("braid", "S"), "speed": {"host_ms": 1.635}}
+    assert _speed_cell(row) == "high (1.6 ms)"
+    row = {**_row("quick", "S"), "speed": {"host_ms": 0.0054}}
+    assert _speed_cell(row) == "low (0.0054 ms)"
+
+
+def test_a_probe_failure_shows_only_its_category():
+    row = {**_row("a", "S"), "speed": {"error": "does not link: XFoo, XBar"}}
+    assert _speed_cell(row) == "does not link"
+    row = {**_row("b", "S"), "speed": {"error": "crashed on the host (signal 11)"}}
+    assert _speed_cell(row) == "crashed on the host"
+
+
+def test_a_hack_that_was_not_probed_has_a_dash():
+    assert _speed_cell(_row("big", "L")) == "-"
+
+
+def test_a_ported_hack_shows_the_step_measured_on_the_device():
+    rows = [_row("pyro", "S"), _row("maze", "S")]
+    cells = _cells(
+        sh.render_table(
+            rows, ported={"pyro", "maze"}, measured={"pyro": (0.8, 1.1), "maze": (0.7, 0.7)}
+        )
+    )
+    assert [c["Speed"] for c in cells] == ["0.7 ms measured", "0.8-1.1 ms measured"]
+
+
+def test_a_ported_hack_with_no_measurement_has_a_dash():
+    assert _speed_cell(_row("pyro", "S"), ported={"pyro"}, measured={}) == "-"
+
+
+def test_only_unported_two_d_hacks_rated_s_are_probed():
+    rows = [
+        _row("easy", "S"), _row("medium", "M"), _row("hard", "L"),
+        _row("done", "S"), {**_row("gl", "XL"), "kind": "gl"},
+    ]
+    probed = []
+
+    def fake(name):
+        probed.append(name)
+        return {"host_ms": 0.01}
+
+    sh.probe_speed(rows, {"done"}, fake)
+    assert probed == ["easy"]
+    assert rows[0]["speed"] == {"host_ms": 0.01}
+    assert all("speed" not in r for r in rows[1:])

@@ -13,6 +13,8 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+import probe_hacks
+
 X_CALL = re.compile(r"\b(X[A-Z][A-Za-z0-9]*)\s*\(")
 GL_IDENT = re.compile(r"\b(glBegin|glVertex\w*|glx\w+|GLX\w+)\b")
 NOISE = re.compile(
@@ -44,6 +46,10 @@ UNNAMED = re.compile(r"::\(unnamed[^)]*\)")
 MAX_HEADER_STUBS = 25
 FLOAT_HEAVY_THRESHOLD = 20
 MAX_MEDIUM_MISSING = 4
+# The hacks worth running on the host are the S ones. A gap is a compile error,
+# so an M or L hack cannot be built until the shim fills it, and a GL hack needs
+# a rasteriser first.
+PROBED_EFFORTS = {"S"}
 EFFORT_ORDER = {"S": 0, "M": 1, "L": 2, "XL": 3}
 REGISTRY_ARRAY = re.compile(r"\bg_hacks\s*\[\s*\]\s*=\s*\{(.*?)\}\s*;", re.DOTALL)
 REGISTRY_ENTRY = re.compile(r"&(\w+)_hack\b")
@@ -209,10 +215,43 @@ def code_cell(text: str) -> str:
     return "`" + text.replace("`", "'").replace("|", "\\|") + "`"
 
 
-def render_table(rows: list[dict], ported=frozenset(), failed=frozenset()) -> str:
+def probe_speed(rows: list[dict], ported: set[str], probe_one, workers: int = 4) -> None:
+    """Runs each unported 2D hack rated S on the host and stores the result
+    as row["speed"]: {"host_ms": ...} or {"error": ...}. `probe_one(name)` does
+    the build and run (see probe_hacks.probe)."""
+    todo = [
+        r
+        for r in rows
+        if r["name"] not in ported and r["kind"] == "2d" and r["effort"] in PROBED_EFFORTS
+    ]
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        for row, result in zip(todo, pool.map(lambda r: probe_one(r["name"]), todo)):
+            row["speed"] = result
+
+
+def speed_cell(row: dict, done: bool = False, measured: dict | None = None) -> str:
+    """A ported hack shows the step measured on the device; an unported one
+    shows its host band, or why it could not be probed."""
+    if done:
+        steps = (measured or {}).get(row["name"])
+        if not steps:
+            return "-"
+        lo, hi = steps
+        return (f"{lo:g}" if lo == hi else f"{lo:g}-{hi:g}") + " ms measured"
+    speed = row.get("speed")
+    if not speed:
+        return "-"
+    if "error" in speed:
+        return speed["error"].split(":")[0].split(" (")[0]
+    return f"{probe_hacks.band(speed['host_ms'])} ({speed['host_ms']:.2g} ms)"
+
+
+def render_table(
+    rows: list[dict], ported=frozenset(), failed=frozenset(), measured=None
+) -> str:
     lines = [
-        "| Hack | Kind | Effort | Ported | Shim gaps | Flags | LOC |",
-        "| --- | --- | --- | --- | --- | --- | --- |",
+        "| Hack | Kind | Effort | Speed | Ported | Shim gaps | Flags | LOC |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     def order(r):
         return (r["name"] in ported, EFFORT_ORDER[r["effort"]], r["name"])
@@ -223,8 +262,9 @@ def render_table(rows: list[dict], ported=frozenset(), failed=frozenset()) -> st
         done = r["name"] in ported
         mark = PORTED if done else FAILED if r["name"] in failed else "-"
         effort = "-" if done else r["effort"]
+        speed = speed_cell(r, done, measured)
         lines.append(
-            f"| {r['name']} | {r['kind']} | {effort} | {mark} | {missing} | {flags} | {r['loc']} |"
+            f"| {r['name']} | {r['kind']} | {effort} | {speed} | {mark} | {missing} | {flags} | {r['loc']} |"
         )
     return "\n".join(lines) + "\n"
 
@@ -301,6 +341,12 @@ def main(argv: list[str], root: Path | None = None) -> int:
     parser.add_argument("--intro", default=str(root / "tools/assessment_intro.md"))
     parser.add_argument("--measured", default=str(root / "tools/assessment_measured.md"))
     parser.add_argument("--out", default=str(root / "docs/porting-assessment.md"))
+    parser.add_argument(
+        "--no-probe",
+        dest="probe",
+        action="store_false",
+        help="skip running the S hacks on the host for the Speed column",
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -336,6 +382,14 @@ def run(args: argparse.Namespace, vendor: Path, root: Path) -> int:
     failed_path = Path(args.failed_ports)
     failed = read_failed_ports(failed_path.read_text()) if failed_path.exists() else {}
     check_ports(ported, failed, {r["name"] for r in rows})
+    if args.probe:
+        probe_speed(
+            rows,
+            ported,
+            lambda name: probe_hacks.probe(
+                name, (vendor / "hacks" / f"{name}.c").read_text(errors="replace"), root
+            ),
+        )
     todo = [r for r in rows if r["name"] not in ported]
     counts = {e: sum(r["effort"] == e for r in todo) for e in ("S", "M", "L", "XL")}
     intro = Path(args.intro).read_text().format(
@@ -355,7 +409,7 @@ def run(args: argparse.Namespace, vendor: Path, root: Path) -> int:
         + "needing few additions come first.\n\n"
         + render_ranking(rank_missing(rows, 10))
         + "\n## All hacks\n\n"
-        + render_table(rows, ported, set(failed))
+        + render_table(rows, ported, set(failed), probe_hacks.parse_measured(measured))
         + render_failed(failed)
         + "\n## Excluded files\n\n"
         + "These files in `hacks/` and `hacks/glx/` have no `XSCREENSAVER_MODULE`\n"
