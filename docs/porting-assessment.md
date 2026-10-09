@@ -16,8 +16,9 @@ it with `uv run tools/score_hacks.py`.
   (`cc -fsyntax-only`). Anything the compiler cannot find is a **shim
   gap**: a missing header, type, struct field, constant or function.
   That second check catches helpers hacks reach through `utils/` that a
-  count of Xlib calls cannot see. It does not run anything, so treat the
-  effort ratings as a prioritisation aid, not an estimate.
+  count of Xlib calls cannot see. The effort rating does not run anything,
+  so treat it as a prioritisation aid, not an estimate. It also says nothing
+  about speed: see "Speed" below.
 - The **All hacks** table lists the work still to do first, from least to
   most effort (S, M, L, XL) and then by name, and the ported hacks last.
   Its **Ported** column shows ✅ for a hack in the
@@ -35,6 +36,33 @@ it with `uv run tools/score_hacks.py`.
 | L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 80 |
 | XL | GL: needs a software rasteriser (see below) | 140 |
 | Ported | Already running on the device, so no rating | 29 |
+
+## Speed
+
+Effort says what a hack takes to compile, not how fast it runs. Braid was
+rated S and runs at 3-9 fps, because it draws about 7,500 wide lines a frame,
+which nothing in its source says. So each unported S hack is also built with
+the shim and run on the host for 300 steps (`tools/probe_hacks.py`), and the
+**Speed** column gives its band and host milliseconds per step. A hack rated
+M or higher has gaps, which are compile errors, so it cannot be run until the
+shim fills them and its Speed is a dash.
+
+- **low**: under 0.015 ms.
+- **medium**: 0.015 to 0.05 ms.
+- **high**: 0.05 ms or more.
+- **does not link**, **does not compile**, **crashed on the host**, **timed
+  out**: an S hack that could not be probed.
+
+A ported hack shows the step measured on the device instead.
+
+The host time ranks the device step well (a Spearman correlation of 0.89 over
+the hacks measured, and all seven with a device step of 50 ms or more are in
+the high band) but it is not a prediction in milliseconds: the device took
+60 to 1,500 times as long. The ratio is highest for hacks that still do
+software double-precision maths, so a low band does not clear a hack that
+does a lot of `double` arithmetic. The bands were fitted to the same hacks, so
+those figures are in-sample. See [speed-backtest.md](speed-backtest.md) for
+the table and its limits.
 
 ## Flags
 
@@ -430,291 +458,291 @@ needing few additions come first.
 
 ## All hacks
 
-| Hack | Kind | Effort | Ported | Shim gaps | Flags | LOC |
-| --- | --- | --- | --- | --- | --- | --- |
-| anemone | 2d | S | - | - | pixmaps | 458 |
-| anemotaxis | 2d | S | - | - | pixmaps | 760 |
-| celtic | 2d | S | - | - | - | 1141 |
-| compass | 2d | S | - | - | pixmaps, float-heavy | 999 |
-| epicycle | 2d | S | - | - | - | 803 |
-| euler2d | 2d | S | - | - | float-heavy, needs-xlockmore | 893 |
-| forest | 2d | S | - | - | needs-xlockmore | 241 |
-| fuzzyflakes | 2d | S | - | - | pixmaps | 655 |
-| grav | 2d | S | - | - | needs-xlockmore | 360 |
-| halftone | 2d | S | - | - | pixmaps | 413 |
-| ifs | 2d | S | - | - | pixmaps | 560 |
-| interaggregate | 2d | S | - | - | - | 989 |
-| kaleidescope | 2d | S | - | - | - | 514 |
-| laser | 2d | S | - | - | needs-xlockmore | 356 |
-| lissie | 2d | S | - | - | needs-xlockmore | 323 |
-| lmorph | 2d | S | - | - | float-heavy | 580 |
-| mountain | 2d | S | - | - | needs-xlockmore | 283 |
-| rotor | 2d | S | - | - | needs-xlockmore | 394 |
-| scooter | 2d | S | - | - | needs-xlockmore | 975 |
-| truchet | 2d | S | - | - | pixmaps | 541 |
-| wormhole | 2d | S | - | - | pixmaps | 734 |
-| abstractile | 2d | M | - | `BlackPixelOfScreen`, `make_color_loop`, `make_color_ramp`, `rgb_to_hsv` | - | 1625 |
-| bouboule | 2d | M | - | `GXor`, `XSetFunction` | xor, needs-xlockmore | 860 |
-| cwaves | 2d | M | - | `BlackPixelOfScreen` | - | 219 |
-| cynosure | 2d | M | - | `XCreateBitmapFromData`, `XSetWindowBackground`, `rgb_to_hsv` | - | 457 |
-| hexadrop | 2d | M | - | `XSetWindowBackground` | - | 446 |
-| hyperball | 2d | M | - | `UnmapNotify` | - | 2464 |
-| lisa | 2d | M | - | `XMaxRequestSize` | needs-xlockmore | 744 |
-| munch | 2d | M | - | `GXxor`, `XSetFunction`, `i_log2`, `pow2.h` | xor | 462 |
-| penrose | 2d | M | - | `LineOnOffDash` | needs-xlockmore | 1342 |
-| triangle | 2d | M | - | `free_colors`, `make_smooth_colormap` | needs-xlockmore | 355 |
-| vermiculate | 2d | M | - | `XSetWindowBackground`, `ya_random` | - | 1229 |
-| worm | 2d | M | - | `GXor`, `XClearArea`, `XSetFunction` | xor, needs-xlockmore | 434 |
-| xrayswarm | 2d | M | - | `XSetGraphicsExposures`, `initTime` | - | 1235 |
-| ant | 2d | L | - | `CoordModePrevious`, `NUMSTIPPLES`, `XCreatePixmapFromBitmapData`, `automata.h`, `hexagonUnit`, `triangleUnit` | needs-xlockmore | 1351 |
-| apollonian | 2d | L | - | `FcChar8`, `XColor.color`, `XGlyphInfo`, `XQueryColor`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall` | needs-xlockmore | 820 |
-| apple2-main | 2d | L | - | `A2CONTROLLER_DONE`, `A2CONTROLLER_FREE`, `A2_GR_FULL`, `A2_GR_HIRES`, `A2_GR_LORES`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `DisplayOfScreen`, `GrayScale`, `KeyPress`, `PseudoColor`, `TTY_BLINK`, `TTY_BOLD`, `TTY_INVERSE`, `TTY_SYMBOLS`, `XDestroyImage`, `XEvent.xany`, `XEvent.xkey`, `XGetImage`, `XGetPixel`, `XImage`, `XQueryColors`, `ZPixmap`, `a2_clear_gr`, `a2_clear_hgr`, `a2_cls`, `a2_display_image_loading`, `a2_goto`, `a2_hline`, `a2_hplot`, `a2_invalidate`, `a2_plot`, `a2_printc`, `a2_printc_noscroll`, `a2_prints`, `analogtv_reconfigure`, `ansi-tty.h`, `ansi_tty`, `ansi_tty_free`, `ansi_tty_init`, `ansi_tty_print`, `apple2.h`, `apple2_one_frame`, `apple2_sim_t`, `apple2_start`, `apple2_state_t`, `error: expected expression`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `error: incompatible integer to pointer conversion initializing 'char *' with an expression of type 'int' [-Wint-conversion]`, `flag`, `image`, `load_image_async`, `sim`, `st`, `tc`, `text_data`, `textclient.h`, `textclient_close`, `textclient_getc`, `textclient_open`, `textclient_putc_event`, `textclient_puts`, `textclient_reshape`, `tty`, `tty_char`, `tty_flag`, `utf8_encode`, `utf8_to_latin1`, `utf8wc.h`, `visual_cells`, `visual_class`, `visual_rgb_masks` | pixmaps, readback | 1642 |
-| attraction | 2d | L | - | `ButtonRelease`, `XEvent.x`, `XEvent.xany`, `XEvent.y`, `compute_closed_spline`, `error: incompatible integer to pointer conversion assigning to 'int *' from 'int' [-Wint-conversion]`, `error: member reference base type 'int' is not a structure or union`, `error: type name does not allow function specifier to be specified`, `error: type specifier missing, defaults to 'int'; ISO C99 and later do not support implicit int [-Wimplicit-int]`, `free_spline`, `make_color_ramp`, `make_spline`, `spline` | - | 1115 |
-| barcode | 2d | L | - | `ButtonRelease`, `LSBFirst`, `XCreateImage`, `XDestroyImage`, `XEvent.xany`, `XImage`, `XPutImage`, `XYBitmap` | - | 2055 |
-| binaryhorizon | 2d | L | - | `KeyPress`, `XDestroyImage`, `XEvent.xany`, `XGetImage`, `XImage`, `XPutImage`, `XPutPixel`, `ZPixmap`, `visual_depth` | pixmaps, readback | 624 |
-| binaryring | 2d | L | - | `KeyPress`, `XDestroyImage`, `XEvent.xany`, `XGetImage`, `XImage`, `XPutImage`, `XPutPixel`, `ZPixmap`, `visual_depth` | pixmaps, readback | 577 |
-| blitspin | 2d | L | - | `GXand`, `GXclear`, `GXor`, `GXset`, `GXxor`, `XDestroyImage`, `XDisplayHeight`, `XDisplayWidth`, `XGetImage`, `XPutImage`, `XScreenNumberOfScreen`, `async_load_state`, `file_to_pixmap`, `images/gen/som_png.h`, `load_image_async_simple`, `pow2.h`, `som_png`, `to_pow2` | pixmaps, readback, clipmask | 467 |
-| boxfit | 2d | L | - | `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XSetWindowBackground`, `ZPixmap`, `async_load_state`, `load_image_async_simple` | pixmaps, readback | 573 |
-| bsod | 2d | L | - | `A2CONTROLLER_DONE`, `A2CONTROLLER_FREE`, `A2_GR_FULL`, `A2_GR_HIRES`, `A2_GR_LORES`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `FcChar8`, `XClearArea`, `XColor.color`, `XCreateImage`, `XCreatePixmapFromBitmapData`, `XDestroyImage`, `XFetchName`, `XGetImage`, `XGetPixel`, `XGlyphInfo`, `XImage`, `XPutImage`, `XPutPixel`, `XQueryColor`, `XSetPlaneMask`, `XSetWindowBackground`, `XStoreName`, `XYPixmap`, `XftColor`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `XftTextExtentsUtf8_multi`, `ZPixmap`, `a2_cls`, `a2_goto`, `a2_init_memory_active`, `a2_invalidate`, `a2_poke`, `a2_printc`, `a2_printc_noscroll`, `a2_prints`, `amiga_png`, `android_png`, `apple2.h`, `apple2_one_frame`, `apple2_sim_t`, `apple2_start`, `apple2_state_t`, `apple_png`, `async_load_state`, `atari_png`, `atm_png`, `dvd_png`, `em`, `error: expected expression`, `font`, `gnome1_png`, `gnome2_png`, `hmac_png`, `i1`, `i2`, `images/gen/amiga_png.h`, `images/gen/android_png.h`, `images/gen/apple_png.h`, `images/gen/atari_png.h`, `images/gen/atm_png.h`, `images/gen/dvd_png.h`, `images/gen/gnome1_png.h`, `images/gen/gnome2_png.h`, `images/gen/hmac_png.h`, `images/gen/mac_png.h`, `images/gen/macbomb_png.h`, `images/gen/osx_10_2_png.h`, `images/gen/osx_10_3_png.h`, `images/gen/ransomware_png.h`, `images/gen/sun_png.h`, `load_image_async_simple`, `load_xft_font_retry`, `mac_png`, `macbomb_png`, `osx_10_2_png`, `osx_10_3_png`, `ov`, `ov2`, `ransomware_png`, `screen_number`, `sim`, `st`, `sun_png`, `utf8_decode_combining`, `utf8wc.h`, `xft.h`, `xft_word_wrap`, `xftwrap.h` | pixmaps, readback, clipmask | 7809 |
-| bubbles | 2d | L | - | `BUBBLE_MAGIC`, `Bubble`, `Bubble_Step`, `DELETE_BUBBLE`, `KEEP_BUBBLE`, `MAX`, `MAX_DROPPAGE`, `MIN`, `bubbles.h`, `default_bubbles`, `error: expected expression`, `head`, `init_default_bubbles`, `least`, `newpix`, `nextbub`, `num_default_bubbles`, `pixmap_list`, `rv`, `tmp`, `tmppix`, `touch` | pixmaps, clipmask | 1468 |
-| bumps | 2d | L | - | `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XQueryColors`, `XSetWindowBackground`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `load_image_async_simple`, `pScreenImage`, `put_xshm_image`, `xshm.h` | pixmaps, readback | 705 |
-| ccurve | 2d | L | - | `make_color_loop` | pixmaps | 872 |
-| crystal | 2d | L | - | `GXxor`, `XCreateColormap`, `XFreeColormap`, `XInstallColormap`, `XSetFunction`, `XSetWindowColormap`, `free_colors`, `has_writable_cells`, `make_random_colormap`, `make_smooth_colormap`, `make_uniform_colormap`, `rotate_colors` | xor, float-heavy, needs-xlockmore | 1286 |
-| decayscreen | 2d | L | - | `async_load_state`, `load_image_async_simple` | pixmaps | 392 |
-| deco | 2d | L | - | `DisplayOfScreen`, `XStoreColors`, `allocate_writable_colors`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `has_writable_cells` | - | 345 |
-| deluxe | 2d | L | - | `GCPlaneMask`, `XGCValues.plane_mask`, `allocate_alpha_colors`, `alpha.h` | pixmaps, float-heavy | 480 |
-| demon | 2d | L | - | `CoordModePrevious`, `GCFillStyle`, `GCStipple`, `NUMSTIPPLES`, `STIPPLESIZE`, `XCreatePixmapFromBitmapData`, `XGCValues.fill_style`, `XGCValues.stipple`, `automata.h`, `hexagonUnit`, `stipples`, `triangleUnit` | needs-xlockmore | 953 |
-| distort | 2d | L | - | `BlackPixelOfScreen`, `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XPutImage`, `XPutPixel`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `load_image_async_simple`, `put_xshm_image`, `xshm.h` | pixmaps, readback | 894 |
-| droste | 2d | L | - | `BlackPixelOfScreen`, `GET_PARENT_OBJ`, `KeyPress`, `KeySym`, `THREAD_DEFAULTS`, `THREAD_OPTIONS`, `XDestroyImage`, `XEvent.xkey`, `XGetImage`, `XGetPixel`, `XImage`, `XK_Down`, `XK_Left`, `XK_Right`, `XK_Up`, `XLookupString`, `XPutPixel`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `double_time`, `doubletime.h`, `error: expected expression`, `error: field has incomplete type 'struct threadpool'`, `error: variable has incomplete type 'const struct threadpool_class'`, `hardware_concurrency`, `i_log2_fast`, `keysym`, `load_image_async_simple`, `pow2.h`, `put_xshm_image`, `thread_util.h`, `threadpool`, `threadpool_create`, `threadpool_destroy`, `threadpool_run`, `threadpool_wait`, `xshm.h` | pixmaps, readback | 686 |
-| eruption | 2d | L | - | `XEvent.x`, `XEvent.y`, `XImage`, `XPutPixel`, `XSetWindowBackground`, `XShmSegmentInfo`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `error: typedef redefinition with different types ('unsigned long' vs 'unsigned int')`, `img`, `put_xshm_image`, `xshm.h` | - | 608 |
-| fiberlamp | 2d | L | - | `RootWindow`, `XAllocNamedColor`, `XSetGraphicsExposures`, `XTranslateCoordinates` | pixmaps, needs-xlockmore | 480 |
-| filmleader | 2d | L | - | `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_SIGNAL_LEN`, `ButtonRelease`, `FcChar8`, `KeyPress`, `KeySym`, `XCreateImage`, `XDestroyImage`, `XEvent.xany`, `XEvent.xkey`, `XGetImage`, `XGetPixel`, `XGlyphInfo`, `XImage`, `XLookupString`, `XPutImage`, `XPutPixel`, `XftColor`, `XftColorAllocName`, `XftColorFree`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftTextExtentsUtf8`, `ZPixmap`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_load_ximage`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `double_time`, `doubletime.h`, `error: expected expression`, `extents`, `img`, `img1`, `img2`, `keysym`, `load_xft_font_retry`, `screen_number`, `xftfont` | pixmaps, readback | 548 |
-| fireworkx | 2d | L | - | `ButtonRelease`, `ImageByteOrder`, `MSBFirst`, `XCreateImage`, `XDestroyImage`, `XEvent.x`, `XEvent.y`, `XImage`, `XPutImage`, `ZPixmap` | - | 882 |
-| flag | 2d | L | - | `GCFont`, `XCharStruct`, `XCreateImage`, `XDestroyImage`, `XDrawString`, `XFontStruct`, `XFreeFont`, `XGCValues.font`, `XGetImage`, `XGetPixel`, `XImage`, `XLoadQueryFont`, `XPutPixel`, `XSetGraphicsExposures`, `XTextExtents`, `XYBitmap`, `XYPixmap`, `ZPixmap`, `bob_png`, `file_to_pixmap`, `font`, `im`, `image_data_to_ximage`, `images/gen/bob_png.h`, `o2`, `overall` | pixmaps, readback, text, needs-xlockmore | 570 |
-| flow | 2d | L | - | `XSetGraphicsExposures` | pixmaps, needs-xlockmore | 1216 |
-| fluidballs | 2d | L | - | `ButtonRelease`, `FcChar8`, `RootWindow`, `XEvent.x`, `XEvent.xany`, `XEvent.y`, `XTranslateCoordinates`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `error: expected expression`, `error: too few arguments to function call, expected 2, have 1`, `load_xft_font_retry`, `screen_number` | pixmaps | 881 |
-| fontglide | 2d | L | - | `BlackPixelOfScreen`, `DisplayOfScreen`, `FcChar8`, `XCreateImage`, `XDestroyImage`, `XDrawString`, `XDrawString16`, `XFreeFont`, `XGetAtomName`, `XGetImage`, `XGetPixel`, `XGlyphInfo`, `XImage`, `XLoadQueryFont`, `XLookupString`, `XPutImage`, `XPutPixel`, `XRenderColor`, `XSetFont`, `XTextExtents`, `XTextExtents16`, `XYPixmap`, `XftColor`, `XftColorAllocValue`, `XftColorFree`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `ZPixmap`, `bg`, `error: Xft is required under X11`, `error: expected expression`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `extents`, `fg`, `in`, `load_xft_font_retry`, `out`, `screen_number`, `swap`, `text_data`, `textclient.h`, `textclient_close`, `textclient_getc`, `textclient_open`, `utf8_decode_combining`, `utf8wc.h`, `xftdraw` | pixmaps, readback, text, clipmask | 2474 |
-| glitchpeg | 2d | L | - | `BitmapBitOrder`, `ButtonRelease`, `ImageByteOrder`, `XCreateImage`, `XDestroyImage`, `XEvent.xany`, `XGetPixel`, `XImage`, `XPutImage`, `XPutPixel`, `XtAppAddInput`, `XtDisplayToApplicationContext`, `XtInputExceptMask`, `XtInputId`, `XtInputReadMask`, `XtPointer`, `XtRemoveInput`, `ZPixmap`, `error: operand of type 'XPoint' where arithmetic or pointer type is required`, `image`, `image_data_to_ximage`, `out` | readback | 466 |
-| goop | 2d | L | - | `AllPlanes`, `DefaultScreenOfDisplay`, `DisplayOfScreen`, `GXclear`, `GXxor`, `WhitePixelOfScreen`, `XSetFunction`, `XSetPlaneMask`, `allocate_alpha_colors`, `alpha.h`, `compute_closed_spline`, `error: incompatible integer to pointer conversion assigning to 'int *' from 'int' [-Wint-conversion]`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `error: member reference base type 'int' is not a structure or union`, `error: type name does not allow function specifier to be specified`, `error: type specifier missing, defaults to 'int'; ISO C99 and later do not support implicit int [-Wimplicit-int]`, `free_spline`, `has_writable_cells`, `make_spline`, `spline` | pixmaps, xor | 651 |
-| greynetic | 2d | L | - | `GCFillStyle`, `GCStipple`, `XCreatePixmapFromBitmapData`, `XGCValues.fill_style`, `XGCValues.stipple` | - | 297 |
-| halo | 2d | L | - | `GXxor` | pixmaps | 459 |
-| imsmap | 2d | L | - | `XCreateImage`, `XDestroyImage`, `XImage`, `XPutImage`, `XPutPixel`, `XYBitmap`, `image` | - | 426 |
-| interference | 2d | L | - | `GET_PARENT_OBJ`, `THREAD_DEFAULTS`, `THREAD_OPTIONS`, `XImage`, `XPutPixel`, `XShmGetEventBase`, `XShmSegmentInfo`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `error: expected expression`, `error: field has incomplete type 'struct threadpool'`, `error: too few arguments to function call, expected 2, have 1`, `error: variable has incomplete type 'const struct threadpool_class'`, `hardware_concurrency`, `make_color_loop`, `put_xshm_image`, `thread_memory_alignment`, `thread_util.h`, `threadpool`, `threadpool_create`, `threadpool_destroy`, `threadpool_run`, `threadpool_wait`, `visual_pixmap_depth`, `xshm.h` | pixmaps | 1002 |
-| intermomentary | 2d | L | - | `XQueryColor`, `XSetTile`, `make_color_ramp`, `rgb_to_hsv` | pixmaps | 605 |
-| juggle | 2d | L | - | `XDrawImageString`, `XDrawString`, `XFontStruct`, `XFreeFontInfo`, `XLoadQueryFont`, `XTextWidth`, `gettimeofday` | text, float-heavy, needs-xlockmore | 2798 |
-| julia | 2d | L | - | `Button1`, `ButtonRelease`, `Cursor`, `MotionNotify`, `XCreatePixmapCursor`, `XCreatePixmapFromBitmapData`, `XDefineCursor`, `XEvent.x`, `XEvent.xany`, `XEvent.xmotion`, `XEvent.y`, `XFreeCursor`, `XSetStipple`, `XSetTSOrigin`, `XUndefineCursor` | pixmaps, float-heavy, needs-xlockmore | 451 |
-| kumppa | 2d | L | - | `XSetGraphicsExposures` | pixmaps | 545 |
-| lcdscrub | 2d | L | - | `XCreateImage`, `XDestroyImage`, `XGetPixel`, `XImage`, `XPutImage`, `XPutPixel`, `XYPixmap`, `error: too few arguments to function call, expected 2, have 1` | pixmaps, readback, clipmask | 399 |
-| loop | 2d | L | - | `CoordModePrevious`, `GCFillStyle`, `GCStipple`, `STIPPLESIZE`, `XCreatePixmapFromBitmapData`, `XGCValues.fill_style`, `XGCValues.stipple`, `automata.h`, `hexagonUnit`, `stipples`, `triangleUnit` | needs-xlockmore | 1700 |
-| m6502 | 2d | L | - | `ANALOGTV_BLACK_LEVEL`, `ANALOGTV_BOT`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_TOP`, `ANALOGTV_VISLINES`, `ANALOGTV_VIS_END`, `ANALOGTV_VIS_LEN`, `ANALOGTV_VIS_START`, `ANALOGTV_WHITE_LEVEL`, `Bit8`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_draw_solid`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_lcp_to_ntsc`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `asm6502.h`, `double_time`, `doubletime.h`, `m6502.h`, `m6502_build`, `m6502_destroy6502`, `m6502_next_eval`, `m6502_start_eval_file`, `m6502_start_eval_string`, `machine_6502` | - | 288 |
-| marbling | 2d | L | - | `DefaultScreenOfDisplay`, `GET_PARENT_OBJ`, `KeyPress`, `KeySym`, `THREAD_DEFAULTS`, `THREAD_OPTIONS`, `XEvent.xany`, `XEvent.xkey`, `XImage`, `XK_Down`, `XK_Left`, `XK_Right`, `XK_Up`, `XLookupString`, `XPutPixel`, `XShmSegmentInfo`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `error: expected expression`, `error: field has incomplete type 'struct threadpool'`, `error: incompatible integer to pointer conversion passing 'int' to parameter of type 'Screen *' (aka 'struct XshimScreen *') [-Wint-conversion]`, `error: variable has incomplete type 'const struct threadpool_class'`, `hardware_concurrency`, `keysym`, `put_xshm_image`, `thread_memory_alignment`, `thread_util.h`, `threadpool_create`, `threadpool_destroy`, `threadpool_run`, `threadpool_wait`, `visual_pixmap_depth`, `xshm.h` | - | 635 |
-| memscroller | 2d | L | - | `FcChar8`, `XGlyphInfo`, `XImage`, `XShmSegmentInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `error: expected expression`, `load_xft_font_retry`, `overall`, `put_xshm_image`, `screen_number`, `xft.h`, `xshm.h` | pixmaps | 626 |
-| metaballs | 2d | L | - | `BitmapPad`, `XCreateImage`, `XDestroyImage`, `XFree`, `XImage`, `XListPixmapFormats`, `XPutImage`, `XPutPixel`, `XSetWindowBackground`, `ZPixmap` | - | 438 |
-| moire | 2d | L | - | `BlackPixelOfScreen`, `DefaultScreenOfDisplay`, `WhitePixelOfScreen`, `XImage`, `XPutPixel`, `XQueryColor`, `XShmSegmentInfo`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `make_color_ramp`, `put_xshm_image`, `rgb_to_hsv`, `visual_depth`, `xshm.h` | - | 253 |
-| moire2 | 2d | L | - | `GXor`, `GXxor`, `XSetFunction` | pixmaps, xor | 363 |
-| nerverot | 2d | L | - | `make_color_ramp`, `rgb_to_hsv` | pixmaps, float-heavy | 1367 |
-| noseguy | 2d | L | - | `FcChar8`, `XCreateImage`, `XDestroyImage`, `XGetImage`, `XGetPixel`, `XGlyphInfo`, `XImage`, `XPutImage`, `XPutPixel`, `XYPixmap`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `ZPixmap`, `error: expected expression`, `extents`, `i1`, `i2`, `images/gen/nose-f1_png.h`, `images/gen/nose-f2_png.h`, `images/gen/nose-f3_png.h`, `images/gen/nose-f4_png.h`, `images/gen/nose-l1_png.h`, `images/gen/nose-l2_png.h`, `images/gen/nose-r1_png.h`, `images/gen/nose-r2_png.h`, `load_xft_font_retry`, `nose_f1_png`, `nose_f2_png`, `nose_f3_png`, `nose_f4_png`, `nose_l1_png`, `nose_l2_png`, `nose_r1_png`, `nose_r2_png`, `screen_number`, `text_data`, `textclient.h`, `textclient_close`, `textclient_getc`, `textclient_open`, `textclient_reshape` | pixmaps, readback, clipmask | 720 |
-| penetrate | 2d | L | - | `FcChar8`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall`, `screen_number`, `usleep` | - | 1037 |
-| phosphor | 2d | L | - | `BlackPixelOfScreen`, `DefaultScreenOfDisplay`, `FALSE`, `FcChar8`, `KeyPress`, `TTY_BOLD`, `TTY_INVERSE`, `TTY_ITALIC`, `TTY_SYMBOLS`, `Time`, `XCreateImage`, `XDestroyImage`, `XEvent.xany`, `XEvent.xkey`, `XGetImage`, `XGetPixel`, `XGlyphInfo`, `XImage`, `XPutImage`, `XPutPixel`, `XQueryColor`, `XWriteBitmapFile`, `XYBitmap`, `XYPixmap`, `XftColor`, `XftDraw`, `XftDrawCreate`, `XftDrawStringUtf8`, `XftFont`, `XftTextExtentsUtf8`, `XtAppAddTimeOut`, `XtAppContext`, `XtIntervalId`, `XtPointer`, `XtRemoveTimeOut`, `ZPixmap`, `_6x10font_png`, `ansi-tty.h`, `ansi_graphics_unicode`, `ansi_tty`, `ansi_tty_free`, `ansi_tty_init`, `ansi_tty_print`, `ansi_tty_resize`, `app`, `error: expected expression`, `font`, `font_bits`, `im`, `im2`, `images/gen/6x10font_png.h`, `load_xft_font_retry`, `make_color_ramp`, `mm`, `overall`, `rgb_to_hsv`, `screen_number`, `tcell`, `text_data`, `textclient.h`, `textclient_close`, `textclient_getc`, `textclient_open`, `textclient_putc_event`, `textclient_puts`, `textclient_reshape`, `tty`, `tty_char`, `utf8_encode`, `utf8_to_latin1`, `utf8wc.h`, `xft_fg`, `xftdraw`, `xim_color`, `xim_mono` | pixmaps, readback, clipmask | 1260 |
-| piecewise | 2d | L | - | `make_color_loop` | pixmaps | 1036 |
-| polyominoes | 2d | L | - | `LSBFirst`, `MSBFirst`, `XCreateImage`, `XDestroyImage`, `XImage`, `XPutImage`, `XYBitmap`, `countof` | needs-xlockmore | 2370 |
-| pong | 2d | L | - | `ANALOGTV_BLACK_LEVEL`, `ANALOGTV_BOT`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_TOP`, `ANALOGTV_VISLINES`, `ANALOGTV_VIS_END`, `ANALOGTV_VIS_LEN`, `ANALOGTV_VIS_START`, `ButtonPressMask`, `ButtonRelease`, `ButtonReleaseMask`, `CurrentTime`, `Cursor`, `FocusChangeMask`, `FocusIn`, `FocusOut`, `GrabModeAsync`, `KeyPress`, `KeyPressMask`, `KeyRelease`, `KeyReleaseMask`, `KeySym`, `MotionNotify`, `X11/keysym.h`, `XCreatePixmapCursor`, `XDefineCursor`, `XDestroyImage`, `XEvent.x`, `XEvent.xkey`, `XEvent.xmotion`, `XGrabPointer`, `XHeightMMOfScreen`, `XHeightOfScreen`, `XK_Down`, `XK_Up`, `XLookupString`, `XUngrabPointer`, `XWarpPointer`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_draw_solid`, `analogtv_draw_string`, `analogtv_font`, `analogtv_font_set_char`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_lcp_to_ntsc`, `analogtv_make_font`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `double_time`, `doubletime.h`, `key` | pixmaps | 1109 |
-| popsquares | 2d | L | - | `XQueryColor`, `make_color_ramp`, `rgb_to_hsv` | pixmaps | 310 |
-| qix | 2d | L | - | `CellsOfScreen`, `DefaultScreenOfDisplay`, `GCPlaneMask`, `GXxor`, `XGCValues.plane_mask`, `XQueryColor`, `XSetWindowBackground`, `allocate_alpha_colors`, `alpha.h`, `has_writable_cells`, `rgb_to_hsv` | - | 642 |
-| rdbomb | 2d | L | - | `DefaultScreenOfDisplay`, `XImage`, `XListPixmapFormats`, `XPixmapFormatValues`, `XSetWindowBackground`, `XShmSegmentInfo`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `error: expected ')'`, `error: expected function body after function declarator`, `error: expected parameter declarator`, `error: incompatible integer to pointer conversion passing 'int' to parameter of type 'void *' [-Wint-conversion]`, `error: subscripted value is not an array, pointer, or vector`, `has_writable_cells`, `pfv`, `put_xshm_image`, `visual_depth`, `xshm.h` | - | 571 |
-| ripples | 2d | L | - | `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XPutPixel`, `XQueryColor`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `load_image_async_simple`, `put_xshm_image`, `visual_rgb_masks`, `xshm.h` | readback | 1127 |
-| rocks | 2d | L | - | `XQueryColor`, `XSetGraphicsExposures` | pixmaps | 562 |
-| rotzoomer | 2d | L | - | `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XPutPixel`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `load_image_async_simple`, `put_xshm_image`, `xshm.h` | pixmaps, readback | 601 |
-| shadebobs | 2d | L | - | `BlackPixelOfScreen`, `XCreateImage`, `XDestroyImage`, `XFree`, `XGetPixel`, `XImage`, `XListPixmapFormats`, `XPutImage`, `XPutPixel`, `XSetWindowBackground`, `ZPixmap` | readback | 474 |
-| slidescreen | 2d | L | - | `XFree`, `XQueryColors`, `async_load_state`, `load_image_async_simple`, `visual_cells` | pixmaps | 507 |
-| slip | 2d | L | - | `DisplayOfScreen`, `ScreenOfDisplay`, `XSetGraphicsExposures`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `load_image_async` | pixmaps, needs-xlockmore | 376 |
-| speedmine | 2d | L | - | `XQueryColor`, `error: too few arguments to function call, expected 2, have 1`, `make_color_ramp`, `rgb_to_hsv` | pixmaps, clipmask | 1659 |
-| spotlight | 2d | L | - | `async_load_state`, `error: too few arguments to function call, expected 2, have 1`, `load_image_async_simple` | pixmaps, clipmask | 355 |
-| starfish | 2d | L | - | `EvenOddRule`, `GCFillRule`, `XGCValues.fill_rule`, `XSetWindowBackground`, `compute_closed_spline`, `error: incompatible integer to pointer conversion assigning to 'int *' from 'int' [-Wint-conversion]`, `error: member reference base type 'int' is not a structure or union`, `error: type name does not allow function specifier to be specified`, `error: type specifier missing, defaults to 'int'; ISO C99 and later do not support implicit int [-Wimplicit-int]`, `make_spline`, `spline` | - | 564 |
-| strange | 2d | L | - | `GCGraphicsExposures`, `GET_PARENT_OBJ`, `MSBFirst`, `StaticColor`, `THREAD_OPTIONS`, `TrueColor`, `XGCValues.graphics_exposures`, `XImage`, `XPutPixel`, `XQueryColor`, `XQueryColors`, `XSetFunction`, `XSetGraphicsExposures`, `XShmSegmentInfo`, `ZPixmap`, `aligned_free`, `aligned_malloc`, `create_xshm_image`, `destroy_xshm_image`, `error: field has incomplete type 'struct threadpool'`, `error: incomplete definition of type 'struct threadpool'`, `error: invalid application of 'sizeof' to an incomplete type 'XrmOptionDescRec[]'`, `error: unexpected type name 'ATTRACTOR': expected expression`, `error: variable has incomplete type 'const struct threadpool_class'`, `hardware_concurrency`, `i_log2`, `pow2.h`, `put_xshm_image`, `thread_memory_alignment`, `thread_util.h`, `threadpool_create`, `threadpool_destroy`, `threadpool_run`, `threadpool_wait`, `visual_class`, `visual_pixmap_depth`, `visual_rgb_masks`, `xshm.h` | pixmaps, xor, needs-xlockmore | 1353 |
-| swirl | 2d | L | - | `XCreateColormap`, `XFree`, `XFreeColormap`, `XImage`, `XInstallColormap`, `XPutPixel`, `XQueryColor`, `XSetWMColormapWindows`, `XSetWindowColormap`, `XShmSegmentInfo`, `XStoreColors`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `free_colors`, `make_smooth_colormap`, `put_xshm_image`, `rotate_colors`, `xshm.h` | needs-xlockmore | 1447 |
-| t3d | 2d | L | - | `BlackPixelOfScreen`, `Button1Mask`, `Button2Mask`, `Button3Mask`, `GXandInverted`, `GXor`, `KeyPress`, `KeySym`, `XAllocColorCells`, `XEvent.xkey`, `XGetImage`, `XLookupString`, `XPutImage`, `XStoreColors`, `error: too few arguments to function call, expected 2, have 1`, `keysym` | pixmaps, readback, float-heavy | 991 |
-| tessellimage | 2d | L | - | `ButtonRelease`, `ITRIANGLE`, `X11/keysymdef.h`, `XCreateImage`, `XDestroyImage`, `XEvent.xany`, `XGetImage`, `XGetPixel`, `XImage`, `XPutImage`, `XPutPixel`, `XQueryColor`, `XYZ`, `ZPixmap`, `async_load_state`, `delaunay`, `delaunay.h`, `delaunay_xyzcompare`, `dimg`, `double_time`, `doubletime.h`, `error: expected expression`, `img2`, `load_image_async_simple`, `p`, `tt`, `v`, `visual_rgb_masks` | pixmaps, readback | 996 |
-| testx11 | 2d | L | - | `BlackPixelOfScreen`, `GCFont`, `GXxor`, `KeyPress`, `KeySym`, `XClearArea`, `XCreatePixmapFromBitmapData`, `XDestroyImage`, `XDrawString`, `XEvent.x`, `XEvent.xany`, `XEvent.xkey`, `XEvent.y`, `XGCValues.font`, `XGetImage`, `XImage`, `XLoadFont`, `XLookupString`, `XPutImage`, `XPutPixel`, `XSetWindowBackground`, `ZPixmap`, `colorbars.h`, `draw_colorbars`, `error: expected ')'`, `error: expected function body after function declarator`, `error: expected parameter declarator`, `get_position`, `get_rotation`, `glx/rotator.h`, `image`, `keysym`, `make_color_loop`, `make_rotator`, `rotator`, `visual_depth` | pixmaps, readback, text, clipmask | 968 |
-| twang | 2d | L | - | `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XPutPixel`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `load_image_async_simple`, `put_xshm_image`, `xshm.h` | pixmaps, readback | 791 |
-| vfeedback | 2d | L | - | `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_SIGNAL_LEN`, `BlackPixelOfScreen`, `Button1`, `Button2`, `Button3`, `Button4`, `Button5`, `Button6`, `Button7`, `ButtonRelease`, `EASE_IN_OUT_SINE`, `KeyPress`, `KeySym`, `MotionNotify`, `RANDSIGN`, `XCreateImage`, `XDestroyImage`, `XEvent.state`, `XEvent.x`, `XEvent.xany`, `XEvent.xkey`, `XEvent.xmotion`, `XEvent.y`, `XGetImage`, `XGetPixel`, `XImage`, `XK_Down`, `XK_Left`, `XK_Right`, `XK_Up`, `XLookupString`, `XPutPixel`, `ZPixmap`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_input_allocate`, `analogtv_load_ximage`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `double_time`, `doubletime.h`, `ease`, `easing.h`, `img`, `in`, `keysym`, `out` | pixmaps, readback | 592 |
-| wander | 2d | L | - | `make_color_loop` | pixmaps | 284 |
-| whirlygig | 2d | L | - | `XDrawString` | pixmaps, text, float-heavy | 741 |
-| xanalogtv | 2d | L | - | `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_PIC_LEN`, `ANALOGTV_SCALE`, `ANALOGTV_SIGNAL_LEN`, `ANALOGTV_V`, `ANALOGTV_VIS_LEN`, `ANALOGTV_VIS_START`, `KeyPress`, `KeySym`, `XDestroyImage`, `XEvent.xkey`, `XGetImage`, `XImage`, `XK_Down`, `XK_Left`, `XK_Next`, `XK_Prior`, `XK_Right`, `XK_Up`, `XLookupString`, `XrmDatabase`, `XrmPutResource`, `XrmValue`, `ZPixmap`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_draw_solid_rel_lcp`, `analogtv_draw_string_centered`, `analogtv_font`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_lcp_to_ntsc`, `analogtv_load_ximage`, `analogtv_make_font`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `analogtv_setup_teletext`, `db`, `file_to_pixmap`, `gethostname`, `image`, `images/gen/testcard_bbcf_png.h`, `images/gen/testcard_pm5544_png.h`, `images/gen/testcard_rca_png.h`, `inp`, `input`, `keysym`, `load_image_async`, `rec`, `testcard_bbcf_png`, `testcard_pm5544_png`, `testcard_rca_png`, `value`, `ximage` | pixmaps, readback | 689 |
-| xflame | 2d | L | - | `XCreateImage`, `XDestroyImage`, `XGetPixel`, `XImage`, `XPutPixel`, `XQueryColor`, `XShmSegmentInfo`, `ZPixmap`, `bob_png`, `create_xshm_image`, `destroy_xshm_image`, `file_to_ximage`, `image`, `image_data_to_ximage`, `images/gen/bob_png.h`, `out`, `put_xshm_image`, `xshm.h` | readback | 826 |
-| xjack | 2d | L | - | `FcChar8`, `XClearArea`, `XEvent.xany`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall`, `screen_number` | pixmaps | 508 |
-| xlyap | 2d | L | - | `BlackPixelOfScreen`, `Cursor`, `KeyPress`, `KeySym`, `WhitePixelOfScreen`, `X11/cursorfont.h`, `XComposeStatus`, `XEvent.xkey`, `XKeyEvent`, `XLookupString`, `XPending`, `XStoreColors`, `error: expected expression` | pixmaps | 1939 |
-| xmatrix | 2d | L | - | `KeyPress`, `KeySym`, `XCreateImage`, `XDestroyImage`, `XEvent.xany`, `XEvent.xkey`, `XGetImage`, `XGetPixel`, `XImage`, `XLookupString`, `XPutImage`, `XPutPixel`, `XYPixmap`, `XtAppAddTimeOut`, `XtAppContext`, `XtIntervalId`, `XtPointer`, `XtRemoveTimeOut`, `ZPixmap`, `app`, `i1`, `i2`, `im`, `images/gen/matrix1_png.h`, `images/gen/matrix1b_png.h`, `images/gen/matrix2_png.h`, `images/gen/matrix2b_png.h`, `keysym`, `matrix1_png`, `matrix1b_png`, `matrix2_png`, `matrix2b_png`, `text_data`, `textclient.h`, `textclient_close`, `textclient_getc`, `textclient_open`, `textclient_reshape` | pixmaps, readback | 1915 |
-| zoom | 2d | L | - | `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XSetWindowBackground`, `ZPixmap`, `async_load_state`, `error: too few arguments to function call, expected 2, have 1`, `load_image_async_simple` | pixmaps, readback | 290 |
-| antinspect | gl | XL | - | - | needs-xlockmore | 696 |
-| antmaze | gl | XL | - | - | needs-xlockmore | 1612 |
-| antspotlight | gl | XL | - | - | needs-xlockmore | 797 |
-| atlantis | gl | XL | - | `XDestroyImage` | needs-xlockmore | 607 |
-| atunnel | gl | XL | - | `XDestroyImage` | needs-xlockmore | 315 |
-| b_lockglue | gl | XL | - | - | needs-xlockmore | 240 |
-| beats | gl | XL | - | - | needs-xlockmore | 439 |
-| blinkbox | gl | XL | - | - | needs-xlockmore | 615 |
-| blocktube | gl | XL | - | `XDestroyImage` | needs-xlockmore | 454 |
-| boing | gl | XL | - | - | float-heavy, needs-xlockmore | 666 |
-| bouncingcow | gl | XL | - | - | needs-xlockmore | 649 |
-| boxed | gl | XL | - | - | needs-xlockmore | 1361 |
-| cage | gl | XL | - | `XDestroyImage` | needs-xlockmore | 498 |
-| carousel | gl | XL | - | - | needs-xlockmore | 982 |
-| chompytower | gl | XL | - | - | needs-xlockmore | 1131 |
-| circuit | gl | XL | - | - | needs-xlockmore | 2106 |
-| cityflow | gl | XL | - | - | needs-xlockmore | 561 |
-| companion | gl | XL | - | - | needs-xlockmore | 605 |
-| covid19 | gl | XL | - | - | needs-xlockmore | 657 |
-| crackberg | gl | XL | - | `XLookupString`, `XNextEvent`, `XPeekEvent`, `XPending` | float-heavy, needs-xlockmore | 1484 |
-| crumbler | gl | XL | - | - | needs-xlockmore | 905 |
-| cube21 | gl | XL | - | - | needs-xlockmore | 943 |
-| cubenetic | gl | XL | - | - | needs-xlockmore | 616 |
-| cubestack | gl | XL | - | `XLookupString` | needs-xlockmore | 453 |
-| cubestorm | gl | XL | - | `XLookupString` | needs-xlockmore | 485 |
-| cubetwist | gl | XL | - | `XLookupString` | needs-xlockmore | 579 |
-| cubicgrid | gl | XL | - | - | needs-xlockmore | 322 |
-| cubocteversion | gl | XL | - | `XDestroyImage` | needs-xlockmore | 5657 |
-| dangerball | gl | XL | - | - | needs-xlockmore | 377 |
-| deepstars | gl | XL | - | - | needs-xlockmore | 385 |
-| discoball | gl | XL | - | - | needs-xlockmore | 709 |
-| dnalogo | gl | XL | - | `XLookupString` | float-heavy, needs-xlockmore | 3657 |
-| dumpsterfire | gl | XL | - | - | needs-xlockmore | 845 |
-| dymaxionmap | gl | XL | - | `XCreateImage`, `XDestroyImage`, `XGetPixel`, `XLookupString`, `XPutPixel` | readback, needs-xlockmore | 1729 |
-| endgame | gl | XL | - | - | needs-xlockmore | 1451 |
-| energystream | gl | XL | - | - | needs-xlockmore | 536 |
-| engine | gl | XL | - | - | needs-xlockmore | 1015 |
-| esper | gl | XL | - | `XLookupString` | needs-xlockmore | 2463 |
-| etruscanvenus | gl | XL | - | - | needs-xlockmore | 2761 |
-| extrusion | gl | XL | - | - | needs-xlockmore | 552 |
-| flipflop | gl | XL | - | - | needs-xlockmore | 875 |
-| flipscreen3d | gl | XL | - | - | needs-xlockmore | 524 |
-| fliptext | gl | XL | - | - | needs-xlockmore | 1005 |
-| floppy | gl | XL | - | - | needs-xlockmore | 584 |
-| flurry | gl | XL | - | - | needs-xlockmore | 550 |
-| flyingtoasters | gl | XL | - | `XDestroyImage` | needs-xlockmore | 924 |
-| gears | gl | XL | - | - | needs-xlockmore | 953 |
-| geodesic | gl | XL | - | - | float-heavy, needs-xlockmore | 825 |
-| geodesicgears | gl | XL | - | `XLookupString` | float-heavy, needs-xlockmore | 1802 |
-| gflux | gl | XL | - | - | needs-xlockmore | 799 |
-| gibson | gl | XL | - | - | needs-xlockmore | 1317 |
-| glblur | gl | XL | - | - | needs-xlockmore | 630 |
-| glcells | gl | XL | - | - | needs-xlockmore | 1382 |
-| gleidescope | gl | XL | - | `XOFFSET` | float-heavy, needs-xlockmore | 1620 |
-| glforestfire | gl | XL | - | `XDestroyImage` | needs-xlockmore | 1089 |
-| glhanoi | gl | XL | - | - | float-heavy, needs-xlockmore | 2080 |
-| glknots | gl | XL | - | - | needs-xlockmore | 455 |
-| glmatrix | gl | XL | - | `XDestroyImage`, `XGetPixel`, `XPutPixel` | readback, needs-xlockmore | 1077 |
-| glplanet | gl | XL | - | `XDestroyImage` | float-heavy, needs-xlockmore | 1111 |
-| glschool | gl | XL | - | - | needs-xlockmore | 229 |
-| glslideshow | gl | XL | - | - | needs-xlockmore | 1917 |
-| glsnake | gl | XL | - | - | needs-xlockmore | 2699 |
-| gltext | gl | XL | - | - | needs-xlockmore | 619 |
-| graphstat | gl | XL | - | - | needs-xlockmore | 750 |
-| gravitywell | gl | XL | - | - | needs-xlockmore | 770 |
-| handsy | gl | XL | - | `XLookupString` | needs-xlockmore | 1158 |
-| headroom | gl | XL | - | - | needs-xlockmore | 628 |
-| hexstrut | gl | XL | - | `XLookupString` | needs-xlockmore | 511 |
-| hextrail | gl | XL | - | `XLookupString` | needs-xlockmore | 782 |
-| highvoltage | gl | XL | - | `XLookupString` | needs-xlockmore | 949 |
-| hilbert | gl | XL | - | `XLookupString` | needs-xlockmore | 1165 |
-| hopffibration | gl | XL | - | - | needs-xlockmore | 3580 |
-| hydrostat | gl | XL | - | - | needs-xlockmore | 796 |
-| hypertorus | gl | XL | - | `XLookupString` | float-heavy, needs-xlockmore | 2150 |
-| hypnowheel | gl | XL | - | - | needs-xlockmore | 335 |
-| jigglypuff | gl | XL | - | `XDestroyImage` | needs-xlockmore | 1125 |
-| jigsaw | gl | XL | - | - | needs-xlockmore | 1512 |
-| juggler3d | gl | XL | - | - | float-heavy, needs-xlockmore | 3023 |
-| kaleidocycle | gl | XL | - | `XLookupString` | needs-xlockmore | 584 |
-| kallisti | gl | XL | - | - | needs-xlockmore | 357 |
-| klein | gl | XL | - | `XLookupString` | float-heavy, needs-xlockmore | 3574 |
-| klondike | gl | XL | - | `XDestroyImage` | needs-xlockmore | 803 |
-| lament | gl | XL | - | `XDestroyImage`, `XLookupString` | needs-xlockmore | 1801 |
-| lavalite | gl | XL | - | - | needs-xlockmore | 1552 |
-| lockward | gl | XL | - | `XLookupString` | needs-xlockmore | 964 |
-| mapscroller | gl | XL | - | `XDestroyImage`, `XGetPixel`, `XLookupString` | readback, needs-xlockmore | 1672 |
-| maze3d | gl | XL | - | - | needs-xlockmore | 1958 |
-| menger | gl | XL | - | `XLookupString` | needs-xlockmore | 574 |
-| mirrorblob | gl | XL | - | - | needs-xlockmore | 1822 |
-| moebius | gl | XL | - | `XDestroyImage` | needs-xlockmore | 794 |
-| moebiusgears | gl | XL | - | `XLookupString` | needs-xlockmore | 446 |
-| molecule | gl | XL | - | `XLookupString` | needs-xlockmore | 1716 |
-| morph3d | gl | XL | - | - | needs-xlockmore | 841 |
-| nakagin | gl | XL | - | - | needs-xlockmore | 1636 |
-| noof | gl | XL | - | - | needs-xlockmore | 530 |
-| papercube | gl | XL | - | - | needs-xlockmore | 1111 |
-| peepers | gl | XL | - | `XChangeProperty`, `XDestroyImage`, `XInternAtom` | float-heavy, needs-xlockmore | 1470 |
-| photopile | gl | XL | - | - | needs-xlockmore | 869 |
-| pinion | gl | XL | - | `XLookupString` | needs-xlockmore | 1497 |
-| pipes | gl | XL | - | - | needs-xlockmore | 1208 |
-| platonicfolding | gl | XL | - | `XDestroyImage` | needs-xlockmore | 3465 |
-| polyhedra-gl | gl | XL | - | `XLookupString` | needs-xlockmore | 687 |
-| polytopes | gl | XL | - | `XLookupString` | needs-xlockmore | 3194 |
-| projectiveplane | gl | XL | - | `XLookupString` | float-heavy, needs-xlockmore | 2643 |
-| providence | gl | XL | - | - | float-heavy, needs-xlockmore | 811 |
-| pulsar | gl | XL | - | - | needs-xlockmore | 509 |
-| quasicrystal | gl | XL | - | `XLookupString` | needs-xlockmore | 494 |
-| queens | gl | XL | - | - | needs-xlockmore | 608 |
-| raverhoop | gl | XL | - | `XLookupString` | needs-xlockmore | 771 |
-| razzledazzle | gl | XL | - | - | needs-xlockmore | 728 |
-| romanboy | gl | XL | - | - | needs-xlockmore | 2565 |
-| rubik | gl | XL | - | - | needs-xlockmore | 2156 |
-| rubikblocks | gl | XL | - | - | needs-xlockmore | 651 |
-| sballs | gl | XL | - | `XDestroyImage` | needs-xlockmore | 830 |
-| sierpinski3d | gl | XL | - | `XLookupString` | needs-xlockmore | 579 |
-| skulloop | gl | XL | - | - | needs-xlockmore | 651 |
-| skytentacles | gl | XL | - | `XCreateImage`, `XDestroyImage`, `XLookupString`, `XPutPixel` | float-heavy, needs-xlockmore | 1124 |
-| sonar | gl | XL | - | - | needs-xlockmore | 1266 |
-| sphereeversion | gl | XL | - | `XDestroyImage` | needs-xlockmore | 1420 |
-| spheremonics | gl | XL | - | - | needs-xlockmore | 926 |
-| splitflap | gl | XL | - | - | needs-xlockmore | 1427 |
-| splodesic | gl | XL | - | `XLookupString` | float-heavy, needs-xlockmore | 645 |
-| sproingiewrap | gl | XL | - | - | needs-xlockmore | 227 |
-| squirtorus | gl | XL | - | - | needs-xlockmore | 1006 |
-| stairs | gl | XL | - | `XDestroyImage`, `XLookupString` | needs-xlockmore | 601 |
-| starwars | gl | XL | - | - | needs-xlockmore | 1080 |
-| stonerview | gl | XL | - | - | needs-xlockmore | 156 |
-| superquadrics | gl | XL | - | - | needs-xlockmore | 811 |
-| surfaces | gl | XL | - | - | float-heavy, needs-xlockmore | 654 |
-| tangram | gl | XL | - | - | needs-xlockmore | 1074 |
-| timetunnel | gl | XL | - | `XDestroyImage` | needs-xlockmore | 1259 |
-| topblock | gl | XL | - | `XLookupString` | needs-xlockmore | 891 |
-| tronbit | gl | XL | - | `XLookupString` | needs-xlockmore | 532 |
-| unicrud | gl | XL | - | `XLookupString` | needs-xlockmore | 1039 |
-| unknownpleasures | gl | XL | - | `XCreateImage`, `XDestroyImage`, `XGetPixel`, `XLookupString`, `XPutPixel` | readback, needs-xlockmore | 736 |
-| vigilance | gl | XL | - | `XLookupString` | needs-xlockmore | 1171 |
-| voronoi | gl | XL | - | - | needs-xlockmore | 543 |
-| winduprobot | gl | XL | - | `XDestroyImage`, `XLookupString` | float-heavy, needs-xlockmore | 2505 |
-| worldpieces | gl | XL | - | `XDestroyImage` | float-heavy, needs-xlockmore | 2194 |
-| xshadertoy | gl | XL | - | `XFetchName`, `XStoreName` | needs-xlockmore | 1192 |
-| blaster | 2d | - | ✅ | - | - | 1208 |
-| braid | 2d | - | ✅ | - | needs-xlockmore | 444 |
-| cloudlife | 2d | - | ✅ | - | - | 440 |
-| coral | 2d | - | ✅ | - | - | 328 |
-| critical | 2d | - | ✅ | - | - | 462 |
-| discrete | 2d | - | ✅ | - | needs-xlockmore | 442 |
-| drift | 2d | - | ✅ | - | needs-xlockmore | 674 |
-| fadeplot | 2d | - | ✅ | - | needs-xlockmore | 243 |
-| flame | 2d | - | ✅ | - | - | 457 |
-| galaxy | 2d | - | ✅ | - | needs-xlockmore | 462 |
-| helix | 2d | - | ✅ | - | - | 358 |
-| hopalong | 2d | - | ✅ | - | needs-xlockmore | 563 |
-| hypercube | 2d | - | ✅ | - | - | 576 |
-| lightning | 2d | - | ✅ | - | needs-xlockmore | 602 |
-| maze | 2d | - | ✅ | - | pixmaps, clipmask | 1681 |
-| pedal | 2d | - | ✅ | - | - | 339 |
-| petri | 2d | - | ✅ | - | - | 780 |
-| pyro | 2d | - | ✅ | - | - | 373 |
-| rorschach | 2d | - | ✅ | - | - | 227 |
-| sierpinski | 2d | - | ✅ | - | needs-xlockmore | 215 |
-| sphere | 2d | - | ✅ | - | needs-xlockmore | 304 |
-| spiral | 2d | - | ✅ | - | needs-xlockmore | 331 |
-| squiral | 2d | - | ✅ | - | - | 335 |
-| substrate | 2d | - | ✅ | - | - | 780 |
-| thornbird | 2d | - | ✅ | - | needs-xlockmore | 270 |
-| vines | 2d | - | ✅ | - | needs-xlockmore | 190 |
-| whirlwindwarp | 2d | - | ✅ | - | - | 509 |
-| xspirograph | 2d | - | ✅ | - | - | 338 |
-| pacman | 2d | - | ✅ | `BLUE`, `GHOSTS`, `GHOST_DANGER`, `JAILHEIGHT`, `LEVHEIGHT`, `LEVWIDTH`, `MAXGDIR`, `MAXGFLASH`, `MAXGWAG`, `MAXMOUTH`, `MINGRIDSIZE`, `MINSIZE`, `NOWHERE`, `NUM_BONUS_DOTS`, `PAC_DEATH_FRAMES`, `START`, `XDrawString`, `XLoadQueryFont`, `chasing`, `error: expected expression`, `error: invalid application of 'sizeof' to an incomplete type 'argtype[]'`, `ghoststruct`, `goingin`, `goingout`, `hiding`, `images/gen/pacman_png.h`, `inbox`, `pacman.h`, `pacman_ai.h`, `pacman_bonus_dot_eaten`, `pacman_bonus_dot_pos`, `pacman_createnewlevel`, `pacman_eat_bonus_dot`, `pacman_ghost_update`, `pacman_is_bonus_dot`, `pacman_level.h`, `pacman_png`, `pacman_trackmouse`, `pacman_update`, `pacmangamestruct`, `pp`, `ps_chasing`, `ps_dieing`, `ps_eating` | pixmaps, text, clipmask, needs-xlockmore | 1479 |
+| Hack | Kind | Effort | Speed | Ported | Shim gaps | Flags | LOC |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| anemone | 2d | S | high (2 ms) | - | - | pixmaps | 458 |
+| anemotaxis | 2d | S | high (1.6 ms) | - | - | pixmaps | 760 |
+| celtic | 2d | S | high (1.2 ms) | - | - | - | 1141 |
+| compass | 2d | S | high (1.7 ms) | - | - | pixmaps, float-heavy | 999 |
+| epicycle | 2d | S | low (0.0009 ms) | - | - | - | 803 |
+| euler2d | 2d | S | high (0.29 ms) | - | - | float-heavy, needs-xlockmore | 893 |
+| forest | 2d | S | high (0.15 ms) | - | - | needs-xlockmore | 241 |
+| fuzzyflakes | 2d | S | high (1.8 ms) | - | - | pixmaps | 655 |
+| grav | 2d | S | low (0.0039 ms) | - | - | needs-xlockmore | 360 |
+| halftone | 2d | S | high (2.1 ms) | - | - | pixmaps | 413 |
+| ifs | 2d | S | high (0.35 ms) | - | - | pixmaps | 560 |
+| interaggregate | 2d | S | high (0.66 ms) | - | - | - | 989 |
+| kaleidescope | 2d | S | high (0.071 ms) | - | - | - | 514 |
+| laser | 2d | S | high (0.14 ms) | - | - | needs-xlockmore | 356 |
+| lissie | 2d | S | low (0.0042 ms) | - | - | needs-xlockmore | 323 |
+| lmorph | 2d | S | high (0.28 ms) | - | - | float-heavy | 580 |
+| mountain | 2d | S | low (0.0005 ms) | - | - | needs-xlockmore | 283 |
+| rotor | 2d | S | low (0.0011 ms) | - | - | needs-xlockmore | 394 |
+| scooter | 2d | S | high (0.18 ms) | - | - | needs-xlockmore | 975 |
+| truchet | 2d | S | high (3 ms) | - | - | pixmaps | 541 |
+| wormhole | 2d | S | high (1.6 ms) | - | - | pixmaps | 734 |
+| abstractile | 2d | M | - | - | `BlackPixelOfScreen`, `make_color_loop`, `make_color_ramp`, `rgb_to_hsv` | - | 1625 |
+| bouboule | 2d | M | - | - | `GXor`, `XSetFunction` | xor, needs-xlockmore | 860 |
+| cwaves | 2d | M | - | - | `BlackPixelOfScreen` | - | 219 |
+| cynosure | 2d | M | - | - | `XCreateBitmapFromData`, `XSetWindowBackground`, `rgb_to_hsv` | - | 457 |
+| hexadrop | 2d | M | - | - | `XSetWindowBackground` | - | 446 |
+| hyperball | 2d | M | - | - | `UnmapNotify` | - | 2464 |
+| lisa | 2d | M | - | - | `XMaxRequestSize` | needs-xlockmore | 744 |
+| munch | 2d | M | - | - | `GXxor`, `XSetFunction`, `i_log2`, `pow2.h` | xor | 462 |
+| penrose | 2d | M | - | - | `LineOnOffDash` | needs-xlockmore | 1342 |
+| triangle | 2d | M | - | - | `free_colors`, `make_smooth_colormap` | needs-xlockmore | 355 |
+| vermiculate | 2d | M | - | - | `XSetWindowBackground`, `ya_random` | - | 1229 |
+| worm | 2d | M | - | - | `GXor`, `XClearArea`, `XSetFunction` | xor, needs-xlockmore | 434 |
+| xrayswarm | 2d | M | - | - | `XSetGraphicsExposures`, `initTime` | - | 1235 |
+| ant | 2d | L | - | - | `CoordModePrevious`, `NUMSTIPPLES`, `XCreatePixmapFromBitmapData`, `automata.h`, `hexagonUnit`, `triangleUnit` | needs-xlockmore | 1351 |
+| apollonian | 2d | L | - | - | `FcChar8`, `XColor.color`, `XGlyphInfo`, `XQueryColor`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall` | needs-xlockmore | 820 |
+| apple2-main | 2d | L | - | - | `A2CONTROLLER_DONE`, `A2CONTROLLER_FREE`, `A2_GR_FULL`, `A2_GR_HIRES`, `A2_GR_LORES`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `DisplayOfScreen`, `GrayScale`, `KeyPress`, `PseudoColor`, `TTY_BLINK`, `TTY_BOLD`, `TTY_INVERSE`, `TTY_SYMBOLS`, `XDestroyImage`, `XEvent.xany`, `XEvent.xkey`, `XGetImage`, `XGetPixel`, `XImage`, `XQueryColors`, `ZPixmap`, `a2_clear_gr`, `a2_clear_hgr`, `a2_cls`, `a2_display_image_loading`, `a2_goto`, `a2_hline`, `a2_hplot`, `a2_invalidate`, `a2_plot`, `a2_printc`, `a2_printc_noscroll`, `a2_prints`, `analogtv_reconfigure`, `ansi-tty.h`, `ansi_tty`, `ansi_tty_free`, `ansi_tty_init`, `ansi_tty_print`, `apple2.h`, `apple2_one_frame`, `apple2_sim_t`, `apple2_start`, `apple2_state_t`, `error: expected expression`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `error: incompatible integer to pointer conversion initializing 'char *' with an expression of type 'int' [-Wint-conversion]`, `flag`, `image`, `load_image_async`, `sim`, `st`, `tc`, `text_data`, `textclient.h`, `textclient_close`, `textclient_getc`, `textclient_open`, `textclient_putc_event`, `textclient_puts`, `textclient_reshape`, `tty`, `tty_char`, `tty_flag`, `utf8_encode`, `utf8_to_latin1`, `utf8wc.h`, `visual_cells`, `visual_class`, `visual_rgb_masks` | pixmaps, readback | 1642 |
+| attraction | 2d | L | - | - | `ButtonRelease`, `XEvent.x`, `XEvent.xany`, `XEvent.y`, `compute_closed_spline`, `error: incompatible integer to pointer conversion assigning to 'int *' from 'int' [-Wint-conversion]`, `error: member reference base type 'int' is not a structure or union`, `error: type name does not allow function specifier to be specified`, `error: type specifier missing, defaults to 'int'; ISO C99 and later do not support implicit int [-Wimplicit-int]`, `free_spline`, `make_color_ramp`, `make_spline`, `spline` | - | 1115 |
+| barcode | 2d | L | - | - | `ButtonRelease`, `LSBFirst`, `XCreateImage`, `XDestroyImage`, `XEvent.xany`, `XImage`, `XPutImage`, `XYBitmap` | - | 2055 |
+| binaryhorizon | 2d | L | - | - | `KeyPress`, `XDestroyImage`, `XEvent.xany`, `XGetImage`, `XImage`, `XPutImage`, `XPutPixel`, `ZPixmap`, `visual_depth` | pixmaps, readback | 624 |
+| binaryring | 2d | L | - | - | `KeyPress`, `XDestroyImage`, `XEvent.xany`, `XGetImage`, `XImage`, `XPutImage`, `XPutPixel`, `ZPixmap`, `visual_depth` | pixmaps, readback | 577 |
+| blitspin | 2d | L | - | - | `GXand`, `GXclear`, `GXor`, `GXset`, `GXxor`, `XDestroyImage`, `XDisplayHeight`, `XDisplayWidth`, `XGetImage`, `XPutImage`, `XScreenNumberOfScreen`, `async_load_state`, `file_to_pixmap`, `images/gen/som_png.h`, `load_image_async_simple`, `pow2.h`, `som_png`, `to_pow2` | pixmaps, readback, clipmask | 467 |
+| boxfit | 2d | L | - | - | `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XSetWindowBackground`, `ZPixmap`, `async_load_state`, `load_image_async_simple` | pixmaps, readback | 573 |
+| bsod | 2d | L | - | - | `A2CONTROLLER_DONE`, `A2CONTROLLER_FREE`, `A2_GR_FULL`, `A2_GR_HIRES`, `A2_GR_LORES`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `FcChar8`, `XClearArea`, `XColor.color`, `XCreateImage`, `XCreatePixmapFromBitmapData`, `XDestroyImage`, `XFetchName`, `XGetImage`, `XGetPixel`, `XGlyphInfo`, `XImage`, `XPutImage`, `XPutPixel`, `XQueryColor`, `XSetPlaneMask`, `XSetWindowBackground`, `XStoreName`, `XYPixmap`, `XftColor`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `XftTextExtentsUtf8_multi`, `ZPixmap`, `a2_cls`, `a2_goto`, `a2_init_memory_active`, `a2_invalidate`, `a2_poke`, `a2_printc`, `a2_printc_noscroll`, `a2_prints`, `amiga_png`, `android_png`, `apple2.h`, `apple2_one_frame`, `apple2_sim_t`, `apple2_start`, `apple2_state_t`, `apple_png`, `async_load_state`, `atari_png`, `atm_png`, `dvd_png`, `em`, `error: expected expression`, `font`, `gnome1_png`, `gnome2_png`, `hmac_png`, `i1`, `i2`, `images/gen/amiga_png.h`, `images/gen/android_png.h`, `images/gen/apple_png.h`, `images/gen/atari_png.h`, `images/gen/atm_png.h`, `images/gen/dvd_png.h`, `images/gen/gnome1_png.h`, `images/gen/gnome2_png.h`, `images/gen/hmac_png.h`, `images/gen/mac_png.h`, `images/gen/macbomb_png.h`, `images/gen/osx_10_2_png.h`, `images/gen/osx_10_3_png.h`, `images/gen/ransomware_png.h`, `images/gen/sun_png.h`, `load_image_async_simple`, `load_xft_font_retry`, `mac_png`, `macbomb_png`, `osx_10_2_png`, `osx_10_3_png`, `ov`, `ov2`, `ransomware_png`, `screen_number`, `sim`, `st`, `sun_png`, `utf8_decode_combining`, `utf8wc.h`, `xft.h`, `xft_word_wrap`, `xftwrap.h` | pixmaps, readback, clipmask | 7809 |
+| bubbles | 2d | L | - | - | `BUBBLE_MAGIC`, `Bubble`, `Bubble_Step`, `DELETE_BUBBLE`, `KEEP_BUBBLE`, `MAX`, `MAX_DROPPAGE`, `MIN`, `bubbles.h`, `default_bubbles`, `error: expected expression`, `head`, `init_default_bubbles`, `least`, `newpix`, `nextbub`, `num_default_bubbles`, `pixmap_list`, `rv`, `tmp`, `tmppix`, `touch` | pixmaps, clipmask | 1468 |
+| bumps | 2d | L | - | - | `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XQueryColors`, `XSetWindowBackground`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `load_image_async_simple`, `pScreenImage`, `put_xshm_image`, `xshm.h` | pixmaps, readback | 705 |
+| ccurve | 2d | L | - | - | `make_color_loop` | pixmaps | 872 |
+| crystal | 2d | L | - | - | `GXxor`, `XCreateColormap`, `XFreeColormap`, `XInstallColormap`, `XSetFunction`, `XSetWindowColormap`, `free_colors`, `has_writable_cells`, `make_random_colormap`, `make_smooth_colormap`, `make_uniform_colormap`, `rotate_colors` | xor, float-heavy, needs-xlockmore | 1286 |
+| decayscreen | 2d | L | - | - | `async_load_state`, `load_image_async_simple` | pixmaps | 392 |
+| deco | 2d | L | - | - | `DisplayOfScreen`, `XStoreColors`, `allocate_writable_colors`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `has_writable_cells` | - | 345 |
+| deluxe | 2d | L | - | - | `GCPlaneMask`, `XGCValues.plane_mask`, `allocate_alpha_colors`, `alpha.h` | pixmaps, float-heavy | 480 |
+| demon | 2d | L | - | - | `CoordModePrevious`, `GCFillStyle`, `GCStipple`, `NUMSTIPPLES`, `STIPPLESIZE`, `XCreatePixmapFromBitmapData`, `XGCValues.fill_style`, `XGCValues.stipple`, `automata.h`, `hexagonUnit`, `stipples`, `triangleUnit` | needs-xlockmore | 953 |
+| distort | 2d | L | - | - | `BlackPixelOfScreen`, `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XPutImage`, `XPutPixel`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `load_image_async_simple`, `put_xshm_image`, `xshm.h` | pixmaps, readback | 894 |
+| droste | 2d | L | - | - | `BlackPixelOfScreen`, `GET_PARENT_OBJ`, `KeyPress`, `KeySym`, `THREAD_DEFAULTS`, `THREAD_OPTIONS`, `XDestroyImage`, `XEvent.xkey`, `XGetImage`, `XGetPixel`, `XImage`, `XK_Down`, `XK_Left`, `XK_Right`, `XK_Up`, `XLookupString`, `XPutPixel`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `double_time`, `doubletime.h`, `error: expected expression`, `error: field has incomplete type 'struct threadpool'`, `error: variable has incomplete type 'const struct threadpool_class'`, `hardware_concurrency`, `i_log2_fast`, `keysym`, `load_image_async_simple`, `pow2.h`, `put_xshm_image`, `thread_util.h`, `threadpool`, `threadpool_create`, `threadpool_destroy`, `threadpool_run`, `threadpool_wait`, `xshm.h` | pixmaps, readback | 686 |
+| eruption | 2d | L | - | - | `XEvent.x`, `XEvent.y`, `XImage`, `XPutPixel`, `XSetWindowBackground`, `XShmSegmentInfo`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `error: typedef redefinition with different types ('unsigned long' vs 'unsigned int')`, `img`, `put_xshm_image`, `xshm.h` | - | 608 |
+| fiberlamp | 2d | L | - | - | `RootWindow`, `XAllocNamedColor`, `XSetGraphicsExposures`, `XTranslateCoordinates` | pixmaps, needs-xlockmore | 480 |
+| filmleader | 2d | L | - | - | `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_SIGNAL_LEN`, `ButtonRelease`, `FcChar8`, `KeyPress`, `KeySym`, `XCreateImage`, `XDestroyImage`, `XEvent.xany`, `XEvent.xkey`, `XGetImage`, `XGetPixel`, `XGlyphInfo`, `XImage`, `XLookupString`, `XPutImage`, `XPutPixel`, `XftColor`, `XftColorAllocName`, `XftColorFree`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftTextExtentsUtf8`, `ZPixmap`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_load_ximage`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `double_time`, `doubletime.h`, `error: expected expression`, `extents`, `img`, `img1`, `img2`, `keysym`, `load_xft_font_retry`, `screen_number`, `xftfont` | pixmaps, readback | 548 |
+| fireworkx | 2d | L | - | - | `ButtonRelease`, `ImageByteOrder`, `MSBFirst`, `XCreateImage`, `XDestroyImage`, `XEvent.x`, `XEvent.y`, `XImage`, `XPutImage`, `ZPixmap` | - | 882 |
+| flag | 2d | L | - | - | `GCFont`, `XCharStruct`, `XCreateImage`, `XDestroyImage`, `XDrawString`, `XFontStruct`, `XFreeFont`, `XGCValues.font`, `XGetImage`, `XGetPixel`, `XImage`, `XLoadQueryFont`, `XPutPixel`, `XSetGraphicsExposures`, `XTextExtents`, `XYBitmap`, `XYPixmap`, `ZPixmap`, `bob_png`, `file_to_pixmap`, `font`, `im`, `image_data_to_ximage`, `images/gen/bob_png.h`, `o2`, `overall` | pixmaps, readback, text, needs-xlockmore | 570 |
+| flow | 2d | L | - | - | `XSetGraphicsExposures` | pixmaps, needs-xlockmore | 1216 |
+| fluidballs | 2d | L | - | - | `ButtonRelease`, `FcChar8`, `RootWindow`, `XEvent.x`, `XEvent.xany`, `XEvent.y`, `XTranslateCoordinates`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `error: expected expression`, `error: too few arguments to function call, expected 2, have 1`, `load_xft_font_retry`, `screen_number` | pixmaps | 881 |
+| fontglide | 2d | L | - | - | `BlackPixelOfScreen`, `DisplayOfScreen`, `FcChar8`, `XCreateImage`, `XDestroyImage`, `XDrawString`, `XDrawString16`, `XFreeFont`, `XGetAtomName`, `XGetImage`, `XGetPixel`, `XGlyphInfo`, `XImage`, `XLoadQueryFont`, `XLookupString`, `XPutImage`, `XPutPixel`, `XRenderColor`, `XSetFont`, `XTextExtents`, `XTextExtents16`, `XYPixmap`, `XftColor`, `XftColorAllocValue`, `XftColorFree`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `ZPixmap`, `bg`, `error: Xft is required under X11`, `error: expected expression`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `extents`, `fg`, `in`, `load_xft_font_retry`, `out`, `screen_number`, `swap`, `text_data`, `textclient.h`, `textclient_close`, `textclient_getc`, `textclient_open`, `utf8_decode_combining`, `utf8wc.h`, `xftdraw` | pixmaps, readback, text, clipmask | 2474 |
+| glitchpeg | 2d | L | - | - | `BitmapBitOrder`, `ButtonRelease`, `ImageByteOrder`, `XCreateImage`, `XDestroyImage`, `XEvent.xany`, `XGetPixel`, `XImage`, `XPutImage`, `XPutPixel`, `XtAppAddInput`, `XtDisplayToApplicationContext`, `XtInputExceptMask`, `XtInputId`, `XtInputReadMask`, `XtPointer`, `XtRemoveInput`, `ZPixmap`, `error: operand of type 'XPoint' where arithmetic or pointer type is required`, `image`, `image_data_to_ximage`, `out` | readback | 466 |
+| goop | 2d | L | - | - | `AllPlanes`, `DefaultScreenOfDisplay`, `DisplayOfScreen`, `GXclear`, `GXxor`, `WhitePixelOfScreen`, `XSetFunction`, `XSetPlaneMask`, `allocate_alpha_colors`, `alpha.h`, `compute_closed_spline`, `error: incompatible integer to pointer conversion assigning to 'int *' from 'int' [-Wint-conversion]`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `error: member reference base type 'int' is not a structure or union`, `error: type name does not allow function specifier to be specified`, `error: type specifier missing, defaults to 'int'; ISO C99 and later do not support implicit int [-Wimplicit-int]`, `free_spline`, `has_writable_cells`, `make_spline`, `spline` | pixmaps, xor | 651 |
+| greynetic | 2d | L | - | - | `GCFillStyle`, `GCStipple`, `XCreatePixmapFromBitmapData`, `XGCValues.fill_style`, `XGCValues.stipple` | - | 297 |
+| halo | 2d | L | - | - | `GXxor` | pixmaps | 459 |
+| imsmap | 2d | L | - | - | `XCreateImage`, `XDestroyImage`, `XImage`, `XPutImage`, `XPutPixel`, `XYBitmap`, `image` | - | 426 |
+| interference | 2d | L | - | - | `GET_PARENT_OBJ`, `THREAD_DEFAULTS`, `THREAD_OPTIONS`, `XImage`, `XPutPixel`, `XShmGetEventBase`, `XShmSegmentInfo`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `error: expected expression`, `error: field has incomplete type 'struct threadpool'`, `error: too few arguments to function call, expected 2, have 1`, `error: variable has incomplete type 'const struct threadpool_class'`, `hardware_concurrency`, `make_color_loop`, `put_xshm_image`, `thread_memory_alignment`, `thread_util.h`, `threadpool`, `threadpool_create`, `threadpool_destroy`, `threadpool_run`, `threadpool_wait`, `visual_pixmap_depth`, `xshm.h` | pixmaps | 1002 |
+| intermomentary | 2d | L | - | - | `XQueryColor`, `XSetTile`, `make_color_ramp`, `rgb_to_hsv` | pixmaps | 605 |
+| juggle | 2d | L | - | - | `XDrawImageString`, `XDrawString`, `XFontStruct`, `XFreeFontInfo`, `XLoadQueryFont`, `XTextWidth`, `gettimeofday` | text, float-heavy, needs-xlockmore | 2798 |
+| julia | 2d | L | - | - | `Button1`, `ButtonRelease`, `Cursor`, `MotionNotify`, `XCreatePixmapCursor`, `XCreatePixmapFromBitmapData`, `XDefineCursor`, `XEvent.x`, `XEvent.xany`, `XEvent.xmotion`, `XEvent.y`, `XFreeCursor`, `XSetStipple`, `XSetTSOrigin`, `XUndefineCursor` | pixmaps, float-heavy, needs-xlockmore | 451 |
+| kumppa | 2d | L | - | - | `XSetGraphicsExposures` | pixmaps | 545 |
+| lcdscrub | 2d | L | - | - | `XCreateImage`, `XDestroyImage`, `XGetPixel`, `XImage`, `XPutImage`, `XPutPixel`, `XYPixmap`, `error: too few arguments to function call, expected 2, have 1` | pixmaps, readback, clipmask | 399 |
+| loop | 2d | L | - | - | `CoordModePrevious`, `GCFillStyle`, `GCStipple`, `STIPPLESIZE`, `XCreatePixmapFromBitmapData`, `XGCValues.fill_style`, `XGCValues.stipple`, `automata.h`, `hexagonUnit`, `stipples`, `triangleUnit` | needs-xlockmore | 1700 |
+| m6502 | 2d | L | - | - | `ANALOGTV_BLACK_LEVEL`, `ANALOGTV_BOT`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_TOP`, `ANALOGTV_VISLINES`, `ANALOGTV_VIS_END`, `ANALOGTV_VIS_LEN`, `ANALOGTV_VIS_START`, `ANALOGTV_WHITE_LEVEL`, `Bit8`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_draw_solid`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_lcp_to_ntsc`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `asm6502.h`, `double_time`, `doubletime.h`, `m6502.h`, `m6502_build`, `m6502_destroy6502`, `m6502_next_eval`, `m6502_start_eval_file`, `m6502_start_eval_string`, `machine_6502` | - | 288 |
+| marbling | 2d | L | - | - | `DefaultScreenOfDisplay`, `GET_PARENT_OBJ`, `KeyPress`, `KeySym`, `THREAD_DEFAULTS`, `THREAD_OPTIONS`, `XEvent.xany`, `XEvent.xkey`, `XImage`, `XK_Down`, `XK_Left`, `XK_Right`, `XK_Up`, `XLookupString`, `XPutPixel`, `XShmSegmentInfo`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `error: expected expression`, `error: field has incomplete type 'struct threadpool'`, `error: incompatible integer to pointer conversion passing 'int' to parameter of type 'Screen *' (aka 'struct XshimScreen *') [-Wint-conversion]`, `error: variable has incomplete type 'const struct threadpool_class'`, `hardware_concurrency`, `keysym`, `put_xshm_image`, `thread_memory_alignment`, `thread_util.h`, `threadpool_create`, `threadpool_destroy`, `threadpool_run`, `threadpool_wait`, `visual_pixmap_depth`, `xshm.h` | - | 635 |
+| memscroller | 2d | L | - | - | `FcChar8`, `XGlyphInfo`, `XImage`, `XShmSegmentInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `error: expected expression`, `load_xft_font_retry`, `overall`, `put_xshm_image`, `screen_number`, `xft.h`, `xshm.h` | pixmaps | 626 |
+| metaballs | 2d | L | - | - | `BitmapPad`, `XCreateImage`, `XDestroyImage`, `XFree`, `XImage`, `XListPixmapFormats`, `XPutImage`, `XPutPixel`, `XSetWindowBackground`, `ZPixmap` | - | 438 |
+| moire | 2d | L | - | - | `BlackPixelOfScreen`, `DefaultScreenOfDisplay`, `WhitePixelOfScreen`, `XImage`, `XPutPixel`, `XQueryColor`, `XShmSegmentInfo`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `make_color_ramp`, `put_xshm_image`, `rgb_to_hsv`, `visual_depth`, `xshm.h` | - | 253 |
+| moire2 | 2d | L | - | - | `GXor`, `GXxor`, `XSetFunction` | pixmaps, xor | 363 |
+| nerverot | 2d | L | - | - | `make_color_ramp`, `rgb_to_hsv` | pixmaps, float-heavy | 1367 |
+| noseguy | 2d | L | - | - | `FcChar8`, `XCreateImage`, `XDestroyImage`, `XGetImage`, `XGetPixel`, `XGlyphInfo`, `XImage`, `XPutImage`, `XPutPixel`, `XYPixmap`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `ZPixmap`, `error: expected expression`, `extents`, `i1`, `i2`, `images/gen/nose-f1_png.h`, `images/gen/nose-f2_png.h`, `images/gen/nose-f3_png.h`, `images/gen/nose-f4_png.h`, `images/gen/nose-l1_png.h`, `images/gen/nose-l2_png.h`, `images/gen/nose-r1_png.h`, `images/gen/nose-r2_png.h`, `load_xft_font_retry`, `nose_f1_png`, `nose_f2_png`, `nose_f3_png`, `nose_f4_png`, `nose_l1_png`, `nose_l2_png`, `nose_r1_png`, `nose_r2_png`, `screen_number`, `text_data`, `textclient.h`, `textclient_close`, `textclient_getc`, `textclient_open`, `textclient_reshape` | pixmaps, readback, clipmask | 720 |
+| penetrate | 2d | L | - | - | `FcChar8`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall`, `screen_number`, `usleep` | - | 1037 |
+| phosphor | 2d | L | - | - | `BlackPixelOfScreen`, `DefaultScreenOfDisplay`, `FALSE`, `FcChar8`, `KeyPress`, `TTY_BOLD`, `TTY_INVERSE`, `TTY_ITALIC`, `TTY_SYMBOLS`, `Time`, `XCreateImage`, `XDestroyImage`, `XEvent.xany`, `XEvent.xkey`, `XGetImage`, `XGetPixel`, `XGlyphInfo`, `XImage`, `XPutImage`, `XPutPixel`, `XQueryColor`, `XWriteBitmapFile`, `XYBitmap`, `XYPixmap`, `XftColor`, `XftDraw`, `XftDrawCreate`, `XftDrawStringUtf8`, `XftFont`, `XftTextExtentsUtf8`, `XtAppAddTimeOut`, `XtAppContext`, `XtIntervalId`, `XtPointer`, `XtRemoveTimeOut`, `ZPixmap`, `_6x10font_png`, `ansi-tty.h`, `ansi_graphics_unicode`, `ansi_tty`, `ansi_tty_free`, `ansi_tty_init`, `ansi_tty_print`, `ansi_tty_resize`, `app`, `error: expected expression`, `font`, `font_bits`, `im`, `im2`, `images/gen/6x10font_png.h`, `load_xft_font_retry`, `make_color_ramp`, `mm`, `overall`, `rgb_to_hsv`, `screen_number`, `tcell`, `text_data`, `textclient.h`, `textclient_close`, `textclient_getc`, `textclient_open`, `textclient_putc_event`, `textclient_puts`, `textclient_reshape`, `tty`, `tty_char`, `utf8_encode`, `utf8_to_latin1`, `utf8wc.h`, `xft_fg`, `xftdraw`, `xim_color`, `xim_mono` | pixmaps, readback, clipmask | 1260 |
+| piecewise | 2d | L | - | - | `make_color_loop` | pixmaps | 1036 |
+| polyominoes | 2d | L | - | - | `LSBFirst`, `MSBFirst`, `XCreateImage`, `XDestroyImage`, `XImage`, `XPutImage`, `XYBitmap`, `countof` | needs-xlockmore | 2370 |
+| pong | 2d | L | - | - | `ANALOGTV_BLACK_LEVEL`, `ANALOGTV_BOT`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_TOP`, `ANALOGTV_VISLINES`, `ANALOGTV_VIS_END`, `ANALOGTV_VIS_LEN`, `ANALOGTV_VIS_START`, `ButtonPressMask`, `ButtonRelease`, `ButtonReleaseMask`, `CurrentTime`, `Cursor`, `FocusChangeMask`, `FocusIn`, `FocusOut`, `GrabModeAsync`, `KeyPress`, `KeyPressMask`, `KeyRelease`, `KeyReleaseMask`, `KeySym`, `MotionNotify`, `X11/keysym.h`, `XCreatePixmapCursor`, `XDefineCursor`, `XDestroyImage`, `XEvent.x`, `XEvent.xkey`, `XEvent.xmotion`, `XGrabPointer`, `XHeightMMOfScreen`, `XHeightOfScreen`, `XK_Down`, `XK_Up`, `XLookupString`, `XUngrabPointer`, `XWarpPointer`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_draw_solid`, `analogtv_draw_string`, `analogtv_font`, `analogtv_font_set_char`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_lcp_to_ntsc`, `analogtv_make_font`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `double_time`, `doubletime.h`, `key` | pixmaps | 1109 |
+| popsquares | 2d | L | - | - | `XQueryColor`, `make_color_ramp`, `rgb_to_hsv` | pixmaps | 310 |
+| qix | 2d | L | - | - | `CellsOfScreen`, `DefaultScreenOfDisplay`, `GCPlaneMask`, `GXxor`, `XGCValues.plane_mask`, `XQueryColor`, `XSetWindowBackground`, `allocate_alpha_colors`, `alpha.h`, `has_writable_cells`, `rgb_to_hsv` | - | 642 |
+| rdbomb | 2d | L | - | - | `DefaultScreenOfDisplay`, `XImage`, `XListPixmapFormats`, `XPixmapFormatValues`, `XSetWindowBackground`, `XShmSegmentInfo`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `error: expected ')'`, `error: expected function body after function declarator`, `error: expected parameter declarator`, `error: incompatible integer to pointer conversion passing 'int' to parameter of type 'void *' [-Wint-conversion]`, `error: subscripted value is not an array, pointer, or vector`, `has_writable_cells`, `pfv`, `put_xshm_image`, `visual_depth`, `xshm.h` | - | 571 |
+| ripples | 2d | L | - | - | `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XPutPixel`, `XQueryColor`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `load_image_async_simple`, `put_xshm_image`, `visual_rgb_masks`, `xshm.h` | readback | 1127 |
+| rocks | 2d | L | - | - | `XQueryColor`, `XSetGraphicsExposures` | pixmaps | 562 |
+| rotzoomer | 2d | L | - | - | `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XPutPixel`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `load_image_async_simple`, `put_xshm_image`, `xshm.h` | pixmaps, readback | 601 |
+| shadebobs | 2d | L | - | - | `BlackPixelOfScreen`, `XCreateImage`, `XDestroyImage`, `XFree`, `XGetPixel`, `XImage`, `XListPixmapFormats`, `XPutImage`, `XPutPixel`, `XSetWindowBackground`, `ZPixmap` | readback | 474 |
+| slidescreen | 2d | L | - | - | `XFree`, `XQueryColors`, `async_load_state`, `load_image_async_simple`, `visual_cells` | pixmaps | 507 |
+| slip | 2d | L | - | - | `DisplayOfScreen`, `ScreenOfDisplay`, `XSetGraphicsExposures`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `load_image_async` | pixmaps, needs-xlockmore | 376 |
+| speedmine | 2d | L | - | - | `XQueryColor`, `error: too few arguments to function call, expected 2, have 1`, `make_color_ramp`, `rgb_to_hsv` | pixmaps, clipmask | 1659 |
+| spotlight | 2d | L | - | - | `async_load_state`, `error: too few arguments to function call, expected 2, have 1`, `load_image_async_simple` | pixmaps, clipmask | 355 |
+| starfish | 2d | L | - | - | `EvenOddRule`, `GCFillRule`, `XGCValues.fill_rule`, `XSetWindowBackground`, `compute_closed_spline`, `error: incompatible integer to pointer conversion assigning to 'int *' from 'int' [-Wint-conversion]`, `error: member reference base type 'int' is not a structure or union`, `error: type name does not allow function specifier to be specified`, `error: type specifier missing, defaults to 'int'; ISO C99 and later do not support implicit int [-Wimplicit-int]`, `make_spline`, `spline` | - | 564 |
+| strange | 2d | L | - | - | `GCGraphicsExposures`, `GET_PARENT_OBJ`, `MSBFirst`, `StaticColor`, `THREAD_OPTIONS`, `TrueColor`, `XGCValues.graphics_exposures`, `XImage`, `XPutPixel`, `XQueryColor`, `XQueryColors`, `XSetFunction`, `XSetGraphicsExposures`, `XShmSegmentInfo`, `ZPixmap`, `aligned_free`, `aligned_malloc`, `create_xshm_image`, `destroy_xshm_image`, `error: field has incomplete type 'struct threadpool'`, `error: incomplete definition of type 'struct threadpool'`, `error: invalid application of 'sizeof' to an incomplete type 'XrmOptionDescRec[]'`, `error: unexpected type name 'ATTRACTOR': expected expression`, `error: variable has incomplete type 'const struct threadpool_class'`, `hardware_concurrency`, `i_log2`, `pow2.h`, `put_xshm_image`, `thread_memory_alignment`, `thread_util.h`, `threadpool_create`, `threadpool_destroy`, `threadpool_run`, `threadpool_wait`, `visual_class`, `visual_pixmap_depth`, `visual_rgb_masks`, `xshm.h` | pixmaps, xor, needs-xlockmore | 1353 |
+| swirl | 2d | L | - | - | `XCreateColormap`, `XFree`, `XFreeColormap`, `XImage`, `XInstallColormap`, `XPutPixel`, `XQueryColor`, `XSetWMColormapWindows`, `XSetWindowColormap`, `XShmSegmentInfo`, `XStoreColors`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `free_colors`, `make_smooth_colormap`, `put_xshm_image`, `rotate_colors`, `xshm.h` | needs-xlockmore | 1447 |
+| t3d | 2d | L | - | - | `BlackPixelOfScreen`, `Button1Mask`, `Button2Mask`, `Button3Mask`, `GXandInverted`, `GXor`, `KeyPress`, `KeySym`, `XAllocColorCells`, `XEvent.xkey`, `XGetImage`, `XLookupString`, `XPutImage`, `XStoreColors`, `error: too few arguments to function call, expected 2, have 1`, `keysym` | pixmaps, readback, float-heavy | 991 |
+| tessellimage | 2d | L | - | - | `ButtonRelease`, `ITRIANGLE`, `X11/keysymdef.h`, `XCreateImage`, `XDestroyImage`, `XEvent.xany`, `XGetImage`, `XGetPixel`, `XImage`, `XPutImage`, `XPutPixel`, `XQueryColor`, `XYZ`, `ZPixmap`, `async_load_state`, `delaunay`, `delaunay.h`, `delaunay_xyzcompare`, `dimg`, `double_time`, `doubletime.h`, `error: expected expression`, `img2`, `load_image_async_simple`, `p`, `tt`, `v`, `visual_rgb_masks` | pixmaps, readback | 996 |
+| testx11 | 2d | L | - | - | `BlackPixelOfScreen`, `GCFont`, `GXxor`, `KeyPress`, `KeySym`, `XClearArea`, `XCreatePixmapFromBitmapData`, `XDestroyImage`, `XDrawString`, `XEvent.x`, `XEvent.xany`, `XEvent.xkey`, `XEvent.y`, `XGCValues.font`, `XGetImage`, `XImage`, `XLoadFont`, `XLookupString`, `XPutImage`, `XPutPixel`, `XSetWindowBackground`, `ZPixmap`, `colorbars.h`, `draw_colorbars`, `error: expected ')'`, `error: expected function body after function declarator`, `error: expected parameter declarator`, `get_position`, `get_rotation`, `glx/rotator.h`, `image`, `keysym`, `make_color_loop`, `make_rotator`, `rotator`, `visual_depth` | pixmaps, readback, text, clipmask | 968 |
+| twang | 2d | L | - | - | `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XPutPixel`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `load_image_async_simple`, `put_xshm_image`, `xshm.h` | pixmaps, readback | 791 |
+| vfeedback | 2d | L | - | - | `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_SIGNAL_LEN`, `BlackPixelOfScreen`, `Button1`, `Button2`, `Button3`, `Button4`, `Button5`, `Button6`, `Button7`, `ButtonRelease`, `EASE_IN_OUT_SINE`, `KeyPress`, `KeySym`, `MotionNotify`, `RANDSIGN`, `XCreateImage`, `XDestroyImage`, `XEvent.state`, `XEvent.x`, `XEvent.xany`, `XEvent.xkey`, `XEvent.xmotion`, `XEvent.y`, `XGetImage`, `XGetPixel`, `XImage`, `XK_Down`, `XK_Left`, `XK_Right`, `XK_Up`, `XLookupString`, `XPutPixel`, `ZPixmap`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_input_allocate`, `analogtv_load_ximage`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `double_time`, `doubletime.h`, `ease`, `easing.h`, `img`, `in`, `keysym`, `out` | pixmaps, readback | 592 |
+| wander | 2d | L | - | - | `make_color_loop` | pixmaps | 284 |
+| whirlygig | 2d | L | - | - | `XDrawString` | pixmaps, text, float-heavy | 741 |
+| xanalogtv | 2d | L | - | - | `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_PIC_LEN`, `ANALOGTV_SCALE`, `ANALOGTV_SIGNAL_LEN`, `ANALOGTV_V`, `ANALOGTV_VIS_LEN`, `ANALOGTV_VIS_START`, `KeyPress`, `KeySym`, `XDestroyImage`, `XEvent.xkey`, `XGetImage`, `XImage`, `XK_Down`, `XK_Left`, `XK_Next`, `XK_Prior`, `XK_Right`, `XK_Up`, `XLookupString`, `XrmDatabase`, `XrmPutResource`, `XrmValue`, `ZPixmap`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_draw_solid_rel_lcp`, `analogtv_draw_string_centered`, `analogtv_font`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_lcp_to_ntsc`, `analogtv_load_ximage`, `analogtv_make_font`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `analogtv_setup_teletext`, `db`, `file_to_pixmap`, `gethostname`, `image`, `images/gen/testcard_bbcf_png.h`, `images/gen/testcard_pm5544_png.h`, `images/gen/testcard_rca_png.h`, `inp`, `input`, `keysym`, `load_image_async`, `rec`, `testcard_bbcf_png`, `testcard_pm5544_png`, `testcard_rca_png`, `value`, `ximage` | pixmaps, readback | 689 |
+| xflame | 2d | L | - | - | `XCreateImage`, `XDestroyImage`, `XGetPixel`, `XImage`, `XPutPixel`, `XQueryColor`, `XShmSegmentInfo`, `ZPixmap`, `bob_png`, `create_xshm_image`, `destroy_xshm_image`, `file_to_ximage`, `image`, `image_data_to_ximage`, `images/gen/bob_png.h`, `out`, `put_xshm_image`, `xshm.h` | readback | 826 |
+| xjack | 2d | L | - | - | `FcChar8`, `XClearArea`, `XEvent.xany`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall`, `screen_number` | pixmaps | 508 |
+| xlyap | 2d | L | - | - | `BlackPixelOfScreen`, `Cursor`, `KeyPress`, `KeySym`, `WhitePixelOfScreen`, `X11/cursorfont.h`, `XComposeStatus`, `XEvent.xkey`, `XKeyEvent`, `XLookupString`, `XPending`, `XStoreColors`, `error: expected expression` | pixmaps | 1939 |
+| xmatrix | 2d | L | - | - | `KeyPress`, `KeySym`, `XCreateImage`, `XDestroyImage`, `XEvent.xany`, `XEvent.xkey`, `XGetImage`, `XGetPixel`, `XImage`, `XLookupString`, `XPutImage`, `XPutPixel`, `XYPixmap`, `XtAppAddTimeOut`, `XtAppContext`, `XtIntervalId`, `XtPointer`, `XtRemoveTimeOut`, `ZPixmap`, `app`, `i1`, `i2`, `im`, `images/gen/matrix1_png.h`, `images/gen/matrix1b_png.h`, `images/gen/matrix2_png.h`, `images/gen/matrix2b_png.h`, `keysym`, `matrix1_png`, `matrix1b_png`, `matrix2_png`, `matrix2b_png`, `text_data`, `textclient.h`, `textclient_close`, `textclient_getc`, `textclient_open`, `textclient_reshape` | pixmaps, readback | 1915 |
+| zoom | 2d | L | - | - | `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XSetWindowBackground`, `ZPixmap`, `async_load_state`, `error: too few arguments to function call, expected 2, have 1`, `load_image_async_simple` | pixmaps, readback | 290 |
+| antinspect | gl | XL | - | - | - | needs-xlockmore | 696 |
+| antmaze | gl | XL | - | - | - | needs-xlockmore | 1612 |
+| antspotlight | gl | XL | - | - | - | needs-xlockmore | 797 |
+| atlantis | gl | XL | - | - | `XDestroyImage` | needs-xlockmore | 607 |
+| atunnel | gl | XL | - | - | `XDestroyImage` | needs-xlockmore | 315 |
+| b_lockglue | gl | XL | - | - | - | needs-xlockmore | 240 |
+| beats | gl | XL | - | - | - | needs-xlockmore | 439 |
+| blinkbox | gl | XL | - | - | - | needs-xlockmore | 615 |
+| blocktube | gl | XL | - | - | `XDestroyImage` | needs-xlockmore | 454 |
+| boing | gl | XL | - | - | - | float-heavy, needs-xlockmore | 666 |
+| bouncingcow | gl | XL | - | - | - | needs-xlockmore | 649 |
+| boxed | gl | XL | - | - | - | needs-xlockmore | 1361 |
+| cage | gl | XL | - | - | `XDestroyImage` | needs-xlockmore | 498 |
+| carousel | gl | XL | - | - | - | needs-xlockmore | 982 |
+| chompytower | gl | XL | - | - | - | needs-xlockmore | 1131 |
+| circuit | gl | XL | - | - | - | needs-xlockmore | 2106 |
+| cityflow | gl | XL | - | - | - | needs-xlockmore | 561 |
+| companion | gl | XL | - | - | - | needs-xlockmore | 605 |
+| covid19 | gl | XL | - | - | - | needs-xlockmore | 657 |
+| crackberg | gl | XL | - | - | `XLookupString`, `XNextEvent`, `XPeekEvent`, `XPending` | float-heavy, needs-xlockmore | 1484 |
+| crumbler | gl | XL | - | - | - | needs-xlockmore | 905 |
+| cube21 | gl | XL | - | - | - | needs-xlockmore | 943 |
+| cubenetic | gl | XL | - | - | - | needs-xlockmore | 616 |
+| cubestack | gl | XL | - | - | `XLookupString` | needs-xlockmore | 453 |
+| cubestorm | gl | XL | - | - | `XLookupString` | needs-xlockmore | 485 |
+| cubetwist | gl | XL | - | - | `XLookupString` | needs-xlockmore | 579 |
+| cubicgrid | gl | XL | - | - | - | needs-xlockmore | 322 |
+| cubocteversion | gl | XL | - | - | `XDestroyImage` | needs-xlockmore | 5657 |
+| dangerball | gl | XL | - | - | - | needs-xlockmore | 377 |
+| deepstars | gl | XL | - | - | - | needs-xlockmore | 385 |
+| discoball | gl | XL | - | - | - | needs-xlockmore | 709 |
+| dnalogo | gl | XL | - | - | `XLookupString` | float-heavy, needs-xlockmore | 3657 |
+| dumpsterfire | gl | XL | - | - | - | needs-xlockmore | 845 |
+| dymaxionmap | gl | XL | - | - | `XCreateImage`, `XDestroyImage`, `XGetPixel`, `XLookupString`, `XPutPixel` | readback, needs-xlockmore | 1729 |
+| endgame | gl | XL | - | - | - | needs-xlockmore | 1451 |
+| energystream | gl | XL | - | - | - | needs-xlockmore | 536 |
+| engine | gl | XL | - | - | - | needs-xlockmore | 1015 |
+| esper | gl | XL | - | - | `XLookupString` | needs-xlockmore | 2463 |
+| etruscanvenus | gl | XL | - | - | - | needs-xlockmore | 2761 |
+| extrusion | gl | XL | - | - | - | needs-xlockmore | 552 |
+| flipflop | gl | XL | - | - | - | needs-xlockmore | 875 |
+| flipscreen3d | gl | XL | - | - | - | needs-xlockmore | 524 |
+| fliptext | gl | XL | - | - | - | needs-xlockmore | 1005 |
+| floppy | gl | XL | - | - | - | needs-xlockmore | 584 |
+| flurry | gl | XL | - | - | - | needs-xlockmore | 550 |
+| flyingtoasters | gl | XL | - | - | `XDestroyImage` | needs-xlockmore | 924 |
+| gears | gl | XL | - | - | - | needs-xlockmore | 953 |
+| geodesic | gl | XL | - | - | - | float-heavy, needs-xlockmore | 825 |
+| geodesicgears | gl | XL | - | - | `XLookupString` | float-heavy, needs-xlockmore | 1802 |
+| gflux | gl | XL | - | - | - | needs-xlockmore | 799 |
+| gibson | gl | XL | - | - | - | needs-xlockmore | 1317 |
+| glblur | gl | XL | - | - | - | needs-xlockmore | 630 |
+| glcells | gl | XL | - | - | - | needs-xlockmore | 1382 |
+| gleidescope | gl | XL | - | - | `XOFFSET` | float-heavy, needs-xlockmore | 1620 |
+| glforestfire | gl | XL | - | - | `XDestroyImage` | needs-xlockmore | 1089 |
+| glhanoi | gl | XL | - | - | - | float-heavy, needs-xlockmore | 2080 |
+| glknots | gl | XL | - | - | - | needs-xlockmore | 455 |
+| glmatrix | gl | XL | - | - | `XDestroyImage`, `XGetPixel`, `XPutPixel` | readback, needs-xlockmore | 1077 |
+| glplanet | gl | XL | - | - | `XDestroyImage` | float-heavy, needs-xlockmore | 1111 |
+| glschool | gl | XL | - | - | - | needs-xlockmore | 229 |
+| glslideshow | gl | XL | - | - | - | needs-xlockmore | 1917 |
+| glsnake | gl | XL | - | - | - | needs-xlockmore | 2699 |
+| gltext | gl | XL | - | - | - | needs-xlockmore | 619 |
+| graphstat | gl | XL | - | - | - | needs-xlockmore | 750 |
+| gravitywell | gl | XL | - | - | - | needs-xlockmore | 770 |
+| handsy | gl | XL | - | - | `XLookupString` | needs-xlockmore | 1158 |
+| headroom | gl | XL | - | - | - | needs-xlockmore | 628 |
+| hexstrut | gl | XL | - | - | `XLookupString` | needs-xlockmore | 511 |
+| hextrail | gl | XL | - | - | `XLookupString` | needs-xlockmore | 782 |
+| highvoltage | gl | XL | - | - | `XLookupString` | needs-xlockmore | 949 |
+| hilbert | gl | XL | - | - | `XLookupString` | needs-xlockmore | 1165 |
+| hopffibration | gl | XL | - | - | - | needs-xlockmore | 3580 |
+| hydrostat | gl | XL | - | - | - | needs-xlockmore | 796 |
+| hypertorus | gl | XL | - | - | `XLookupString` | float-heavy, needs-xlockmore | 2150 |
+| hypnowheel | gl | XL | - | - | - | needs-xlockmore | 335 |
+| jigglypuff | gl | XL | - | - | `XDestroyImage` | needs-xlockmore | 1125 |
+| jigsaw | gl | XL | - | - | - | needs-xlockmore | 1512 |
+| juggler3d | gl | XL | - | - | - | float-heavy, needs-xlockmore | 3023 |
+| kaleidocycle | gl | XL | - | - | `XLookupString` | needs-xlockmore | 584 |
+| kallisti | gl | XL | - | - | - | needs-xlockmore | 357 |
+| klein | gl | XL | - | - | `XLookupString` | float-heavy, needs-xlockmore | 3574 |
+| klondike | gl | XL | - | - | `XDestroyImage` | needs-xlockmore | 803 |
+| lament | gl | XL | - | - | `XDestroyImage`, `XLookupString` | needs-xlockmore | 1801 |
+| lavalite | gl | XL | - | - | - | needs-xlockmore | 1552 |
+| lockward | gl | XL | - | - | `XLookupString` | needs-xlockmore | 964 |
+| mapscroller | gl | XL | - | - | `XDestroyImage`, `XGetPixel`, `XLookupString` | readback, needs-xlockmore | 1672 |
+| maze3d | gl | XL | - | - | - | needs-xlockmore | 1958 |
+| menger | gl | XL | - | - | `XLookupString` | needs-xlockmore | 574 |
+| mirrorblob | gl | XL | - | - | - | needs-xlockmore | 1822 |
+| moebius | gl | XL | - | - | `XDestroyImage` | needs-xlockmore | 794 |
+| moebiusgears | gl | XL | - | - | `XLookupString` | needs-xlockmore | 446 |
+| molecule | gl | XL | - | - | `XLookupString` | needs-xlockmore | 1716 |
+| morph3d | gl | XL | - | - | - | needs-xlockmore | 841 |
+| nakagin | gl | XL | - | - | - | needs-xlockmore | 1636 |
+| noof | gl | XL | - | - | - | needs-xlockmore | 530 |
+| papercube | gl | XL | - | - | - | needs-xlockmore | 1111 |
+| peepers | gl | XL | - | - | `XChangeProperty`, `XDestroyImage`, `XInternAtom` | float-heavy, needs-xlockmore | 1470 |
+| photopile | gl | XL | - | - | - | needs-xlockmore | 869 |
+| pinion | gl | XL | - | - | `XLookupString` | needs-xlockmore | 1497 |
+| pipes | gl | XL | - | - | - | needs-xlockmore | 1208 |
+| platonicfolding | gl | XL | - | - | `XDestroyImage` | needs-xlockmore | 3465 |
+| polyhedra-gl | gl | XL | - | - | `XLookupString` | needs-xlockmore | 687 |
+| polytopes | gl | XL | - | - | `XLookupString` | needs-xlockmore | 3194 |
+| projectiveplane | gl | XL | - | - | `XLookupString` | float-heavy, needs-xlockmore | 2643 |
+| providence | gl | XL | - | - | - | float-heavy, needs-xlockmore | 811 |
+| pulsar | gl | XL | - | - | - | needs-xlockmore | 509 |
+| quasicrystal | gl | XL | - | - | `XLookupString` | needs-xlockmore | 494 |
+| queens | gl | XL | - | - | - | needs-xlockmore | 608 |
+| raverhoop | gl | XL | - | - | `XLookupString` | needs-xlockmore | 771 |
+| razzledazzle | gl | XL | - | - | - | needs-xlockmore | 728 |
+| romanboy | gl | XL | - | - | - | needs-xlockmore | 2565 |
+| rubik | gl | XL | - | - | - | needs-xlockmore | 2156 |
+| rubikblocks | gl | XL | - | - | - | needs-xlockmore | 651 |
+| sballs | gl | XL | - | - | `XDestroyImage` | needs-xlockmore | 830 |
+| sierpinski3d | gl | XL | - | - | `XLookupString` | needs-xlockmore | 579 |
+| skulloop | gl | XL | - | - | - | needs-xlockmore | 651 |
+| skytentacles | gl | XL | - | - | `XCreateImage`, `XDestroyImage`, `XLookupString`, `XPutPixel` | float-heavy, needs-xlockmore | 1124 |
+| sonar | gl | XL | - | - | - | needs-xlockmore | 1266 |
+| sphereeversion | gl | XL | - | - | `XDestroyImage` | needs-xlockmore | 1420 |
+| spheremonics | gl | XL | - | - | - | needs-xlockmore | 926 |
+| splitflap | gl | XL | - | - | - | needs-xlockmore | 1427 |
+| splodesic | gl | XL | - | - | `XLookupString` | float-heavy, needs-xlockmore | 645 |
+| sproingiewrap | gl | XL | - | - | - | needs-xlockmore | 227 |
+| squirtorus | gl | XL | - | - | - | needs-xlockmore | 1006 |
+| stairs | gl | XL | - | - | `XDestroyImage`, `XLookupString` | needs-xlockmore | 601 |
+| starwars | gl | XL | - | - | - | needs-xlockmore | 1080 |
+| stonerview | gl | XL | - | - | - | needs-xlockmore | 156 |
+| superquadrics | gl | XL | - | - | - | needs-xlockmore | 811 |
+| surfaces | gl | XL | - | - | - | float-heavy, needs-xlockmore | 654 |
+| tangram | gl | XL | - | - | - | needs-xlockmore | 1074 |
+| timetunnel | gl | XL | - | - | `XDestroyImage` | needs-xlockmore | 1259 |
+| topblock | gl | XL | - | - | `XLookupString` | needs-xlockmore | 891 |
+| tronbit | gl | XL | - | - | `XLookupString` | needs-xlockmore | 532 |
+| unicrud | gl | XL | - | - | `XLookupString` | needs-xlockmore | 1039 |
+| unknownpleasures | gl | XL | - | - | `XCreateImage`, `XDestroyImage`, `XGetPixel`, `XLookupString`, `XPutPixel` | readback, needs-xlockmore | 736 |
+| vigilance | gl | XL | - | - | `XLookupString` | needs-xlockmore | 1171 |
+| voronoi | gl | XL | - | - | - | needs-xlockmore | 543 |
+| winduprobot | gl | XL | - | - | `XDestroyImage`, `XLookupString` | float-heavy, needs-xlockmore | 2505 |
+| worldpieces | gl | XL | - | - | `XDestroyImage` | float-heavy, needs-xlockmore | 2194 |
+| xshadertoy | gl | XL | - | - | `XFetchName`, `XStoreName` | needs-xlockmore | 1192 |
+| blaster | 2d | - | 3.6-3.7 ms measured | ✅ | - | - | 1208 |
+| braid | 2d | - | 95-296 ms measured | ✅ | - | needs-xlockmore | 444 |
+| cloudlife | 2d | - | 8.8-8.9 ms measured | ✅ | - | - | 440 |
+| coral | 2d | - | 15-25 ms measured | ✅ | - | - | 328 |
+| critical | 2d | - | 0.7 ms measured | ✅ | - | - | 462 |
+| discrete | 2d | - | 149-160 ms measured | ✅ | - | needs-xlockmore | 442 |
+| drift | 2d | - | 11-13 ms measured | ✅ | - | needs-xlockmore | 674 |
+| fadeplot | 2d | - | 2.9-3.2 ms measured | ✅ | - | needs-xlockmore | 243 |
+| flame | 2d | - | 26-107 ms measured | ✅ | - | - | 457 |
+| galaxy | 2d | - | 58-75 ms measured | ✅ | - | needs-xlockmore | 462 |
+| helix | 2d | - | 0.9-2.1 ms measured | ✅ | - | - | 358 |
+| hopalong | 2d | - | 7.3-20.1 ms measured | ✅ | - | needs-xlockmore | 563 |
+| hypercube | 2d | - | 2.7-2.9 ms measured | ✅ | - | - | 576 |
+| lightning | 2d | - | 1.8-1.9 ms measured | ✅ | - | needs-xlockmore | 602 |
+| maze | 2d | - | 0.1-1.3 ms measured | ✅ | - | pixmaps, clipmask | 1681 |
+| pedal | 2d | - | 126-519 ms measured | ✅ | - | - | 339 |
+| petri | 2d | - | 0.3-2.5 ms measured | ✅ | - | - | 780 |
+| pyro | 2d | - | 0.8-1.1 ms measured | ✅ | - | - | 373 |
+| rorschach | 2d | - | 0.6-1.7 ms measured | ✅ | - | - | 227 |
+| sierpinski | 2d | - | 1.8-4 ms measured | ✅ | - | needs-xlockmore | 215 |
+| sphere | 2d | - | 0.6-1.1 ms measured | ✅ | - | needs-xlockmore | 304 |
+| spiral | 2d | - | 0.9-1.2 ms measured | ✅ | - | needs-xlockmore | 331 |
+| squiral | 2d | - | 0.1-0.3 ms measured | ✅ | - | - | 335 |
+| substrate | 2d | - | 2.9-43.9 ms measured | ✅ | - | - | 780 |
+| thornbird | 2d | - | 2-2.2 ms measured | ✅ | - | needs-xlockmore | 270 |
+| vines | 2d | - | 133-160 ms measured | ✅ | - | needs-xlockmore | 190 |
+| whirlwindwarp | 2d | - | 6.2-26.4 ms measured | ✅ | - | - | 509 |
+| xspirograph | 2d | - | 54-56 ms measured | ✅ | - | - | 338 |
+| pacman | 2d | - | 1.3-1.9 ms measured | ✅ | `BLUE`, `GHOSTS`, `GHOST_DANGER`, `JAILHEIGHT`, `LEVHEIGHT`, `LEVWIDTH`, `MAXGDIR`, `MAXGFLASH`, `MAXGWAG`, `MAXMOUTH`, `MINGRIDSIZE`, `MINSIZE`, `NOWHERE`, `NUM_BONUS_DOTS`, `PAC_DEATH_FRAMES`, `START`, `XDrawString`, `XLoadQueryFont`, `chasing`, `error: expected expression`, `error: invalid application of 'sizeof' to an incomplete type 'argtype[]'`, `ghoststruct`, `goingin`, `goingout`, `hiding`, `images/gen/pacman_png.h`, `inbox`, `pacman.h`, `pacman_ai.h`, `pacman_bonus_dot_eaten`, `pacman_bonus_dot_pos`, `pacman_createnewlevel`, `pacman_eat_bonus_dot`, `pacman_ghost_update`, `pacman_is_bonus_dot`, `pacman_level.h`, `pacman_png`, `pacman_trackmouse`, `pacman_update`, `pacmangamestruct`, `pp`, `ps_chasing`, `ps_dieing`, `ps_eating` | pixmaps, text, clipmask, needs-xlockmore | 1479 |
 
 ## Excluded files
 

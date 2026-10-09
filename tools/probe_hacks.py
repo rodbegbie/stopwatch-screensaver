@@ -54,8 +54,24 @@ REGISTRY_HEAD = """\
 """
 
 
+# A hack row of the measured notes: | Name | fps | step lo-hi ms | ... |. The fps
+# column is numeric, which keeps the notes' other tables out.
+MEASURED_ROW = re.compile(
+    r"^\| ([A-Za-z0-9]+) \| [0-9.\-]+ \| ([0-9.]+)(?:-([0-9.]+))? ms \|",
+    re.MULTILINE,
+)
+
+
 class ProbeError(Exception):
     pass
+
+
+def parse_measured(text: str) -> dict[str, tuple[float, float]]:
+    """Device step range in ms for each hack in tools/assessment_measured.md."""
+    rows = {}
+    for name, lo, hi in MEASURED_ROW.findall(text):
+        rows[name.lower()] = (float(lo), float(hi or lo))
+    return rows
 
 
 def module_entry(source: str) -> tuple[str, str]:
@@ -139,7 +155,7 @@ def probe(name: str, source: str, root: Path, cc: str = "cc") -> dict:
                 *map(str, shim_sources(root)),
                 "-lm", "-lpthread", "-o", str(program),
             ]
-            build = subprocess.run(cmd, capture_output=True, text=True)
+            build = subprocess.run(cmd, capture_output=True, text=True, check=False)
             if build.returncode != 0:
                 missing = undefined_symbols(build.stderr)
                 if missing:
@@ -151,7 +167,7 @@ def probe(name: str, source: str, root: Path, cc: str = "cc") -> dict:
             for _ in range(RUNS):
                 run = subprocess.run(
                     [str(program), "stats", "0"],
-                    capture_output=True, text=True, timeout=RUN_TIMEOUT_S,
+                    capture_output=True, text=True, timeout=RUN_TIMEOUT_S, check=False,
                 )
                 if run.returncode != 0:
                     how = (

@@ -9,7 +9,6 @@ Run: (cd firmware && pio run -e dump) && uv run tools/speed_backtest.py
 """
 
 import argparse
-import re
 import statistics
 import subprocess
 import sys
@@ -22,23 +21,8 @@ SLOW_DEVICE_MS = 50.0
 RUNS = 3
 BANDS = ("low", "medium", "high")
 
-# A hack row: | Name | fps | step lo-hi ms | ... |. The fps column is numeric,
-# which keeps the other tables in the measured notes out.
-MEASURED_ROW = re.compile(
-    r"^\| ([A-Za-z0-9]+) \| [0-9.\-]+ \| ([0-9.]+)(?:-([0-9.]+))? ms \|",
-    re.MULTILINE,
-)
-
-
 class BacktestError(Exception):
     pass
-
-
-def parse_measured(text: str) -> dict[str, tuple[float, float]]:
-    rows = {}
-    for name, lo, hi in MEASURED_ROW.findall(text):
-        rows[name.lower()] = (float(lo), float(hi or lo))
-    return rows
 
 
 def registry_names(registry: str) -> list[str]:
@@ -78,7 +62,7 @@ def measure_host(program: Path, index: int) -> float:
     times = []
     for _ in range(RUNS):
         run = subprocess.run(
-            [str(program), "stats", str(index)], capture_output=True, text=True
+            [str(program), "stats", str(index)], capture_output=True, text=True, check=False
         )
         if run.returncode != 0:
             raise BacktestError(
@@ -233,7 +217,7 @@ def main(argv: list[str], root: Path | None = None) -> int:
                 f"{program} not found; build it with `pio run -e dump` in firmware/"
             )
         names = registry_names(Path(args.registry).read_text())
-        measured = parse_measured(Path(args.measured).read_text())
+        measured = probe_hacks.parse_measured(Path(args.measured).read_text())
         host = {name: measure_host(program, i) for i, name in enumerate(names)}
         rows = join_rows(names, host, measured)
         Path(args.out).write_text(render(rows))

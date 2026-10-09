@@ -16,8 +16,9 @@ it with `uv run tools/score_hacks.py`.
   (`cc -fsyntax-only`). Anything the compiler cannot find is a **shim
   gap**: a missing header, type, struct field, constant or function.
   That second check catches helpers hacks reach through `utils/` that a
-  count of Xlib calls cannot see. It does not run anything, so treat the
-  effort ratings as a prioritisation aid, not an estimate.
+  count of Xlib calls cannot see. The effort rating does not run anything,
+  so treat it as a prioritisation aid, not an estimate. It also says nothing
+  about speed: see "Speed" below.
 - The **All hacks** table lists the work still to do first, from least to
   most effort (S, M, L, XL) and then by name, and the ported hacks last.
   Its **Ported** column shows ✅ for a hack in the
@@ -35,6 +36,33 @@ it with `uv run tools/score_hacks.py`.
 | L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | {n_l} |
 | XL | GL: needs a software rasteriser (see below) | {n_xl} |
 | Ported | Already running on the device, so no rating | {n_ported} |
+
+## Speed
+
+Effort says what a hack takes to compile, not how fast it runs. Braid was
+rated S and runs at 3-9 fps, because it draws about 7,500 wide lines a frame,
+which nothing in its source says. So each unported S hack is also built with
+the shim and run on the host for 300 steps (`tools/probe_hacks.py`), and the
+**Speed** column gives its band and host milliseconds per step. A hack rated
+M or higher has gaps, which are compile errors, so it cannot be run until the
+shim fills them and its Speed is a dash.
+
+- **low**: under 0.015 ms.
+- **medium**: 0.015 to 0.05 ms.
+- **high**: 0.05 ms or more.
+- **does not link**, **does not compile**, **crashed on the host**, **timed
+  out**: an S hack that could not be probed.
+
+A ported hack shows the step measured on the device instead.
+
+The host time ranks the device step well (a Spearman correlation of 0.89 over
+the hacks measured, and all seven with a device step of 50 ms or more are in
+the high band) but it is not a prediction in milliseconds: the device took
+60 to 1,500 times as long. The ratio is highest for hacks that still do
+software double-precision maths, so a low band does not clear a hack that
+does a lot of `double` arithmetic. The bands were fitted to the same hacks, so
+those figures are in-sample. See [speed-backtest.md](speed-backtest.md) for
+the table and its limits.
 
 ## Flags
 

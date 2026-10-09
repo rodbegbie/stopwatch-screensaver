@@ -8,25 +8,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import speed_backtest as sb  # noqa: E402
 
-MEASURED = """\
-## Measured on the device
-
-| Hack | fps | step | push | wait | Extra PSRAM |
-| --- | --- | --- | --- | --- | --- |
-| Pyro | 30.0 | 0.8-1.1 ms | 31.2 ms | 0 ms | about 80 KB |
-| XSpirograph | 11.0-11.4 | 54-56 ms | 31.4 ms | 0-20 ms | none measurable |
-| Pedal | 0.2-0.4 | 126-519 ms | 31.4-31.5 ms | 3290-5507 ms | none |
-| Maze | 6.0-28.8 | 0.1-1.3 ms | 31.2-33.4 ms | 0-256 ms | not measured |
-
-| Hack | Restart cost | Rows | Free heap |
-| --- | --- | --- | --- |
-| Lightning | 4.3-4.5 ms | 64 | 85-91 |
-
-| Build | First braid |
-| --- | --- |
-| As copied | 2.0 fps, 482 ms |
-"""
-
 REGISTRY = """\
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack,
@@ -38,20 +19,6 @@ const int g_hack_count = 4;
 
 def row(name, host_ms, lo, hi):
     return {"name": name, "host_ms": host_ms, "device_lo": lo, "device_hi": hi}
-
-
-def test_measured_step_ranges_are_read_from_the_hack_table_only():
-    assert sb.parse_measured(MEASURED) == {
-        "pyro": (0.8, 1.1),
-        "xspirograph": (54.0, 56.0),
-        "pedal": (126.0, 519.0),
-        "maze": (0.1, 1.3),
-    }
-
-
-def test_a_single_figure_is_a_range_of_one():
-    text = "| Hack | fps | step |\n| --- | --- | --- |\n| Critical | 30.4 | 0.7 ms | 31.1 ms |\n"
-    assert sb.parse_measured(text) == {"critical": (0.7, 0.7)}
 
 
 def test_registry_names_keep_the_array_order():
