@@ -1,0 +1,5 @@
+/claude-md-optimizer
+
+---
+
+Love it.  I don't think the hook idea works, since I still want to sometimes give the agent permission to flash and reflash the device when it's investigating something.
