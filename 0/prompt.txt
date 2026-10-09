@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>b9ivuheo7</task-id>
+<tool-use-id>toolu_01VktP6RhSQQ1ykrZrYxjyX7</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/7818bbd0-37b3-4a75-bc5a-3c69d7ab38a5/tasks/b9ivuheo7.output</output-file>
+<status>completed</status>
+<summary>Background command "Capture 200 seconds of serial" completed (exit code 0)</summary>
+</task-notification>
