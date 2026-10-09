@@ -1,0 +1,59 @@
+Base directory for this skill: /Users/rod/build/stopwatch-screensaver/.claude/skills/m5stack-stopwatch
+
+# M5Stack StopWatch field guide
+
+This is the board context for WorkOS init() kits. The hardware is M5Stack **StopWatch, SKU C152**. Do not substitute a Waveshare round AMOLED board, M5Stick, or generic ESP32 pin map. Conference credentials are not supplied here. To put the conference firmware back, see **Flashing and recovery**.
+
+Sources reviewed: **2026-09-16**. Use the linked official documentation for current requirements. This guide has not been validated by flashing a physical kit.
+
+## Start with the project
+
+Inspect the existing framework, board configuration, dependency versions, and upload port. Preserve a working toolchain unless the task calls for changing it. For a new Arduino project, use the device-specific path below; an existing ESP-IDF or PlatformIO project should follow its own board recipe. Identify the physical port rather than copying an example port name.
+
+### Arduino setup
+
+1. Follow the [StopWatch quick-start](https://docs.m5stack.com/en/arduino/stopwatch/program) and [M5Stack Board Manager setup](https://docs.m5stack.com/en/arduino/arduino_board). The package index is `https://static-cdn.m5stack.com/resource/arduino/package_m5stack_index.json`.
+2. Select **M5StopWatch**. The current [display example](https://docs.m5stack.com/en/arduino/stopwatch/display) requires M5Stack Board Manager **3.3.7+**, M5Unified **0.2.15+**, and M5GFX **0.2.21+**. These are verified minimums, not a promise that every future version is compatible.
+3. Install library dependencies. Initialize through `M5.config()` and `M5.begin(cfg)`; use `M5.Display` for drawing. Start with the official display example to validate the board and toolchain.
+4. To enter download mode, connect USB-C, hold the **power/reset button about 2 seconds until its green LED turns on**, then release. Select the correct port and upload.
+
+The [hardware page](https://docs.m5stack.com/en/core/StopWatch) also gives a PlatformIO recipe using `esp32s3box`. That is a separate toolchain configuration; it is not the Arduino board selection.
+
+## Hardware essentials
+
+The [manufacturer's specifications](https://shop.m5stack.com/products/m5stack-stopwatch-dev-kit-esp32-s3) identify an ESP32-S3R8, 16 MB flash, 8 MB PSRAM, and 2.4 GHz Wi-Fi. The circular 1.75-inch AMOLED is **466 × 466**, driven by CO5300 over QSPI, with CST820B touch. It has two programmable buttons, a vibration motor, BMI270 IMU, RX8130CE RTC, ES8311 audio codec, microphone, amplifier, and a 450 mAh battery.
+
+Design for the visible circle: keep important text and controls away from the square framebuffer's corners. Prefer M5Unified/M5GFX initialization over guessed display timing, GPIO assignments, or generic drivers.
+
+### Interaction and peripherals
+
+- Call `M5.update()` regularly. Use `M5.BtnA.wasPressed()` and `M5.BtnB.wasPressed()` for button events; avoid long blocking loops. [Button example](https://docs.m5stack.com/en/arduino/stopwatch/button).
+- Read touch with `M5.Touch.getDetail()` after updating. [Touch example](https://docs.m5stack.com/en/arduino/stopwatch/touch).
+- Use `M5.Power.setVibration(...)` rather than assuming a direct vibration GPIO. [Vibration example](https://docs.m5stack.com/en/arduino/stopwatch/vibration).
+- Battery percentage, charging state, and millivolts are available; **battery-current measurement is not supported by this hardware**. [Battery example](https://docs.m5stack.com/en/arduino/stopwatch/battery).
+
+### Wiring and power
+
+Check the [revision-specific pin map and sticker correction](https://docs.m5stack.com/en/core/StopWatch) before external wiring. Some **v1.0** kits have a rear pin incorrectly marked `BAT`; it is **5V IN**, and a battery must not be connected there. **v1.0.1** uses `*BAT` for the battery pin.
+
+Buttons A/B are GPIO2/GPIO1. Internal I²C uses SDA47/SCL48; the Grove signal pins are GPIO10/GPIO11. Several onboard controls are routed through M5IOE1, so a peripheral is not necessarily attached to a direct ESP32 GPIO.
+
+For accessories, low-power work, or custom power sequencing, read the [M5PM1/M5IOE1 guide](https://docs.m5stack.com/en/arduino/stopwatch/m5pm1_m5ioe1). Its power levels switch independently, and Grove 5 V output may require `M5.Power.setExtOutput(true)`. M5PM1 can intentionally fail the first I²C transaction after idle while waking. Verify interrupt mappings against current schematics before implementing wake behavior.
+
+## Flashing and recovery
+
+Installing firmware replaces the current device application. Preserve any image the user needs to restore. init() kits ship with the conference firmware, which can be put back from [the install page](https://workos.com/init/badge/install) in desktop Chrome or Edge. When uploading is already in scope, use the verified port and matching board configuration. If detection or upload fails, check the data cable, download mode, and port before changing low-level flash settings.
+
+The install page only writes to a badge whose partition table still matches the conference layout. That layout is byte-for-byte Arduino's default M5StopWatch partition scheme, **16M Flash (3MB APP/9.9MB FATFS)** (`app3M_fat9M_16MB`). Keep it unless the user accepts losing browser restore; after uploading with another scheme, upload any sketch with this one before using the install page. The conference firmware stores the attendee's badge profile in a LittleFS filesystem on the `ffat` partition, and the installer never formats it, so leave that partition alone: `FFat.begin(true)`, for example, reformats it and erases the profile.
+
+For the manufacturer's demo, follow [factory recovery](https://docs.m5stack.com/en/guide/restore_factory/stopwatch) with [M5Burner](https://docs.m5stack.com/en/uiflow/m5burner/intro). Select matching StopWatch firmware, enter download mode, burn to the correct port, and reset. This does **not** restore the init() conference firmware. Stop and diagnose an unexplained upload failure rather than escalating to repeated full-chip erases.
+
+## Choose a reference for the task
+
+- [M5Unified](https://github.com/m5stack/M5Unified) and [M5GFX](https://github.com/m5stack/M5GFX): shared board support, peripheral examples, and graphics.
+- [UiFlow2 / MicroPython quick-start](https://docs.m5stack.com/en/uiflow2/stopwatch/program): matching firmware and Python workflow.
+- [M5Stack factory demo source](https://github.com/m5stack/M5StopWatch-UserDemo): full ESP-IDF application. Follow its README's version and subrepository setup, not Arduino instructions.
+- [ESPtember Couch to 5K](https://esptember.com/day/day-13-c25k/): a community project specifically for this StopWatch. [Build story](https://esptember.com/day/day-13-c25k/story/) and [agent index](https://esptember.com/llms.txt).
+- [ESPtember AuthKit sign-in](https://esptember.com/day/day-31-authkit/): WorkOS device authorization on a badge, then [staying signed in](https://esptember.com/day/day-32-connected/) and [connecting accounts with Pipes](https://esptember.com/day/day-33-pipes/). Pair with the [CLI Auth docs](https://workos.com/docs/authkit/cli-auth).
+
+Other ESPtember lessons can target Waveshare hardware. Reuse their ideas, not their board configuration or firmware binaries. Report compilation and physical-device validation separately; a successful build does not prove display, touch, power, or buttons work on the kit.
