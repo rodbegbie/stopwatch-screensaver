@@ -48,7 +48,8 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Pacman",
                                          "Braid",
                                          "Mountain",
-                                         "Epicycle"};
+                                         "Epicycle",
+                                         "Kaleidescope"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -356,6 +357,7 @@ static const uint64_t kBaseline[] = {
     0x9b6e044ecec355d5ull, /* Braid: taken after looking at the frames */
     0x8ce46510f0e0360cull, /* Mountain: taken after looking at the frames */
     0xa19684045106b327ull, /* Epicycle: taken after looking at the frames */
+    0xdeb3899d2483b5b7ull, /* Kaleidescope: taken after looking at the frames */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -524,6 +526,10 @@ void test_epicycle_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("Epicycle", 0);
 }
 
+void test_kaleidescope_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Kaleidescope", 0);
+}
+
 /* Braid calls sin and cos for every segment, and the S3's libm does them in
  * software. fast_sinf and fast_cosf must agree with libm to 2e-6 (a pixel is
  * a few hundred times that) over the angles a hack uses, with the argument
@@ -601,6 +607,7 @@ int main(void) {
   RUN_TEST(test_braid_restarts_and_stops_do_not_leak);
   RUN_TEST(test_mountain_restarts_and_stops_do_not_leak);
   RUN_TEST(test_epicycle_stops_do_not_leak);
+  RUN_TEST(test_kaleidescope_stops_do_not_leak);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
   return UNITY_END();
