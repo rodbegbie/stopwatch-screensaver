@@ -1,0 +1,82 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4FRY299JZPV1QZW81SFE4HM",
+  "session_id": "fb2cd8f8-4072-436e-987b-c6410cbd4e25",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-09T07:27:10.60631Z",
+  "branch": "main",
+  "checkpoints_count": 5,
+  "files_touched": null,
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "a00cc8e89887",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 30,
+    "cache_creation_tokens": 64523,
+    "cache_read_tokens": 1047761,
+    "output_tokens": 8564,
+    "api_call_count": 14,
+    "subagent_tokens": {
+      "input_tokens": 48,
+      "cache_creation_tokens": 169828,
+      "cache_read_tokens": 1767175,
+      "output_tokens": 1744,
+      "api_call_count": 24
+    }
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01CoVVu4zHao2GZEVau3izvT",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "dg"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "a00cc8e89887",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 32,
+        "end": 33,
+        "entry_ids": [
+          "4cb7b6bc-f2e2-4f80-b12b-1ce5e06e77e4"
+        ],
+        "tool_use_id": "toolu_01CoVVu4zHao2GZEVau3izvT"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01CoVVu4zHao2GZEVau3izvT"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: dg",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 5
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 63,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".private-journal/2026-10-07/19-59-30-000000-79f41e20.md": 8,
+        ".private-journal/2026-10-07/22-51-53-000000-2f0b9ece.md": 8,
+        ".private-journal/2026-10-08/07-50-07-000000-0110d472.md": 8,
+        ".private-journal/2026-10-08/15-15-15-000000-4004028d.md": 19,
+        ".private-journal/2026-10-08/15-45-25-000000-61b97d2d.md": 8,
+        ".private-journal/2026-10-08/17-26-54-000000-98ba9899.md": 12
+      }
+    }
+  ]
+}
