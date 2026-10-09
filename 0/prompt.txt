@@ -1,0 +1,1 @@
+Do any of the other hacks *specify* a colour?  I'm not sure how to tell what the "expected" colours are for colourful ones like Pyro or Galaxy
