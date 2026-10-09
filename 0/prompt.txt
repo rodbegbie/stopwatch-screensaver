@@ -1,0 +1,11 @@
+<task-notification>
+<task-id>a4aac1a02244e56a2</task-id>
+<tool-use-id>toolu_01DztSr56tKGU5niRCn9mzTc</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/33bf0604-36da-43a4-a036-2b72e12fa8bb/tasks/a4aac1a02244e56a2.output</output-file>
+<status>completed</status>
+<summary>Agent "Discoverability run, no hint" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>This agent's report was delivered to you as a message from "a4aac1a02244e56a2" (its SubagentHandback call). Read it there; it is not repeated here.
+</result>
+<usage><subagent_tokens>64871</subagent_tokens><tool_uses>8</tool_uses><duration_ms>42956</duration_ms></usage>
+</task-notification>
