@@ -1,0 +1,225 @@
+## Context Usage
+
+**Model:** claude-sonnet-5-5  
+**Tokens:** 49.7k / 1m (5%)
+
+### Estimated usage by category
+
+| Category | Tokens | Percentage |
+|----------|--------|------------|
+| System prompt | 4k | 0.4% |
+| System tools | 12.3k | 1.2% |
+| MCP tools | 608 | 0.1% |
+| MCP server instructions | 922 | 0.1% |
+| MCP tools (deferred) | 35.7k | 3.6% |
+| System tools (deferred) | 24.1k | 2.4% |
+| Memory files | 10.5k | 1.0% |
+| Skills | 9.9k | 1.0% |
+| Messages | 11.5k | 1.2% |
+| Free space | 917.3k | 91.7% |
+| Autocompact buffer | 33k | 3.3% |
+
+### MCP Tools
+
+| Tool | Server | Tokens |
+|------|--------|--------|
+| mcp__claude_ai_Claude_Docs__batch | claude_ai_Claude_Docs | 149 |
+| mcp__claude_ai_Claude_Docs__create | claude_ai_Claude_Docs | 232 |
+| mcp__claude_ai_Claude_Docs__delete | claude_ai_Claude_Docs | 311 |
+| mcp__claude_ai_Claude_Docs__export | claude_ai_Claude_Docs | 294 |
+| mcp__claude_ai_Claude_Docs__guide | claude_ai_Claude_Docs | 189 |
+| mcp__claude_ai_Claude_Docs__query | claude_ai_Claude_Docs | 165 |
+| mcp__claude_ai_Claude_Docs__read | claude_ai_Claude_Docs | 294 |
+| mcp__claude_ai_Claude_Docs__update | claude_ai_Claude_Docs | 270 |
+| mcp__claude_ai_Google_Drive__authenticate | claude_ai_Google_Drive | 168 |
+| mcp__claude_ai_Google_Drive__complete_authentication | claude_ai_Google_Drive | 222 |
+| mcp__claude_ai_Sonos__add_players_to_group | claude_ai_Sonos | 437 |
+| mcp__claude_ai_Sonos__adjust_group_volume | claude_ai_Sonos | 326 |
+| mcp__claude_ai_Sonos__adjust_player_volume | claude_ai_Sonos | 238 |
+| mcp__claude_ai_Sonos__get_group_volume | claude_ai_Sonos | 180 |
+| mcp__claude_ai_Sonos__get_households_and_groups_and_players | claude_ai_Sonos | 367 |
+| mcp__claude_ai_Sonos__get_night_sound_and_speech_enhancement | claude_ai_Sonos | 245 |
+| mcp__claude_ai_Sonos__get_now_playing | claude_ai_Sonos | 241 |
+| mcp__claude_ai_Sonos__get_player_volume | claude_ai_Sonos | 157 |
+| mcp__claude_ai_Sonos__get_registered_music_services | claude_ai_Sonos | 212 |
+| mcp__claude_ai_Sonos__get_shuffle_repeat_crossfade | claude_ai_Sonos | 136 |
+| mcp__claude_ai_Sonos__get_sonos_favorites | claude_ai_Sonos | 250 |
+| mcp__claude_ai_Sonos__get_sonos_playlists | claude_ai_Sonos | 213 |
+| mcp__claude_ai_Sonos__move_audio_to_players | claude_ai_Sonos | 526 |
+| mcp__claude_ai_Sonos__pause | claude_ai_Sonos | 174 |
+| mcp__claude_ai_Sonos__play_album | claude_ai_Sonos | 331 |
+| mcp__claude_ai_Sonos__play_artist | claude_ai_Sonos | 306 |
+| mcp__claude_ai_Sonos__play_player_line_in | claude_ai_Sonos | 311 |
+| mcp__claude_ai_Sonos__play_playlist | claude_ai_Sonos | 449 |
+| mcp__claude_ai_Sonos__play_radio | claude_ai_Sonos | 713 |
+| mcp__claude_ai_Sonos__play_sonos_favorite | claude_ai_Sonos | 247 |
+| mcp__claude_ai_Sonos__play_sonos_playlist | claude_ai_Sonos | 267 |
+| mcp__claude_ai_Sonos__play_station | claude_ai_Sonos | 634 |
+| mcp__claude_ai_Sonos__play_track | claude_ai_Sonos | 277 |
+| mcp__claude_ai_Sonos__remove_players_from_group | claude_ai_Sonos | 375 |
+| mcp__claude_ai_Sonos__resume | claude_ai_Sonos | 192 |
+| mcp__claude_ai_Sonos__seek | claude_ai_Sonos | 291 |
+| mcp__claude_ai_Sonos__set_group_mute | claude_ai_Sonos | 178 |
+| mcp__claude_ai_Sonos__set_group_volume | claude_ai_Sonos | 308 |
+| mcp__claude_ai_Sonos__set_night_sound_and_speech_enhancement | claude_ai_Sonos | 335 |
+| mcp__claude_ai_Sonos__set_player_mute | claude_ai_Sonos | 177 |
+| mcp__claude_ai_Sonos__set_player_volume | claude_ai_Sonos | 221 |
+| mcp__claude_ai_Sonos__set_shuffle_repeat_crossfade | claude_ai_Sonos | 369 |
+| mcp__claude_ai_Sonos__skip_to_next_track | claude_ai_Sonos | 122 |
+| mcp__claude_ai_Sonos__skip_to_previous_track | claude_ai_Sonos | 126 |
+| mcp__claude-in-chrome__browser_batch | claude-in-chrome | 682 |
+| mcp__claude-in-chrome__computer | claude-in-chrome | 2.3k |
+| mcp__claude-in-chrome__file_upload | claude-in-chrome | 446 |
+| mcp__claude-in-chrome__find | claude-in-chrome | 343 |
+| mcp__claude-in-chrome__form_input | claude-in-chrome | 416 |
+| mcp__claude-in-chrome__get_page_text | claude-in-chrome | 215 |
+| mcp__claude-in-chrome__gif_creator | claude-in-chrome | 925 |
+| mcp__claude-in-chrome__javascript_tool | claude-in-chrome | 433 |
+| mcp__claude-in-chrome__list_connected_browsers | claude-in-chrome | 487 |
+| mcp__claude-in-chrome__navigate | claude-in-chrome | 586 |
+| mcp__claude-in-chrome__read_console_messages | claude-in-chrome | 588 |
+| mcp__claude-in-chrome__read_network_requests | claude-in-chrome | 487 |
+| mcp__claude-in-chrome__read_page | claude-in-chrome | 571 |
+| mcp__claude-in-chrome__resize_window | claude-in-chrome | 260 |
+| mcp__claude-in-chrome__select_browser | claude-in-chrome | 158 |
+| mcp__claude-in-chrome__shortcuts_execute | claude-in-chrome | 312 |
+| mcp__claude-in-chrome__shortcuts_list | claude-in-chrome | 203 |
+| mcp__claude-in-chrome__switch_browser | claude-in-chrome | 195 |
+| mcp__claude-in-chrome__tabs_close_mcp | claude-in-chrome | 221 |
+| mcp__claude-in-chrome__tabs_context_mcp | claude-in-chrome | 303 |
+| mcp__claude-in-chrome__tabs_create_mcp | claude-in-chrome | 212 |
+| mcp__claude-in-chrome__upload_image | claude-in-chrome | 686 |
+| mcp__context7__query-docs | context7 | 789 |
+| mcp__context7__resolve-library-id | context7 | 1.1k |
+| mcp__plugin_context-mode_context-mode__ctx_batch_execute | plugin_context-mode_context-mode | 1.7k |
+| mcp__plugin_context-mode_context-mode__ctx_doctor | plugin_context-mode_context-mode | 143 |
+| mcp__plugin_context-mode_context-mode__ctx_execute | plugin_context-mode_context-mode | 1.5k |
+| mcp__plugin_context-mode_context-mode__ctx_execute_file | plugin_context-mode_context-mode | 1.2k |
+| mcp__plugin_context-mode_context-mode__ctx_fetch_and_index | plugin_context-mode_context-mode | 1.4k |
+| mcp__plugin_context-mode_context-mode__ctx_index | plugin_context-mode_context-mode | 1.2k |
+| mcp__plugin_context-mode_context-mode__ctx_insight | plugin_context-mode_context-mode | 216 |
+| mcp__plugin_context-mode_context-mode__ctx_purge | plugin_context-mode_context-mode | 920 |
+| mcp__plugin_context-mode_context-mode__ctx_search | plugin_context-mode_context-mode | 1.2k |
+| mcp__plugin_context-mode_context-mode__ctx_stats | plugin_context-mode_context-mode | 137 |
+| mcp__plugin_context-mode_context-mode__ctx_upgrade | plugin_context-mode_context-mode | 172 |
+| mcp__pulse__create_post | pulse | 165 |
+| mcp__pulse__list_recent_entries | pulse | 184 |
+| mcp__pulse__login | pulse | 113 |
+| mcp__pulse__process_thoughts | pulse | 370 |
+| mcp__pulse__read_journal_entry | pulse | 99 |
+| mcp__pulse__read_posts | pulse | 209 |
+| mcp__pulse__search_journal | pulse | 238 |
+
+### Memory Files
+
+| Type | Path | Tokens |
+|------|------|--------|
+| User | /Users/rod/.claude/CLAUDE.md | 1.3k |
+| User | /Users/rod/.claude/rules/python.md | 103 |
+| User | /Users/rod/.claude/rules/version-control.md | 262 |
+| User | /Users/rod/.claude/rules/splice.md | 377 |
+| User | /Users/rod/.claude/rules/context-mode.md | 676 |
+| User | /Users/rod/.claude/rules/memory.md | 1.1k |
+| User | /Users/rod/.claude/rules/bash-conventions.md | 546 |
+| AutoMem | /Users/rod/.claude/projects/-Users-rod-build-stopwatch-screensaver/memory/MEMORY.md | 675 |
+| Project | /Users/rod/build/stopwatch-screensaver/AGENTS.md | 4.7k |
+| Project | /Users/rod/build/stopwatch-screensaver/.entire/graph-agent.md | 839 |
+
+### Skills
+
+| Skill | Source | Tokens |
+|-------|--------|--------|
+| address-findings | User | ~110 |
+| claude-md-optimizer | User | ~110 |
+| context7-mcp | User | ~90 |
+| dg | User | ~40 |
+| explain | User | ~60 |
+| find-skills | User | ~110 |
+| hunk-review | User | ~110 |
+| learning-opportunities | User | ~130 |
+| markdown | User | ~100 |
+| recall | User | ~120 |
+| replay | User | ~100 |
+| review | User | ~90 |
+| rod-voice | User | ~170 |
+| search | User | ~60 |
+| session-crosslink | User | ~90 |
+| session-handoff | User | ~60 |
+| session-to-skill | User | ~50 |
+| teach | User | ~100 |
+| using-entire | User | ~180 |
+| what-happened | User | ~140 |
+| deliver-branch | Project | ~70 |
+| m5stack-stopwatch | Project | ~90 |
+| port-hack | Project | ~70 |
+| claude-md-management:revise-claude-md | Plugin (claude-md-management) | ~30 |
+| claude-md-management:claude-md-improver | Plugin (claude-md-management) | ~130 |
+| context-mode:context-mode | Plugin (context-mode) | ~330 |
+| context-mode:ctx-doctor | Plugin (context-mode) | ~60 |
+| context-mode:ctx-index | Plugin (context-mode) | ~80 |
+| context-mode:ctx-insight | Plugin (context-mode) | ~100 |
+| context-mode:ctx-purge | Plugin (context-mode) | ~70 |
+| context-mode:ctx-search | Plugin (context-mode) | ~60 |
+| context-mode:ctx-stats | Plugin (context-mode) | ~100 |
+| context-mode:ctx-upgrade | Plugin (context-mode) | ~60 |
+| elements-of-style:writing-clearly-and-concisely | Plugin (elements-of-style) | ~90 |
+| entire:address-findings | Plugin (entire) | ~110 |
+| entire:explain | Plugin (entire) | ~60 |
+| entire:recall | Plugin (entire) | ~130 |
+| entire:replay | Plugin (entire) | ~100 |
+| entire:review | Plugin (entire) | ~90 |
+| entire:search | Plugin (entire) | ~210 |
+| entire:session-crosslink | Plugin (entire) | ~90 |
+| entire:session-handoff | Plugin (entire) | ~60 |
+| entire:session-to-skill | Plugin (entire) | ~60 |
+| entire:teach | Plugin (entire) | ~110 |
+| entire:using-entire | Plugin (entire) | ~180 |
+| entire:what-happened | Plugin (entire) | ~150 |
+| superpowers:brainstorming | Plugin (superpowers) | ~80 |
+| superpowers:diagnosing-superpowers | Plugin (superpowers) | ~140 |
+| superpowers:dispatching-parallel-agents | Plugin (superpowers) | ~50 |
+| superpowers:executing-plans | Plugin (superpowers) | ~70 |
+| superpowers:finishing-a-development-branch | Plugin (superpowers) | ~50 |
+| superpowers:receiving-code-review | Plugin (superpowers) | ~90 |
+| superpowers:requesting-code-review | Plugin (superpowers) | ~50 |
+| superpowers:subagent-driven-development | Plugin (superpowers) | ~40 |
+| superpowers:systematic-debugging | Plugin (superpowers) | ~40 |
+| superpowers:test-driven-development | Plugin (superpowers) | ~40 |
+| superpowers:using-git-worktrees | Plugin (superpowers) | ~80 |
+| superpowers:using-superpowers | Plugin (superpowers) | ~60 |
+| superpowers:verification-before-completion | Plugin (superpowers) | ~90 |
+| superpowers:writing-plans | Plugin (superpowers) | ~40 |
+| superpowers:writing-skills | Plugin (superpowers) | ~40 |
+| dataviz | Built-in | ~480 |
+| artifact-design | Built-in | ~70 |
+| artifact-diagramming | Built-in | ~70 |
+| artifact-capabilities | Built-in | ~250 |
+| update-config | Built-in | ~240 |
+| keybindings-help | Built-in | ~80 |
+| code-review | Built-in | ~330 |
+| simplify | Built-in | ~60 |
+| fewer-permission-prompts | Built-in | ~60 |
+| loop | Built-in | ~120 |
+| schedule | Built-in | ~130 |
+| claude-api | Built-in | ~360 |
+| claude-in-chrome | Built-in | ~180 |
+| run | Built-in | ~120 |
+| plugin-authoring | Built-in | ~90 |
+| init | Built-in | ~20 |
+| security-review | Built-in | ~30 |
+| built-in-browser | claude.ai sync | ~290 |
+| chrome-browser | claude.ai sync | ~260 |
+| computer-use | claude.ai sync | ~320 |
+| deep-research | claude.ai sync | ~200 |
+| docs | claude.ai sync | ~340 |
+| docx | claude.ai sync | < 20 |
+| google-workspace | claude.ai sync | < 20 |
+| hide-all-instagram-ads | claude.ai sync | ~30 |
+| import-memory | claude.ai sync | ~60 |
+| morning | claude.ai sync | < 20 |
+| pdf | claude.ai sync | < 20 |
+| pptx | claude.ai sync | < 20 |
+| anthropic-skills:rod-voice | claude.ai sync | < 20 |
+| skill-creator | claude.ai sync | < 20 |
+| unblock-instagram-accounts | claude.ai sync | ~50 |
+| xlsx | claude.ai sync | < 20 |
