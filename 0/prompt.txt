@@ -1,0 +1,1 @@
+There's a bug -- it is switching on button-up as well as button-down, so a click jumps two steps forward or back.
