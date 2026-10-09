@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bd3bejo34</task-id>
+<tool-use-id>toolu_01JZBJej4Ax5R9DWwiTiVqrM</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/65ee8463-66bb-4544-af8a-6c6f6be248ca/tasks/bd3bejo34.output</output-file>
+<status>completed</status>
+<summary>Background command "/Users/rod/build/stopwatch-screensaver/.venv/bin/python -I /private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/65ee8463-66bb-4544-af8a-6c6f6be248ca/scratchpad/capture.py /dev/cu.usbmodem112401 180 /private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/65ee8463-66bb-4544-af8a-6c6f6be248ca/scratchpad/serial2.txt" completed (exit code 0)</summary>
+</task-notification>
