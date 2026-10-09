@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>b1fc1uq67</task-id>
+<tool-use-id>toolu_01Uwww7TndmMBjTZRRRRBaEn</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/cd7d24f7-9aab-4dcd-baf1-b0d59d2a6982/tasks/b1fc1uq67.output</output-file>
+<status>completed</status>
+<summary>Background command "Capture 4 minutes of serial output with absolute paths" completed (exit code 0)</summary>
+</task-notification>
