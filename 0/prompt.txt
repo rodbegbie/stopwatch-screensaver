@@ -1,0 +1,4 @@
+1. Yes, do the test.
+2. Let's try an optimisation.
+3. File an issue and correct the Blaster PR text.
+4. Let's wait for the answers on 1 & 2.
