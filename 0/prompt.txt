@@ -1,0 +1,1 @@
+Ah, it's checking both buttons' values every 5ms
