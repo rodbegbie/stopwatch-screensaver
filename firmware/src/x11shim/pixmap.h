@@ -13,6 +13,9 @@ struct XshimPixmap {
   int stride;
   uint16_t *rgb;
   uint8_t *bits;
+  /* Links in the display's list of pixmaps a hack holds. Only pixmaps handed
+   * to a hack are on it; a GC's copy of its clip mask is not. */
+  struct XshimPixmap *prev, *next;
 };
 
 /* Frees the GC's copy of its clip mask, if it has one. */

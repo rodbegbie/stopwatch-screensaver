@@ -19,8 +19,12 @@ typedef unsigned long Window;
 typedef unsigned long Drawable;
 typedef unsigned long Colormap;
 
+struct XshimPixmap;
+
 typedef struct XshimDisplay {
   Canvas *canvas;
+  /* Every pixmap a hack has made and not freed, newest first. */
+  struct XshimPixmap *pixmaps;
 } Display;
 
 typedef unsigned long Pixmap;
@@ -119,6 +123,10 @@ enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
 #define JoinRound 1
 #define JoinBevel 2
 #define Nonconvex 1
+#define FillSolid 0
+#define FillTiled 1
+#define FillStippled 2
+#define FillOpaqueStippled 3
 #define Convex 2
 #define GXcopy 0x3
 #define ButtonPress 4
@@ -145,6 +153,11 @@ extern const char *progclass;
 
 Display *xshim_open_display(Canvas *canvas);
 void xshim_close_display(Display *dpy);
+/* Frees every pixmap the hack made and did not free, as an X server does when
+ * a client disconnects. Closing the display does it too. A hack that only
+ * leaks (Pacman keeps neither the unscaled sprites nor some scaled ones) is
+ * made whole by calling this when it stops. */
+void xshim_release_pixmaps(Display *dpy);
 
 GC XCreateGC(Display *, Drawable, unsigned long mask, XGCValues *);
 int XFreeGC(Display *, GC);
@@ -152,6 +165,12 @@ int XSetForeground(Display *, GC, unsigned long pixel);
 /* Honours GCForeground, GCLineWidth, GCCapStyle and GCJoinStyle; the rest of
  * the mask is ignored (set a background with XSetBackground). */
 int XChangeGC(Display *, GC, unsigned long mask, XGCValues *);
+/* The fill style is ignored: everything is drawn solid. */
+int XSetFillStyle(Display *, GC, int fill_style);
+/* There is no pointer: reports False, with every output zero. */
+Bool XQueryPointer(Display *, Window, Window *root_return, Window *child_return,
+                   int *root_x, int *root_y, int *win_x, int *win_y,
+                   unsigned int *mask_return);
 /* line_style is ignored: lines are always solid. */
 int XSetLineAttributes(Display *, GC, unsigned int width, int line_style,
                        int cap_style, int join_style);

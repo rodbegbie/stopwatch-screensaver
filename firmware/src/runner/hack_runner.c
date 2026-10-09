@@ -59,6 +59,9 @@ static Callbacks callbacks_for(const HackEntry *e) {
 static void stop(HackRunner *r) {
   if (!r->running) return;
   callbacks_for(r->hacks[r->index]).free(r->dpy, RUNNER_WINDOW, r->closure);
+  /* The display outlives the hack, so release what the hack forgot to free, as
+   * an X server does when a client disconnects. */
+  xshim_release_pixmaps(r->dpy);
   r->closure = NULL;
   r->running = 0;
 }

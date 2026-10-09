@@ -1658,6 +1658,76 @@ void test_a_slanted_projecting_cap_reaches_half_the_width_past_the_end(void) {
   XFreeGC(dpy, gc);
 }
 
+void test_set_fill_style_is_accepted_and_drawing_stays_solid(void) {
+  use_canvas(64);
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  TEST_ASSERT_EQUAL_INT(0, FillSolid);
+  TEST_ASSERT_EQUAL_INT(0, XSetFillStyle(dpy, gc, FillSolid));
+  XSetFillStyle(dpy, gc, FillStippled);
+  XFillRectangle(dpy, win, gc, 2, 2, 3, 3);
+  TEST_ASSERT_EQUAL_INT(9, count_set());
+  XFreeGC(dpy, gc);
+}
+
+void test_query_pointer_reports_no_pointer(void) {
+  Window root = 7, child = 7;
+  int rx = 7, ry = 7, wx = 7, wy = 7;
+  unsigned int mask = 7;
+  TEST_ASSERT_FALSE(XQueryPointer(dpy, win, &root, &child, &rx, &ry, &wx, &wy, &mask));
+  TEST_ASSERT_EQUAL_INT(0, rx + ry + wx + wy);
+  TEST_ASSERT_EQUAL_UINT(0, mask);
+  TEST_ASSERT_EQUAL_UINT(0, (unsigned)child);
+}
+
+void test_release_pixmaps_frees_every_live_pixmap_once(void) {
+  Pixmap mask = None;
+  Pixmap loaded = load_image(&mask);
+  Pixmap made = XCreatePixmap(dpy, win, 6, 5, 16);
+  Pixmap bits = XCreatePixmap(dpy, win, 6, 5, 1);
+  TEST_ASSERT_NOT_EQUAL(None, loaded);
+  TEST_ASSERT_NOT_EQUAL(None, made);
+  XFreePixmap(dpy, bits);
+  xshim_release_pixmaps(dpy);
+  xshim_release_pixmaps(dpy);
+  /* tearDown checks that nothing was left allocated; AddressSanitizer would
+   * catch a pixmap freed both by the hack and by the release. */
+}
+
+void test_close_display_releases_pixmaps_a_hack_left_behind(void) {
+  Pixmap mask = None;
+  load_image(&mask);
+  XCreatePixmap(dpy, win, 8, 8, 16);
+}
+
+void test_pixmaps_freed_in_any_order_unlink_cleanly(void) {
+  Pixmap a = XCreatePixmap(dpy, win, 2, 2, 16);
+  Pixmap b = XCreatePixmap(dpy, win, 2, 2, 16);
+  Pixmap c = XCreatePixmap(dpy, win, 2, 2, 16);
+  XFreePixmap(dpy, b);
+  XFreePixmap(dpy, a);
+  Pixmap d = XCreatePixmap(dpy, win, 2, 2, 16);
+  XFreePixmap(dpy, c);
+  xshim_release_pixmaps(dpy);
+  (void)d;
+}
+
+void test_copy_area_into_a_pixmap_that_failed_to_allocate_leaves_the_canvas_alone(void) {
+  Pixmap mask = None;
+  Pixmap src = load_image(&mask);
+  Pixmap failed = XCreatePixmap(dpy, win, 65535, 65535, 16);
+  TEST_ASSERT_EQUAL(None, failed);
+  GC gc = new_gc(0xFFFF, 0);
+  XCopyArea(dpy, src, failed, gc, 0, 0, BLOB_W, BLOB_H, 3, 3);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XCopyArea(dpy, src, win, gc, 0, 0, BLOB_W, BLOB_H, 3, 3);
+  TEST_ASSERT_EQUAL_INT(BLOB_W * BLOB_H, count_set());
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, src);
+  XFreePixmap(dpy, mask);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_image_data_to_pixmap_makes_a_colour_pixmap_and_a_mask);
@@ -1779,6 +1849,12 @@ int main(void) {
   RUN_TEST(test_scale_pixmap_loop_like_pacman_fills_the_destination);
   RUN_TEST(test_drawing_primitive_with_a_pixmap_drawable_still_draws_to_the_canvas);
   RUN_TEST(test_copy_area_within_one_pixmap_reads_before_it_overwrites);
+  RUN_TEST(test_copy_area_into_a_pixmap_that_failed_to_allocate_leaves_the_canvas_alone);
+  RUN_TEST(test_set_fill_style_is_accepted_and_drawing_stays_solid);
+  RUN_TEST(test_query_pointer_reports_no_pointer);
+  RUN_TEST(test_release_pixmaps_frees_every_live_pixmap_once);
+  RUN_TEST(test_close_display_releases_pixmaps_a_hack_left_behind);
+  RUN_TEST(test_pixmaps_freed_in_any_order_unlink_cleanly);
   RUN_TEST(test_fill_arc_full_still_matches_the_old_ellipse);
   RUN_TEST(test_zero_size_and_zero_sweep_arcs_draw_nothing_much);
   RUN_TEST(test_huge_arcs_return_without_hanging_or_overflowing);

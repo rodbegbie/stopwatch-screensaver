@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,6 +7,9 @@
 #include <unity.h>
 
 #include "core/canvas.h"
+#include "screenhack.h"
+#include "xlockmore.h"
+#include "hacks/pacman/pacman.h"
 #include "hacks/registry.h"
 #include "runner/hack_runner.h"
 
@@ -38,7 +42,8 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Lightning",
                                          "Maze",
                                          "Blaster",
-                                         "Substrate"};
+                                         "Substrate",
+                                         "Pacman"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -109,6 +114,34 @@ static void idle_free(Display *dpy, Window w, void *closure) {
   (void)dpy;
   (void)w;
   (void)closure;
+}
+
+/* A hack that makes pixmaps and never frees them: Pacman's scale_pixmap
+ * overwrites the unscaled handle, and its free skips several. A real X server
+ * frees a client's resources when it disconnects; the runner reuses one display
+ * across hacks, so it must release what a stopped hack left behind. */
+static void *leaky_init(Display *dpy, Window w) {
+  XCreatePixmap(dpy, w, 100, 100, 16);
+  XCreatePixmap(dpy, w, 64, 64, 1);
+  return NULL;
+}
+
+void test_the_runner_releases_pixmaps_a_stopped_hack_left_behind(void) {
+  static const HackEntry leaky = {"Leaky", NULL, leaky_init, idle_draw, idle_free, NULL, NULL};
+  const HackEntry *const hacks[] = {&leaky};
+  HackRunner *r = runner_create_with(&cv, hacks, 1);
+  for (int i = 0; i < 3; i++) {
+    runner_start(r, 0);
+    runner_step(r);
+  }
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  for (int i = 0; i < 40; i++) {
+    runner_start(r, 0);
+    runner_step(r);
+  }
+  const size_t after = __sanitizer_get_current_allocated_bytes();
+  runner_destroy(r);
+  TEST_ASSERT_TRUE_MESSAGE(after < before + 4 * 1024, "pixmaps piled up across restarts");
 }
 
 /* Substrate starts on a white canvas, so "20 non-black pixels" was true before
@@ -314,6 +347,7 @@ static const uint64_t kBaseline[] = {
     0, /* Maze: see test_maze_frame_matches_main */
     0x1472437ef1d9a798ull, /* Blaster */
     0xb90b3ccdac009a41ull, /* Substrate */
+    0x30f53883f531c363ull, /* Pacman: taken on its own branch, after looking at the frames */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -327,6 +361,137 @@ void test_frames_of_every_hack_but_maze_match_main(void) {
 
 void test_maze_frame_matches_main(void) {
   TEST_ASSERT_EQUAL_UINT64(0x0693082a4399bc39ull, hash_after(index_of("Maze"), 200));
+}
+
+/* Pacman restarts its level after the last dot is eaten or the third death,
+ * several times in 60,000 frames (checked by watching the dots come back).
+ * Growth measured over five seeds is exactly 0, so 512 bytes is slack, and a
+ * leaked 1.3 KB level copy per restart is caught. */
+void test_pacman_levels_do_not_leak(void) {
+  const int pacman = index_of("Pacman");
+  TEST_ASSERT_TRUE(pacman >= 0);
+  srandom(1);
+  HackRunner *r = runner_create(&cv);
+  runner_start(r, pacman);
+  for (int f = 0; f < 5000; f++) runner_step(r);
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  for (int f = 0; f < 60000; f++) runner_step(r);
+  const size_t after = __sanitizer_get_current_allocated_bytes();
+  runner_destroy(r);
+  TEST_ASSERT_TRUE_MESSAGE(after < before + 512, "allocated bytes grew");
+}
+
+/* Runs Pacman on a thread whose stack was painted first, and reports how much
+ * of it was touched. The board's loop task has 16 KB. `ulimit -s` cannot show
+ * this: a level's depth depends on the random numbers drawn, and the first level
+ * is a shallow one. */
+/* The probe reads how much of a painted stack was touched, so frames must be on
+ * it. AddressSanitizer's use-after-return detection (the default on Linux clang,
+ * off on macOS) moves them to a heap fake stack and the probe would under-report. */
+const char *__asan_default_options(void) { return "detect_stack_use_after_return=0"; }
+
+#define STACK_PROBE_BYTES (1024 * 1024)
+#define STACK_PAINT 0xA5
+static int probe_seed, probe_frames, probe_hack;
+
+static void *probe_run(void *arg) {
+  (void)arg;
+  srandom(probe_seed);
+  HackRunner *r = runner_create(&cv);
+  runner_start(r, probe_hack);
+  for (int f = 0; f < probe_frames; f++) runner_step(r);
+  runner_destroy(r);
+  return NULL;
+}
+
+static long stack_used_by(int hack, int seed, int frames) {
+  void *mem = NULL;
+  if (posix_memalign(&mem, 16384, STACK_PROBE_BYTES) != 0) return -1;
+  unsigned char *stack = (unsigned char *)mem;
+  memset(stack, STACK_PAINT, STACK_PROBE_BYTES);
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  if (pthread_attr_setstack(&attr, stack, STACK_PROBE_BYTES) != 0) return -2;
+  probe_hack = hack;
+  probe_seed = seed;
+  probe_frames = frames;
+  pthread_t t;
+  if (pthread_create(&t, &attr, probe_run, NULL) != 0) return -3;
+  pthread_join(t, NULL);
+  long untouched = 0;
+  while (untouched < STACK_PROBE_BYTES && stack[untouched] == STACK_PAINT) untouched++;
+  free(stack);
+  return STACK_PROBE_BYTES - untouched;
+}
+
+/* Pacman has two recursions, both patched out by the build: the level
+ * generator (up to 315 KB: a 1.3 KB copy of the level in each of ~200 frames)
+ * and the ghosts' route search (453 levels, about 22 KB on the device). With
+ * both gone it uses about 12 KB here. This build's frames are inflated by
+ * AddressSanitizer (the device's frames are smaller), so staying under the loop
+ * task's 16 KB here means staying under it there. */
+void test_pacman_stays_within_the_loop_task_stack(void) {
+  const int pacman = index_of("Pacman");
+  TEST_ASSERT_TRUE(pacman >= 0);
+  long worst = 0;
+  for (int seed = 1; seed <= 3; seed++) {
+    const long used = stack_used_by(pacman, seed, 20000);
+    TEST_ASSERT_TRUE_MESSAGE(used >= 0, "could not run the probe");
+    if (used > worst) worst = used;
+  }
+  TEST_ASSERT_TRUE_MESSAGE(worst < 16 * 1024, "Pacman used 16 KB of stack or more");
+}
+
+/* Pacman loads and scales its sprite sheet in init, so start and stop is where
+ * pixmaps would leak. Growth over 40 restarts is measured at exactly 0, so 512
+ * bytes is slack, and a leaked GC per restart is caught. */
+void test_pacman_start_and_stop_do_not_leak(void) {
+  const int pacman = index_of("Pacman");
+  TEST_ASSERT_TRUE(pacman >= 0);
+  HackRunner *r = runner_create(&cv);
+  for (int i = 0; i < 3; i++) {
+    runner_start(r, pacman);
+    runner_step(r);
+  }
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  for (int i = 0; i < 40; i++) {
+    runner_start(r, pacman);
+    runner_step(r);
+    runner_step(r);
+  }
+  const size_t after = __sanitizer_get_current_allocated_bytes();
+  runner_destroy(r);
+  TEST_ASSERT_TRUE_MESSAGE(after < before + 512, "allocated bytes grew");
+}
+
+/* Pacman's ghosts find their way home with a depth-first search (find_home)
+ * that recurses up to 453 levels. The build rewrites it with an explicit stack,
+ * so this pins what the ghosts do over 30,000 frames: every ghost's position
+ * every 100 frames, and the frame every 1,000, taken with the original
+ * recursion. `trips` counts the frames a ghost was following a route home, so
+ * the pin cannot pass without the search having run. */
+void test_pacman_ghosts_take_the_same_routes_home(void) {
+  const int pacman = index_of("Pacman");
+  TEST_ASSERT_TRUE(pacman >= 0);
+  srandom(1);
+  HackRunner *r = runner_create(&cv);
+  runner_start(r, pacman);
+  uint64_t chain = 0xcbf29ce484222325ull;
+  long trips = 0;
+  for (int f = 1; f <= 30000; f++) {
+    runner_step(r);
+    const pacmangamestruct *pp = &pacman_games[0];
+    for (unsigned g = 0; g < pp->nghosts; g++) {
+      if (pp->ghosts[g].home_count > 0) trips++;
+      if (f % 100 == 0) {
+        chain = (chain ^ (uint64_t)(pp->ghosts[g].row * 4099 + pp->ghosts[g].col)) * 0x100000001b3ull;
+      }
+    }
+    if (f % 1000 == 0) chain = (chain ^ frame_hash()) * 0x100000001b3ull;
+  }
+  runner_destroy(r);
+  TEST_ASSERT_TRUE_MESSAGE(trips > 0, "no ghost ever followed a route home");
+  TEST_ASSERT_EQUAL_UINT64(2287115883820344180ull, chain);
 }
 
 void test_prev_from_first_wraps_to_last_hack(void) {
@@ -343,6 +508,7 @@ int main(void) {
   RUN_TEST(test_every_hack_can_be_stopped_before_its_first_frame);
   RUN_TEST(test_a_hack_starts_on_the_background_colour_it_asks_for);
   RUN_TEST(test_a_hack_that_never_draws_on_white_is_not_drawing);
+  RUN_TEST(test_the_runner_releases_pixmaps_a_stopped_hack_left_behind);
   RUN_TEST(test_every_hack_draws_something_within_2000_frames);
   RUN_TEST(test_every_hack_runs_3000_frames_cleanly_with_sane_delays);
   RUN_TEST(test_cycling_through_all_hacks_100_times_is_asan_clean);
@@ -352,6 +518,10 @@ int main(void) {
   RUN_TEST(test_substrate_draws_what_it_drew_before_pixels_were_swapped);
   RUN_TEST(test_frames_of_every_hack_but_maze_match_main);
   RUN_TEST(test_maze_frame_matches_main);
+  RUN_TEST(test_pacman_levels_do_not_leak);
+  RUN_TEST(test_pacman_start_and_stop_do_not_leak);
+  RUN_TEST(test_pacman_stays_within_the_loop_task_stack);
+  RUN_TEST(test_pacman_ghosts_take_the_same_routes_home);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
   return UNITY_END();
 }

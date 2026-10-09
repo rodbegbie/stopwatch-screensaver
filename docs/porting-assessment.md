@@ -30,11 +30,11 @@ it with `uv run tools/score_hacks.py`.
 
 | Rating | Meaning | Count |
 | --- | --- | --- |
-| S | 2D, and the unmodified source compiles against the shim | 20 |
-| M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 15 |
-| L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 81 |
+| S | 2D, and the unmodified source compiles against the shim | 22 |
+| M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 13 |
+| L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 80 |
 | XL | GL: needs a software rasteriser (see below) | 140 |
-| Ported | Already running on the device, so no rating | 27 |
+| Ported | Already running on the device, so no rating | 28 |
 
 ## Flags
 
@@ -59,7 +59,7 @@ performance numbers exist yet, so this stays a separate future project.
 
 ## Measured on the device
 
-Twenty-seven hacks have been run so far (default settings, 466×466 canvas
+Twenty-eight hacks have been run so far (default settings, 466×466 canvas
 pushed to the display every frame, canvas held in PSRAM). The firmware times
 each frame in three parts, averaged over 5 seconds: **step** is the hack's own
 draw call, **push** is sending the canvas to the display, and **wait** is what
@@ -97,6 +97,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Maze | 6.0-28.8 | 0.1-1.3 ms | 31.2-33.4 ms | 0-256 ms | not measured |
 | Blaster | 27.8 | 3.6-3.7 ms | 31.2-31.3 ms | 0 ms | not measured |
 | Substrate | 12.4-20.6 | 2.9-43.9 ms | 41.1-44.4 ms | 0 ms | about 1.74 MB |
+| Pacman | 75.6-79.2 | 1.3-1.9 ms | 0.8-1.4 ms | 10.0-10.6 ms | about 580 KB |
 
 Maze's row is 26 five-second readings over 160 seconds, taken on a build that
 includes the overlay stamping. Its steps are cheap, and its frame rate is set
@@ -300,6 +301,63 @@ with insertion sort then cost 2.6 million steps per picture on average and
 `qsort` above 16 crossings the step means are 126-519 ms. Pedal remains the
 second most expensive hack to draw after Flame.
 
+## Wide lines, arcs and pixmaps
+
+The shim now honours `line_width`, cap and join styles, draws `XDrawArc` and
+partial `XFillArc`, and lets `XCopyArea` write into pixmaps made by
+`XCreatePixmap`. Width 0 and 1 keep the old line code.
+
+No registered hack draws a wide line here. A survey over 200 frames of each
+found a largest width of 1 (XSpirograph and Blaster; their Retina branches do
+not run), and Maze's width-2 call sits under `HAVE_JWXYZ`, which is not
+defined. So nothing the device runs today uses the new code, and the checks
+were that nothing else changed:
+
+- Frame hashes of 26 of the 27 hacks (every one but Coral, which reads the
+  clock) are identical before and after, taken at four points over 200 frames.
+  Maze, Pyro, Hopalong, Galaxy, Blaster and Substrate also dumped identical
+  raw frames.
+- On the device, Maze pinned with the rotation off for 75 seconds on each
+  build, plain `main` and this branch: 11 five-second windows each, with the
+  same medians for fps (24.4), push (1.1 ms) and rows (32), and step medians of
+  0.30 and 0.40 ms. The two captures started at different points in Maze's
+  cycle, so single windows differ and the 0.1 ms is within the resolution of
+  the log. No reboot, panic or stack canary appeared.
+- Not measured: the new code on the device. Wide lines, arcs and the pixmap
+  copy are covered by host tests only. Blaster, which fills arcs, was not
+  re-measured on the device after the change. Pacman is the first port that
+  needs them.
+
+## Pacman
+
+Pacman runs at 75.6-79.2 fps (second window onward, 46 windows of 5 seconds
+pinned with the rotation off), paced by its own 10 ms delay: the step is
+1.3-1.9 ms, the push 0.8-1.4 ms for 45-84 rows a frame, and the wait 10.0-10.6
+ms. It takes about 580 KB of PSRAM (7,424,155 free before it starts, 6,842,931
+after) and about 50 KB of internal heap (the scaled sprites are each under
+4 KB, so `malloc` keeps them in internal RAM). Rod checked the colours on the
+screen: cyan walls, a yellow Pacman, the four ghost colours.
+
+Two recursions in the hack had to go. The level generator (`creatlevelblock`
+and `nextstep`) recursed up to about 315 KB deep on the host and rebooted the
+board on its first frame (stack canary, loop task, 16 KB). The build now
+patches it out, so Pacman always plays the fixed level. The ghosts' route home
+(`recur_back_track`) reaches 453 levels of 48 bytes from some cells, about
+22 KB; the build rewrites it as a loop over a heap stack that visits cells in
+the same order, pinned over 30,000 frames. With a temporary stack gauge in the
+serial line (not committed), the loop task's lowest free stack was 5,092 bytes
+of 16,384 and falling after three minutes with the recursion, and a steady
+13,844 bytes over four minutes after the rewrite.
+
+Upstream also leaks about 514 KB of pixmaps each time Pacman starts. The
+runner now releases a stopped hack's pixmaps. Rotating every 5 seconds for 70
+rotations (two Pacman visits), the hack after each visit read the same heap
+and PSRAM (289,228 and 7,342,579).
+
+Not measured: runs longer than four minutes pinned, and the stack gauge only
+saw the loop task while ghosts followed routes home, which the host pin shows
+they do but the log does not mark.
+
 ## Suggested order for shim stage 2
 
 Shim gaps across 2D hacks, ranked so gaps that block hacks
@@ -307,16 +365,16 @@ needing few additions come first.
 
 | Gap | Score | 2D hacks needing it |
 | --- | --- | --- |
+| `XSetGraphicsExposures` | 3.51 | 8 |
 | `make_color_loop` | 3.32 | 6 |
-| `XSetGraphicsExposures` | 2.76 | 8 |
 | `XSetWindowBackground` | 2.68 | 14 |
-| `XImage` | 2.37 | 39 |
-| `error: call to undeclared library function 'memset' with type 'void *(void *, int, unsigned long)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]` | 2.22 | 8 |
-| `XDestroyImage` | 2.06 | 33 |
-| `rgb_to_hsv` | 2.04 | 9 |
+| `XImage` | 2.39 | 39 |
+| `rgb_to_hsv` | 2.09 | 9 |
+| `XDestroyImage` | 2.08 | 33 |
 | `GXxor` | 1.89 | 8 |
-| `ZPixmap` | 1.87 | 35 |
-| `XQueryColor` | 1.76 | 14 |
+| `ZPixmap` | 1.88 | 35 |
+| `XQueryColor` | 1.81 | 14 |
+| `async_load_state` | 1.75 | 14 |
 
 ## All hacks
 
@@ -324,9 +382,11 @@ needing few additions come first.
 | --- | --- | --- | --- | --- | --- | --- |
 | anemone | 2d | S | - | - | pixmaps | 458 |
 | anemotaxis | 2d | S | - | - | pixmaps | 760 |
+| braid | 2d | S | - | - | needs-xlockmore | 444 |
 | celtic | 2d | S | - | - | - | 1141 |
 | compass | 2d | S | - | - | pixmaps, float-heavy | 999 |
 | epicycle | 2d | S | - | - | - | 803 |
+| euler2d | 2d | S | - | - | float-heavy, needs-xlockmore | 893 |
 | forest | 2d | S | - | - | needs-xlockmore | 241 |
 | fuzzyflakes | 2d | S | - | - | pixmaps | 655 |
 | grav | 2d | S | - | - | needs-xlockmore | 360 |
@@ -344,23 +404,21 @@ needing few additions come first.
 | wormhole | 2d | S | - | - | pixmaps | 734 |
 | abstractile | 2d | M | - | `BlackPixelOfScreen`, `make_color_loop`, `make_color_ramp`, `rgb_to_hsv` | - | 1625 |
 | bouboule | 2d | M | - | `GXor`, `XSetFunction` | xor, needs-xlockmore | 860 |
-| braid | 2d | M | - | `error: call to undeclared library function 'memset' with type 'void *(void *, int, unsigned long)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]` | needs-xlockmore | 444 |
 | cwaves | 2d | M | - | `BlackPixelOfScreen` | - | 219 |
 | cynosure | 2d | M | - | `XCreateBitmapFromData`, `XSetWindowBackground`, `rgb_to_hsv` | - | 457 |
-| euler2d | 2d | M | - | `error: call to undeclared library function 'memcpy' with type 'void *(void *, const void *, unsigned long)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]`, `error: call to undeclared library function 'memset' with type 'void *(void *, int, unsigned long)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]` | float-heavy, needs-xlockmore | 893 |
 | hexadrop | 2d | M | - | `XSetWindowBackground` | - | 446 |
 | hyperball | 2d | M | - | `UnmapNotify` | - | 2464 |
 | lisa | 2d | M | - | `XMaxRequestSize` | needs-xlockmore | 744 |
 | munch | 2d | M | - | `GXxor`, `XSetFunction`, `i_log2`, `pow2.h` | xor | 462 |
-| penrose | 2d | M | - | `LineOnOffDash`, `error: call to undeclared library function 'memcmp' with type 'int (const void *, const void *, unsigned long)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]` | needs-xlockmore | 1342 |
+| penrose | 2d | M | - | `LineOnOffDash` | needs-xlockmore | 1342 |
 | triangle | 2d | M | - | `free_colors`, `make_smooth_colormap` | needs-xlockmore | 355 |
 | vermiculate | 2d | M | - | `XSetWindowBackground`, `ya_random` | - | 1229 |
-| worm | 2d | M | - | `GXor`, `XClearArea`, `XSetFunction`, `error: call to undeclared library function 'memset' with type 'void *(void *, int, unsigned long)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]` | xor, needs-xlockmore | 434 |
+| worm | 2d | M | - | `GXor`, `XClearArea`, `XSetFunction` | xor, needs-xlockmore | 434 |
 | xrayswarm | 2d | M | - | `XSetGraphicsExposures`, `initTime` | - | 1235 |
 | ant | 2d | L | - | `CoordModePrevious`, `NUMSTIPPLES`, `XCreatePixmapFromBitmapData`, `automata.h`, `hexagonUnit`, `triangleUnit` | needs-xlockmore | 1351 |
-| apollonian | 2d | L | - | `FcChar8`, `XColor.color`, `XGlyphInfo`, `XQueryColor`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: call to undeclared library function 'strlen' with type 'unsigned long (const char *)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]`, `error: expected expression`, `load_xft_font_retry`, `overall` | needs-xlockmore | 820 |
+| apollonian | 2d | L | - | `FcChar8`, `XColor.color`, `XGlyphInfo`, `XQueryColor`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall` | needs-xlockmore | 820 |
 | apple2-main | 2d | L | - | `A2CONTROLLER_DONE`, `A2CONTROLLER_FREE`, `A2_GR_FULL`, `A2_GR_HIRES`, `A2_GR_LORES`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `DisplayOfScreen`, `GrayScale`, `KeyPress`, `PseudoColor`, `TTY_BLINK`, `TTY_BOLD`, `TTY_INVERSE`, `TTY_SYMBOLS`, `XDestroyImage`, `XEvent.xany`, `XEvent.xkey`, `XGetImage`, `XGetPixel`, `XImage`, `XQueryColors`, `ZPixmap`, `a2_clear_gr`, `a2_clear_hgr`, `a2_cls`, `a2_display_image_loading`, `a2_goto`, `a2_hline`, `a2_hplot`, `a2_invalidate`, `a2_plot`, `a2_printc`, `a2_printc_noscroll`, `a2_prints`, `analogtv_reconfigure`, `ansi-tty.h`, `ansi_tty`, `ansi_tty_free`, `ansi_tty_init`, `ansi_tty_print`, `apple2.h`, `apple2_one_frame`, `apple2_sim_t`, `apple2_start`, `apple2_state_t`, `error: expected expression`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `error: incompatible integer to pointer conversion initializing 'char *' with an expression of type 'int' [-Wint-conversion]`, `flag`, `image`, `load_image_async`, `sim`, `st`, `tc`, `text_data`, `textclient.h`, `textclient_close`, `textclient_getc`, `textclient_open`, `textclient_putc_event`, `textclient_puts`, `textclient_reshape`, `tty`, `tty_char`, `tty_flag`, `utf8_encode`, `utf8_to_latin1`, `utf8wc.h`, `visual_cells`, `visual_class`, `visual_rgb_masks` | pixmaps, readback | 1642 |
-| attraction | 2d | L | - | `ButtonRelease`, `XEvent.x`, `XEvent.xany`, `XEvent.y`, `XQueryPointer`, `compute_closed_spline`, `error: incompatible integer to pointer conversion assigning to 'int *' from 'int' [-Wint-conversion]`, `error: member reference base type 'int' is not a structure or union`, `error: type name does not allow function specifier to be specified`, `error: type specifier missing, defaults to 'int'; ISO C99 and later do not support implicit int [-Wimplicit-int]`, `free_spline`, `make_color_ramp`, `make_spline`, `spline` | - | 1115 |
+| attraction | 2d | L | - | `ButtonRelease`, `XEvent.x`, `XEvent.xany`, `XEvent.y`, `compute_closed_spline`, `error: incompatible integer to pointer conversion assigning to 'int *' from 'int' [-Wint-conversion]`, `error: member reference base type 'int' is not a structure or union`, `error: type name does not allow function specifier to be specified`, `error: type specifier missing, defaults to 'int'; ISO C99 and later do not support implicit int [-Wimplicit-int]`, `free_spline`, `make_color_ramp`, `make_spline`, `spline` | - | 1115 |
 | barcode | 2d | L | - | `ButtonRelease`, `LSBFirst`, `XCreateImage`, `XDestroyImage`, `XEvent.xany`, `XImage`, `XPutImage`, `XYBitmap` | - | 2055 |
 | binaryhorizon | 2d | L | - | `KeyPress`, `XDestroyImage`, `XEvent.xany`, `XGetImage`, `XImage`, `XPutImage`, `XPutPixel`, `ZPixmap`, `visual_depth` | pixmaps, readback | 624 |
 | binaryring | 2d | L | - | `KeyPress`, `XDestroyImage`, `XEvent.xany`, `XGetImage`, `XImage`, `XPutImage`, `XPutPixel`, `ZPixmap`, `visual_depth` | pixmaps, readback | 577 |
@@ -374,29 +432,29 @@ needing few additions come first.
 | decayscreen | 2d | L | - | `async_load_state`, `load_image_async_simple` | pixmaps | 392 |
 | deco | 2d | L | - | `DisplayOfScreen`, `XStoreColors`, `allocate_writable_colors`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `has_writable_cells` | - | 345 |
 | deluxe | 2d | L | - | `GCPlaneMask`, `XGCValues.plane_mask`, `allocate_alpha_colors`, `alpha.h` | pixmaps, float-heavy | 480 |
-| demon | 2d | L | - | `CoordModePrevious`, `FillOpaqueStippled`, `GCFillStyle`, `GCStipple`, `NUMSTIPPLES`, `STIPPLESIZE`, `XCreatePixmapFromBitmapData`, `XGCValues.fill_style`, `XGCValues.stipple`, `automata.h`, `error: call to undeclared library function 'memcpy' with type 'void *(void *, const void *, unsigned long)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]`, `hexagonUnit`, `stipples`, `triangleUnit` | needs-xlockmore | 953 |
+| demon | 2d | L | - | `CoordModePrevious`, `GCFillStyle`, `GCStipple`, `NUMSTIPPLES`, `STIPPLESIZE`, `XCreatePixmapFromBitmapData`, `XGCValues.fill_style`, `XGCValues.stipple`, `automata.h`, `hexagonUnit`, `stipples`, `triangleUnit` | needs-xlockmore | 953 |
 | distort | 2d | L | - | `BlackPixelOfScreen`, `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XPutImage`, `XPutPixel`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `load_image_async_simple`, `put_xshm_image`, `xshm.h` | pixmaps, readback | 894 |
 | droste | 2d | L | - | `BlackPixelOfScreen`, `GET_PARENT_OBJ`, `KeyPress`, `KeySym`, `THREAD_DEFAULTS`, `THREAD_OPTIONS`, `XDestroyImage`, `XEvent.xkey`, `XGetImage`, `XGetPixel`, `XImage`, `XK_Down`, `XK_Left`, `XK_Right`, `XK_Up`, `XLookupString`, `XPutPixel`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `double_time`, `doubletime.h`, `error: expected expression`, `error: field has incomplete type 'struct threadpool'`, `error: variable has incomplete type 'const struct threadpool_class'`, `hardware_concurrency`, `i_log2_fast`, `keysym`, `load_image_async_simple`, `pow2.h`, `put_xshm_image`, `thread_util.h`, `threadpool`, `threadpool_create`, `threadpool_destroy`, `threadpool_run`, `threadpool_wait`, `xshm.h` | pixmaps, readback | 686 |
 | eruption | 2d | L | - | `XEvent.x`, `XEvent.y`, `XImage`, `XPutPixel`, `XSetWindowBackground`, `XShmSegmentInfo`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `error: typedef redefinition with different types ('unsigned long' vs 'unsigned int')`, `img`, `put_xshm_image`, `xshm.h` | - | 608 |
 | fiberlamp | 2d | L | - | `RootWindow`, `XAllocNamedColor`, `XSetGraphicsExposures`, `XTranslateCoordinates` | pixmaps, needs-xlockmore | 480 |
 | filmleader | 2d | L | - | `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_SIGNAL_LEN`, `ButtonRelease`, `FcChar8`, `KeyPress`, `KeySym`, `XCreateImage`, `XDestroyImage`, `XEvent.xany`, `XEvent.xkey`, `XGetImage`, `XGetPixel`, `XGlyphInfo`, `XImage`, `XLookupString`, `XPutImage`, `XPutPixel`, `XftColor`, `XftColorAllocName`, `XftColorFree`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftTextExtentsUtf8`, `ZPixmap`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_load_ximage`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `double_time`, `doubletime.h`, `error: expected expression`, `extents`, `img`, `img1`, `img2`, `keysym`, `load_xft_font_retry`, `screen_number`, `xftfont` | pixmaps, readback | 548 |
 | fireworkx | 2d | L | - | `ButtonRelease`, `ImageByteOrder`, `MSBFirst`, `XCreateImage`, `XDestroyImage`, `XEvent.x`, `XEvent.y`, `XImage`, `XPutImage`, `ZPixmap` | - | 882 |
-| flag | 2d | L | - | `GCFont`, `XCharStruct`, `XCreateImage`, `XDestroyImage`, `XDrawString`, `XFontStruct`, `XFreeFont`, `XGCValues.font`, `XGetImage`, `XGetPixel`, `XImage`, `XLoadQueryFont`, `XPutPixel`, `XSetGraphicsExposures`, `XTextExtents`, `XYBitmap`, `XYPixmap`, `ZPixmap`, `bob_png`, `error: call to undeclared library function 'memset' with type 'void *(void *, int, unsigned long)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]`, `error: call to undeclared library function 'strcmp' with type 'int (const char *, const char *)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]`, `error: call to undeclared library function 'strdup' with type 'char *(const char *)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]`, `error: call to undeclared library function 'strlen' with type 'unsigned long (const char *)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]`, `error: call to undeclared library function 'strtok' with type 'char *(char *, const char *)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]`, `file_to_pixmap`, `font`, `im`, `image_data_to_ximage`, `images/gen/bob_png.h`, `o2`, `overall` | pixmaps, readback, text, needs-xlockmore | 570 |
-| flow | 2d | L | - | `XSetGraphicsExposures`, `error: call to undeclared library function 'memcpy' with type 'void *(void *, const void *, unsigned long)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]`, `error: call to undeclared library function 'memmove' with type 'void *(void *, const void *, unsigned long)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]`, `error: call to undeclared library function 'memset' with type 'void *(void *, int, unsigned long)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]` | pixmaps, needs-xlockmore | 1216 |
-| fluidballs | 2d | L | - | `ButtonRelease`, `FcChar8`, `RootWindow`, `XEvent.x`, `XEvent.xany`, `XEvent.y`, `XQueryPointer`, `XTranslateCoordinates`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `error: expected expression`, `error: too few arguments to function call, expected 2, have 1`, `load_xft_font_retry`, `screen_number` | pixmaps | 881 |
+| flag | 2d | L | - | `GCFont`, `XCharStruct`, `XCreateImage`, `XDestroyImage`, `XDrawString`, `XFontStruct`, `XFreeFont`, `XGCValues.font`, `XGetImage`, `XGetPixel`, `XImage`, `XLoadQueryFont`, `XPutPixel`, `XSetGraphicsExposures`, `XTextExtents`, `XYBitmap`, `XYPixmap`, `ZPixmap`, `bob_png`, `file_to_pixmap`, `font`, `im`, `image_data_to_ximage`, `images/gen/bob_png.h`, `o2`, `overall` | pixmaps, readback, text, needs-xlockmore | 570 |
+| flow | 2d | L | - | `XSetGraphicsExposures` | pixmaps, needs-xlockmore | 1216 |
+| fluidballs | 2d | L | - | `ButtonRelease`, `FcChar8`, `RootWindow`, `XEvent.x`, `XEvent.xany`, `XEvent.y`, `XTranslateCoordinates`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `error: expected expression`, `error: too few arguments to function call, expected 2, have 1`, `load_xft_font_retry`, `screen_number` | pixmaps | 881 |
 | fontglide | 2d | L | - | `BlackPixelOfScreen`, `DisplayOfScreen`, `FcChar8`, `XCreateImage`, `XDestroyImage`, `XDrawString`, `XDrawString16`, `XFreeFont`, `XGetAtomName`, `XGetImage`, `XGetPixel`, `XGlyphInfo`, `XImage`, `XLoadQueryFont`, `XLookupString`, `XPutImage`, `XPutPixel`, `XRenderColor`, `XSetFont`, `XTextExtents`, `XTextExtents16`, `XYPixmap`, `XftColor`, `XftColorAllocValue`, `XftColorFree`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `ZPixmap`, `bg`, `error: Xft is required under X11`, `error: expected expression`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `extents`, `fg`, `in`, `load_xft_font_retry`, `out`, `screen_number`, `swap`, `text_data`, `textclient.h`, `textclient_close`, `textclient_getc`, `textclient_open`, `utf8_decode_combining`, `utf8wc.h`, `xftdraw` | pixmaps, readback, text, clipmask | 2474 |
 | glitchpeg | 2d | L | - | `BitmapBitOrder`, `ButtonRelease`, `ImageByteOrder`, `XCreateImage`, `XDestroyImage`, `XEvent.xany`, `XGetPixel`, `XImage`, `XPutImage`, `XPutPixel`, `XtAppAddInput`, `XtDisplayToApplicationContext`, `XtInputExceptMask`, `XtInputId`, `XtInputReadMask`, `XtPointer`, `XtRemoveInput`, `ZPixmap`, `error: operand of type 'XPoint' where arithmetic or pointer type is required`, `image`, `image_data_to_ximage`, `out` | readback | 466 |
 | goop | 2d | L | - | `AllPlanes`, `DefaultScreenOfDisplay`, `DisplayOfScreen`, `GXclear`, `GXxor`, `WhitePixelOfScreen`, `XSetFunction`, `XSetPlaneMask`, `allocate_alpha_colors`, `alpha.h`, `compute_closed_spline`, `error: incompatible integer to pointer conversion assigning to 'int *' from 'int' [-Wint-conversion]`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `error: member reference base type 'int' is not a structure or union`, `error: type name does not allow function specifier to be specified`, `error: type specifier missing, defaults to 'int'; ISO C99 and later do not support implicit int [-Wimplicit-int]`, `free_spline`, `has_writable_cells`, `make_spline`, `spline` | pixmaps, xor | 651 |
-| greynetic | 2d | L | - | `FillOpaqueStippled`, `GCFillStyle`, `GCStipple`, `XCreatePixmapFromBitmapData`, `XGCValues.fill_style`, `XGCValues.stipple` | - | 297 |
+| greynetic | 2d | L | - | `GCFillStyle`, `GCStipple`, `XCreatePixmapFromBitmapData`, `XGCValues.fill_style`, `XGCValues.stipple` | - | 297 |
 | halo | 2d | L | - | `GXxor` | pixmaps | 459 |
 | imsmap | 2d | L | - | `XCreateImage`, `XDestroyImage`, `XImage`, `XPutImage`, `XPutPixel`, `XYBitmap`, `image` | - | 426 |
 | interference | 2d | L | - | `GET_PARENT_OBJ`, `THREAD_DEFAULTS`, `THREAD_OPTIONS`, `XImage`, `XPutPixel`, `XShmGetEventBase`, `XShmSegmentInfo`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `error: expected expression`, `error: field has incomplete type 'struct threadpool'`, `error: too few arguments to function call, expected 2, have 1`, `error: variable has incomplete type 'const struct threadpool_class'`, `hardware_concurrency`, `make_color_loop`, `put_xshm_image`, `thread_memory_alignment`, `thread_util.h`, `threadpool`, `threadpool_create`, `threadpool_destroy`, `threadpool_run`, `threadpool_wait`, `visual_pixmap_depth`, `xshm.h` | pixmaps | 1002 |
-| intermomentary | 2d | L | - | `XQueryColor`, `XSetFillStyle`, `XSetTile`, `make_color_ramp`, `rgb_to_hsv` | pixmaps | 605 |
-| juggle | 2d | L | - | `XDrawImageString`, `XDrawString`, `XFontStruct`, `XFreeFontInfo`, `XLoadQueryFont`, `XTextWidth`, `error: call to undeclared library function 'strcasecmp' with type 'int (const char *, const char *)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]`, `error: call to undeclared library function 'strcmp' with type 'int (const char *, const char *)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]`, `error: call to undeclared library function 'strdup' with type 'char *(const char *)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]`, `error: call to undeclared library function 'strlen' with type 'unsigned long (const char *)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]`, `gettimeofday` | text, float-heavy, needs-xlockmore | 2798 |
-| julia | 2d | L | - | `Button1`, `ButtonRelease`, `Cursor`, `FillOpaqueStippled`, `MotionNotify`, `XCreatePixmapCursor`, `XCreatePixmapFromBitmapData`, `XDefineCursor`, `XEvent.x`, `XEvent.xany`, `XEvent.xmotion`, `XEvent.y`, `XFreeCursor`, `XSetFillStyle`, `XSetStipple`, `XSetTSOrigin`, `XUndefineCursor`, `error: call to undeclared library function 'memset' with type 'void *(void *, int, unsigned long)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]` | pixmaps, float-heavy, needs-xlockmore | 451 |
+| intermomentary | 2d | L | - | `XQueryColor`, `XSetTile`, `make_color_ramp`, `rgb_to_hsv` | pixmaps | 605 |
+| juggle | 2d | L | - | `XDrawImageString`, `XDrawString`, `XFontStruct`, `XFreeFontInfo`, `XLoadQueryFont`, `XTextWidth`, `gettimeofday` | text, float-heavy, needs-xlockmore | 2798 |
+| julia | 2d | L | - | `Button1`, `ButtonRelease`, `Cursor`, `MotionNotify`, `XCreatePixmapCursor`, `XCreatePixmapFromBitmapData`, `XDefineCursor`, `XEvent.x`, `XEvent.xany`, `XEvent.xmotion`, `XEvent.y`, `XFreeCursor`, `XSetStipple`, `XSetTSOrigin`, `XUndefineCursor` | pixmaps, float-heavy, needs-xlockmore | 451 |
 | kumppa | 2d | L | - | `XSetGraphicsExposures` | pixmaps | 545 |
 | lcdscrub | 2d | L | - | `XCreateImage`, `XDestroyImage`, `XGetPixel`, `XImage`, `XPutImage`, `XPutPixel`, `XYPixmap`, `error: too few arguments to function call, expected 2, have 1` | pixmaps, readback, clipmask | 399 |
-| loop | 2d | L | - | `CoordModePrevious`, `FillOpaqueStippled`, `GCFillStyle`, `GCStipple`, `STIPPLESIZE`, `XCreatePixmapFromBitmapData`, `XGCValues.fill_style`, `XGCValues.stipple`, `automata.h`, `hexagonUnit`, `stipples`, `triangleUnit` | needs-xlockmore | 1700 |
+| loop | 2d | L | - | `CoordModePrevious`, `GCFillStyle`, `GCStipple`, `STIPPLESIZE`, `XCreatePixmapFromBitmapData`, `XGCValues.fill_style`, `XGCValues.stipple`, `automata.h`, `hexagonUnit`, `stipples`, `triangleUnit` | needs-xlockmore | 1700 |
 | m6502 | 2d | L | - | `ANALOGTV_BLACK_LEVEL`, `ANALOGTV_BOT`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_TOP`, `ANALOGTV_VISLINES`, `ANALOGTV_VIS_END`, `ANALOGTV_VIS_LEN`, `ANALOGTV_VIS_START`, `ANALOGTV_WHITE_LEVEL`, `Bit8`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_draw_solid`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_lcp_to_ntsc`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `asm6502.h`, `double_time`, `doubletime.h`, `m6502.h`, `m6502_build`, `m6502_destroy6502`, `m6502_next_eval`, `m6502_start_eval_file`, `m6502_start_eval_string`, `machine_6502` | - | 288 |
 | marbling | 2d | L | - | `DefaultScreenOfDisplay`, `GET_PARENT_OBJ`, `KeyPress`, `KeySym`, `THREAD_DEFAULTS`, `THREAD_OPTIONS`, `XEvent.xany`, `XEvent.xkey`, `XImage`, `XK_Down`, `XK_Left`, `XK_Right`, `XK_Up`, `XLookupString`, `XPutPixel`, `XShmSegmentInfo`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `error: expected expression`, `error: field has incomplete type 'struct threadpool'`, `error: incompatible integer to pointer conversion passing 'int' to parameter of type 'Screen *' (aka 'struct XshimScreen *') [-Wint-conversion]`, `error: variable has incomplete type 'const struct threadpool_class'`, `hardware_concurrency`, `keysym`, `put_xshm_image`, `thread_memory_alignment`, `thread_util.h`, `threadpool_create`, `threadpool_destroy`, `threadpool_run`, `threadpool_wait`, `visual_pixmap_depth`, `xshm.h` | - | 635 |
 | memscroller | 2d | L | - | `FcChar8`, `XGlyphInfo`, `XImage`, `XShmSegmentInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `error: expected expression`, `load_xft_font_retry`, `overall`, `put_xshm_image`, `screen_number`, `xft.h`, `xshm.h` | pixmaps | 626 |
@@ -405,12 +463,11 @@ needing few additions come first.
 | moire2 | 2d | L | - | `GXor`, `GXxor`, `XSetFunction` | pixmaps, xor | 363 |
 | nerverot | 2d | L | - | `make_color_ramp`, `rgb_to_hsv` | pixmaps, float-heavy | 1367 |
 | noseguy | 2d | L | - | `FcChar8`, `XCreateImage`, `XDestroyImage`, `XGetImage`, `XGetPixel`, `XGlyphInfo`, `XImage`, `XPutImage`, `XPutPixel`, `XYPixmap`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `ZPixmap`, `error: expected expression`, `extents`, `i1`, `i2`, `images/gen/nose-f1_png.h`, `images/gen/nose-f2_png.h`, `images/gen/nose-f3_png.h`, `images/gen/nose-f4_png.h`, `images/gen/nose-l1_png.h`, `images/gen/nose-l2_png.h`, `images/gen/nose-r1_png.h`, `images/gen/nose-r2_png.h`, `load_xft_font_retry`, `nose_f1_png`, `nose_f2_png`, `nose_f3_png`, `nose_f4_png`, `nose_l1_png`, `nose_l2_png`, `nose_r1_png`, `nose_r2_png`, `screen_number`, `text_data`, `textclient.h`, `textclient_close`, `textclient_getc`, `textclient_open`, `textclient_reshape` | pixmaps, readback, clipmask | 720 |
-| pacman | 2d | L | - | `BLUE`, `FillSolid`, `GHOSTS`, `GHOST_DANGER`, `JAILHEIGHT`, `LEVHEIGHT`, `LEVWIDTH`, `MAXGDIR`, `MAXGFLASH`, `MAXGWAG`, `MAXMOUTH`, `MINGRIDSIZE`, `MINSIZE`, `NOWHERE`, `NUM_BONUS_DOTS`, `PAC_DEATH_FRAMES`, `START`, `XDrawString`, `XLoadQueryFont`, `XSetFillStyle`, `chasing`, `error: expected expression`, `error: invalid application of 'sizeof' to an incomplete type 'argtype[]'`, `ghoststruct`, `goingin`, `goingout`, `hiding`, `images/gen/pacman_png.h`, `inbox`, `pacman.h`, `pacman_ai.h`, `pacman_bonus_dot_eaten`, `pacman_bonus_dot_pos`, `pacman_createnewlevel`, `pacman_eat_bonus_dot`, `pacman_ghost_update`, `pacman_is_bonus_dot`, `pacman_level.h`, `pacman_png`, `pacman_trackmouse`, `pacman_update`, `pacmangamestruct`, `pp`, `ps_chasing`, `ps_dieing`, `ps_eating` | pixmaps, text, clipmask, needs-xlockmore | 1479 |
 | penetrate | 2d | L | - | `FcChar8`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall`, `screen_number`, `usleep` | - | 1037 |
 | phosphor | 2d | L | - | `BlackPixelOfScreen`, `DefaultScreenOfDisplay`, `FALSE`, `FcChar8`, `KeyPress`, `TTY_BOLD`, `TTY_INVERSE`, `TTY_ITALIC`, `TTY_SYMBOLS`, `Time`, `XCreateImage`, `XDestroyImage`, `XEvent.xany`, `XEvent.xkey`, `XGetImage`, `XGetPixel`, `XGlyphInfo`, `XImage`, `XPutImage`, `XPutPixel`, `XQueryColor`, `XWriteBitmapFile`, `XYBitmap`, `XYPixmap`, `XftColor`, `XftDraw`, `XftDrawCreate`, `XftDrawStringUtf8`, `XftFont`, `XftTextExtentsUtf8`, `XtAppAddTimeOut`, `XtAppContext`, `XtIntervalId`, `XtPointer`, `XtRemoveTimeOut`, `ZPixmap`, `_6x10font_png`, `ansi-tty.h`, `ansi_graphics_unicode`, `ansi_tty`, `ansi_tty_free`, `ansi_tty_init`, `ansi_tty_print`, `ansi_tty_resize`, `app`, `error: expected expression`, `font`, `font_bits`, `im`, `im2`, `images/gen/6x10font_png.h`, `load_xft_font_retry`, `make_color_ramp`, `mm`, `overall`, `rgb_to_hsv`, `screen_number`, `tcell`, `text_data`, `textclient.h`, `textclient_close`, `textclient_getc`, `textclient_open`, `textclient_putc_event`, `textclient_puts`, `textclient_reshape`, `tty`, `tty_char`, `utf8_encode`, `utf8_to_latin1`, `utf8wc.h`, `xft_fg`, `xftdraw`, `xim_color`, `xim_mono` | pixmaps, readback, clipmask | 1260 |
 | piecewise | 2d | L | - | `make_color_loop` | pixmaps | 1036 |
-| polyominoes | 2d | L | - | `LSBFirst`, `MSBFirst`, `XCreateImage`, `XDestroyImage`, `XImage`, `XPutImage`, `XYBitmap`, `countof`, `error: call to undeclared library function 'memset' with type 'void *(void *, int, unsigned long)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]` | needs-xlockmore | 2370 |
-| pong | 2d | L | - | `ANALOGTV_BLACK_LEVEL`, `ANALOGTV_BOT`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_TOP`, `ANALOGTV_VISLINES`, `ANALOGTV_VIS_END`, `ANALOGTV_VIS_LEN`, `ANALOGTV_VIS_START`, `ButtonPressMask`, `ButtonRelease`, `ButtonReleaseMask`, `CurrentTime`, `Cursor`, `FocusChangeMask`, `FocusIn`, `FocusOut`, `GrabModeAsync`, `KeyPress`, `KeyPressMask`, `KeyRelease`, `KeyReleaseMask`, `KeySym`, `MotionNotify`, `X11/keysym.h`, `XCreatePixmapCursor`, `XDefineCursor`, `XDestroyImage`, `XEvent.x`, `XEvent.xkey`, `XEvent.xmotion`, `XGrabPointer`, `XHeightMMOfScreen`, `XHeightOfScreen`, `XK_Down`, `XK_Up`, `XLookupString`, `XQueryPointer`, `XUngrabPointer`, `XWarpPointer`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_draw_solid`, `analogtv_draw_string`, `analogtv_font`, `analogtv_font_set_char`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_lcp_to_ntsc`, `analogtv_make_font`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `double_time`, `doubletime.h`, `key` | pixmaps | 1109 |
+| polyominoes | 2d | L | - | `LSBFirst`, `MSBFirst`, `XCreateImage`, `XDestroyImage`, `XImage`, `XPutImage`, `XYBitmap`, `countof` | needs-xlockmore | 2370 |
+| pong | 2d | L | - | `ANALOGTV_BLACK_LEVEL`, `ANALOGTV_BOT`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_TOP`, `ANALOGTV_VISLINES`, `ANALOGTV_VIS_END`, `ANALOGTV_VIS_LEN`, `ANALOGTV_VIS_START`, `ButtonPressMask`, `ButtonRelease`, `ButtonReleaseMask`, `CurrentTime`, `Cursor`, `FocusChangeMask`, `FocusIn`, `FocusOut`, `GrabModeAsync`, `KeyPress`, `KeyPressMask`, `KeyRelease`, `KeyReleaseMask`, `KeySym`, `MotionNotify`, `X11/keysym.h`, `XCreatePixmapCursor`, `XDefineCursor`, `XDestroyImage`, `XEvent.x`, `XEvent.xkey`, `XEvent.xmotion`, `XGrabPointer`, `XHeightMMOfScreen`, `XHeightOfScreen`, `XK_Down`, `XK_Up`, `XLookupString`, `XUngrabPointer`, `XWarpPointer`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_draw_solid`, `analogtv_draw_string`, `analogtv_font`, `analogtv_font_set_char`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_lcp_to_ntsc`, `analogtv_make_font`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `double_time`, `doubletime.h`, `key` | pixmaps | 1109 |
 | popsquares | 2d | L | - | `XQueryColor`, `make_color_ramp`, `rgb_to_hsv` | pixmaps | 310 |
 | qix | 2d | L | - | `CellsOfScreen`, `DefaultScreenOfDisplay`, `GCPlaneMask`, `GXxor`, `XGCValues.plane_mask`, `XQueryColor`, `XSetWindowBackground`, `allocate_alpha_colors`, `alpha.h`, `has_writable_cells`, `rgb_to_hsv` | - | 642 |
 | rdbomb | 2d | L | - | `DefaultScreenOfDisplay`, `XImage`, `XListPixmapFormats`, `XPixmapFormatValues`, `XSetWindowBackground`, `XShmSegmentInfo`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `error: expected ')'`, `error: expected function body after function declarator`, `error: expected parameter declarator`, `error: incompatible integer to pointer conversion passing 'int' to parameter of type 'void *' [-Wint-conversion]`, `error: subscripted value is not an array, pointer, or vector`, `has_writable_cells`, `pfv`, `put_xshm_image`, `visual_depth`, `xshm.h` | - | 571 |
@@ -423,9 +480,9 @@ needing few additions come first.
 | speedmine | 2d | L | - | `XQueryColor`, `error: too few arguments to function call, expected 2, have 1`, `make_color_ramp`, `rgb_to_hsv` | pixmaps, clipmask | 1659 |
 | spotlight | 2d | L | - | `async_load_state`, `error: too few arguments to function call, expected 2, have 1`, `load_image_async_simple` | pixmaps, clipmask | 355 |
 | starfish | 2d | L | - | `EvenOddRule`, `GCFillRule`, `XGCValues.fill_rule`, `XSetWindowBackground`, `compute_closed_spline`, `error: incompatible integer to pointer conversion assigning to 'int *' from 'int' [-Wint-conversion]`, `error: member reference base type 'int' is not a structure or union`, `error: type name does not allow function specifier to be specified`, `error: type specifier missing, defaults to 'int'; ISO C99 and later do not support implicit int [-Wimplicit-int]`, `make_spline`, `spline` | - | 564 |
-| strange | 2d | L | - | `GCGraphicsExposures`, `GET_PARENT_OBJ`, `MSBFirst`, `StaticColor`, `THREAD_OPTIONS`, `TrueColor`, `XGCValues.graphics_exposures`, `XImage`, `XPutPixel`, `XQueryColor`, `XQueryColors`, `XSetFunction`, `XSetGraphicsExposures`, `XShmSegmentInfo`, `ZPixmap`, `aligned_free`, `aligned_malloc`, `create_xshm_image`, `destroy_xshm_image`, `error: call to undeclared library function 'memset' with type 'void *(void *, int, unsigned long)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]`, `error: field has incomplete type 'struct threadpool'`, `error: incomplete definition of type 'struct threadpool'`, `error: invalid application of 'sizeof' to an incomplete type 'XrmOptionDescRec[]'`, `error: unexpected type name 'ATTRACTOR': expected expression`, `error: variable has incomplete type 'const struct threadpool_class'`, `hardware_concurrency`, `i_log2`, `pow2.h`, `put_xshm_image`, `thread_memory_alignment`, `thread_util.h`, `threadpool_create`, `threadpool_destroy`, `threadpool_run`, `threadpool_wait`, `visual_class`, `visual_pixmap_depth`, `visual_rgb_masks`, `xshm.h` | pixmaps, xor, needs-xlockmore | 1353 |
+| strange | 2d | L | - | `GCGraphicsExposures`, `GET_PARENT_OBJ`, `MSBFirst`, `StaticColor`, `THREAD_OPTIONS`, `TrueColor`, `XGCValues.graphics_exposures`, `XImage`, `XPutPixel`, `XQueryColor`, `XQueryColors`, `XSetFunction`, `XSetGraphicsExposures`, `XShmSegmentInfo`, `ZPixmap`, `aligned_free`, `aligned_malloc`, `create_xshm_image`, `destroy_xshm_image`, `error: field has incomplete type 'struct threadpool'`, `error: incomplete definition of type 'struct threadpool'`, `error: invalid application of 'sizeof' to an incomplete type 'XrmOptionDescRec[]'`, `error: unexpected type name 'ATTRACTOR': expected expression`, `error: variable has incomplete type 'const struct threadpool_class'`, `hardware_concurrency`, `i_log2`, `pow2.h`, `put_xshm_image`, `thread_memory_alignment`, `thread_util.h`, `threadpool_create`, `threadpool_destroy`, `threadpool_run`, `threadpool_wait`, `visual_class`, `visual_pixmap_depth`, `visual_rgb_masks`, `xshm.h` | pixmaps, xor, needs-xlockmore | 1353 |
 | swirl | 2d | L | - | `XCreateColormap`, `XFree`, `XFreeColormap`, `XImage`, `XInstallColormap`, `XPutPixel`, `XQueryColor`, `XSetWMColormapWindows`, `XSetWindowColormap`, `XShmSegmentInfo`, `XStoreColors`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `free_colors`, `make_smooth_colormap`, `put_xshm_image`, `rotate_colors`, `xshm.h` | needs-xlockmore | 1447 |
-| t3d | 2d | L | - | `BlackPixelOfScreen`, `Button1Mask`, `Button2Mask`, `Button3Mask`, `GXandInverted`, `GXor`, `KeyPress`, `KeySym`, `XAllocColorCells`, `XEvent.xkey`, `XGetImage`, `XLookupString`, `XPutImage`, `XQueryPointer`, `XStoreColors`, `error: too few arguments to function call, expected 2, have 1`, `keysym` | pixmaps, readback, float-heavy | 991 |
+| t3d | 2d | L | - | `BlackPixelOfScreen`, `Button1Mask`, `Button2Mask`, `Button3Mask`, `GXandInverted`, `GXor`, `KeyPress`, `KeySym`, `XAllocColorCells`, `XEvent.xkey`, `XGetImage`, `XLookupString`, `XPutImage`, `XStoreColors`, `error: too few arguments to function call, expected 2, have 1`, `keysym` | pixmaps, readback, float-heavy | 991 |
 | tessellimage | 2d | L | - | `ButtonRelease`, `ITRIANGLE`, `X11/keysymdef.h`, `XCreateImage`, `XDestroyImage`, `XEvent.xany`, `XGetImage`, `XGetPixel`, `XImage`, `XPutImage`, `XPutPixel`, `XQueryColor`, `XYZ`, `ZPixmap`, `async_load_state`, `delaunay`, `delaunay.h`, `delaunay_xyzcompare`, `dimg`, `double_time`, `doubletime.h`, `error: expected expression`, `img2`, `load_image_async_simple`, `p`, `tt`, `v`, `visual_rgb_masks` | pixmaps, readback | 996 |
 | testx11 | 2d | L | - | `BlackPixelOfScreen`, `GCFont`, `GXxor`, `KeyPress`, `KeySym`, `XClearArea`, `XCreatePixmapFromBitmapData`, `XDestroyImage`, `XDrawString`, `XEvent.x`, `XEvent.xany`, `XEvent.xkey`, `XEvent.y`, `XGCValues.font`, `XGetImage`, `XImage`, `XLoadFont`, `XLookupString`, `XPutImage`, `XPutPixel`, `XSetWindowBackground`, `ZPixmap`, `colorbars.h`, `draw_colorbars`, `error: expected ')'`, `error: expected function body after function declarator`, `error: expected parameter declarator`, `get_position`, `get_rotation`, `glx/rotator.h`, `image`, `keysym`, `make_color_loop`, `make_rotator`, `rotator`, `visual_depth` | pixmaps, readback, text, clipmask | 968 |
 | twang | 2d | L | - | `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XPutPixel`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `load_image_async_simple`, `put_xshm_image`, `xshm.h` | pixmaps, readback | 791 |
@@ -534,9 +591,9 @@ needing few additions come first.
 | nakagin | gl | XL | - | - | needs-xlockmore | 1636 |
 | noof | gl | XL | - | - | needs-xlockmore | 530 |
 | papercube | gl | XL | - | - | needs-xlockmore | 1111 |
-| peepers | gl | XL | - | `XChangeProperty`, `XDestroyImage`, `XInternAtom`, `XQueryPointer` | float-heavy, needs-xlockmore | 1470 |
+| peepers | gl | XL | - | `XChangeProperty`, `XDestroyImage`, `XInternAtom` | float-heavy, needs-xlockmore | 1470 |
 | photopile | gl | XL | - | - | needs-xlockmore | 869 |
-| pinion | gl | XL | - | `XLookupString`, `XQueryPointer` | needs-xlockmore | 1497 |
+| pinion | gl | XL | - | `XLookupString` | needs-xlockmore | 1497 |
 | pipes | gl | XL | - | - | needs-xlockmore | 1208 |
 | platonicfolding | gl | XL | - | `XDestroyImage` | needs-xlockmore | 3465 |
 | polyhedra-gl | gl | XL | - | `XLookupString` | needs-xlockmore | 687 |
@@ -577,7 +634,7 @@ needing few additions come first.
 | voronoi | gl | XL | - | - | needs-xlockmore | 543 |
 | winduprobot | gl | XL | - | `XDestroyImage`, `XLookupString` | float-heavy, needs-xlockmore | 2505 |
 | worldpieces | gl | XL | - | `XDestroyImage` | float-heavy, needs-xlockmore | 2194 |
-| xshadertoy | gl | XL | - | `XFetchName`, `XQueryPointer`, `XStoreName` | needs-xlockmore | 1192 |
+| xshadertoy | gl | XL | - | `XFetchName`, `XStoreName` | needs-xlockmore | 1192 |
 | blaster | 2d | - | ✅ | - | - | 1208 |
 | cloudlife | 2d | - | ✅ | - | - | 440 |
 | coral | 2d | - | ✅ | - | - | 328 |
@@ -605,6 +662,7 @@ needing few additions come first.
 | vines | 2d | - | ✅ | - | needs-xlockmore | 190 |
 | whirlwindwarp | 2d | - | ✅ | - | - | 509 |
 | xspirograph | 2d | - | ✅ | - | - | 338 |
+| pacman | 2d | - | ✅ | `BLUE`, `GHOSTS`, `GHOST_DANGER`, `JAILHEIGHT`, `LEVHEIGHT`, `LEVWIDTH`, `MAXGDIR`, `MAXGFLASH`, `MAXGWAG`, `MAXMOUTH`, `MINGRIDSIZE`, `MINSIZE`, `NOWHERE`, `NUM_BONUS_DOTS`, `PAC_DEATH_FRAMES`, `START`, `XDrawString`, `XLoadQueryFont`, `chasing`, `error: expected expression`, `error: invalid application of 'sizeof' to an incomplete type 'argtype[]'`, `ghoststruct`, `goingin`, `goingout`, `hiding`, `images/gen/pacman_png.h`, `inbox`, `pacman.h`, `pacman_ai.h`, `pacman_bonus_dot_eaten`, `pacman_bonus_dot_pos`, `pacman_createnewlevel`, `pacman_eat_bonus_dot`, `pacman_ghost_update`, `pacman_is_bonus_dot`, `pacman_level.h`, `pacman_png`, `pacman_trackmouse`, `pacman_update`, `pacmangamestruct`, `pp`, `ps_chasing`, `ps_dieing`, `ps_eating` | pixmaps, text, clipmask, needs-xlockmore | 1479 |
 
 ## Excluded files
 
