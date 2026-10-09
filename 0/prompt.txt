@@ -1,0 +1,1 @@
+Lovely stuff. The flicker's gone, the text is clear and legible. The screen tapping works.  Open the PR!
