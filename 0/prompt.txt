@@ -1,0 +1,1 @@
+1. Yes.  2. No visible clipping since I think there's plenty of padding around each letter. 3. Outline is fine because there isn't any actual clipping.
