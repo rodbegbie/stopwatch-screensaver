@@ -98,10 +98,8 @@ def test_nothing_outside_the_function_changes():
     src = _real_ai()
     out = pp.patch_pacman_ai(src)
     head = src[: src.index("static int\nrecur_back_track (")]
-    tail = src[src.index("static void\nfind_home")]
     assert out.startswith(head)
     assert out.endswith(src[src.index("static void\nfind_home") :])
-    assert tail
 
 
 def test_a_missing_function_is_an_error():

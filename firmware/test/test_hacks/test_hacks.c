@@ -364,7 +364,9 @@ void test_maze_frame_matches_main(void) {
 }
 
 /* Pacman restarts its level after the last dot is eaten or the third death,
- * several times in 60,000 frames (checked by watching the dots come back). */
+ * several times in 60,000 frames (checked by watching the dots come back).
+ * Growth measured over five seeds is exactly 0, so 512 bytes is slack, and a
+ * leaked 1.3 KB level copy per restart is caught. */
 void test_pacman_levels_do_not_leak(void) {
   const int pacman = index_of("Pacman");
   TEST_ASSERT_TRUE(pacman >= 0);
@@ -376,13 +378,18 @@ void test_pacman_levels_do_not_leak(void) {
   for (int f = 0; f < 60000; f++) runner_step(r);
   const size_t after = __sanitizer_get_current_allocated_bytes();
   runner_destroy(r);
-  TEST_ASSERT_TRUE_MESSAGE(after < before + 60 * 1024, "allocated bytes grew");
+  TEST_ASSERT_TRUE_MESSAGE(after < before + 512, "allocated bytes grew");
 }
 
 /* Runs Pacman on a thread whose stack was painted first, and reports how much
  * of it was touched. The board's loop task has 16 KB. `ulimit -s` cannot show
  * this: a level's depth depends on the random numbers drawn, and the first level
  * is a shallow one. */
+/* The probe reads how much of a painted stack was touched, so frames must be on
+ * it. AddressSanitizer's use-after-return detection (the default on Linux clang,
+ * off on macOS) moves them to a heap fake stack and the probe would under-report. */
+const char *__asan_default_options(void) { return "detect_stack_use_after_return=0"; }
+
 #define STACK_PROBE_BYTES (1024 * 1024)
 #define STACK_PAINT 0xA5
 static int probe_seed, probe_frames, probe_hack;
@@ -436,7 +443,8 @@ void test_pacman_stays_within_the_loop_task_stack(void) {
 }
 
 /* Pacman loads and scales its sprite sheet in init, so start and stop is where
- * pixmaps would leak. */
+ * pixmaps would leak. Growth over 40 restarts is measured at exactly 0, so 512
+ * bytes is slack, and a leaked GC per restart is caught. */
 void test_pacman_start_and_stop_do_not_leak(void) {
   const int pacman = index_of("Pacman");
   TEST_ASSERT_TRUE(pacman >= 0);
@@ -453,7 +461,7 @@ void test_pacman_start_and_stop_do_not_leak(void) {
   }
   const size_t after = __sanitizer_get_current_allocated_bytes();
   runner_destroy(r);
-  TEST_ASSERT_TRUE_MESSAGE(after < before + 64 * 1024, "allocated bytes grew");
+  TEST_ASSERT_TRUE_MESSAGE(after < before + 512, "allocated bytes grew");
 }
 
 /* Pacman's ghosts find their way home with a depth-first search (find_home)

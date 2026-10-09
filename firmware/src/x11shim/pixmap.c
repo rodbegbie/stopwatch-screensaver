@@ -237,12 +237,15 @@ static void copy_region(Display *dpy, GC gc, const struct XshimPixmap *src,
 }
 
 /* To the canvas, the source must be a colour pixmap. To a pixmap, source and
- * destination must have the same depth. Anything else draws nothing. */
+ * destination must have the same depth. Anything else draws nothing, including
+ * a destination of None: XCreatePixmap returns it when it cannot allocate, and
+ * a hack that carries on must not paint its sprites on the screen. */
 int XCopyArea(Display *dpy, Drawable src, Drawable dst, GC gc, int sx, int sy,
               unsigned int w, unsigned int h, int dx, int dy) {
   const struct XshimPixmap *pm = pixmap_of(src);
   struct XshimPixmap *target = pixmap_of(dst);
   if (!pm) return 0;
+  if (!target && dst != WINDOW_ID) return 0;
   if (target ? pm->depth == target->depth : pm->depth == 16)
     copy_region(dpy, gc, pm, target, sx, sy, w, h, dx, dy);
   return 0;
