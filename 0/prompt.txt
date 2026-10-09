@@ -1,0 +1,9 @@
+flash it plz.
+
+---
+
+Looks good to me -- since the device is connected and charging, it's showing 100%.  I'll test it later disconnected.  Open the PR thanks.
+
+---
+
+OK, I've approved the trail, so merge the PR.  And since we're working on overlays, let's look at issue #38
