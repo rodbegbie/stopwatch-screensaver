@@ -33,19 +33,22 @@ typedef struct XshimGC {
   unsigned long background;
   struct XshimPixmap *clip;
   int clip_x, clip_y;
+  int line_width, cap_style, join_style;
 } *GC;
 
 typedef struct XshimScreen Screen;
 typedef struct XshimVisual Visual;
 
-/* background, function and line_width are accepted but ignored here (set a
- * background with XSetBackground): drawing is always GXcopy with 1-pixel
- * lines. */
+/* function is accepted but ignored: drawing is always GXcopy. Lines honour
+ * line_width, cap_style and join_style (width 0 or 1 draws a plain
+ * one-pixel line). */
 typedef struct {
   unsigned long foreground;
   unsigned long background;
   int function;
   int line_width;
+  int cap_style;
+  int join_style;
 } XGCValues;
 
 typedef struct {
@@ -80,6 +83,10 @@ typedef struct {
   short angle1, angle2;
 } XArc;
 
+typedef struct {
+  short x1, y1, x2, y2;
+} XSegment;
+
 typedef union {
   int type;
   struct {
@@ -101,6 +108,18 @@ enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
 #define GCForeground (1L << 2)
 #define GCBackground (1L << 3)
 #define GCLineWidth (1L << 4)
+#define GCCapStyle (1L << 6)
+#define GCJoinStyle (1L << 7)
+#define LineSolid 0
+#define CapNotLast 0
+#define CapButt 1
+#define CapRound 2
+#define CapProjecting 3
+#define JoinMiter 0
+#define JoinRound 1
+#define JoinBevel 2
+#define Nonconvex 1
+#define Convex 2
 #define GXcopy 0x3
 #define ButtonPress 4
 #define Expose 12
@@ -130,8 +149,12 @@ void xshim_close_display(Display *dpy);
 GC XCreateGC(Display *, Drawable, unsigned long mask, XGCValues *);
 int XFreeGC(Display *, GC);
 int XSetForeground(Display *, GC, unsigned long pixel);
-/* Only GCForeground is honoured; the rest of the mask is ignored. */
+/* Honours GCForeground, GCLineWidth, GCCapStyle and GCJoinStyle; the rest of
+ * the mask is ignored (set a background with XSetBackground). */
 int XChangeGC(Display *, GC, unsigned long mask, XGCValues *);
+/* line_style is ignored: lines are always solid. */
+int XSetLineAttributes(Display *, GC, unsigned int width, int line_style,
+                       int cap_style, int join_style);
 Status XGetWindowAttributes(Display *, Window, XWindowAttributes *);
 int XClearWindow(Display *, Window);
 int XDrawPoint(Display *, Drawable, GC, int x, int y);
@@ -142,20 +165,30 @@ int XDrawLine(Display *, Drawable, GC, int x1, int y1, int x2, int y2);
 int XDrawRectangle(Display *, Drawable, GC, int x, int y, unsigned int w,
                    unsigned int h);
 int XDrawLines(Display *, Drawable, GC, XPoint *pts, int n, int mode);
+/* Each segment is drawn on its own, with the GC's caps and no joins. */
+int XDrawSegments(Display *, Drawable, GC, XSegment *segs, int n);
 int XFillRectangle(Display *, Drawable, GC, int x, int y, unsigned int w,
                    unsigned int h);
 int XFillRectangles(Display *, Drawable, GC, XRectangle *rects, int n);
-/* Only full ellipses (angle2 >= 360*64) are drawn; partial arcs are ignored. */
+/* Angles are in 64ths of a degree from three o'clock, counter-clockwise; a
+ * sweep of 360 degrees or more is a full ellipse. A partial arc fills as a pie
+ * slice. */
+int XDrawArc(Display *, Drawable, GC, int x, int y, unsigned int w,
+             unsigned int h, int angle1, int angle2);
+int XDrawArcs(Display *, Drawable, GC, XArc *arcs, int n);
 int XFillArc(Display *, Drawable, GC, int x, int y, unsigned int w,
              unsigned int h, int angle1, int angle2);
-/* Each arc goes through XFillArc, so the same full-ellipse limit applies. */
+/* Each arc goes through XFillArc. */
 int XFillArcs(Display *, Drawable, GC, XArc *arcs, int n);
 int XFillPolygon(Display *, Drawable, GC, XPoint *pts, int n, int shape,
                  int mode);
 
-/* Pixmaps are read-only sources for XCopyArea and XCopyPlane; the only way
- * to get one is image_data_to_pixmap (ximage-loader.h). Drawing into a pixmap
- * is not supported. A depth-1 pixmap is a bitmap, anything else is RGB565. */
+/* A pixmap is made by XCreatePixmap (zero filled; depth 1 is a bitmap, any
+ * other depth is RGB565) or image_data_to_pixmap (ximage-loader.h). The only
+ * thing that writes into one is XCopyArea: drawing primitives given a pixmap
+ * as their drawable still draw on the canvas. */
+Pixmap XCreatePixmap(Display *, Drawable, unsigned int w, unsigned int h,
+                     unsigned int depth);
 int XFreePixmap(Display *, Pixmap);
 /* Reports the canvas for the window and the pixmap's own size otherwise.
  * Returns 0 and writes nothing for a pixmap that does not exist. */
@@ -168,8 +201,10 @@ Status XGetGeometry(Display *, Drawable, Window *root, int *x, int *y,
 int XSetClipMask(Display *, GC, Pixmap mask);
 int XSetClipOrigin(Display *, GC, int x, int y);
 int XSetBackground(Display *, GC, unsigned long pixel);
-/* Source must be a colour pixmap and the destination the window. Honours the
- * clip mask. */
+/* To the window, the source must be a colour pixmap. To a pixmap, source and
+ * destination must have the same depth (colour to colour, bitmap to bitmap).
+ * Anything else draws nothing. Honours the clip mask, which is positioned in
+ * destination coordinates. */
 int XCopyArea(Display *, Drawable src, Drawable dst, GC, int src_x, int src_y,
               unsigned int w, unsigned int h, int dst_x, int dst_y);
 /* Source must be a depth-1 pixmap and plane 1: set bits are drawn in the

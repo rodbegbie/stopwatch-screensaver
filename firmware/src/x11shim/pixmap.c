@@ -143,45 +143,92 @@ static int clipped_out(const GC gc, int64_t x, int64_t y) {
 static int64_t min64(int64_t a, int64_t b) { return a < b ? a : b; }
 static int64_t max64(int64_t a, int64_t b) { return a > b ? a : b; }
 
-/* Walks only the part of the copy that lies inside both the source and the
- * canvas, so a huge width or height costs nothing. All sums are in 64 bits. */
-static void copy_pixels(Display *dpy, GC gc, const struct XshimPixmap *src,
-                        int sx, int sy, unsigned int w, unsigned int h, int dx,
-                        int dy) {
-  const Canvas *cv = dpy->canvas;
+/* The largest pixmap XCreatePixmap will make: 4 million pixels, which is 8 MB
+ * of RGB565, more than the board has. */
+#define MAX_PIXMAP_PIXELS 4000000ULL
+
+Pixmap XCreatePixmap(Display *dpy, Drawable d, unsigned int w, unsigned int h,
+                     unsigned int depth) {
+  (void)dpy, (void)d;
+  if (w == 0 || h == 0 || (uint64_t)w * h > MAX_PIXMAP_PIXELS) return None;
+  struct XshimPixmap *pm = pixmap_new((int)w, (int)h, depth == 1 ? 1 : 16);
+  if (!pm) return None;
+  if (pm->bits)
+    memset(pm->bits, 0, (size_t)pm->stride * (size_t)pm->h);
+  else
+    memset(pm->rgb, 0, (size_t)pm->w * (size_t)pm->h * sizeof(uint16_t));
+  return (Pixmap)(uintptr_t)pm;
+}
+
+static void set_bit(struct XshimPixmap *pm, int x, int y, int on) {
+  uint8_t *byte = &pm->bits[y * pm->stride + x / 8];
+  const uint8_t mask = (uint8_t)(0x80 >> (x % 8));
+  *byte = on ? (uint8_t)(*byte | mask) : (uint8_t)(*byte & ~mask);
+}
+
+/* Copies the part of the rectangle that lies inside both the source and the
+ * destination (a pixmap, or the canvas when dst is NULL), so a huge width or
+ * height costs nothing. All sums are in 64 bits. Between a colour source and a
+ * colour destination, or two bitmaps, pixels are copied as they are; a bitmap
+ * drawn on the canvas uses the GC's foreground and background. When source and
+ * destination are the same pixmap and overlap, rows and columns are walked in
+ * the order that reads each pixel before it is overwritten. */
+static void copy_region(Display *dpy, GC gc, const struct XshimPixmap *src,
+                        struct XshimPixmap *dst, int sx, int sy,
+                        unsigned int w, unsigned int h, int dx, int dy) {
+  const int64_t dw = dst ? dst->w : dpy->canvas->w;
+  const int64_t dh = dst ? dst->h : dpy->canvas->h;
   const int64_t i0 = max64(0, max64(-(int64_t)sx, -(int64_t)dx));
-  const int64_t i1 = min64(w, min64((int64_t)src->w - sx, (int64_t)cv->w - dx));
+  const int64_t i1 = min64(w, min64((int64_t)src->w - sx, dw - dx));
   const int64_t j0 = max64(0, max64(-(int64_t)sy, -(int64_t)dy));
-  const int64_t j1 = min64(h, min64((int64_t)src->h - sy, (int64_t)cv->h - dy));
-  for (int64_t j = j0; j < j1; j++) {
-    for (int64_t i = i0; i < i1; i++) {
+  const int64_t j1 = min64(h, min64((int64_t)src->h - sy, dh - dy));
+  const int same = dst == src;
+  const int reverse_x = same && dx > sx, reverse_y = same && dy > sy;
+  for (int64_t jj = 0; jj < j1 - j0; jj++) {
+    const int64_t j = reverse_y ? j1 - 1 - jj : j0 + jj;
+    for (int64_t ii = 0; ii < i1 - i0; ii++) {
+      const int64_t i = reverse_x ? i1 - 1 - ii : i0 + ii;
       const int64_t x = dx + i, y = dy + j;
       if (clipped_out(gc, x, y)) continue;
       const int64_t px = sx + i, py = sy + j;
-      const uint16_t colour =
-          src->depth == 1
-              ? (uint16_t)(bit_at(src, (int)px, (int)py) ? gc->foreground : gc->background)
-              : src->rgb[py * src->w + px];
-      canvas_point(dpy->canvas, (int)x, (int)y, colour);
+      if (src->depth == 1) {
+        const int bit = bit_at(src, (int)px, (int)py);
+        if (!dst)
+          canvas_point(dpy->canvas, (int)x, (int)y,
+                       (uint16_t)(bit ? gc->foreground : gc->background));
+        else
+          set_bit(dst, (int)x, (int)y, bit);
+      } else {
+        const uint16_t colour = src->rgb[py * src->w + px];
+        if (!dst)
+          canvas_point(dpy->canvas, (int)x, (int)y, colour);
+        else
+          dst->rgb[y * dst->w + x] = colour;
+      }
     }
   }
 }
 
+/* To the canvas, the source must be a colour pixmap. To a pixmap, source and
+ * destination must have the same depth. Anything else draws nothing. */
 int XCopyArea(Display *dpy, Drawable src, Drawable dst, GC gc, int sx, int sy,
               unsigned int w, unsigned int h, int dx, int dy) {
-  (void)dst;
   const struct XshimPixmap *pm = pixmap_of(src);
-  if (pm && pm->depth == 16) copy_pixels(dpy, gc, pm, sx, sy, w, h, dx, dy);
+  struct XshimPixmap *target = pixmap_of(dst);
+  if (!pm) return 0;
+  if (target ? pm->depth == target->depth : pm->depth == 16)
+    copy_region(dpy, gc, pm, target, sx, sy, w, h, dx, dy);
   return 0;
 }
 
+/* Always draws on the canvas, whatever dst is. */
 int XCopyPlane(Display *dpy, Drawable src, Drawable dst, GC gc, int sx,
                int sy, unsigned int w, unsigned int h, int dx, int dy,
                unsigned long plane) {
   (void)dst;
   const struct XshimPixmap *pm = pixmap_of(src);
   if (pm && pm->depth == 1 && plane == 1)
-    copy_pixels(dpy, gc, pm, sx, sy, w, h, dx, dy);
+    copy_region(dpy, gc, pm, NULL, sx, sy, w, h, dx, dy);
   return 0;
 }
 

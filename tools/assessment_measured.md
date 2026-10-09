@@ -240,3 +240,30 @@ with insertion sort then cost 2.6 million steps per picture on average and
 21.6 million on the worst, which took about 4-5 seconds on the device; with
 `qsort` above 16 crossings the step means are 126-519 ms. Pedal remains the
 second most expensive hack to draw after Flame.
+
+## Wide lines, arcs and pixmaps
+
+The shim now honours `line_width`, cap and join styles, draws `XDrawArc` and
+partial `XFillArc`, and lets `XCopyArea` write into pixmaps made by
+`XCreatePixmap`. Width 0 and 1 keep the old line code.
+
+No registered hack draws a wide line here. A survey over 200 frames of each
+found a largest width of 1 (XSpirograph and Blaster; their Retina branches do
+not run), and Maze's width-2 call sits under `HAVE_JWXYZ`, which is not
+defined. So nothing the device runs today uses the new code, and the checks
+were that nothing else changed:
+
+- Frame hashes of 26 of the 27 hacks (every one but Coral, which reads the
+  clock) are identical before and after, taken at four points over 200 frames.
+  Maze, Pyro, Hopalong, Galaxy, Blaster and Substrate also dumped identical
+  raw frames.
+- On the device, Maze pinned with the rotation off for 75 seconds on each
+  build, plain `main` and this branch: 11 five-second windows each, with the
+  same medians for fps (24.4), push (1.1 ms) and rows (32), and step medians of
+  0.30 and 0.40 ms. The two captures started at different points in Maze's
+  cycle, so single windows differ and the 0.1 ms is within the resolution of
+  the log. No reboot, panic or stack canary appeared.
+- Not measured: the new code on the device. Wide lines, arcs and the pixmap
+  copy are covered by host tests only. Blaster, which fills arcs, was not
+  re-measured on the device after the change. Pacman is the first port that
+  needs them.
