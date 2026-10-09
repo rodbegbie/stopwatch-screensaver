@@ -16,6 +16,15 @@ extern "C" {
  * keeps a 9.6 KB array of rectangles on the stack. */
 SET_LOOP_TASK_STACK_SIZE(16 * 1024);
 
+#ifdef TGL_SPIKE
+extern "C" void spike_log(const char *msg) {
+  Serial.printf("%s stack_free_min=%u heap=%u psram=%u\n", msg,
+                (unsigned)uxTaskGetStackHighWaterMark(nullptr),
+                (unsigned)ESP.getFreeHeap(),
+                (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+}
+#endif
+
 static const int kSize = 466;
 static const uint32_t kSliceUs = 10000;
 /* Build with -DSTART_HACK=\"galaxy\" (see AGENTS.md) to always start on one

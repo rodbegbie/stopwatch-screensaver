@@ -45,6 +45,9 @@ XLOCKMORE_HACK(mountain, "Mountain");
 extern const HackEntry substrate_hack;
 extern const HackEntry epicycle_hack;
 extern const HackEntry kaleidescope_hack;
+#ifdef TGL_SPIKE
+extern const HackEntry tglspike_hack;
+#endif
 
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
@@ -68,5 +71,10 @@ const HackEntry *const g_hacks[] = {
     &braid_hack,
     &mountain_hack,
     &epicycle_hack,
-    &kaleidescope_hack};
+    &kaleidescope_hack
+#ifdef TGL_SPIKE
+    ,
+    &tglspike_hack
+#endif
+};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);

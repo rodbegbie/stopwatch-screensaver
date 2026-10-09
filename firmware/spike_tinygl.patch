@@ -1,0 +1,465 @@
+diff --git a/include/zfeatures.h b/include/zfeatures.h
+index aa7a14c..8d46896 100644
+--- a/include/zfeatures.h
++++ b/include/zfeatures.h
+@@ -19,7 +19,7 @@ it's in the GL spec that this should occur.
+ Swap between using the inline'd malloc(), calloc(), and free() in zbuffer.h, or
+ a replacement gl_malloc(), gl_zalloc(), and gl_free() in memory.c
+ */
+-#define TGL_FEATURE_CUSTOM_MALLOC 0
++#define TGL_FEATURE_CUSTOM_MALLOC 1
+ 
+ /*
+ Use Fast Inverse Square Root. Toggleable because it's actually slower on some platforms,
+@@ -113,8 +113,8 @@ Optimization hint- cost of branching.
+ #endif
+ 
+ 
+-#define TGL_FEATURE_16_BITS        0
+-#define TGL_FEATURE_32_BITS        1
++#define TGL_FEATURE_16_BITS        1
++#define TGL_FEATURE_32_BITS        0
+ 
+ #if TGL_FEATURE_32_BITS == 1
+ #define TGL_FEATURE_RENDER_BITS    32
+diff --git a/src/clip.c b/src/clip.c
+index c00429b..2168ec5 100644
+--- a/src/clip.c
++++ b/src/clip.c
+@@ -14,7 +14,7 @@ static void gl_transform_to_viewport_clip_c(GLVertex* v) { /* MARK: NOT_INLINED_
+ 	GLContext* c = gl_get_context();
+ 	/* coordinates */
+ 	{
+-		GLfloat winv = 1.0 / v->pc.W;
++		GLfloat winv = 1.0f / v->pc.W;
+ 		v->zp.x = (GLint)(v->pc.X * winv * c->viewport.scale.X + c->viewport.trans.X);
+ 		v->zp.y = (GLint)(v->pc.Y * winv * c->viewport.scale.Y + c->viewport.trans.Y);
+ 		v->zp.z = (GLint)(v->pc.Z * winv * c->viewport.scale.Z + c->viewport.trans.Z);
+@@ -249,7 +249,7 @@ void gl_draw_triangle(GLVertex* p0, GLVertex* p1, GLVertex* p2) {
+ 		if (norm == 0) 
+ 			return;
+ 
+-		front = norm < 0.0;
++		front = norm < 0.0f;
+ 		front = front ^ c->current_front_face; 
+ 
+ 		/* back face culling */
+diff --git a/src/init.c b/src/init.c
+index a394759..22eb76c 100644
+--- a/src/init.c
++++ b/src/init.c
+@@ -99,21 +99,21 @@ static int TinyGLRuntimeCompatibilityTest() {
+ 		return 1;
+ #if TGL_FEATURE_FISR == 1
+ 	t = fastInvSqrt(37);
+-	tf2 = 1.0 / sqrt(37);
+-	if (TGL_FLOAT_ERR(t, tf2) > 0.05)
++	tf2 = 1.0f / sqrt(37);
++	if (TGL_FLOAT_ERR(t, tf2) > 0.05f)
+ 		return 1;
+ 	t = fastInvSqrt(59);
+-	tf2 = 1.0 / sqrt(59);
+-	if (TGL_FLOAT_ERR(t, tf2) > 0.05)
++	tf2 = 1.0f / sqrt(59);
++	if (TGL_FLOAT_ERR(t, tf2) > 0.05f)
+ 		return 1;
+ 	t = fastInvSqrt(1023);
+-	tf2 = 1.0 / sqrt(1023);
+-	if (TGL_FLOAT_ERR(t, tf2) > 0.05)
++	tf2 = 1.0f / sqrt(1023);
++	if (TGL_FLOAT_ERR(t, tf2) > 0.05f)
+ 		return 1;
+ 
+ 	t = fastInvSqrt(10000);
+-	tf2 = 1.0 / sqrt(10000);
+-	if (TGL_FLOAT_ERR(t, tf2) > 0.05)
++	tf2 = 1.0f / sqrt(10000);
++	if (TGL_FLOAT_ERR(t, tf2) > 0.05f)
+ 		return 1;
+ #endif
+ 	{
+@@ -216,7 +216,7 @@ void glInit(void* zbuffer1) {
+ 		l->enabled = 0;
+ 	}
+ 	c->first_light = NULL;
+-	c->ambient_light_model = gl_V4_New(0.2, 0.2, 0.2, 1);
++	c->ambient_light_model = gl_V4_New(0.2f, 0.2f, 0.2f, 1);
+ 	c->local_light_model = 0;
+ 	c->lighting_enabled = 0;
+ 	c->light_model_two_side = 0;
+@@ -225,8 +225,8 @@ void glInit(void* zbuffer1) {
+ 	for (i = 0; i < 2; i++) {
+ 		GLMaterial* m = &c->materials[i];
+ 		m->emission = gl_V4_New(0, 0, 0, 1);
+-		m->ambient = gl_V4_New(0.2, 0.2, 0.2, 1);
+-		m->diffuse = gl_V4_New(0.8, 0.8, 0.8, 1);
++		m->ambient = gl_V4_New(0.2f, 0.2f, 0.2f, 1);
++		m->diffuse = gl_V4_New(0.8f, 0.8f, 0.8f, 1);
+ 		m->specular = gl_V4_New(0, 0, 0, 1);
+ 		m->shininess = 0;
+ 	}
+@@ -245,15 +245,15 @@ void glInit(void* zbuffer1) {
+ 	c->zb->blendeq = GL_FUNC_ADD;
+ 
+ 	/* default state */
+-	c->current_color.X = 1.0;
+-	c->current_color.Y = 1.0;
+-	c->current_color.Z = 1.0;
+-	c->current_color.W = 0.0;
+-
+-	c->current_normal.X = 1.0;
+-	c->current_normal.Y = 0.0;
+-	c->current_normal.Z = 0.0;
+-	c->current_normal.W = 0.0;
++	c->current_color.X = 1.0f;
++	c->current_color.Y = 1.0f;
++	c->current_color.Z = 1.0f;
++	c->current_color.W = 0.0f;
++
++	c->current_normal.X = 1.0f;
++	c->current_normal.Y = 0.0f;
++	c->current_normal.Z = 0.0f;
++	c->current_normal.W = 0.0f;
+ 
+ 	c->current_edge_flag = 1;
+ 
+diff --git a/src/light.c b/src/light.c
+index b1524e1..43dd28d 100644
+--- a/src/light.c
++++ b/src/light.c
+@@ -147,7 +147,7 @@ void glopLight(GLParam* p) {
+ 
+ 		l->spot_cutoff = a;
+ 		if (a != 180)
+-			l->cos_spot_cutoff = cos(a * M_PI / 180.0);
++			l->cos_spot_cutoff = cos(a * M_PI / 180.0f);
+ 	} break;
+ 	case GL_CONSTANT_ATTENUATION:
+ 		l->attenuation[0] = v.v[0];
+@@ -333,7 +333,7 @@ void gl_shade_vertex(GLVertex* v) {
+ 					
+ 					s.X = d.X; 
+ 					s.Y = d.Y; 
+-					s.Z = d.Z - 1.0;
++					s.Z = d.Z - 1.0f;
+ 				}
+ 				
+ 				dot_spec = n.X * s.X + n.Y * s.Y + n.Z * s.Z;
+diff --git a/src/matrix.c b/src/matrix.c
+index 6234352..58fd3a5 100644
+--- a/src/matrix.c
++++ b/src/matrix.c
+@@ -122,7 +122,7 @@ void glopRotate(GLParam* p) {
+ 	GLfloat angle;
+ 	GLint dir_code;
+ 
+-	angle = p[1].f * M_PI / 180.0;
++	angle = p[1].f * M_PI / 180.0f;
+ 	u[0] = p[2].f;
+ 	u[1] = p[3].f;
+ 	u[2] = p[4].f;
+@@ -243,12 +243,12 @@ void glopFrustum(GLParam* p) {
+ 	GLfloat farp = p[6].f;
+ 	GLfloat x, y, A, B, C, D;
+ 
+-	x = (2.0 * near) / (right - left);
+-	y = (2.0 * near) / (top - bottom);
++	x = (2.0f * near) / (right - left);
++	y = (2.0f * near) / (top - bottom);
+ 	A = (right + left) / (right - left);
+ 	B = (top + bottom) / (top - bottom);
+ 	C = -(farp + near) / (farp - near);
+-	D = -(2.0 * farp * near) / (farp - near);
++	D = -(2.0f * farp * near) / (farp - near);
+ 
+ 	r = &m.m[0][0];
+ 	r[0] = x;
+diff --git a/src/memory.c b/src/memory.c
+index 7cf44c5..5533e21 100644
+--- a/src/memory.c
++++ b/src/memory.c
+@@ -1,20 +1,41 @@
+ /*
+- * Memory allocator for TinyGL
++ * Spike allocator: allocations of 2 KB or more go to PSRAM on the device.
++ * The z-buffer and display lists are the big ones; the small context state
++ * stays in fast internal RAM.
+  */
+ 
++#include "zgl.h"
++
+ static inline void required_for_compilation_(){
+ 	return;
+ }
+ 
+ #if TGL_FEATURE_CUSTOM_MALLOC == 1
+-#include "zgl.h"
++#include <string.h>
++#ifdef ESP_PLATFORM
++#include <esp_heap_caps.h>
++#endif
+ 
+-/* modify these functions so that they suit your needs */
++long spike_psram_bytes = 0;
++long spike_internal_bytes = 0;
+ 
+-#include <string.h>
+ void gl_free(void* p) { free(p); }
+ 
+-void* gl_malloc(GLint size) { return malloc(size); }
++void* gl_malloc(GLint size) {
++#ifdef ESP_PLATFORM
++	if (size >= 192) {
++		void* p = heap_caps_malloc(size, MALLOC_CAP_SPIRAM);
++		if (p) spike_psram_bytes += size;
++		return p;
++	}
++#endif
++	spike_internal_bytes += size;
++	return malloc(size);
++}
+ 
+-void* gl_zalloc(GLint size) { return calloc(1, size); }
++void* gl_zalloc(GLint size) {
++	void* p = gl_malloc(size);
++	if (p) memset(p, 0, size);
++	return p;
++}
+ #endif
+diff --git a/src/spike_single.h b/src/spike_single.h
+new file mode 100644
+index 0000000..9bade55
+--- /dev/null
++++ b/src/spike_single.h
+@@ -0,0 +1,11 @@
++#ifndef SPIKE_SINGLE_H
++#define SPIKE_SINGLE_H
++/* Spike: the S3's FPU is single-precision only, so double libm calls are
++ * software. Route TinyGL's calls to the float versions. */
++#include <math.h>
++#define sqrt sqrtf
++#define pow powf
++#define sin sinf
++#define cos cosf
++#define floor floorf
++#endif
+diff --git a/src/vertex.c b/src/vertex.c
+index 616715d..980c94f 100644
+--- a/src/vertex.c
++++ b/src/vertex.c
+@@ -75,7 +75,7 @@ void glopBegin(GLParam* p) {
+ 			gl_M4_Mul(&c->matrix_model_projection, c->matrix_stack_ptr[1], c->matrix_stack_ptr[0]);
+ 			/* test to accelerate computation */
+ 			c->matrix_model_projection_no_w_transform = 0;
+-			if (m[12] == 0.0 && m[13] == 0.0 && m[14] == 0.0)
++			if (m[12] == 0.0f && m[13] == 0.0f && m[14] == 0.0f)
+ 				/*
+ 				 if(c->matrix_model_projection.m[3][0] == 0.0 &&
+ 					c->matrix_model_projection.m[3][1] == 0.0 &&
+@@ -135,7 +135,7 @@ void glopBegin(GLParam* p) {
+ static void gl_transform_to_viewport_vertex_c(GLVertex* v) {
+ 	GLContext* c = gl_get_context();
+ 	{
+-		GLfloat winv = 1.0 / v->pc.W;
++		GLfloat winv = 1.0f / v->pc.W;
+ 		v->zp.x = (GLint)(v->pc.X * winv * c->viewport.scale.X + c->viewport.trans.X);
+ 		v->zp.y = (GLint)(v->pc.Y * winv * c->viewport.scale.Y + c->viewport.trans.Y);
+ 		v->zp.z = (GLint)(v->pc.Z * winv * c->viewport.scale.Z + c->viewport.trans.Z);
+diff --git a/src/zbuffer.c b/src/zbuffer.c
+index 6321340..659c757 100644
+--- a/src/zbuffer.c
++++ b/src/zbuffer.c
+@@ -313,7 +313,7 @@ void ZB_copyFrameBuffer(ZBuffer* zb, void* buf, GLint linesize) {
+ /*
+  * adr must be aligned on an 'int'
+  */
+-static void memset_s(void* adr, GLint val, GLint count) {
++static void tgl_memset_s(void* adr, GLint val, GLint count) {
+ 	GLint i, n, v;
+ 	GLuint* p;
+ 	GLushort* q;
+@@ -360,7 +360,7 @@ void ZB_clear(ZBuffer* zb, GLint clear_z, GLint z, GLint clear_color, GLint r, G
+ 	GLint y;
+ 	PIXEL* pp;
+ 	if (clear_z) {
+-		memset_s(zb->zbuf, z, zb->xsize * zb->ysize);
++		tgl_memset_s(zb->zbuf, z, zb->xsize * zb->ysize);
+ 	}
+ 	if (clear_color) {
+ 		pp = zb->pbuf;
+@@ -372,7 +372,7 @@ void ZB_clear(ZBuffer* zb, GLint clear_z, GLint z, GLint clear_color, GLint r, G
+ #else
+ 			color = RGB_TO_PIXEL(r, g, b);
+ #endif
+-			memset_s(pp, color, zb->xsize);
++			tgl_memset_s(pp, color, zb->xsize);
+ #elif TGL_FEATURE_RENDER_BITS == 32
+ #if TGL_FEATURE_FORCE_CLEAR_NO_COPY_COLOR
+ 			color = TGL_NO_COPY_COLOR;
+diff --git a/src/zgl.h b/src/zgl.h
+index 77cc70a..b17a009 100644
+--- a/src/zgl.h
++++ b/src/zgl.h
+@@ -8,11 +8,12 @@
+ #include "../include/zfeatures.h"
+ #include "zmath.h"
+ #include <math.h>
++#include "spike_single.h"
+ #include <stdlib.h>
+ 
+ #include <string.h>
+ #ifndef M_PI
+-#define M_PI 3.1415926535897932384626433832795
++#define M_PI 3.1415926535897932384626433832795f
+ #endif
+ 
+ 
+@@ -53,7 +54,7 @@ enum {
+ #define TEXCOORD_ARRAY 0x0008
+ 
+ #define MAX_DISPLAY_LISTS 16384
+-#define OP_BUFFER_MAX_SIZE 4096
++#define OP_BUFFER_MAX_SIZE 64
+ 
+ #define TGL_OFFSET_FILL 0x1
+ #define TGL_OFFSET_LINE 0x2
+@@ -372,7 +373,7 @@ void gl_add_feedback(GLfloat token, GLVertex* v1, GLVertex* v2, GLVertex* v3, GL
+ static GLint gl_clipcode(GLfloat x, GLfloat y, GLfloat z, GLfloat w1) {
+ 	GLfloat w;
+ 
+-	w = w1 * (1.0 + CLIP_EPSILON);
++	w = w1 * (1.0f + CLIP_EPSILON);
+ 	return (x < -w) | ((x > w) << 1) | ((y < -w) << 2) | ((y > w) << 3) | ((z < -w) << 4) | ((z > w) << 5);
+ }
+ 
+@@ -461,13 +462,13 @@ static void gl_eval_viewport() {
+ 
+ 	v = &c->viewport;
+ 
+-	v->trans.X = ((v->xsize - 0.5) / 2.0) + v->xmin;
+-	v->trans.Y = ((v->ysize - 0.5) / 2.0) + v->ymin;
+-	v->trans.Z = ((zsize - 0.5) / 2.0) + ((1 << ZB_POINT_Z_FRAC_BITS)) / 2;
++	v->trans.X = ((v->xsize - 0.5f) / 2.0f) + v->xmin;
++	v->trans.Y = ((v->ysize - 0.5f) / 2.0f) + v->ymin;
++	v->trans.Z = ((zsize - 0.5f) / 2.0f) + ((1 << ZB_POINT_Z_FRAC_BITS)) / 2;
+ 
+-	v->scale.X = (v->xsize - 0.5) / 2.0;
+-	v->scale.Y = -(v->ysize - 0.5) / 2.0;
+-	v->scale.Z = -((zsize - 0.5) / 2.0);
++	v->scale.X = (v->xsize - 0.5f) / 2.0f;
++	v->scale.Y = -(v->ysize - 0.5f) / 2.0f;
++	v->scale.Z = -((zsize - 0.5f) / 2.0f);
+ }
+ 
+ #endif /* _tgl_zgl_h_ */
+diff --git a/src/zmath.c b/src/zmath.c
+index fd4e938..8530cd7 100644
+--- a/src/zmath.c
++++ b/src/zmath.c
+@@ -60,7 +60,7 @@ void gl_M4_Mul(M4* c, M4* a, M4* b) {
+ #endif
+ 	for (i = 0; i < 4; i++)
+ 		for (j = 0; j < 4; j++) {
+-			s = 0.0;
++			s = 0.0f;
+ 			for (k = 0; k < 4; k++)
+ 				s += a->m[i][k] * b->m[k][j];
+ 			c->m[i][j] = s;
+@@ -81,7 +81,7 @@ void gl_M4_MulLeft(M4* c, M4* b) {
+ #endif
+ 	for (i = 0; i < 4; i++)
+ 		for (j = 0; j < 4; j++) {
+-			s = 0.0;
++			s = 0.0f;
+ 			for (k = 0; k < 4; k++)
+ 				s += a.m[i][k] * b->m[k][j];
+ 			c->m[i][j] = s;
+@@ -148,10 +148,10 @@ void gl_M4_InvOrtho(M4* a, M4 b) {
+ 	for (i = 0; i < 3; i++)
+ 		for (j = 0; j < 3; j++)
+ 			a->m[i][j] = b.m[j][i];
+-	a->m[3][0] = 0.0;
+-	a->m[3][1] = 0.0;
+-	a->m[3][2] = 0.0;
+-	a->m[3][3] = 1.0;
++	a->m[3][0] = 0.0f;
++	a->m[3][1] = 0.0f;
++	a->m[3][2] = 0.0f;
++	a->m[3][3] = 1.0f;
+ 
+ 	for (i = 0; i < 3; i++) {
+ 		s = 0;
+diff --git a/src/zmath.h b/src/zmath.h
+index b660e43..c9850e6 100644
+--- a/src/zmath.h
++++ b/src/zmath.h
+@@ -3,8 +3,9 @@
+ #include "../include/GL/gl.h"
+ #include "../include/zfeatures.h"
+ #include <math.h>
++#include "spike_single.h"
+ #include <stdlib.h>
+-#include <string.h> 
++#include <string.h>
+ /* Matrix & Vertex */
+ 
+ typedef struct {
+@@ -77,7 +78,7 @@ static int gl_V3_Norm_Fast(V3* a) {
+ 	n = sqrt(a->X * a->X + a->Y * a->Y + a->Z * a->Z); 
+ 	if (n == 0)
+ 		return 1;
+-	n = 1.0 / n;
++	n = 1.0f / n;
+ #endif
+ 	a->X *= n;
+ 	a->Y *= n;
+diff --git a/src/zraster.c b/src/zraster.c
+index d19cfb2..3b8890d 100644
+--- a/src/zraster.c
++++ b/src/zraster.c
+@@ -49,7 +49,7 @@ void glopRasterPos(GLParam* p) {
+ 	gl_vertex_transform_raster(&v);
+ 	if (v.clip_code == 0) {
+ 		{
+-			GLfloat winv = 1.0 / v.pc.W;
++			GLfloat winv = 1.0f / v.pc.W;
+ 			v.zp.x = (GLint)(v.pc.X * winv * c->viewport.scale.X + c->viewport.trans.X);
+ 			v.zp.y = (GLint)(v.pc.Y * winv * c->viewport.scale.Y + c->viewport.trans.Y);
+ 			v.zp.z = (GLint)(v.pc.Z * winv * c->viewport.scale.Z + c->viewport.trans.Z);
+diff --git a/src/ztriangle.c b/src/ztriangle.c
+index 8e815a7..56f6ed8 100644
+--- a/src/ztriangle.c
++++ b/src/ztriangle.c
+@@ -275,7 +275,7 @@ void ZB_setTexture(ZBuffer* zb, PIXEL* texture) { zb->current_texture = texture;
+ 		GLfloat sz, tz, fzl, zinv;                                                                                                                             \
+ 		n = (x2 >> 16) - x1;                                                                                                                                   \
+ 		fzl = (GLfloat)z1;                                                                                                                                     \
+-		zinv = 1.0 / fzl;                                                                                                                                      \
++		zinv = 1.0f / fzl;                                                                                                                                      \
+ 		pp = (PIXEL*)((GLbyte*)pp1 + x1 * PSZB);                                                                                                               \
+ 		pz = pz1 + x1;                                                                                                                                         \
+ 		z = z1;                                                                                                                                                \
+@@ -293,7 +293,7 @@ void ZB_setTexture(ZBuffer* zb, PIXEL* texture) { zb->current_texture = texture;
+ 				dtdx = (GLint)((dtzdx - tt * fdzdx) * zinv);                                                                                                   \
+ 			}                                                                                                                                                  \
+ 			fzl += fndzdx;                                                                                                                                     \
+-			zinv = 1.0 / fzl;                                                                                                                                  \
++			zinv = 1.0f / fzl;                                                                                                                                  \
+ 			PUT_PIXEL(0); /*the_x++;*/                                                                                                                         \
+ 			PUT_PIXEL(1); /*the_x++;*/                                                                                                                         \
+ 			PUT_PIXEL(2); /*the_x++;*/                                                                                                                         \
+diff --git a/src/ztriangle.h b/src/ztriangle.h
+index fc90dfa..a43a607 100644
+--- a/src/ztriangle.h
++++ b/src/ztriangle.h
+@@ -82,8 +82,8 @@ Things to keep in mind:
+ 		return;
+ 	fz = 1.0 / fz; 
+ 	*/
+-	if (fz != 0.0)
+-		fz = 1.0 / fz;
++	if (fz != 0.0f)
++		fz = 1.0f / fz;
+ 	
+ 	fdx1 *= fz;
+ 	fdy1 *= fz;
