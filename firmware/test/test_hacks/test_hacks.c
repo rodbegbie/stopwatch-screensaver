@@ -113,6 +113,34 @@ static void idle_free(Display *dpy, Window w, void *closure) {
   (void)closure;
 }
 
+/* A hack that makes pixmaps and never frees them: Pacman's scale_pixmap
+ * overwrites the unscaled handle, and its free skips several. A real X server
+ * frees a client's resources when it disconnects; the runner reuses one display
+ * across hacks, so it must release what a stopped hack left behind. */
+static void *leaky_init(Display *dpy, Window w) {
+  XCreatePixmap(dpy, w, 100, 100, 16);
+  XCreatePixmap(dpy, w, 64, 64, 1);
+  return NULL;
+}
+
+void test_the_runner_releases_pixmaps_a_stopped_hack_left_behind(void) {
+  static const HackEntry leaky = {"Leaky", NULL, leaky_init, idle_draw, idle_free, NULL, NULL};
+  const HackEntry *const hacks[] = {&leaky};
+  HackRunner *r = runner_create_with(&cv, hacks, 1);
+  for (int i = 0; i < 3; i++) {
+    runner_start(r, 0);
+    runner_step(r);
+  }
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  for (int i = 0; i < 40; i++) {
+    runner_start(r, 0);
+    runner_step(r);
+  }
+  const size_t after = __sanitizer_get_current_allocated_bytes();
+  runner_destroy(r);
+  TEST_ASSERT_TRUE_MESSAGE(after < before + 4 * 1024, "pixmaps piled up across restarts");
+}
+
 /* Substrate starts on a white canvas, so "20 non-black pixels" was true before
  * it drew anything. A hack that never draws must not pass, whatever colour its
  * background is. */
@@ -404,6 +432,27 @@ void test_pacman_does_not_recurse_like_its_level_generator(void) {
   TEST_ASSERT_TRUE_MESSAGE(worst < 160 * 1024, "Pacman used 160 KB of stack or more");
 }
 
+/* Pacman loads and scales its sprite sheet in init, so start and stop is where
+ * pixmaps would leak. */
+void test_pacman_start_and_stop_do_not_leak(void) {
+  const int pacman = index_of("Pacman");
+  TEST_ASSERT_TRUE(pacman >= 0);
+  HackRunner *r = runner_create(&cv);
+  for (int i = 0; i < 3; i++) {
+    runner_start(r, pacman);
+    runner_step(r);
+  }
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  for (int i = 0; i < 40; i++) {
+    runner_start(r, pacman);
+    runner_step(r);
+    runner_step(r);
+  }
+  const size_t after = __sanitizer_get_current_allocated_bytes();
+  runner_destroy(r);
+  TEST_ASSERT_TRUE_MESSAGE(after < before + 64 * 1024, "allocated bytes grew");
+}
+
 void test_prev_from_first_wraps_to_last_hack(void) {
   HackRunner *r = runner_create(&cv);
   runner_start(r, 0);
@@ -418,6 +467,7 @@ int main(void) {
   RUN_TEST(test_every_hack_can_be_stopped_before_its_first_frame);
   RUN_TEST(test_a_hack_starts_on_the_background_colour_it_asks_for);
   RUN_TEST(test_a_hack_that_never_draws_on_white_is_not_drawing);
+  RUN_TEST(test_the_runner_releases_pixmaps_a_stopped_hack_left_behind);
   RUN_TEST(test_every_hack_draws_something_within_2000_frames);
   RUN_TEST(test_every_hack_runs_3000_frames_cleanly_with_sane_delays);
   RUN_TEST(test_cycling_through_all_hacks_100_times_is_asan_clean);
@@ -428,6 +478,7 @@ int main(void) {
   RUN_TEST(test_frames_of_every_hack_but_maze_match_main);
   RUN_TEST(test_maze_frame_matches_main);
   RUN_TEST(test_pacman_levels_do_not_leak);
+  RUN_TEST(test_pacman_start_and_stop_do_not_leak);
   RUN_TEST(test_pacman_does_not_recurse_like_its_level_generator);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
   return UNITY_END();
