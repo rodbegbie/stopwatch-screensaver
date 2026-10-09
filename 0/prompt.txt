@@ -1,0 +1,1 @@
+here's my thought: Let's try porting 2 low-band S hacks, and 2 high-band S hacks, and see how well the predictions hold up.  WDYT?
