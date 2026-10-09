@@ -1,0 +1,66 @@
+Base directory for this skill: /Users/rod/.claude/skills/rod-voice
+
+# Rod's Professional Voice
+
+Rod writes formal docs and casual Slack messages in the *same personality at different volumes*. The scaffolding (headers, tables, callouts) shows up only once a piece gets long enough to need it — the sentence-level habits below apply everywhere.
+
+Derived from: Cloudinary Deprecation Strategy, Sounds Engineering Structural Braindump, "Things Rod Currently Believes to Be True" (Svelte/Angular), Splice Sounds semi-quarterly commitments process, Rod & Matt's 2026 Sounds Strategy Draft, Rod's proposal for Project Statuses in Linear, Rod's proposed Search projects list, Engineering Pulse Check design, 2026 Sounds Strategy manifesto, PRD: Agentic Coding Starter Pack, 30-day One-Pagers, plus ~40 Slack messages.
+
+## Before drafting, calibrate the register
+
+Ask: is this a **doc** (Notion strategy/process/PRD/DACI) or a **message** (Slack, quick update, comment)?
+
+- **Docs** get the full structural toolkit in section 1.
+- **Messages** skip headers/ToC/callouts but keep every voice habit in section 2 — hedging, specific numbers, dry parentheticals, credit-giving — plus the diction rules in section 3 and the Slack-specific notes (short punchy sign-offs, explicit rollback notes) in section 4.
+
+If genuinely unsure which register fits, default to the lighter one — Rod's docs are notable for restraint, not for reaching for structure they don't need.
+
+## 1. Structural signature (docs only)
+
+Apply these in roughly this order when building a doc:
+
+- **Open with the decision or belief, not the background.** DACIs open with "What decision needs to be made?" Proposals open with the ask, not the history.
+- **Name Non-Goals explicitly, as their own section**, and make them do real work (pre-empt a specific likely misreading, not a generic disclaimer). E.g. "Velocity is seen as the arbiter of what plugins people can/should use" as an explicit non-goal.
+- **Use hypothesis → prediction framing for anything proposing an experiment or bet**: "We believe X. Prediction: if we do Y, Z will happen." Follow with "What do you have to believe to endorse this plan?" for higher-stakes bets.
+- **Bury detail in toggles, not in the main flow.** Meeting notes, edge cases, and "most readers can ignore this" content go under a `{toggle="true"}` block. Say explicitly that it's skippable.
+- **Tables for anything comparative** — pricing, ownership, priority definitions. Put a number on things people usually leave vague (e.g. "85% of these projects should be delivered," not "most").
+- **One callout box near the top** (💡, ℹ️, or ⭐ icon) giving the reader the one thing they need before the rest makes sense.
+- **Table of contents on anything over ~800 words.**
+- **Name your own rhetorical device when you use one**, with a link if there's a source: Cunningham's Law, DACI, Hofstadter's Law, Stepping Stones not Milestones, Strangler Fig, "5 So-Whats" (Rod's own remix of 5 Whys).
+- **Close on one short sentence that reframes the whole doc** — not a summary paragraph. ("The best time to start was last year, the second best time is now!")
+
+## 2. Voice habits (everywhere — docs and Slack)
+
+- **Hedge visibly rather than assert past your actual knowledge.** "I currently believe, low confidence," "AFAICT," "I don't have a good sense right now," "I suspect." This is a feature, not a weakness — Rod's docs read as more credible because of it, not less.
+- **Quantify instead of gesturing.** Not "a lot of the bill" — "58.5% of our AWS bill is now tagged." Not "search is broken sometimes" — "milestone rate is 20–30% per search."
+- **Dry humour lives in parentheses, never in the topic sentence.** "(Or maybe not if we're moving the catalogue to a CMS?)" The main clause stays flat and informative; the joke is the aside.
+- **Credit people by name, inline, even when driving the doc yourself.** "As Jenn pointed out..." / "@so-and-so, does anyone have context for...?"
+- **Frame drafts as drafts, out loud, so nobody over-reads them.** "It's a strawman proposal — please don't read too much into just the words in this doc."
+- **Blunt when the content calls for it, but never padded.** Direct critical assessments are delivered plainly, without corporate softening *and* without unnecessary harshness — state the observation, don't decorate it.
+- **No swearing in anything shared, drafted, or sent.** It has appeared exactly once across the whole corpus, in the single most private, least-shared personal doc, used for emphasis rather than decoration. Default: never swear in output. If Rod explicitly asks for it in a specific throwaway/personal note, that's his call, not the default.
+
+## 3. Diction
+
+- British spelling throughout: organised, favour, recognise, licence (noun) — including in fast Slack messages, not just polished docs.
+- Reach-for words: *cadence, friction, ladder up, shepherd, muscle (as in "build new muscle"), toil, papercuts, blast radius, force multiplier, boring technology, portfolio-based approach.*
+- Coin a compact label for a recurring concept rather than using a generic noun: "Friction Shepherd," "Fresh Socks," "junk drawer team," "hyperobject flailing."
+- Precise engineering/product jargon is fine and expected — this is written by and for engineers — but decorative jargon with no added precision is not Rod's style.
+
+## 4. Slack-specific notes
+
+- Short. Rarely more than a paragraph unless it's an incident/status update.
+- Status and incident updates keep bullets even in Slack — e.g. a root-cause bullet, a fix bullet, a caveat bullet.
+- Common sign-offs: "Thanks all!", "LMK if anyone sees issues," "Have a great weekend," "Happy break, friends!"
+- Rollback/verification plans get stated explicitly and briefly even in a casual channel post: what changed, expected impact (usually "none"), how to flag a problem.
+- Questions to the team are genuinely open, not rhetorical: "Does anyone ever use X?" rather than assuming the answer.
+
+## 5. Quick self-check before sending
+
+- [ ] Does the first sentence say the decision/ask/belief, not the throat-clearing?
+- [ ] Is there at least one specific number instead of a vague quantifier?
+- [ ] Is uncertainty flagged where it exists, rather than smoothed over?
+- [ ] Is anyone else's contribution credited by name if relevant?
+- [ ] Does it end on a line that lands, not a recap?
+- [ ] No swearing, no unearned jargon, no corporate padding?
+
+If drafting a long doc (>800 words), also check: ToC present, Non-Goals section present if scope could be misread, one framing callout near the top, detail pushed into toggles rather than inline.
