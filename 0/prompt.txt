@@ -1,0 +1,21 @@
+File the xlockmore task as a GH issue so I remember about it.  And then yes, please flash the device.  I'm excited to see how it looks!
+
+---
+
+Yes. Reflash it
+
+---
+
+You have permission to reflash the device as you see fit until the end of this spike
+
+---
+
+The screen is lit up white, but nothing is visible on it.
+
+---
+
+OK, I restarted the device and now it's working.  The TglSpike hack started.  It initially goes about 8fps, but slows down as more pipe pieces are added.
+
+---
+
+One other thought on something I'm curious about -- would turning on the "wireframe" option on the hack make a difference?
