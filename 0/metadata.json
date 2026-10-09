@@ -3,7 +3,7 @@
   "checkpoint_id": "01M4FFFDXSX682NGGKJYXMTMQD",
   "session_id": "33bf0604-36da-43a4-a036-2b72e12fa8bb",
   "strategy": "manual-commit",
-  "created_at": "2026-10-09T04:41:56.270401Z",
+  "created_at": "2026-10-09T04:42:08.006331Z",
   "branch": "feature/shim-thick-lines-arcs-pixmaps",
   "checkpoints_count": 15,
   "files_touched": [
@@ -12,22 +12,15 @@
   "agent": "Claude Code",
   "model": "claude-sonnet-5-5",
   "turn_id": "2dc6c31adc40",
-  "checkpoint_transcript_start": 125,
-  "transcript_lines_at_start": 125,
-  "compact_transcript_start": 14,
+  "checkpoint_transcript_start": 516,
+  "transcript_lines_at_start": 516,
+  "compact_transcript_start": 82,
   "token_usage": {
-    "input_tokens": 102,
-    "cache_creation_tokens": 85680,
-    "cache_read_tokens": 5856181,
-    "output_tokens": 26697,
-    "api_call_count": 46,
-    "subagent_tokens": {
-      "input_tokens": 66,
-      "cache_creation_tokens": 237435,
-      "cache_read_tokens": 1826191,
-      "output_tokens": 1623,
-      "api_call_count": 33
-    }
+    "input_tokens": 6,
+    "cache_creation_tokens": 1271,
+    "cache_read_tokens": 512293,
+    "output_tokens": 734,
+    "api_call_count": 3
   },
   "skill_events_version": 1,
   "skill_events": [
@@ -182,32 +175,15 @@
     "turn_count": 15
   },
   "initial_attribution": {
-    "calculated_at": "2026-10-09T04:41:56.213268Z",
-    "agent_lines": 134,
-    "agent_removed": 0,
+    "calculated_at": "2026-10-09T04:42:07.982849Z",
+    "agent_lines": 3,
+    "agent_removed": 2,
     "human_added": 0,
     "human_modified": 0,
     "human_removed": 0,
-    "total_committed": 134,
-    "total_lines_changed": 134,
+    "total_committed": 3,
+    "total_lines_changed": 5,
     "agent_percentage": 100,
     "metric_version": 2
-  },
-  "prompt_attributions": [
-    {
-      "checkpoint_number": 1,
-      "user_lines_added": 63,
-      "user_lines_removed": 0,
-      "agent_lines_added": 0,
-      "agent_lines_removed": 0,
-      "user_added_per_file": {
-        ".private-journal/2026-10-07/19-59-30-000000-79f41e20.md": 8,
-        ".private-journal/2026-10-07/22-51-53-000000-2f0b9ece.md": 8,
-        ".private-journal/2026-10-08/07-50-07-000000-0110d472.md": 8,
-        ".private-journal/2026-10-08/15-15-15-000000-4004028d.md": 19,
-        ".private-journal/2026-10-08/15-45-25-000000-61b97d2d.md": 8,
-        ".private-journal/2026-10-08/17-26-54-000000-98ba9899.md": 12
-      }
-    }
-  ]
+  }
 }
