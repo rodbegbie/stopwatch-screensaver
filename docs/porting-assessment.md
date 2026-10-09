@@ -31,11 +31,11 @@ it with `uv run tools/score_hacks.py`.
 
 | Rating | Meaning | Count |
 | --- | --- | --- |
-| S | 2D, and the unmodified source compiles against the shim | 21 |
+| S | 2D, and the unmodified source compiles against the shim | 18 |
 | M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 13 |
 | L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 80 |
 | XL | GL: needs a software rasteriser (see below) | 140 |
-| Ported | Already running on the device, so no rating | 29 |
+| Ported | Already running on the device, so no rating | 32 |
 
 ## Speed
 
@@ -55,14 +55,17 @@ shim fills them and its Speed is a dash.
 
 A ported hack shows the step measured on the device instead.
 
-The host time ranks the device step well (a Spearman correlation of 0.89 over
-the hacks measured, and all seven with a device step of 50 ms or more are in
-the high band) but it is not a prediction in milliseconds: the device took
-60 to 1,500 times as long. The ratio is highest for hacks that still do
-software double-precision maths, so a low band does not clear a hack that
-does a lot of `double` arithmetic. The bands were fitted to the same hacks, so
-those figures are in-sample. See [speed-backtest.md](speed-backtest.md) for
-the table and its limits.
+The host time ranks the device step well (a Spearman correlation of about 0.9
+over the 29 hacks the bands were fitted to, and all seven of those with a
+device step of 50 ms or more are in the high band) but it is not a prediction
+in milliseconds: the device took 60 to 1,500 times as long. The ratio is
+highest for hacks that still do software double-precision maths, so a low band
+does not clear a hack that does a lot of `double` arithmetic. Those figures
+are in-sample. Four hacks ported afterwards, with their predictions committed
+first, all fell where predicted: two low-band hacks under 1 ms, a high-band
+hack at 8 ms and a heavy one at 830 ms
+([speed-predictions.md](speed-predictions.md)). See
+[speed-backtest.md](speed-backtest.md) for the table and its limits.
 
 ## Flags
 
@@ -87,7 +90,7 @@ performance numbers exist yet, so this stays a separate future project.
 
 ## Measured on the device
 
-Twenty-nine hacks have been run so far (default settings, 466×466 canvas
+Thirty-three hacks have been run so far (default settings, 466×466 canvas
 pushed to the display every frame, canvas held in PSRAM). The firmware times
 each frame in three parts, averaged over 5 seconds: **step** is the hack's own
 draw call, **push** is sending the canvas to the display, and **wait** is what
@@ -127,6 +130,10 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Substrate | 12.4-20.6 | 2.9-43.9 ms | 41.1-44.4 ms | 0 ms | about 1.74 MB |
 | Pacman | 75.6-79.2 | 1.3-1.9 ms | 0.8-1.4 ms | 10.0-10.6 ms | about 580 KB |
 | Braid | 3.2-8.6 | 95-296 ms | 19.5-22.7 ms | 0 ms | none measurable |
+| Mountain | 44.0-45.2 | 0-0.4 ms | 0.1-0.4 ms | 21.9-22.1 ms | about 20 KB |
+| Epicycle | 22.8-44.0 | 0.3-2.1 ms | 0.3-0.8 ms | 22.0-59.5 ms | none measurable |
+| Kaleidescope | 27.8-34.4 | 7.0-9.8 ms | 17.7-25.5 ms | 0-3.7 ms | none measurable |
+| Celtic | 1.0-20.4 | 29-1025 ms | 0.1-5.5 ms | 7.9-928 ms | none measurable |
 
 Maze's row is 26 five-second readings over 160 seconds, taken on a build that
 includes the overlay stamping. Its steps are cheap, and its frame rate is set
@@ -438,6 +445,36 @@ bytes (326,220 before the disc table, which takes 1 KB of static memory). No
 stack canary, panic or reboot appeared in any capture. Not measured: runs over
 three minutes, and Braid's restart on the device beyond the three braids seen.
 
+## Four ports that test the Speed bands
+
+Mountain, Epicycle, Kaleidescope and Celtic were ported to test the host Speed
+bands, which were fitted to the first 29 hacks. Predictions were committed
+before any port (`docs/speed-predictions.md`, which also has the verdicts),
+and each was flashed unmodified, pinned with the rotation off, for 180 seconds
+(29-35 five-second windows, the first dropped).
+
+- **Mountain** (low band, 0.0005 ms on the host): step median 0.1 ms, 0-0.4,
+  paced by its own 20 ms delay at 44-45 fps; it idles at 0.0 ms between
+  pictures. It takes about 20 KB of PSRAM (7,404,051 free against 7,424,155).
+- **Epicycle** (low band, 0.0009 ms, 31 `double`s): step median 0.4 ms, 0.3-2.1,
+  with two of 34 windows over 1.4 ms (1.5 and 2.1 ms; the other 32 are 0.3-0.8
+  ms), probably the windows holding a restart. Free heap 327,220-327,612.
+- **Kaleidescope** (high band, 0.0695 ms): step median 8.3 ms, 7.0-9.8, at
+  27.8-34.4 fps with a 17.7-25.5 ms push. Free heap sat at 219,416-219,556 bytes,
+  about 105 KB below an idle build, with PSRAM untouched.
+- **Celtic** (high band, 1.12 ms, 42 `double`s, wide round-capped lines):
+  step median 832 ms, 29-1,025, at about 1.2 fps. Its `assert()` calls
+  `abort()` on a failed allocation, and a picture's memory depends on the
+  pattern: the first held about 300 KB of the 325 KB of free internal heap
+  (free heap read 25,684 bytes), the next two 232,436 and 247,516, and it
+  returned to 328,556 between pictures. Nothing aborted, but the first picture
+  left little margin. Three windows drew nothing (rows=0) yet took 844-1,025 ms
+  a step, so much of the cost is computing, not drawing. Rod took it out of
+  the rotation (issue #37); it is no longer in `g_hacks[]`.
+
+None showed a stack canary, panic or reboot, and free PSRAM was constant
+within each run (Mountain's 20 KB is its offset from the idle figure).
+
 ## Suggested order for shim stage 2
 
 Shim gaps across 2D hacks, ranked so gaps that block hacks
@@ -462,21 +499,18 @@ needing few additions come first.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | anemone | 2d | S | high (2 ms) | - | - | pixmaps | 458 |
 | anemotaxis | 2d | S | high (1.6 ms) | - | - | pixmaps | 760 |
-| celtic | 2d | S | high (1.2 ms) | - | - | - | 1141 |
+| celtic | 2d | S | high (1.2 ms) | ❌ | - | - | 1141 |
 | compass | 2d | S | high (1.7 ms) | - | - | pixmaps, float-heavy | 999 |
-| epicycle | 2d | S | low (0.0009 ms) | - | - | - | 803 |
 | euler2d | 2d | S | high (0.29 ms) | - | - | float-heavy, needs-xlockmore | 893 |
 | forest | 2d | S | high (0.15 ms) | - | - | needs-xlockmore | 241 |
 | fuzzyflakes | 2d | S | high (1.8 ms) | - | - | pixmaps | 655 |
-| grav | 2d | S | low (0.0039 ms) | - | - | needs-xlockmore | 360 |
+| grav | 2d | S | low (0.004 ms) | - | - | needs-xlockmore | 360 |
 | halftone | 2d | S | high (2.1 ms) | - | - | pixmaps | 413 |
 | ifs | 2d | S | high (0.35 ms) | - | - | pixmaps | 560 |
 | interaggregate | 2d | S | high (0.66 ms) | - | - | - | 989 |
-| kaleidescope | 2d | S | high (0.071 ms) | - | - | - | 514 |
 | laser | 2d | S | high (0.14 ms) | - | - | needs-xlockmore | 356 |
 | lissie | 2d | S | low (0.0042 ms) | - | - | needs-xlockmore | 323 |
 | lmorph | 2d | S | high (0.28 ms) | - | - | float-heavy | 580 |
-| mountain | 2d | S | low (0.0005 ms) | - | - | needs-xlockmore | 283 |
 | rotor | 2d | S | low (0.0011 ms) | - | - | needs-xlockmore | 394 |
 | scooter | 2d | S | high (0.18 ms) | - | - | needs-xlockmore | 975 |
 | truchet | 2d | S | high (3 ms) | - | - | pixmaps | 541 |
@@ -721,14 +755,17 @@ needing few additions come first.
 | critical | 2d | - | 0.7 ms measured | ✅ | - | - | 462 |
 | discrete | 2d | - | 149-160 ms measured | ✅ | - | needs-xlockmore | 442 |
 | drift | 2d | - | 11-13 ms measured | ✅ | - | needs-xlockmore | 674 |
+| epicycle | 2d | - | 0.3-2.1 ms measured | ✅ | - | - | 803 |
 | fadeplot | 2d | - | 2.9-3.2 ms measured | ✅ | - | needs-xlockmore | 243 |
 | flame | 2d | - | 26-107 ms measured | ✅ | - | - | 457 |
 | galaxy | 2d | - | 58-75 ms measured | ✅ | - | needs-xlockmore | 462 |
 | helix | 2d | - | 0.9-2.1 ms measured | ✅ | - | - | 358 |
 | hopalong | 2d | - | 7.3-20.1 ms measured | ✅ | - | needs-xlockmore | 563 |
 | hypercube | 2d | - | 2.7-2.9 ms measured | ✅ | - | - | 576 |
+| kaleidescope | 2d | - | 7-9.8 ms measured | ✅ | - | - | 514 |
 | lightning | 2d | - | 1.8-1.9 ms measured | ✅ | - | needs-xlockmore | 602 |
 | maze | 2d | - | 0.1-1.3 ms measured | ✅ | - | pixmaps, clipmask | 1681 |
+| mountain | 2d | - | 0-0.4 ms measured | ✅ | - | needs-xlockmore | 283 |
 | pedal | 2d | - | 126-519 ms measured | ✅ | - | - | 339 |
 | petri | 2d | - | 0.3-2.5 ms measured | ✅ | - | - | 780 |
 | pyro | 2d | - | 0.8-1.1 ms measured | ✅ | - | - | 373 |
@@ -743,6 +780,10 @@ needing few additions come first.
 | whirlwindwarp | 2d | - | 6.2-26.4 ms measured | ✅ | - | - | 509 |
 | xspirograph | 2d | - | 54-56 ms measured | ✅ | - | - | 338 |
 | pacman | 2d | - | 1.3-1.9 ms measured | ✅ | `BLUE`, `GHOSTS`, `GHOST_DANGER`, `JAILHEIGHT`, `LEVHEIGHT`, `LEVWIDTH`, `MAXGDIR`, `MAXGFLASH`, `MAXGWAG`, `MAXMOUTH`, `MINGRIDSIZE`, `MINSIZE`, `NOWHERE`, `NUM_BONUS_DOTS`, `PAC_DEATH_FRAMES`, `START`, `XDrawString`, `XLoadQueryFont`, `chasing`, `error: expected expression`, `error: invalid application of 'sizeof' to an incomplete type 'argtype[]'`, `ghoststruct`, `goingin`, `goingout`, `hiding`, `images/gen/pacman_png.h`, `inbox`, `pacman.h`, `pacman_ai.h`, `pacman_bonus_dot_eaten`, `pacman_bonus_dot_pos`, `pacman_createnewlevel`, `pacman_eat_bonus_dot`, `pacman_ghost_update`, `pacman_is_bonus_dot`, `pacman_level.h`, `pacman_png`, `pacman_trackmouse`, `pacman_update`, `pacmangamestruct`, `pp`, `ps_chasing`, `ps_dieing`, `ps_eating` | pixmaps, text, clipmask, needs-xlockmore | 1479 |
+
+## Failed ports
+
+- **celtic**: shelved at 1.2 fps and 300 KB of heap, see issue #37
 
 ## Excluded files
 

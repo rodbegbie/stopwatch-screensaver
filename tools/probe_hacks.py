@@ -9,7 +9,7 @@ mode) and reads its mean milliseconds per step.
 A host time is not a device time: the device took between about 60 and 1,500
 times as long, depending on how much of the hack is software double-precision
 maths (see docs/speed-backtest.md). It ranks well, though: across the 29
-measured hacks it ranks the device step with a Spearman correlation of 0.89.
+measured hacks it ranks the device step with a Spearman correlation of about 0.9.
 """
 
 import re

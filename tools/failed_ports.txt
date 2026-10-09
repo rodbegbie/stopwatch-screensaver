@@ -1,3 +1,7 @@
 # Hacks that were attempted and given up on, one per line as `name: reason`.
 # score_hacks.py marks them with a cross in the Ported column and lists the
-# reasons in a "Failed ports" section. Nothing has failed so far.
+# reasons in a "Failed ports" section, so keep each reason short. A hack here
+# may still have its source in firmware/src/hacks/, unregistered, and measured
+# results in tools/assessment_measured.md; speed_backtest.py keeps those in its
+# figures.
+celtic: shelved at 1.2 fps and 300 KB of heap, see issue #37
