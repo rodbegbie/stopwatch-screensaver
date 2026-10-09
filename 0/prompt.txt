@@ -1,0 +1,1 @@
+It runs on each interrupt, and evaluates if things are settled.
