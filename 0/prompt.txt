@@ -1,0 +1,1 @@
+Rorschach is crashing. When I navigate to it, the screen is blank then Pyro starts.
