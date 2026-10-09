@@ -1,0 +1,6 @@
+Rebase this branch onto main, since that now has the ability for you to product a build that loads Maze on boot.
+
+Regarding the open issues:
+1. Yeah, that's a known risk with a round display.  I think we've taken the right approach.
+2. Good to know.
+3. No worries!
