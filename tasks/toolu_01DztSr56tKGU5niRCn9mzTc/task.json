@@ -1,0 +1,15 @@
+{
+  "tool_use_id": "toolu_01DztSr56tKGU5niRCn9mzTc",
+  "agent_id": "a4aac1a02244e56a2",
+  "subagent_type": "general-purpose",
+  "task_description": "Discoverability run, no hint",
+  "token_usage": {
+    "input_tokens": 14,
+    "cache_creation_tokens": 44806,
+    "cache_read_tokens": 353015,
+    "output_tokens": 105,
+    "api_call_count": 7
+  },
+  "started_at": "2026-10-08T21:19:29.546939-07:00",
+  "completed_at": "2026-10-08T21:20:12.184521-07:00"
+}

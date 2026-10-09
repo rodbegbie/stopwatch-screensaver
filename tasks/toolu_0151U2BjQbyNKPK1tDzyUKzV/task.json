@@ -1,0 +1,15 @@
+{
+  "tool_use_id": "toolu_0151U2BjQbyNKPK1tDzyUKzV",
+  "agent_id": "a8ddf829ca9f154de",
+  "subagent_type": "general-purpose",
+  "task_description": "L-row Compass assessment run",
+  "token_usage": {
+    "input_tokens": 18,
+    "cache_creation_tokens": 66816,
+    "cache_read_tokens": 549379,
+    "output_tokens": 424,
+    "api_call_count": 9
+  },
+  "started_at": "2026-10-08T21:19:31.629427-07:00",
+  "completed_at": "2026-10-08T21:20:43.893807-07:00"
+}

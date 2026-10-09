@@ -1,0 +1,15 @@
+{
+  "tool_use_id": "toolu_017hCwcmSY19dPjfsAYbs2Hr",
+  "agent_id": "a37832087facb977b",
+  "subagent_type": "general-purpose",
+  "task_description": "Port-next dry run with skill",
+  "token_usage": {
+    "input_tokens": 18,
+    "cache_creation_tokens": 73813,
+    "cache_read_tokens": 484840,
+    "output_tokens": 834,
+    "api_call_count": 9
+  },
+  "started_at": "2026-10-08T21:14:49.167413-07:00",
+  "completed_at": "2026-10-08T21:15:48.347986-07:00"
+}
