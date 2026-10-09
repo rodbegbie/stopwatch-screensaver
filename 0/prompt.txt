@@ -1,0 +1,1 @@
+Yes, that sounds good.  Out of interest, can the GL-based hacks be ported to run on the device too? Or is it limited to the simpler ones?
