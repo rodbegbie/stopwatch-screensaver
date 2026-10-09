@@ -18,8 +18,9 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-# Host milliseconds per step. Calibrated against the measured hacks in
-# docs/speed-backtest.md: no hack below HIGH_MS took over 20 ms on the device.
+# Host milliseconds per step. Fitted to the measured hacks in
+# docs/speed-backtest.md, so the fit is in-sample: no hack below HIGH_MS had a
+# device step midpoint over 20 ms, and every hack at or over 50 ms is above it.
 LOW_MS = 0.015
 HIGH_MS = 0.05
 

@@ -1,0 +1,252 @@
+"""Check the host speed bands against the hacks that have run on the device.
+
+Runs each registered hack on the host (the `dump` program's `stats` mode),
+joins the host time to the step measured on the device in
+tools/assessment_measured.md, and writes docs/speed-backtest.md: how well the
+host time ranked the device step, and what each band turned out to mean.
+
+Run: (cd firmware && pio run -e dump) && uv run tools/speed_backtest.py
+"""
+
+import argparse
+import re
+import statistics
+import subprocess
+import sys
+from pathlib import Path
+
+import probe_hacks
+import score_hacks
+
+SLOW_DEVICE_MS = 50.0
+RUNS = 3
+BANDS = ("low", "medium", "high")
+
+# A hack row: | Name | fps | step lo-hi ms | ... |. The fps column is numeric,
+# which keeps the other tables in the measured notes out.
+MEASURED_ROW = re.compile(
+    r"^\| ([A-Za-z0-9]+) \| [0-9.\-]+ \| ([0-9.]+)(?:-([0-9.]+))? ms \|",
+    re.MULTILINE,
+)
+
+
+class BacktestError(Exception):
+    pass
+
+
+def parse_measured(text: str) -> dict[str, tuple[float, float]]:
+    rows = {}
+    for name, lo, hi in MEASURED_ROW.findall(text):
+        rows[name.lower()] = (float(lo), float(hi or lo))
+    return rows
+
+
+def registry_names(registry: str) -> list[str]:
+    """Hack names in g_hacks[] order, which is the index `dump` takes."""
+    array = score_hacks.REGISTRY_ARRAY.search(score_hacks.strip_noise(registry))
+    if not array:
+        raise BacktestError("no g_hacks[] array found in the registry source")
+    return score_hacks.REGISTRY_ENTRY.findall(array.group(1))
+
+
+def _ranks(values: list[float]) -> list[float]:
+    order = sorted(range(len(values)), key=lambda i: values[i])
+    ranks = [0.0] * len(values)
+    i = 0
+    while i < len(order):
+        j = i
+        while j + 1 < len(order) and values[order[j + 1]] == values[order[i]]:
+            j += 1
+        for k in range(i, j + 1):
+            ranks[order[k]] = (i + j) / 2
+        i = j + 1
+    return ranks
+
+
+def spearman(a: list[float], b: list[float]) -> float:
+    """Rank correlation, with tied values sharing their average rank."""
+    ra, rb = _ranks(a), _ranks(b)
+    ma, mb = statistics.fmean(ra), statistics.fmean(rb)
+    num = sum((x - ma) * (y - mb) for x, y in zip(ra, rb))
+    den = (
+        sum((x - ma) ** 2 for x in ra) * sum((y - mb) ** 2 for y in rb)
+    ) ** 0.5
+    return num / den if den else 0.0
+
+
+def measure_host(program: Path, index: int) -> float:
+    times = []
+    for _ in range(RUNS):
+        run = subprocess.run(
+            [str(program), "stats", str(index)], capture_output=True, text=True
+        )
+        if run.returncode != 0:
+            raise BacktestError(
+                f"{program} stats {index} exited {run.returncode}: {run.stderr.strip()}"
+            )
+        times.append(probe_hacks.parse_stats(run.stdout))
+    return statistics.median(times)
+
+
+def join_rows(
+    names: list[str],
+    host: dict[str, float],
+    measured: dict[str, tuple[float, float]],
+) -> list[dict]:
+    rows = []
+    for name in names:
+        if name not in host or name not in measured:
+            continue
+        lo, hi = measured[name]
+        mid = (lo + hi) / 2
+        rows.append(
+            {
+                "name": name,
+                "host_ms": host[name],
+                "device_lo": lo,
+                "device_hi": hi,
+                "device_mid": mid,
+                "band": probe_hacks.band(host[name]),
+                "ratio": mid / host[name] if host[name] else float("inf"),
+            }
+        )
+    return rows
+
+
+def summarise(rows: list[dict]) -> dict:
+    bands = {}
+    for band in BANDS:
+        steps = [r["device_mid"] for r in rows if r["band"] == band]
+        bands[band] = {
+            "count": len(steps),
+            "max_device_ms": max(steps) if steps else None,
+        }
+    slow = sorted(
+        (r for r in rows if r["device_mid"] >= SLOW_DEVICE_MS),
+        key=lambda r: -r["device_mid"],
+    )
+    return {
+        "bands": bands,
+        "slow": [r["name"] for r in slow],
+        "caught": [r["name"] for r in slow if r["band"] == "high"],
+        "missed": [r["name"] for r in slow if r["band"] != "high"],
+        "spearman": spearman(
+            [r["host_ms"] for r in rows], [r["device_mid"] for r in rows]
+        ),
+        "false_high": [
+            r["name"]
+            for r in rows
+            if r["band"] == "high" and r["device_mid"] < SLOW_DEVICE_MS
+        ],
+    }
+
+
+def _range(lo: float, hi: float) -> str:
+    return f"{lo:g}" if lo == hi else f"{lo:g}-{hi:g}"
+
+
+def render_table(rows: list[dict]) -> str:
+    lines = [
+        "| Hack | Host ms | Band | Device step ms | Device / host |",
+        "| --- | --- | --- | --- | --- |",
+    ]
+    for r in sorted(rows, key=lambda r: (-r["device_mid"], r["name"])):
+        lines.append(
+            f"| {r['name']} | {r['host_ms']:.3f} | {r['band']} | "
+            f"{_range(r['device_lo'], r['device_hi'])} | {r['ratio']:.0f} |"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def render(rows: list[dict]) -> str:
+    s = summarise(rows)
+    b = s["bands"]
+    low, med, high = b["low"], b["medium"], b["high"]
+
+    def worst(band: dict) -> str:
+        return "-" if band["max_device_ms"] is None else f"{band['max_device_ms']:.1f}"
+
+    caught = len(s["caught"])
+    return f"""\
+# Speed backtest
+
+How well a hack's time on the host predicts its step on the device, over the
+{len(rows)} registered hacks that have run on the board. Generated by
+`tools/speed_backtest.py`; the host time is `tools/probe_hacks.py`'s measure.
+
+## Result
+
+- Host time ranks the device step with a Spearman correlation of
+  {s['spearman']:.2f}.
+- Bands (host ms per step): low is under {probe_hacks.LOW_MS}, medium is under
+  {probe_hacks.HIGH_MS}, high is {probe_hacks.HIGH_MS} or more.
+- The slowest hack in the low band took {worst(low)} ms on the device
+  ({low['count']} hacks), in the medium band {worst(med)} ms ({med['count']}
+  hacks) and in the high band {worst(high)} ms ({high['count']} hacks).
+- Of the {len(s['slow'])} hacks with a device step of {SLOW_DEVICE_MS:g} ms or
+  more, the high band caught {caught}.
+  Missed: {', '.join(s['missed']) or 'none'}.
+- High band but under {SLOW_DEVICE_MS:g} ms on the device:
+  {', '.join(s['false_high']) or 'none'}.
+
+## Table
+
+Device step is the range measured in `tools/assessment_measured.md`; the ratio
+uses its midpoint.
+
+{render_table(rows)}
+## Reading it
+
+- The band says how likely a hack is to be slow, not how many milliseconds it
+  will take. The device ran between about 60 and 1,500 times the host time.
+- The ratio is lowest (about 60-120) for hacks bound by drawing or already
+  built in single precision, and highest (about 700-1,500) for hacks that
+  still do software double-precision maths on the device (Vines, Hopalong,
+  Spiral, XSpirograph). A low host time does not clear a hack that does a lot
+  of `double` maths.
+- The bands were chosen from these same hacks, so the catch rate above is
+  in-sample. The real test is the hacks ported from here on: add each one's
+  host time and device step and re-run this.
+- Only hacks that were ported are here, and they were chosen because they
+  looked easy, so there are few slow ones.
+- The thresholds belong to the `dump` environment's build (`-g`, no
+  optimisation) on the machine they were measured on. Re-run this after
+  changing either, and move the bands in `tools/probe_hacks.py` if they no
+  longer fit.
+"""
+
+
+def main(argv: list[str], root: Path | None = None) -> int:
+    root = root or Path(__file__).resolve().parent.parent
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--dump", default=str(root / "firmware/.pio/build/dump/program")
+    )
+    parser.add_argument("--registry", default=str(root / "firmware/src/hacks/registry.c"))
+    parser.add_argument("--measured", default=str(root / "tools/assessment_measured.md"))
+    parser.add_argument("--out", default=str(root / "docs/speed-backtest.md"))
+    args = parser.parse_args(argv)
+    try:
+        program = Path(args.dump)
+        if not program.exists():
+            raise BacktestError(
+                f"{program} not found; build it with `pio run -e dump` in firmware/"
+            )
+        names = registry_names(Path(args.registry).read_text())
+        measured = parse_measured(Path(args.measured).read_text())
+        host = {name: measure_host(program, i) for i, name in enumerate(names)}
+        rows = join_rows(names, host, measured)
+        Path(args.out).write_text(render(rows))
+        s = summarise(rows)
+        print(
+            f"wrote {args.out}: {len(rows)} hacks, spearman {s['spearman']:.2f}, "
+            f"high band caught {len(s['caught'])} of {len(s['slow'])} slow"
+        )
+        return 0
+    except (BacktestError, probe_hacks.ProbeError) as err:
+        print(f"error: {err}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
