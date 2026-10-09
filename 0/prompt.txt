@@ -1,0 +1,1 @@
+You wouldn't know how long it had been held for if it was held for less than 100ms
