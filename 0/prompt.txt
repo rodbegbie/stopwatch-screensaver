@@ -1,0 +1,1 @@
+Leave the spec and plan files in the PR. We'll `git rm` them before we merge.  And yes, open the trail.
