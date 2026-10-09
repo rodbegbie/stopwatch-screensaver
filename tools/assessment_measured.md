@@ -1,6 +1,6 @@
 ## Measured on the device
 
-Twenty-seven hacks have been run so far (default settings, 466×466 canvas
+Twenty-eight hacks have been run so far (default settings, 466×466 canvas
 pushed to the display every frame, canvas held in PSRAM). The firmware times
 each frame in three parts, averaged over 5 seconds: **step** is the hack's own
 draw call, **push** is sending the canvas to the display, and **wait** is what
@@ -38,6 +38,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Maze | 6.0-28.8 | 0.1-1.3 ms | 31.2-33.4 ms | 0-256 ms | not measured |
 | Blaster | 27.8 | 3.6-3.7 ms | 31.2-31.3 ms | 0 ms | not measured |
 | Substrate | 12.4-20.6 | 2.9-43.9 ms | 41.1-44.4 ms | 0 ms | about 1.74 MB |
+| Pacman | 75.6-79.2 | 1.3-1.9 ms | 0.8-1.4 ms | 10.0-10.6 ms | about 580 KB |
 
 Maze's row is 26 five-second readings over 160 seconds, taken on a build that
 includes the overlay stamping. Its steps are cheap, and its frame rate is set
@@ -267,3 +268,33 @@ were that nothing else changed:
   copy are covered by host tests only. Blaster, which fills arcs, was not
   re-measured on the device after the change. Pacman is the first port that
   needs them.
+
+## Pacman
+
+Pacman runs at 75.6-79.2 fps (second window onward, 46 windows of 5 seconds
+pinned with the rotation off), paced by its own 10 ms delay: the step is
+1.3-1.9 ms, the push 0.8-1.4 ms for 45-84 rows a frame, and the wait 10.0-10.6
+ms. It takes about 580 KB of PSRAM (7,424,155 free before it starts, 6,842,931
+after) and about 50 KB of internal heap (the scaled sprites are each under
+4 KB, so `malloc` keeps them in internal RAM). Rod checked the colours on the
+screen: cyan walls, a yellow Pacman, the four ghost colours.
+
+Two recursions in the hack had to go. The level generator (`creatlevelblock`
+and `nextstep`) recursed up to about 315 KB deep on the host and rebooted the
+board on its first frame (stack canary, loop task, 16 KB). The build now
+patches it out, so Pacman always plays the fixed level. The ghosts' route home
+(`recur_back_track`) reaches 453 levels of 48 bytes from some cells, about
+22 KB; the build rewrites it as a loop over a heap stack that visits cells in
+the same order, pinned over 30,000 frames. With a temporary stack gauge in the
+serial line (not committed), the loop task's lowest free stack was 5,092 bytes
+of 16,384 and falling after three minutes with the recursion, and a steady
+13,844 bytes over four minutes after the rewrite.
+
+Upstream also leaks about 514 KB of pixmaps each time Pacman starts. The
+runner now releases a stopped hack's pixmaps. Rotating every 5 seconds for 70
+rotations (two Pacman visits), the hack after each visit read the same heap
+and PSRAM (289,228 and 7,342,579).
+
+Not measured: runs longer than four minutes pinned, and the stack gauge only
+saw the loop task while ghosts followed routes home, which the host pin shows
+they do but the log does not mark.
