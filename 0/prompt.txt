@@ -1,0 +1,1 @@
+Register that it's fired, but then wait a bit for it to settle before reading the value
