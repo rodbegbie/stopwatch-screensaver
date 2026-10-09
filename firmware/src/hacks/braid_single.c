@@ -8,4 +8,10 @@
 
 #include "hacks/single_precision.h"
 
+#include "hacks/fast_trig.h"
+#undef sin
+#undef cos
+#define sin(x) fast_sinf(x)
+#define cos(x) fast_cosf(x)
+
 #include "braid/braid.c"

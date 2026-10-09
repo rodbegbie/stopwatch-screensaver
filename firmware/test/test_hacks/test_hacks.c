@@ -1,3 +1,4 @@
+#include <math.h>
 #include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -9,6 +10,7 @@
 #include "core/canvas.h"
 #include "screenhack.h"
 #include "xlockmore.h"
+#include "hacks/fast_trig.h"
 #include "hacks/pacman/pacman.h"
 #include "hacks/registry.h"
 #include "runner/hack_runner.h"
@@ -503,6 +505,22 @@ void test_braid_restarts_and_stops_do_not_leak(void) {
   TEST_ASSERT_TRUE_MESSAGE(after < before + 512, "allocated bytes grew over start and stop");
 }
 
+/* Braid calls sin and cos for every segment, and the S3's libm does them in
+ * software. fast_sinf and fast_cosf must agree with libm to 2e-6 (a pixel is
+ * a few hundred times that) over the angles a hack uses, with the argument
+ * rounded to float first since that is all the hack passes. */
+void test_fast_sin_and_cos_stay_within_2e6_of_libm(void) {
+  double worst = 0;
+  for (double x = -60.0; x <= 60.0; x += 0.00037) {
+    const float f = (float)x;
+    const double es = fabs((double)fast_sinf(f) - sin((double)f));
+    const double ec = fabs((double)fast_cosf(f) - cos((double)f));
+    if (es > worst) worst = es;
+    if (ec > worst) worst = ec;
+  }
+  TEST_ASSERT_TRUE_MESSAGE(worst < 2e-6, "fast sin or cos is 2e-6 or more off libm");
+}
+
 /* Pacman's ghosts find their way home with a depth-first search (find_home)
  * that recurses up to 453 levels. The build rewrites it with an explicit stack,
  * so this pins what the ghosts do over 30,000 frames: every ghost's position
@@ -562,6 +580,7 @@ int main(void) {
   RUN_TEST(test_pacman_stays_within_the_loop_task_stack);
   RUN_TEST(test_pacman_ghosts_take_the_same_routes_home);
   RUN_TEST(test_braid_restarts_and_stops_do_not_leak);
+  RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
   return UNITY_END();
 }
