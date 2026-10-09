@@ -1,0 +1,1 @@
+OK, let's start flashing with a pinned hack build.  Make it start on CloudLife.
