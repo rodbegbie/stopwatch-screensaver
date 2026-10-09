@@ -1425,6 +1425,205 @@ void test_fill_arc_quarter_is_a_pie_slice_including_the_centre(void) {
   XFreeGC(dpy, gc);
 }
 
+static int count_colour(uint16_t colour) {
+  int n = 0;
+  for (int i = 0; i < cv.w * cv.h; i++) n += cv.px[i] == colour;
+  return n;
+}
+
+void test_create_pixmap_is_zeroed_and_reports_its_geometry(void) {
+  canvas_clear(&cv, 0xFFFF);
+  Pixmap p = XCreatePixmap(dpy, win, 5, 7, 16);
+  TEST_ASSERT_NOT_EQUAL(None, p);
+  Window root;
+  int x, y;
+  unsigned int w, h, border, depth;
+  TEST_ASSERT_TRUE(XGetGeometry(dpy, p, &root, &x, &y, &w, &h, &border, &depth));
+  TEST_ASSERT_EQUAL_UINT(5, w);
+  TEST_ASSERT_EQUAL_UINT(7, h);
+  TEST_ASSERT_EQUAL_UINT(16, depth);
+  GC gc = new_gc(0xF800, 0x001F);
+  XCopyArea(dpy, p, win, gc, 0, 0, 5, 7, 2, 2);
+  TEST_ASSERT_EQUAL_INT(35, count_colour(0));
+  TEST_ASSERT_EQUAL_HEX16(0, at(2, 2));
+  TEST_ASSERT_EQUAL_HEX16(0, at(6, 8));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(7, 2));
+  XFreePixmap(dpy, p);
+
+  Pixmap bits = XCreatePixmap(dpy, win, 5, 7, 1);
+  TEST_ASSERT_TRUE(XGetGeometry(dpy, bits, &root, &x, &y, &w, &h, &border, &depth));
+  TEST_ASSERT_EQUAL_UINT(1, depth);
+  canvas_clear(&cv, 0xFFFF);
+  XCopyPlane(dpy, bits, win, gc, 0, 0, 5, 7, 2, 2, 1);
+  TEST_ASSERT_EQUAL_INT(35, count_colour(0x001F));
+  TEST_ASSERT_EQUAL_INT(0, count_colour(0xF800));
+  XFreePixmap(dpy, bits);
+  XFreeGC(dpy, gc);
+}
+
+void test_create_pixmap_rejects_zero_and_huge_sizes(void) {
+  TEST_ASSERT_EQUAL(None, XCreatePixmap(dpy, win, 0, 5, 16));
+  TEST_ASSERT_EQUAL(None, XCreatePixmap(dpy, win, 5, 0, 16));
+  TEST_ASSERT_EQUAL(None, XCreatePixmap(dpy, win, 0, 0, 1));
+  TEST_ASSERT_EQUAL(None, XCreatePixmap(dpy, win, 4001, 1000, 16));
+  TEST_ASSERT_EQUAL(None, XCreatePixmap(dpy, win, 65535, 65535, 16));
+  TEST_ASSERT_EQUAL(None, XCreatePixmap(dpy, win, 65535, 65535, 1));
+}
+
+void test_copy_area_into_a_colour_pixmap_then_out_to_the_canvas(void) {
+  Pixmap mask = None;
+  Pixmap src = load_image(&mask);
+  Pixmap dst = XCreatePixmap(dpy, win, 6, 5, 16);
+  GC gc = new_gc(0xFFFF, 0);
+  XCopyArea(dpy, src, dst, gc, 0, 0, BLOB_W, BLOB_H, 1, 1);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XCopyArea(dpy, dst, win, gc, 0, 0, 6, 5, 3, 3);
+  TEST_ASSERT_EQUAL_INT(BLOB_W * BLOB_H, count_set());
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1000), at(4, 4));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x100B), at(7, 6));
+  TEST_ASSERT_EQUAL_HEX16(0, at(3, 3));
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, src);
+  XFreePixmap(dpy, mask);
+  XFreePixmap(dpy, dst);
+}
+
+void test_copy_area_into_a_bitmap_copies_bits(void) {
+  Pixmap mask = None;
+  Pixmap src = load_image(&mask);
+  Pixmap bits = XCreatePixmap(dpy, win, 8, 5, 1);
+  GC gc = new_gc(0xF800, 0x001F);
+  XCopyArea(dpy, mask, bits, gc, 0, 0, BLOB_W, BLOB_H, 2, 1);
+  XCopyPlane(dpy, bits, win, gc, 0, 0, 8, 5, 0, 0, 1);
+  TEST_ASSERT_EQUAL_INT(MASK_SET_BITS, count_colour(0xF800));
+  TEST_ASSERT_EQUAL_HEX16(0xF800, at(2, 1));
+  TEST_ASSERT_EQUAL_HEX16(0x001F, at(3, 2));
+  TEST_ASSERT_EQUAL_HEX16(0xF800, at(4, 2));
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, src);
+  XFreePixmap(dpy, mask);
+  XFreePixmap(dpy, bits);
+}
+
+void test_copy_area_between_different_depths_does_nothing(void) {
+  Pixmap mask = None;
+  Pixmap src = load_image(&mask);
+  Pixmap bits = XCreatePixmap(dpy, win, 8, 5, 1);
+  Pixmap colour = XCreatePixmap(dpy, win, 8, 5, 16);
+  GC gc = new_gc(0xF800, 0x001F);
+  XCopyArea(dpy, src, bits, gc, 0, 0, BLOB_W, BLOB_H, 0, 0);
+  XCopyPlane(dpy, bits, win, gc, 0, 0, 8, 5, 0, 0, 1);
+  TEST_ASSERT_EQUAL_INT(0, count_colour(0xF800));
+  XCopyArea(dpy, mask, colour, gc, 0, 0, BLOB_W, BLOB_H, 0, 0);
+  canvas_clear(&cv, 0xFFFF);
+  XCopyArea(dpy, colour, win, gc, 0, 0, 8, 5, 0, 0);
+  TEST_ASSERT_EQUAL_INT(0, count_colour(0xF800));
+  TEST_ASSERT_EQUAL_INT(0, count_colour(px_swap(0x1000)));
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, src);
+  XFreePixmap(dpy, mask);
+  XFreePixmap(dpy, bits);
+  XFreePixmap(dpy, colour);
+}
+
+void test_copy_area_clips_at_destination_edges(void) {
+  Pixmap mask = None;
+  Pixmap src = load_image(&mask);
+  Pixmap dst = XCreatePixmap(dpy, win, 4, 4, 16);
+  GC gc = new_gc(0xFFFF, 0);
+  XCopyArea(dpy, src, dst, gc, 0, 0, BLOB_W, BLOB_H, 2, 2);
+  XCopyArea(dpy, dst, win, gc, 0, 0, 4, 4, 0, 0);
+  TEST_ASSERT_EQUAL_INT(4, count_set());
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1000), at(2, 2));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1005), at(3, 3));
+  XFreePixmap(dpy, dst);
+
+  dst = XCreatePixmap(dpy, win, 4, 4, 16);
+  canvas_clear(&cv, 0);
+  XCopyArea(dpy, src, dst, gc, 0, 0, BLOB_W, BLOB_H, -2, -1);
+  XCopyArea(dpy, dst, win, gc, 0, 0, 4, 4, 0, 0);
+  TEST_ASSERT_EQUAL_INT(4, count_set());
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1006), at(0, 0));
+  XCopyArea(dpy, src, dst, gc, 0, 0, BLOB_W, BLOB_H, 1000000, -1000000);
+  XCopyArea(dpy, src, dst, gc, 0, 0, 0xFFFFFFFFu, 0xFFFFFFFFu, INT_MIN, INT_MIN);
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, src);
+  XFreePixmap(dpy, mask);
+  XFreePixmap(dpy, dst);
+}
+
+void test_copy_area_with_a_clip_mask_skips_masked_pixels(void) {
+  Pixmap mask = None;
+  Pixmap src = load_image(&mask);
+  Pixmap dst = XCreatePixmap(dpy, win, 6, 5, 16);
+  GC gc = new_gc(0xFFFF, 0);
+  XSetClipMask(dpy, gc, mask);
+  XCopyArea(dpy, src, dst, gc, 0, 0, BLOB_W, BLOB_H, 0, 0);
+  XSetClipMask(dpy, gc, None);
+  XCopyArea(dpy, dst, win, gc, 0, 0, 6, 5, 0, 0);
+  TEST_ASSERT_EQUAL_INT(MASK_SET_BITS, count_set());
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, src);
+  XFreePixmap(dpy, mask);
+  XFreePixmap(dpy, dst);
+}
+
+void test_scale_pixmap_loop_like_pacman_fills_the_destination(void) {
+  Pixmap mask = None;
+  Pixmap src = load_image(&mask);
+  GC gc = new_gc(0xFFFF, 0);
+  const int dwidth = 8, dheight = 6, swidth = BLOB_W, sheight = BLOB_H;
+  const float xscale = (float)swidth / (float)dwidth;
+  const float yscale = (float)sheight / (float)dheight;
+  Pixmap dest = XCreatePixmap(dpy, win, dwidth, dheight, 16);
+  Pixmap temp = XCreatePixmap(dpy, win, dwidth, sheight, 16);
+  int j = 0;
+  int end = dwidth * xscale;
+  for (float i = 0; i <= end; i += xscale)
+    XCopyArea(dpy, src, temp, gc, i, 0, 1, sheight, j++, 0);
+  j = 0;
+  end = dheight * yscale;
+  for (float i = 0; i <= end; i += yscale)
+    XCopyArea(dpy, temp, dest, gc, 0, i, dwidth, 1, 0, j++);
+  XFreePixmap(dpy, temp);
+  XCopyArea(dpy, dest, win, gc, 0, 0, dwidth, dheight, 0, 0);
+  TEST_ASSERT_EQUAL_INT(dwidth * dheight, count_set());
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1000), at(0, 0));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1006), at(5, 3));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x100B), at(7, 5));
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, src);
+  XFreePixmap(dpy, mask);
+  XFreePixmap(dpy, dest);
+}
+
+void test_drawing_primitive_with_a_pixmap_drawable_still_draws_to_the_canvas(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 8, 8, 16);
+  GC gc = new_gc(0xFFFF, 0);
+  XFillRectangle(dpy, p, gc, 1, 1, 2, 2);
+  TEST_ASSERT_EQUAL_INT(4, count_set());
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+}
+
+void test_copy_area_within_one_pixmap_reads_before_it_overwrites(void) {
+  Pixmap mask = None;
+  Pixmap src = load_image(&mask);
+  Pixmap p = XCreatePixmap(dpy, win, 8, 3, 16);
+  GC gc = new_gc(0xFFFF, 0);
+  XCopyArea(dpy, src, p, gc, 0, 0, BLOB_W, BLOB_H, 0, 0);
+  XCopyArea(dpy, p, p, gc, 0, 0, BLOB_W, BLOB_H, 2, 0);
+  XCopyArea(dpy, p, win, gc, 0, 0, 8, 3, 0, 0);
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1000), at(2, 0));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1002), at(4, 0));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1003), at(5, 0));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x100B), at(5, 2));
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, src);
+  XFreePixmap(dpy, mask);
+  XFreePixmap(dpy, p);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_image_data_to_pixmap_makes_a_colour_pixmap_and_a_mask);
@@ -1534,6 +1733,16 @@ int main(void) {
   RUN_TEST(test_draw_arc_wide_uses_the_stroke_code);
   RUN_TEST(test_fill_arc_half_fills_a_half_disc);
   RUN_TEST(test_fill_arc_quarter_is_a_pie_slice_including_the_centre);
+  RUN_TEST(test_create_pixmap_is_zeroed_and_reports_its_geometry);
+  RUN_TEST(test_create_pixmap_rejects_zero_and_huge_sizes);
+  RUN_TEST(test_copy_area_into_a_colour_pixmap_then_out_to_the_canvas);
+  RUN_TEST(test_copy_area_into_a_bitmap_copies_bits);
+  RUN_TEST(test_copy_area_between_different_depths_does_nothing);
+  RUN_TEST(test_copy_area_clips_at_destination_edges);
+  RUN_TEST(test_copy_area_with_a_clip_mask_skips_masked_pixels);
+  RUN_TEST(test_scale_pixmap_loop_like_pacman_fills_the_destination);
+  RUN_TEST(test_drawing_primitive_with_a_pixmap_drawable_still_draws_to_the_canvas);
+  RUN_TEST(test_copy_area_within_one_pixmap_reads_before_it_overwrites);
   RUN_TEST(test_fill_arc_full_still_matches_the_old_ellipse);
   RUN_TEST(test_zero_size_and_zero_sweep_arcs_draw_nothing_much);
   RUN_TEST(test_huge_arcs_return_without_hanging_or_overflowing);

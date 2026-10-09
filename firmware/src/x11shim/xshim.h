@@ -183,9 +183,12 @@ int XFillArcs(Display *, Drawable, GC, XArc *arcs, int n);
 int XFillPolygon(Display *, Drawable, GC, XPoint *pts, int n, int shape,
                  int mode);
 
-/* Pixmaps are read-only sources for XCopyArea and XCopyPlane; the only way
- * to get one is image_data_to_pixmap (ximage-loader.h). Drawing into a pixmap
- * is not supported. A depth-1 pixmap is a bitmap, anything else is RGB565. */
+/* A pixmap is made by XCreatePixmap (zero filled; depth 1 is a bitmap, any
+ * other depth is RGB565) or image_data_to_pixmap (ximage-loader.h). The only
+ * thing that writes into one is XCopyArea: drawing primitives given a pixmap
+ * as their drawable still draw on the canvas. */
+Pixmap XCreatePixmap(Display *, Drawable, unsigned int w, unsigned int h,
+                     unsigned int depth);
 int XFreePixmap(Display *, Pixmap);
 /* Reports the canvas for the window and the pixmap's own size otherwise.
  * Returns 0 and writes nothing for a pixmap that does not exist. */
@@ -198,8 +201,10 @@ Status XGetGeometry(Display *, Drawable, Window *root, int *x, int *y,
 int XSetClipMask(Display *, GC, Pixmap mask);
 int XSetClipOrigin(Display *, GC, int x, int y);
 int XSetBackground(Display *, GC, unsigned long pixel);
-/* Source must be a colour pixmap and the destination the window. Honours the
- * clip mask. */
+/* To the window, the source must be a colour pixmap. To a pixmap, source and
+ * destination must have the same depth (colour to colour, bitmap to bitmap).
+ * Anything else draws nothing. Honours the clip mask, which is positioned in
+ * destination coordinates. */
 int XCopyArea(Display *, Drawable src, Drawable dst, GC, int src_x, int src_y,
               unsigned int w, unsigned int h, int dst_x, int dst_y);
 /* Source must be a depth-1 pixmap and plane 1: set bits are drawn in the
