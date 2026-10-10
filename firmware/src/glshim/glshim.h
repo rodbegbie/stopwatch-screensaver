@@ -27,7 +27,8 @@ void glshim_close(void);
 int glshim_is_open(void);
 
 Bool glXMakeCurrent(Display *dpy, GLXDrawable drawable, GLXContext ctx);
-/* TinyGL has drawn into the canvas already; this marks all of it dirty. */
+/* TinyGL has drawn into the canvas already; this marks what it drew since the
+ * last swap, and what the last clear erased, dirty. */
 void glXSwapBuffers(Display *dpy, GLXDrawable drawable);
 
 void gluPerspective(GLdouble fovy, GLdouble aspect, GLdouble znear,

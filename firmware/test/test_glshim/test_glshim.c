@@ -286,6 +286,105 @@ void test_draw_arrays_with_nothing_enabled_or_a_zero_count_draws_nothing(void) {
   TEST_ASSERT_EQUAL_INT(0, count_set());
 }
 
+
+/* Dirty rectangle: TinyGL tracks the box around what it draws, glClear clears
+ * only the box drawn since the last clear, and the swap marks only the old and
+ * new boxes for the push. These pin that it changes nothing visible. */
+static void triangle(float x0, float y0, float x1, float y1, float x2, float y2,
+                     float z, float r, float g, float b) {
+  glBegin(GL_TRIANGLES);
+  glColor3f(r, g, b);
+  glVertex3f(x0, y0, z);
+  glVertex3f(x1, y1, z);
+  glVertex3f(x2, y2, z);
+  glEnd();
+}
+
+static void clear_all(void) { glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); }
+
+static void assert_canvas_is(uint16_t colour, const char *why) {
+  for (int i = 0; i < SIZE * SIZE; i++)
+    if (cv.px[i] != colour) TEST_FAIL_MESSAGE(why);
+}
+
+void test_a_region_clear_still_leaves_the_whole_canvas_clear(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glClearColor(1, 0, 0, 0);
+  clear_all();
+  triangle(-0.9f, -0.9f, -0.5f, -0.9f, -0.9f, -0.5f, 0, 0, 0, 1);
+  glXSwapBuffers(dpy, 0);
+  clear_all();
+  triangle(0.5f, 0.5f, 0.9f, 0.5f, 0.9f, 0.9f, 0, 0, 0, 1);
+  glXSwapBuffers(dpy, 0);
+  clear_all();
+  assert_canvas_is(rgb565(255, 0, 0), "a region clear left a stale pixel");
+}
+
+void test_the_first_clear_after_opening_clears_over_whatever_was_there(void) {
+  for (int i = 0; i < SIZE * SIZE; i++) cv.px[i] = 0x1234;
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glClearColor(1, 0, 0, 0);
+  clear_all();
+  assert_canvas_is(rgb565(255, 0, 0), "the first clear was not a full clear");
+}
+
+void test_a_new_clear_colour_clears_everything(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glClearColor(1, 0, 0, 0);
+  clear_all();
+  triangle(-0.2f, -0.2f, 0.2f, -0.2f, 0.0f, 0.2f, 0, 0, 0, 1);
+  glXSwapBuffers(dpy, 0);
+  glClearColor(0, 1, 0, 0);
+  clear_all();
+  assert_canvas_is(rgb565(0, 255, 0), "a new clear colour left the old one behind");
+}
+
+void test_stale_depth_does_not_hide_the_next_frame(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glEnable(GL_DEPTH_TEST);
+  glClearColor(1, 0, 0, 0);
+  clear_all();
+  triangle(-0.5f, -0.5f, 0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0, 0, 1);
+  glXSwapBuffers(dpy, 0);
+  clear_all();
+  triangle(-0.5f, -0.5f, 0.5f, -0.5f, 0.0f, 0.5f, 0.5f, 0, 1, 0);
+  glXSwapBuffers(dpy, 0);
+  TEST_ASSERT_EQUAL_HEX16(rgb565(0, 255, 0), cv.px[(SIZE / 2) * SIZE + SIZE / 2]);
+}
+
+/* Contract: pixels outside what was drawn are not rewritten by a clear, so
+ * nothing else may draw on the canvas while a GL hack runs. */
+void test_a_clear_rewrites_only_the_region_that_was_drawn(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glClearColor(1, 0, 0, 0);
+  clear_all();
+  triangle(-0.9f, -0.9f, -0.5f, -0.9f, -0.9f, -0.5f, 0, 0, 0, 1);
+  glXSwapBuffers(dpy, 0);
+  const int far_pixel = (SIZE - 2) * SIZE + (SIZE - 2);
+  cv.px[far_pixel] = 0x1234;
+  clear_all();
+  TEST_ASSERT_EQUAL_HEX16_MESSAGE(0x1234, cv.px[far_pixel],
+                                  "the clear rewrote the whole canvas");
+}
+
+void test_the_swap_marks_only_the_old_and_new_boxes_dirty(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glClearColor(1, 0, 0, 0);
+  clear_all();
+  triangle(-0.9f, 0.5f, -0.5f, 0.5f, -0.9f, 0.9f, 0, 0, 0, 1);
+  glXSwapBuffers(dpy, 0);
+  canvas_clear_dirty(&cv);
+  clear_all();
+  triangle(0.5f, -0.9f, 0.9f, -0.9f, 0.9f, -0.5f, 0, 0, 0, 1);
+  glXSwapBuffers(dpy, 0);
+  int x0, x1, dirty_rows = 0;
+  for (int y = 0; y < SIZE; y++) dirty_rows += canvas_dirty_row(&cv, y, &x0, &x1);
+  TEST_ASSERT_TRUE_MESSAGE(dirty_rows > 0, "nothing was marked dirty");
+  TEST_ASSERT_TRUE_MESSAGE(dirty_rows < SIZE * 3 / 4, "almost every row was marked");
+  TEST_ASSERT_FALSE_MESSAGE(canvas_dirty_row(&cv, SIZE / 2, &x0, &x1),
+                            "a row between the two boxes was marked");
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_draw_arrays_honours_a_byte_stride);
@@ -296,6 +395,12 @@ int main(void) {
   RUN_TEST(test_the_first_list_name_is_not_zero);
   RUN_TEST(test_perspective_and_lookat_put_a_point_where_the_maths_says);
   RUN_TEST(test_materiali_sets_the_shininess_tinygl_uses);
+  RUN_TEST(test_a_region_clear_still_leaves_the_whole_canvas_clear);
+  RUN_TEST(test_the_first_clear_after_opening_clears_over_whatever_was_there);
+  RUN_TEST(test_a_new_clear_colour_clears_everything);
+  RUN_TEST(test_stale_depth_does_not_hide_the_next_frame);
+  RUN_TEST(test_a_clear_rewrites_only_the_region_that_was_drawn);
+  RUN_TEST(test_the_swap_marks_only_the_old_and_new_boxes_dirty);
   RUN_TEST(test_a_one_value_light_model_is_not_over_read);
   RUN_TEST(test_is_enabled_reports_texturing_off);
   RUN_TEST(test_swap_buffers_marks_every_row_dirty);

@@ -18,6 +18,9 @@ What the patches do, and why:
   16 KB buffer, and Pipes alone makes 500 of them.
 - The buffer width is not rounded down to a multiple of 4: the canvas is 466.
 - `memset_s` is renamed: macOS's `string.h` declares its own.
+- A dirty rectangle: TinyGL reports the box around everything it draws to
+  `src/glshim/glshim.c`, which clears only the box drawn since the last clear
+  and marks only that box (and the one it replaced) for the display push.
 - Single precision: the S3's FPU does only `float`, so `double` maths is
   software. Decimal literals get an `f` suffix (`float_literals.py`) and
   `sqrt`, `pow`, `sin`, `cos` and `floor` map to their `f` versions.
@@ -53,6 +56,41 @@ SWAPPED_PIXEL = """#elif TGL_FEATURE_RENDER_BITS == 16
 #define RGB_TO_PIXEL(r,g,b) \\
 \tTGL_SWAP16( COLOR_R_GET16(r) | COLOR_G_GET16(g) | COLOR_B_GET16(b)  )
 #endif
+"""
+
+DIRTY_DECLARATIONS = """/* clip.c */
+
+/* The dirty rectangle, kept in src/glshim/glshim.c. */
+void glshim_note_box(GLint x0, GLint y0, GLint x1, GLint y1);
+void glshim_clear(ZBuffer* zb, GLint clear_z, GLint z, GLint clear_color, GLint r, GLint g, GLint b);
+"""
+
+DIRTY_TRIANGLE_HELPER = """static void glshim_note_triangle(GLVertex* p0, GLVertex* p1, GLVertex* p2) {
+	GLint lx = p0->zp.x < p1->zp.x ? p0->zp.x : p1->zp.x;
+	GLint hx = p0->zp.x < p1->zp.x ? p1->zp.x : p0->zp.x;
+	GLint ly = p0->zp.y < p1->zp.y ? p0->zp.y : p1->zp.y;
+	GLint hy = p0->zp.y < p1->zp.y ? p1->zp.y : p0->zp.y;
+	if (p2->zp.x < lx) lx = p2->zp.x;
+	if (p2->zp.x > hx) hx = p2->zp.x;
+	if (p2->zp.y < ly) ly = p2->zp.y;
+	if (p2->zp.y > hy) hy = p2->zp.y;
+	glshim_note_box(lx, ly, hx, hy);
+}
+
+"""
+
+DIRTY_POINT = """void gl_draw_point(GLVertex* p0) {
+	if (p0->clip_code == 0) {
+		GLint m = (GLint)gl_get_context()->zb->pointsize + 1;
+		glshim_note_box(p0->zp.x - m, p0->zp.y - m, p0->zp.x + m, p0->zp.y + m);
+	}
+"""
+
+DIRTY_LINE = """void gl_draw_line(GLVertex* p1, GLVertex* p2) {
+	if ((p1->clip_code | p2->clip_code) == 0)
+		glshim_note_box(p1->zp.x - 1, p1->zp.y - 1, p2->zp.x + 1, p2->zp.y + 1);
+	else /* clipped: it may reach anywhere */
+		glshim_note_box(0, 0, 100000, 100000);
 """
 
 REPLACEMENTS: tuple[Replace, ...] = (
@@ -103,6 +141,32 @@ REPLACEMENTS: tuple[Replace, ...] = (
         "src/zgl.h",
         "#define CLIP_EPSILON (1E-5)",
         "#define CLIP_EPSILON (1E-5f)",
+    ),
+    Replace("src/zgl.h", "/* clip.c */\n", DIRTY_DECLARATIONS),
+    Replace(
+        "src/clip.c",
+        "void gl_draw_point(GLVertex* p0) {\n",
+        DIRTY_TRIANGLE_HELPER + DIRTY_POINT,
+    ),
+    Replace(
+        "src/clip.c", "void gl_draw_line(GLVertex* p1, GLVertex* p2) {\n", DIRTY_LINE
+    ),
+    Replace(
+        "src/clip.c",
+        "c->draw_triangle_front(p0, p1, p2);",
+        "{ glshim_note_triangle(p0, p1, p2); c->draw_triangle_front(p0, p1, p2); }",
+        count=2,
+    ),
+    Replace(
+        "src/clip.c",
+        "c->draw_triangle_back(p0, p1, p2);",
+        "{ glshim_note_triangle(p0, p1, p2); c->draw_triangle_back(p0, p1, p2); }",
+        count=2,
+    ),
+    Replace(
+        "src/clear.c",
+        "ZB_clear(c->zb, mask & GL_DEPTH_BUFFER_BIT,",
+        "glshim_clear(c->zb, mask & GL_DEPTH_BUFFER_BIT,",
     ),
     Replace(
         "src/zgl.h",

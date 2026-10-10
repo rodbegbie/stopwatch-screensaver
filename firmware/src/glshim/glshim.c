@@ -1,14 +1,118 @@
 /* The GL context layer. TinyGL draws straight into the canvas, so a "swap"
- * only has to mark the canvas dirty. Not derived from xscreensaver code. */
+ * only has to mark the canvas dirty. Not derived from xscreensaver code.
+ *
+ * Dirty rectangle: TinyGL reports the box around everything it draws
+ * (glshim_note_box, called from the patched clip.c). glClear then clears only
+ * the box drawn since the last clear, and a swap marks only the box drawn
+ * this frame plus the box the clear erased, because the rest of the canvas is
+ * already the clear colour and already on the display. That holds only while
+ * nothing else draws on the canvas, and only after a first full clear of a
+ * known colour, so a new context starts with neither assumed. */
 #include "glshim/glshim.h"
 
 #include <math.h>
+
+#include <stdbool.h>
+#include <stdint.h>
 
 #include "core/canvas.h"
 #include "zbuffer.h"
 
 static ZBuffer *g_zb;
 static Canvas *g_canvas;
+
+typedef struct {
+  int x0, y0, x1, y1; /* inclusive; empty when x0 > x1 */
+} Box;
+
+static const Box kEmptyBox = {1 << 30, 1 << 30, -1, -1};
+
+static Box g_color_box;  /* drawn since the last colour clear */
+static Box g_z_box;      /* drawn since the last depth clear */
+static Box g_swap_drawn; /* drawn since the last swap */
+static Box g_swap_erased; /* cleared since the last swap */
+static bool g_color_valid;
+static bool g_z_valid;
+static PIXEL g_clear_color;
+static GLint g_clear_z;
+
+static bool box_empty(Box b) { return b.x0 > b.x1 || b.y0 > b.y1; }
+
+static void box_add(Box *b, Box o) {
+  if (box_empty(o)) return;
+  if (o.x0 < b->x0) b->x0 = o.x0;
+  if (o.y0 < b->y0) b->y0 = o.y0;
+  if (o.x1 > b->x1) b->x1 = o.x1;
+  if (o.y1 > b->y1) b->y1 = o.y1;
+}
+
+static Box whole_canvas(void) {
+  return (Box){0, 0, g_canvas->w - 1, g_canvas->h - 1};
+}
+
+/* The erased box is the whole canvas on a new context: what is on the display
+ * is unknown until a full clear and push. */
+static void reset_dirty_rectangle(void) {
+  g_color_box = g_z_box = kEmptyBox;
+  g_color_valid = g_z_valid = false;
+  g_swap_drawn = kEmptyBox;
+  g_swap_erased = g_canvas ? whole_canvas() : kEmptyBox;
+}
+
+/* Called by TinyGL for everything it draws, in canvas pixels. */
+void glshim_note_box(GLint x0, GLint y0, GLint x1, GLint y1) {
+  if (!g_zb) return;
+  Box b = {x0, y0, x1, y1};
+  const Box all = whole_canvas();
+  if (b.x0 < all.x0) b.x0 = all.x0;
+  if (b.y0 < all.y0) b.y0 = all.y0;
+  if (b.x1 > all.x1) b.x1 = all.x1;
+  if (b.y1 > all.y1) b.y1 = all.y1;
+  box_add(&g_color_box, b);
+  box_add(&g_z_box, b);
+  box_add(&g_swap_drawn, b);
+}
+
+/* Two pixels at a time: `p` is 16-bit and not always 4-byte aligned. */
+static void fill_pixels(uint16_t *p, uint16_t v, int n) {
+  if (n > 0 && ((uintptr_t)p & 2)) {
+    *p++ = v;
+    n--;
+  }
+  uint32_t *q = (uint32_t *)p;
+  const uint32_t pair = ((uint32_t)v << 16) | v;
+  for (; n >= 2; n -= 2) *q++ = pair;
+  if (n) *(uint16_t *)q = v;
+}
+
+void glshim_clear(ZBuffer *zb, GLint clear_z, GLint z, GLint clear_color,
+                  GLint r, GLint g, GLint b) {
+  if (zb != g_zb) { /* not opened through glshim_open: the stock clear */
+    ZB_clear(zb, clear_z, z, clear_color, r, g, b);
+    return;
+  }
+  const Box all = whole_canvas();
+  if (clear_color) {
+    const PIXEL color = RGB_TO_PIXEL(r, g, b);
+    const Box area = g_color_valid && color == g_clear_color ? g_color_box : all;
+    for (int y = area.y0; y <= area.y1; y++)
+      fill_pixels((uint16_t *)((GLbyte *)zb->pbuf + y * zb->linesize) + area.x0,
+                  color, area.x1 - area.x0 + 1);
+    box_add(&g_swap_erased, area);
+    g_color_box = kEmptyBox;
+    g_color_valid = true;
+    g_clear_color = color;
+  }
+  if (clear_z) {
+    const Box area = g_z_valid && z == g_clear_z ? g_z_box : all;
+    for (int y = area.y0; y <= area.y1; y++)
+      fill_pixels((uint16_t *)(zb->zbuf + y * zb->xsize) + area.x0, (uint16_t)z,
+                  area.x1 - area.x0 + 1);
+    g_z_box = kEmptyBox;
+    g_z_valid = true;
+    g_clear_z = z;
+  }
+}
 
 typedef struct {
   const char *data;
@@ -30,6 +134,8 @@ void glshim_close(void) {
   ZB_close(g_zb);
   g_zb = NULL;
   g_canvas = NULL;
+  g_color_box = g_z_box = g_swap_drawn = g_swap_erased = kEmptyBox;
+  g_color_valid = g_z_valid = false;
 }
 
 int glshim_is_open(void) { return g_zb != NULL; }
@@ -44,6 +150,7 @@ GLXContext *glshim_open(Canvas *canvas) {
   glInit(g_zb);
   g_vertex = g_normal = g_color = (ClientArray){0};
   g_canvas = canvas;
+  reset_dirty_rectangle();
   xshim_set_release_hook(release_hook);
   handle = g_zb;
   return &handle;
@@ -59,7 +166,14 @@ Bool glXMakeCurrent(Display *dpy, GLXDrawable drawable, GLXContext ctx) {
 void glXSwapBuffers(Display *dpy, GLXDrawable drawable) {
   (void)dpy;
   (void)drawable;
-  if (g_canvas) canvas_mark_dirty(g_canvas, 0, 0, g_canvas->w, g_canvas->h);
+  if (!g_canvas) return;
+  const Box boxes[2] = {g_swap_erased, g_swap_drawn};
+  for (int i = 0; i < 2; i++)
+    if (!box_empty(boxes[i]))
+      canvas_mark_dirty(g_canvas, boxes[i].x0, boxes[i].y0,
+                        boxes[i].x1 - boxes[i].x0 + 1,
+                        boxes[i].y1 - boxes[i].y0 + 1);
+  g_swap_drawn = g_swap_erased = kEmptyBox;
 }
 
 static int stride_in_bytes(int stride, int size) {
