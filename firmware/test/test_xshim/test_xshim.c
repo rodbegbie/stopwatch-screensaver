@@ -9,6 +9,7 @@
 #include "core/canvas.h"
 #include "erase.h"
 #include "fps.h"
+#include "alpha.h"
 #include "screenhack.h"
 #include "utils.h"
 #include "x11shim/arc.h"
@@ -826,6 +827,26 @@ void test_create_gc_reads_line_width_cap_and_join_from_the_mask(void) {
   TEST_ASSERT_EQUAL_INT(CapRound, gc->cap_style);
   TEST_ASSERT_EQUAL_INT(JoinBevel, gc->join_style);
   XFreeGC(dpy, gc);
+}
+
+void test_gc_accepts_a_plane_mask_and_draws_in_the_foreground_regardless(void) {
+  XGCValues v;
+  v.foreground = 0x1234;
+  v.plane_mask = 0x0F0F;
+  GC gc = XCreateGC(dpy, win, GCForeground | GCPlaneMask, &v);
+  canvas_clear(&cv, 0);
+  XFillRectangle(dpy, win, gc, 2, 2, 3, 3);
+  TEST_ASSERT_EQUAL_UINT16(0x1234, cv.px[3 * cv.w + 3]);
+  XFreeGC(dpy, gc);
+}
+
+void test_allocate_alpha_colors_reports_no_colour_planes(void) {
+  int nplanes = 5;
+  unsigned long *masks = (unsigned long *)0x1;
+  unsigned long base = 99;
+  allocate_alpha_colors(NULL, NULL, 1, &nplanes, True, &masks, &base);
+  TEST_ASSERT_EQUAL_INT(0, nplanes);
+  TEST_ASSERT_NULL(masks);
 }
 
 void test_change_gc_updates_only_the_masked_line_fields(void) {
@@ -1845,6 +1866,8 @@ int main(void) {
   RUN_TEST(test_parse_color_rejects_unknown_specs);
   RUN_TEST(test_gc_defaults_are_width_0_butt_miter);
   RUN_TEST(test_create_gc_reads_line_width_cap_and_join_from_the_mask);
+  RUN_TEST(test_gc_accepts_a_plane_mask_and_draws_in_the_foreground_regardless);
+  RUN_TEST(test_allocate_alpha_colors_reports_no_colour_planes);
   RUN_TEST(test_change_gc_updates_only_the_masked_line_fields);
   RUN_TEST(test_set_line_attributes_sets_all_three);
   RUN_TEST(test_wide_horizontal_line_butt_caps);

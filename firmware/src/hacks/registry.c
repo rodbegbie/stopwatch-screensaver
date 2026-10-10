@@ -45,6 +45,7 @@ XLOCKMORE_HACK(mountain, "Mountain");
 extern const HackEntry substrate_hack;
 extern const HackEntry epicycle_hack;
 extern const HackEntry kaleidescope_hack;
+extern const HackEntry deluxe_hack;
 /* The xlockmore framework reads ncolors and cycles; Gears defines neither, and
  * nothing in Gears uses them. Its own 30 ms pause held a light layout to 11 to
  * 13 fps once the dirty rectangle made a frame 44 to 63 ms; 10 ms removes it. */
@@ -87,5 +88,6 @@ const HackEntry *const g_hacks[] = {
     &kaleidescope_hack,
     &gears_hack,
     &morph3d_hack,
-    &cubicgrid_hack};
+    &cubicgrid_hack,
+    &deluxe_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);

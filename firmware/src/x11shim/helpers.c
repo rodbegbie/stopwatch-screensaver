@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdlib.h>
 
+#include "alpha.h"
 #include "colors.h"
 #include "erase.h"
 #include "hsv.h"
@@ -110,3 +111,13 @@ _sig_func_ptr signal(int sig, _sig_func_ptr handler) {
   return SIG_DFL;
 }
 #endif
+
+void allocate_alpha_colors(Screen *screen, Visual *visual, Colormap cmap,
+                           int *nplanesP, Bool additive_p,
+                           unsigned long **plane_masks,
+                           unsigned long *base_pixelP) {
+  (void)screen, (void)visual, (void)cmap, (void)additive_p;
+  *nplanesP = 0;
+  *plane_masks = NULL;
+  if (base_pixelP) *base_pixelP = 0;
+}
