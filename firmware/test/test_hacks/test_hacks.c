@@ -52,7 +52,8 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Epicycle",
                                          "Kaleidescope",
                                          "Gears",
-                                         "Morph3D"};
+                                         "Morph3D",
+                                         "CubicGrid"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -363,6 +364,7 @@ static const uint64_t kBaseline[] = {
     0xdeb3899d2483b5b7ull, /* Kaleidescope: taken after looking at the frames */
     0x41f708d6203d8140ull, /* Gears: taken after looking at the frames */
     0x5a1dd5b30e81a013ull, /* Morph3D: taken after looking at the frames */
+    0xc2b1b6b7d671b4c7ull, /* CubicGrid at ticks 20: taken after looking at the frames */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -631,6 +633,30 @@ void test_morph3d_start_and_stop_do_not_leak(void) {
   TEST_ASSERT_TRUE_MESSAGE(after < before + 64 * 1024, "allocated bytes grew");
 }
 
+/* CubicGrid builds one display list of 27,000 points and frees it on stop;
+ * what could leak is that list and the GL context. */
+void test_cubicgrid_start_and_stop_do_not_leak(void) {
+  const int cubicgrid = index_of("CubicGrid");
+  TEST_ASSERT_TRUE(cubicgrid >= 0);
+  srandom(1);
+  for (int i = 0; i < 3; i++) start_step_and_stop_gl_hack(cubicgrid, "CubicGrid");
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  for (int i = 0; i < 40; i++) start_step_and_stop_gl_hack(cubicgrid, "CubicGrid");
+  const size_t after = __sanitizer_get_current_allocated_bytes();
+  TEST_ASSERT_TRUE_MESSAGE(after < before + 64 * 1024, "allocated bytes grew");
+}
+
+/* CubicGrid draws ticks cubed points: 27,000 at its default of 30, which ran
+ * at 5.6 to 6 fps on the board. The registry cuts the grid to 20 (8,000). */
+void test_cubicgrid_registers_a_smaller_grid(void) {
+  const int cubicgrid = index_of("CubicGrid");
+  TEST_ASSERT_TRUE(cubicgrid >= 0);
+  int found = 0;
+  const char *const *o = g_hacks[cubicgrid]->overrides;
+  for (; o && *o; o++) found |= strcmp(*o, "*ticks: 20") == 0;
+  TEST_ASSERT_TRUE_MESSAGE(found, "CubicGrid does not override *ticks");
+}
+
 /* A tripwire, not a proof. On the host this runs unoptimised under
  * AddressSanitizer, which inflates frames several times over: Gears measures
  * 21 KB here against a 2.4 KB high-water mark on the board (the loop task has
@@ -674,6 +700,8 @@ int main(void) {
   RUN_TEST(test_kaleidescope_stops_do_not_leak);
   RUN_TEST(test_gears_start_and_stop_do_not_leak);
   RUN_TEST(test_morph3d_start_and_stop_do_not_leak);
+  RUN_TEST(test_cubicgrid_start_and_stop_do_not_leak);
+  RUN_TEST(test_cubicgrid_registers_a_smaller_grid);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
