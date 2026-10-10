@@ -76,7 +76,6 @@ extern const HackEntry anemone_hack;
 extern const HackEntry anemotaxis_hack;
 extern const HackEntry compass_hack;
 extern const HackEntry fuzzyflakes_hack;
-extern const HackEntry halftone_hack;
 extern const HackEntry ifs_hack;
 extern const HackEntry interaggregate_hack;
 extern const HackEntry lmorph_hack;
@@ -120,7 +119,6 @@ const HackEntry *const g_hacks[] = {
     &anemotaxis_hack,
     &compass_hack,
     &fuzzyflakes_hack,
-    &halftone_hack,
     &ifs_hack,
     &interaggregate_hack,
     &lmorph_hack,
