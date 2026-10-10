@@ -70,6 +70,7 @@ implied warranty.
 | `firmware/src/hacks/morph3d/morph3d.c` | Marcelo F. Vianna (1997), later changes by the xlockmore and xscreensaver authors | xlock permission notice (below) |
 | `firmware/src/hacks/cubicgrid/cubicgrid.c` | Vasek Potocek (2007) | xlock permission notice (below) |
 | `firmware/src/hacks/deluxe/deluxe.c` | Copyright (c) 1999-2018 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/interaggregate/interaggregate.c` | Copyright (c) 1997, 1998, 2002 Jamie Zawinski; InterAggregate by dagraz, based on j.tarbell's Intersection Aggregate (complexification.net, 2004) | jwz permission notice (above) |
 | `firmware/src/hacks/ifs/ifs.c` | Copyright © Chris Le Sueur and Robby Griffin, 2005-2006 | MIT |
 | `firmware/src/hacks/halftone/halftone.c` | Copyright (c) 2002 Peter Jaric | jwz permission notice (above) |
 | `firmware/src/hacks/fuzzyflakes/fuzzyflakes.c` | Copyright (c) 2004 Barry Dmytro | jwz permission notice (above) |
