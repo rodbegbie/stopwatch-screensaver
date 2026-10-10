@@ -50,7 +50,11 @@ extern const HackEntry kaleidescope_hack;
 static const char *const kGearsOverrides[] = {"*ncolors: 64", "*cycles: 0", NULL};
 XLOCKMORE_HACK_WITH(gears, "Gears", kGearsOverrides);
 XLOCKMORE_HACK_WITH(morph3d, "Morph3D", kGearsOverrides);
-XLOCKMORE_HACK_WITH(cubicgrid, "CubicGrid", kGearsOverrides);
+/* The grid is ticks cubed points a frame: the default 30 (27,000) ran at 5.6
+ * to 6 fps. 20 gives 8,000. */
+static const char *const kCubicGridOverrides[] = {"*ncolors: 64", "*cycles: 0",
+                                                  "*ticks: 20", NULL};
+XLOCKMORE_HACK_WITH(cubicgrid, "CubicGrid", kCubicGridOverrides);
 
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
