@@ -64,6 +64,7 @@ static const char *const kCubicGridOverrides[] = {"*ncolors: 64", "*cycles: 0",
 XLOCKMORE_HACK_WITH(cubicgrid, "CubicGrid", kCubicGridOverrides);
 XLOCKMORE_HACK(forest, "Forest");
 XLOCKMORE_HACK(laser, "Laser");
+XLOCKMORE_HACK(lissie, "Lissie");
 
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
@@ -93,5 +94,6 @@ const HackEntry *const g_hacks[] = {
     &cubicgrid_hack,
     &deluxe_hack,
     &forest_hack,
-    &laser_hack};
+    &laser_hack,
+    &lissie_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);
