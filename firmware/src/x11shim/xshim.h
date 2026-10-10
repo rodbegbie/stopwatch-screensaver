@@ -158,6 +158,10 @@ void xshim_close_display(Display *dpy);
  * leaks (Pacman keeps neither the unscaled sprites nor some scaled ones) is
  * made whole by calling this when it stops. */
 void xshim_release_pixmaps(Display *dpy);
+/* A subsystem that holds per-hack state (the GL layer) registers a hook and is
+ * told when the hack stops: xshim_release_pixmaps calls it once, with the
+ * display, after freeing the pixmaps, and then clears it. */
+void xshim_set_release_hook(void (*hook)(Display *dpy));
 
 GC XCreateGC(Display *, Drawable, unsigned long mask, XGCValues *);
 int XFreeGC(Display *, GC);
