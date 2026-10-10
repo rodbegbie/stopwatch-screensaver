@@ -88,6 +88,46 @@ The numbers say what each frame costs, not how it looks: a dot lattice at 14
 fps and a morphing polyhedron at 10 fps are different bets on what Rod will
 want to see on the board.
 
+## Accuracy against the device
+
+Gears, Morph3D and CubicGrid have all now run on the board. The predictions
+below were committed to this document before each port was flashed. Measured
+is step plus push, the quantity the model predicts.
+
+| Scene | Predicted | Measured | Error |
+| --- | --- | --- | --- |
+| Gears heavy, seed 13 | 211 ms | about 207 ms (#43) | in-sample, fitted |
+| Gears light, seed 11 | 117 ms | about 111 ms (#43) | +5% (held out) |
+| Morph3D, heavy shape | 114 ms | 111 to 118 ms | -3% to +4% |
+| Morph3D, light shape | 87 ms | 84 ms | -3% |
+| CubicGrid, 27,000 points | 165 ms | 170 to 180 ms | +3% to +9% |
+| CubicGrid, 8,000 points | 89 ms | 80 to 88 ms | -10% to -1% |
+
+- **Good to about 10 percent** on these four scenes that were not used in the
+  fit, in both directions. It also ranked them correctly, which is the use it
+  was built for: choosing which hack to port and what to turn down.
+- **The Gears rows are weaker evidence than the rest.** Their "measured"
+  figures are the breakdown quoted in issue #43, not a capture made for this
+  comparison, and the fill figure was fitted to the heavy one.
+- **The device shapes of Morph3D are inferred.** The device does not seed
+  `random()`, so a Morph3D start cannot be asked for its shape: the heavy and
+  light rows are matched by step time (78 to 82 ms and 48 ms). The two middle
+  shapes (5,040 and 5,100 vertices, predicted at about 98 to 100 ms) have not
+  appeared in five starts.
+- **The worries raised in review did not show up.** The model charges one
+  light, and Morph3D has two; its triangles are 3 to 4 pixels where Gears'
+  are 15 to 30; CubicGrid's points are drawn 2.5 pixels wide and uncosted. All
+  three would have made the model optimistic, and none did on the board:
+  Morph3D landed within 4 percent, and CubicGrid's two sizes imply about
+  4.7 microseconds a point against the model's 4. They may still bite a hack
+  that leans harder on them, so the caveats under "What this does not tell
+  us" stand.
+- **Use it for ranking and go or no-go, with a margin of 10 percent.** A
+  prediction within 10 percent of a frame-rate threshold needs the board to
+  settle it. Add each
+  new GL port's measured step to the table and refit `pixel_ns` if the errors
+  drift in one direction.
+
 ## Device check: Morph3D
 
 Flashed on 2026-10-09. The first capture was nine 5 second windows of one
@@ -129,10 +169,10 @@ cheap, as the model assumed.
 
 ## What this does not tell us
 
-- **Only Gears is calibrated.** One heavy and one light scene, both made of
-  many small triangles (15 to 30 pixels each). The fill figure of 570 ns a
-  pixel absorbs per-triangle cost, so a scene of few large triangles is likely
-  over-predicted.
+- **Only Gears is calibrated**, although three hacks now agree with it. The fit
+  used one heavy and one light scene, both made of many small triangles (15 to
+  30 pixels each). The fill figure of 570 ns a pixel absorbs per-triangle cost,
+  so a scene of few large triangles is likely over-predicted.
 - **Lighting cost is per light.** The model charges one flat figure per lit
   vertex, measured with a single light.
 - **Lines and points have no cost of their own** beyond vertex setup.
