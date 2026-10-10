@@ -65,6 +65,7 @@ XLOCKMORE_HACK_WITH(cubicgrid, "CubicGrid", kCubicGridOverrides);
 XLOCKMORE_HACK(forest, "Forest");
 XLOCKMORE_HACK(laser, "Laser");
 XLOCKMORE_HACK(lissie, "Lissie");
+XLOCKMORE_HACK(rotor, "Rotor");
 
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
@@ -95,5 +96,6 @@ const HackEntry *const g_hacks[] = {
     &deluxe_hack,
     &forest_hack,
     &laser_hack,
-    &lissie_hack};
+    &lissie_hack,
+    &rotor_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);
