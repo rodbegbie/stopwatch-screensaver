@@ -1,0 +1,134 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4KSFXN9APF73QA7N1SKFZX2",
+  "session_id": "f6f86398-1b8a-4d92-bf29-a3fe9f2f45eb",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-10T20:53:53.95984Z",
+  "branch": "worktree-port-unknownpleasures",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "firmware/src/glshim/glshim.c",
+    "firmware/src/glshim/glshim.h",
+    "firmware/src/x11shim/doubletime.c",
+    "firmware/src/x11shim/easing.c",
+    "firmware/src/x11shim/include/doubletime.h",
+    "firmware/src/x11shim/include/easing.h",
+    "firmware/src/x11shim/include/fps.h",
+    "firmware/src/x11shim/include/grab-ximage.h",
+    "firmware/src/x11shim/include/ximage-loader.h",
+    "firmware/src/x11shim/ximage.c",
+    "firmware/src/x11shim/xshim.h",
+    "firmware/test/test_glshim/test_glshim.c",
+    "firmware/test/test_xshim/test_xshim.c"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "9d9ea656e77f",
+  "checkpoint_transcript_start": 416,
+  "transcript_lines_at_start": 416,
+  "compact_transcript_start": 33,
+  "token_usage": {
+    "input_tokens": 136,
+    "cache_creation_tokens": 106695,
+    "cache_read_tokens": 12640157,
+    "output_tokens": 52206,
+    "api_call_count": 68
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01X3ExHRmAfX9tVa41vHNE1Q",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:using-git-worktrees"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "ea865ac843cf",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 35,
+        "end": 36,
+        "entry_ids": [
+          "6a623509-5bda-4a20-ab75-dca16a5cea4b"
+        ],
+        "tool_use_id": "toolu_01X3ExHRmAfX9tVa41vHNE1Q"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01X3ExHRmAfX9tVa41vHNE1Q"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:using-git-worktrees",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01MJ2us6XMZ8cua8pZQHFJKG",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "port-hack"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "ea865ac843cf",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 67,
+        "end": 68,
+        "entry_ids": [
+          "2d33cf08-5d87-40d4-b2cc-713f3cf289ad"
+        ],
+        "tool_use_id": "toolu_01MJ2us6XMZ8cua8pZQHFJKG"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01MJ2us6XMZ8cua8pZQHFJKG"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: port-hack",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-10-10T20:53:53.914572Z",
+    "agent_lines": 340,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 340,
+    "total_lines_changed": 340,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 340,
+      "agent_lines_removed": 0
+    }
+  ]
+}

@@ -3,8 +3,20 @@
   "checkpoint_id": "01M4KSFXN9APF73QA7N1SKFZX2",
   "strategy": "manual-commit",
   "branch": "worktree-port-unknownpleasures",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
+    "firmware/src/glshim/glshim.c",
+    "firmware/src/glshim/glshim.h",
+    "firmware/src/x11shim/doubletime.c",
+    "firmware/src/x11shim/easing.c",
+    "firmware/src/x11shim/include/doubletime.h",
+    "firmware/src/x11shim/include/easing.h",
+    "firmware/src/x11shim/include/fps.h",
+    "firmware/src/x11shim/include/grab-ximage.h",
+    "firmware/src/x11shim/include/ximage-loader.h",
+    "firmware/src/x11shim/ximage.c",
+    "firmware/src/x11shim/xshim.h",
+    "firmware/test/test_glshim/test_glshim.c",
     "firmware/test/test_xshim/test_xshim.c"
   ],
   "sessions": [
@@ -14,13 +26,20 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": "/0/prompt.txt"
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 384,
-    "cache_creation_tokens": 279762,
-    "cache_read_tokens": 38000631,
-    "output_tokens": 125684,
-    "api_call_count": 192
+    "input_tokens": 520,
+    "cache_creation_tokens": 386457,
+    "cache_read_tokens": 50640788,
+    "output_tokens": 177890,
+    "api_call_count": 260
   }
 }
