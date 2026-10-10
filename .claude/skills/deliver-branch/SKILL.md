@@ -23,8 +23,9 @@ Moved verbatim from AGENTS.md.
   usually checked out in Rod's main checkout, so `git fetch origin main:main`
   is refused there: run `git merge --ff-only origin/main` in it, only if
   `git status` shows no tracked changes.
-- Merge with `gh pr merge N --merge` once Rod approves. His approval is
-  enough: do not wait for the Entire Gates check to finish. A stacked PR's gate
+- Merge with `gh pr ready N` then `gh pr merge N --merge` once Rod approves
+  (trail PRs are drafts). His approval is enough: do not wait for the Entire
+  Gates check to finish. A stacked PR's gate
   can fail "Up to date: 1 commit behind" once its parent merges: if approvals
   and findings pass and the PR is mergeable, merge it, with no rebase.
 - `entire agent-help` says trails are unavailable; `entire trail create` works.

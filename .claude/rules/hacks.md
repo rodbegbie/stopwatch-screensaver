@@ -75,3 +75,9 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   `XSetForeground`. Interaggregate shipped without this: its alpha blends
   mixed the wrong bit fields and drew rainbow noise instead of green and brown
   strokes. `test_interaggregate_blend` includes the wrapper to check one blend.
+- `dump` never seeds `random()`, so a hack that picks a mode at start (Truchet,
+  12 modes) shows the same one in every dump. To see others, build the hack
+  alone (`probe_hacks.registry_source` and `shim_sources`) from a copy outside
+  `vendor/`, with a `__attribute__((constructor))` that calls
+  `srandom(atoi(getenv("SEED")))`. Each boot on the device picks a new mode
+  too, so measure each mode from separate boots.

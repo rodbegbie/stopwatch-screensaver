@@ -32,7 +32,8 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
   The device starts on a random hack; to pin one while examining it, prefix
   `PLATFORMIO_BUILD_FLAGS='-DSTART_HACK=\"galaxy\"'` (a name from `g_hacks[]`,
   any case; an unknown name falls back to random and logs it). Rebuild without
-  it afterwards, since the define sticks to the build.
+  it afterwards, since the define sticks to the build. Unescaped quotes fail
+  with "error: 'truchet' was not declared in this scope".
   It rotates to the next hack every 90 s (a button press restarts the count);
   `-DROTATE_SECONDS=5` shortens that for leak testing and `=0` turns it off. A
   pinned build still rotates, so add `=0` to measure one hack.
@@ -232,6 +233,13 @@ ones below apply everywhere.
   single-hack tests take about a second); `test_hacks` alone takes about 100 s.
 - Count hacks from `g_hacks[]`, not from a list in a message or a note: a PR
   body said 14 where the registry had 15, and a review list had left one out.
+  `grep -c` counts lines, and a line can hold several entries: use
+  `grep -o '&[a-z0-9_]*_hack' | wc -l`.
+- `gh issue view N` prints nothing in this repo: read issues with
+  `gh api repos/rodbegbie/stopwatch-screensaver/issues/N --jq '.title,.body'`.
+- `markdownlint` already fails on `main` for `THIRD_PARTY_NOTICES.md` (MD034,
+  a bare email) and `tools/assessment_measured.md` (MD041, a fragment): not
+  yours.
 - When a hack's colours look suspect, dump the same index and frame count
   from the current build and from `git stash` of the wrapper, and look at both
   side by side. Interaggregate's blend bug showed as rainbow confetti against
