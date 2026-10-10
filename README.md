@@ -1,8 +1,11 @@
 # stopwatch-screensaver
 
-xscreensaver "hacks" running on the M5Stack StopWatch (SKU C152, ESP32-S3,
-466×466 round AMOLED), through a small X11 shim. A learning project in
-embedded development.
+[xscreensaver](https://www.jwz.org/xscreensaver/) "hacks" running on the
+[M5Stack StopWatch](https://shop.m5stack.com/products/m5stack-stopwatch-dev-kit-esp32-s3)
+(SKU C152, ESP32-S3, 466×466 round AMOLED), through a small X11 shim. A
+learning project in embedded development.
+
+![The StopWatch running a rotation of xscreensaver hacks](docs/video.avif)
 
 The hack sources are copied byte for byte from xscreensaver 6.16, and the
 shim is extended to run them rather than the hacks being edited. A few are
@@ -13,10 +16,11 @@ button order, is `g_hacks[]` in `firmware/src/hacks/registry.c`. The
 [porting assessment](docs/porting-assessment.md) rates every xscreensaver hack
 by porting effort and lists the measurements taken on the device.
 
-Gears is the first OpenGL hack. It runs through a small GL layer over
-[TinyGL](https://github.com/C-Chads/tinygl), a software OpenGL by Fabrice
-Bellard (this project uses TinyGL; see `THIRD_PARTY_NOTICES.md`), drawing at
-4 to 9 fps depending on the random arrangement it starts with.
+Gears, Morph3D and CubicGrid are OpenGL hacks. They run through a small GL
+layer over [TinyGL](https://github.com/C-Chads/tinygl), a software OpenGL by
+Fabrice Bellard (this project uses TinyGL; see `THIRD_PARTY_NOTICES.md`),
+drawing at roughly 4 to 30 fps depending on the hack and the random scene it
+starts with.
 
 Frame rates run from under 1 to dozens of fps, mostly set by the delay each
 hack asks for: some hold each finished picture for seconds. Only the rows a
@@ -29,6 +33,8 @@ hack drew are sent to the display, so a hack that draws little costs little.
 - `firmware/src/x11shim/` implements the Xlib calls hacks use, drawing into
   that canvas (including pixmaps and clip masks), and serves each hack's
   default settings as its resources.
+- `firmware/src/glshim/` and `firmware/src/tinygl/` are the OpenGL layer and
+  the TinyGL copy beneath it, for the GL hacks.
 - `firmware/src/hacks/` holds the copied hack sources. They compile
   unmodified against the shim's own `screenhack.h`.
 - `firmware/src/runner/` starts, steps and switches hacks, painting each
@@ -38,8 +44,10 @@ hack drew are sent to the display, so a hack that draws little costs little.
   buttons and touch. A small task on core 0 watches both buttons, so a press
   made while a hack is in a long draw step is kept, not lost.
 
-The same code builds natively on the Mac, which is how the tests run and how
-frames are dumped to PNG without any hardware.
+`tools/` has the scripts that fetch xscreensaver, score each hack for porting
+effort, and check licence notices. The same firmware code builds natively on the
+Mac, which is how the tests run and how frames are dumped to PNG without any
+hardware.
 
 ## Prerequisites
 
@@ -60,6 +68,9 @@ cd firmware
 pio test -e native                      # host tests (canvas, shim, hacks)
 pio run -e stopwatch -t upload          # build and flash the device
 ```
+
+The scripts in `tools/` have their own tests, run from the repo root with
+`uv run --with pytest --with pillow pytest tools/tests`.
 
 The serial port is set in `firmware/platformio.ini`
 (`/dev/cu.usbmodem112401`). Change it if your device shows up elsewhere. If
@@ -88,11 +99,13 @@ most of the screen, pointing at `https://linkedin.com/in/rodbegbie`; build with
 `-DQR_URL=\"https://example.com\"` to change it. The frame rate and battery
 sit below the hack's name. The choice stays when the hack changes.
 
-Two build flags change this (set them with `PLATFORMIO_BUILD_FLAGS`, and
+Build flags change the defaults (set them with `PLATFORMIO_BUILD_FLAGS`, and
 rebuild without them afterwards, since the define sticks to the build):
 
 - `-DSTART_HACK=\"galaxy\"` always starts on that hack.
 - `-DROTATE_SECONDS=5` changes the rotation time, and `0` turns it off.
+- `-DBADGE_NAME=\"Ann\"` and `-DQR_URL=\"https://example.com\"` set the name
+  badge text and the QR code's target, as described above.
 
 A press made during a long draw step takes effect when the step ends. Extra
 presses in that wait count as one, and holding a button does not repeat.
