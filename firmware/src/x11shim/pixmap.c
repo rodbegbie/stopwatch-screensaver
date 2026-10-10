@@ -5,12 +5,8 @@
 
 #include "ximage-loader.h"
 
-/* The runner's one window is number 1 (see RootWindowOfScreen); a pixmap
- * handle is a pointer, so the two cannot clash. */
-#define WINDOW_ID 1UL
-
 static struct XshimPixmap *pixmap_of(Pixmap p) {
-  return (p == None || p == WINDOW_ID) ? NULL : (struct XshimPixmap *)(uintptr_t)p;
+  return (p == None || p == XSHIM_WINDOW) ? NULL : (struct XshimPixmap *)(uintptr_t)p;
 }
 
 static void pixmap_free(struct XshimPixmap *pm) {
@@ -39,7 +35,7 @@ static struct XshimPixmap *pixmap_new(int w, int h, int depth) {
 }
 
 Canvas *xshim_target(Display *dpy, Drawable d) {
-  if (d == WINDOW_ID) return dpy->canvas;
+  if (d == XSHIM_WINDOW) return dpy->canvas;
   struct XshimPixmap *pm = pixmap_of(d);
   return pm && pm->depth == 16 ? &pm->canvas : NULL;
 }
@@ -125,7 +121,7 @@ Status XGetGeometry(Display *dpy, Drawable d, Window *root, int *x, int *y,
                     unsigned int *w, unsigned int *h, unsigned int *border,
                     unsigned int *depth) {
   int width, height, bits;
-  if (d == WINDOW_ID) {
+  if (d == XSHIM_WINDOW) {
     width = dpy->canvas->w;
     height = dpy->canvas->h;
     bits = 16;
@@ -136,7 +132,7 @@ Status XGetGeometry(Display *dpy, Drawable d, Window *root, int *x, int *y,
   } else {
     return 0;
   }
-  if (root) *root = WINDOW_ID;
+  if (root) *root = XSHIM_WINDOW;
   if (x) *x = 0;
   if (y) *y = 0;
   if (w) *w = (unsigned)width;
@@ -263,7 +259,7 @@ int XCopyArea(Display *dpy, Drawable src, Drawable dst, GC gc, int sx, int sy,
   const struct XshimPixmap *pm = pixmap_of(src);
   struct XshimPixmap *target = pixmap_of(dst);
   if (!pm) return 0;
-  if (!target && dst != WINDOW_ID) return 0;
+  if (!target && dst != XSHIM_WINDOW) return 0;
   if (target ? pm->depth == target->depth : pm->depth == 16)
     copy_region(dpy, gc, pm, target, sx, sy, w, h, dx, dy);
   return 0;

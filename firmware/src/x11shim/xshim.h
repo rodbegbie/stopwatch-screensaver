@@ -163,8 +163,10 @@ enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
 
 #define DefaultScreen(dpy) ((void)(dpy), 0)
 
-/* The runner has one window, number 1, whatever screen it is asked about. */
-#define RootWindowOfScreen(screen) ((void)(screen), (Window)1)
+/* The runner's one window. Any other drawable but None is taken to be a
+ * pixmap pointer, so everything that names the window must use this. */
+#define XSHIM_WINDOW ((Window)1)
+#define RootWindowOfScreen(screen) ((void)(screen), XSHIM_WINDOW)
 #define PointerMotionMask (1L << 6)
 /* Events never arrive, so selecting them does nothing. */
 int XSelectInput(Display *, Window, long mask);
