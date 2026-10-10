@@ -49,7 +49,8 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Braid",
                                          "Mountain",
                                          "Epicycle",
-                                         "Kaleidescope"};
+                                         "Kaleidescope",
+                                         "Gears"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -358,6 +359,7 @@ static const uint64_t kBaseline[] = {
     0x8ce46510f0e0360cull, /* Mountain: taken after looking at the frames */
     0xa19684045106b327ull, /* Epicycle: taken after looking at the frames */
     0xdeb3899d2483b5b7ull, /* Kaleidescope: taken after looking at the frames */
+    0, /* Gears: pinned after looking at its frames */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {

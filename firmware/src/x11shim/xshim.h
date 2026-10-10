@@ -95,9 +95,28 @@ typedef union {
   int type;
   struct {
     int type;
+  } xany;
+  struct {
+    int type;
     unsigned int button;
+    int x, y;
+    unsigned int state;
   } xbutton;
+  struct {
+    int type;
+    int x, y;
+    unsigned int state;
+  } xmotion;
 } XEvent;
+
+#define ButtonPress 4
+#define ButtonRelease 5
+#define MotionNotify 6
+#define Button1 1
+#define Button2 2
+#define Button3 3
+#define Button4 4
+#define Button5 5
 
 typedef struct {
   char *option;
