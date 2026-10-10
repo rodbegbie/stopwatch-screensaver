@@ -68,6 +68,7 @@ implied warranty.
 | `firmware/src/hacks/celtic/celtic.c` | Copyright (c) 2006 Max Froumentin | jwz permission notice (above) |
 | `firmware/src/hacks/gears/gears.c` | Copyright (c) 2007-2019 Jamie Zawinski; originally written by Brian Paul in 1996 or earlier | jwz permission notice (above) |
 | `firmware/src/hacks/morph3d/morph3d.c` | Marcelo F. Vianna (1997), later changes by the xlockmore and xscreensaver authors | xlock permission notice (below) |
+| `firmware/src/hacks/cubicgrid/cubicgrid.c` | Vasek Potocek (2007) | xlock permission notice (below) |
 | `firmware/src/xs_support/glx/involute.c` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.h` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/normals.c` | Copyright (c) 2002-2004 Jamie Zawinski | jwz permission notice (above) |

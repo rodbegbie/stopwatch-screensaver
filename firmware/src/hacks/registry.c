@@ -50,6 +50,7 @@ extern const HackEntry kaleidescope_hack;
 static const char *const kGearsOverrides[] = {"*ncolors: 64", "*cycles: 0", NULL};
 XLOCKMORE_HACK_WITH(gears, "Gears", kGearsOverrides);
 XLOCKMORE_HACK_WITH(morph3d, "Morph3D", kGearsOverrides);
+XLOCKMORE_HACK_WITH(cubicgrid, "CubicGrid", kGearsOverrides);
 
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
@@ -75,5 +76,6 @@ const HackEntry *const g_hacks[] = {
     &epicycle_hack,
     &kaleidescope_hack,
     &gears_hack,
-    &morph3d_hack};
+    &morph3d_hack,
+    &cubicgrid_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);
