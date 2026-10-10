@@ -1,5 +1,7 @@
 /* Builds the unmodified fuzzyflakes.c in single precision (the ESP32-S3's FPU is
- * single-precision only, so `double` maths runs in software), with HAVE_JWXYZ
+ * single-precision only, so `double` maths runs in software) and
+ * with its decimal literals made floats at build time
+ * (tools/float_literals.py), or `0.5 * x` would stay software double, with HAVE_JWXYZ
  * defined after the framework headers. Upstream defines it where the window
  * system double-buffers for the hack, and the hack then draws straight on the
  * window. The shim draws only on the canvas, so drawing into a pixmap and
@@ -19,7 +21,7 @@
 #undef M_PI
 #define M_PI 3.14159265358979323846f
 
-#include "fuzzyflakes/fuzzyflakes.c"
+#include "fuzzyflakes_floatlit.c"
 
 const HackEntry fuzzyflakes_hack = {"FuzzyFlakes", fuzzyflakes_defaults, fuzzyflakes_init,
                                 fuzzyflakes_draw, fuzzyflakes_free, NULL, NULL};
