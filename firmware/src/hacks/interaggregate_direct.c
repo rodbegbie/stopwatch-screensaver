@@ -13,7 +13,24 @@
 
 #include "screenhack.h"
 
+#include "core/canvas.h"
 #include "hacks/single_precision.h"
+
+/* Interaggregate's alpha blend takes the red, green and blue bits out of
+ * pixel values itself (point2rgb), assuming ordinary RGB565. The canvas holds
+ * the bytes swapped, so swap where a colour comes back from XAllocColor and
+ * where it goes into XSetForeground, which leaves the hack working in ordinary
+ * RGB565. Its own foreground and background are black and white, which are the
+ * same in either order, so get_pixel_resource needs no wrapper unless those
+ * defaults change. */
+static Status interaggregate_alloc_color(Display *dpy, Colormap cmap, XColor *c) {
+  Status ok = XAllocColor(dpy, cmap, c);
+  c->pixel = px_swap((uint16_t)c->pixel);
+  return ok;
+}
+#define XAllocColor interaggregate_alloc_color
+#define XSetForeground(dpy, gc, pixel) \
+  XSetForeground(dpy, gc, px_swap((uint16_t)(pixel)))
 
 #undef XSCREENSAVER_MODULE
 #define XSCREENSAVER_MODULE(CLASS, PREFIX)

@@ -67,3 +67,9 @@ Moved verbatim from the Gotchas section of AGENTS.md.
 - Anemone's step moves between 31 and 56 ms as its arms grow and shrink, so its
   fps is 11 to 15.5 whatever one 20 s window says. Forest waits 500 ms between
   trees by design (about 2 fps, and the push is 88 rows).
+- A hack that unpacks pixel values itself (Substrate and Interaggregate, in
+  their `point2rgb`) assumes ordinary RGB565, but the canvas holds the bytes
+  swapped. Its wrapper swaps pixels where they cross `XAllocColor` and
+  `XSetForeground`. Interaggregate shipped without this: its alpha blends
+  mixed the wrong bit fields and drew rainbow noise instead of green and brown
+  strokes. `test_interaggregate_blend` includes the wrapper to check one blend.

@@ -394,7 +394,7 @@ static const uint64_t kBaseline[] = {
     0xb7feaf3a248c76f2ull, /* Compass: taken after looking at the frames */
     0xe94fb924120c76a5ull, /* FuzzyFlakes: taken after looking at the frames */
     0x3cc7ad2eeeea2850ull, /* IFS: taken after looking at the frames */
-    0xa99817e1ad5b5318ull, /* Interaggregate: taken after looking at the frames */
+    0x78c62badb21d8dddull, /* Interaggregate: after looking at the frames, pixels swapped */
     0x7118310d47ee4197ull, /* LMorph: taken after looking at the frames */
     0xe73572fd64eef48full, /* Wormhole: taken after looking at the frames */
 };

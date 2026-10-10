@@ -102,6 +102,10 @@ Halftone with `XFillArc` returning at once measured 15.4 fps (step 31.8 ms), so
 its dots' ellipse fills are about 80% of its step (issue #57). Forest waits
 500 ms between trees by design.
 
+Interaggregate's row was measured before its alpha blend was fixed (the
+wrapper now swaps pixels at the hack's boundary, as Substrate's does), and it
+has not been re-measured or looked at on the device since.
+
 Rod looked at all fifteen registered hacks of the batch on the device on
 2026-10-10 and found them performant and in line with the same hacks on other
 platforms (Anemotaxis was missing from his written list; he confirmed after
