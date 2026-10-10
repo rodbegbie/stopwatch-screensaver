@@ -1,0 +1,9 @@
+Trail is approved. Merge away, little friend.
+
+---
+
+/claude-md-management:revise-claude-md
+
+---
+
+apply both and commit to main
