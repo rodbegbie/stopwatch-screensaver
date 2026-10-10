@@ -1,0 +1,166 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4M3956WY07CBG7F53ATQRPA",
+  "session_id": "f6f86398-1b8a-4d92-bf29-a3fe9f2f45eb",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-10T23:44:59.425692Z",
+  "branch": "chore/xshim-window-define",
+  "checkpoints_count": 6,
+  "save_step_count": 1,
+  "files_touched": [
+    "firmware/src/x11shim/xshim.h"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "5a0965dc50a6",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 818,
+    "cache_creation_tokens": 789394,
+    "cache_read_tokens": 176344665,
+    "output_tokens": 458837,
+    "api_call_count": 409
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01X3ExHRmAfX9tVa41vHNE1Q",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:using-git-worktrees"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "ea865ac843cf",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 35,
+        "end": 36,
+        "entry_ids": [
+          "6a623509-5bda-4a20-ab75-dca16a5cea4b"
+        ],
+        "tool_use_id": "toolu_01X3ExHRmAfX9tVa41vHNE1Q"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01X3ExHRmAfX9tVa41vHNE1Q"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:using-git-worktrees",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01MJ2us6XMZ8cua8pZQHFJKG",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "port-hack"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "ea865ac843cf",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 67,
+        "end": 68,
+        "entry_ids": [
+          "2d33cf08-5d87-40d4-b2cc-713f3cf289ad"
+        ],
+        "tool_use_id": "toolu_01MJ2us6XMZ8cua8pZQHFJKG"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01MJ2us6XMZ8cua8pZQHFJKG"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: port-hack",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01Anxey5dweqpu2uRXhUusmf",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "9d9ea656e77f",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 1610,
+        "end": 1611,
+        "entry_ids": [
+          "4b792997-6818-4427-8757-56d36bb8a6bc"
+        ],
+        "tool_use_id": "toolu_01Anxey5dweqpu2uRXhUusmf"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01Anxey5dweqpu2uRXhUusmf"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_012hqg9FncYMBHf5kPptESy2",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:systematic-debugging"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "8efabbbb2238",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 2270,
+        "end": 2271,
+        "entry_ids": [
+          "9200886c-e123-4650-b779-51397b31e0ab"
+        ],
+        "tool_use_id": "toolu_012hqg9FncYMBHf5kPptESy2"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_012hqg9FncYMBHf5kPptESy2"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:systematic-debugging",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 29
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-10-10T23:44:59.196416Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 6,
+    "human_modified": 2,
+    "human_removed": 0,
+    "total_committed": 6,
+    "total_lines_changed": 14,
+    "agent_percentage": 0,
+    "metric_version": 2
+  }
+}
