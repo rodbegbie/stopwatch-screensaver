@@ -87,6 +87,19 @@ REPLACEMENTS: tuple[Replace, ...] = (
         "for (i = 1; i < MAX_DISPLAY_LISTS; i++) {",
     ),
     Replace(
+        "src/api.c",
+        '\tGLint i;\n#include "error_check_no_context.h"\n'
+        "\tp[0].op = OP_LightModel;\n\tp[1].i = pname;\n"
+        "\tfor (i = 0; i < 4; i++)\n\t\tp[2 + i].f = param[i];\n",
+        "\tGLint i;\n"
+        "\t/* Only the ambient colour has four values; the other parameters have\n"
+        "\t * one, and hacks pass a one-element array. */\n"
+        "\tGLint n = pname == GL_LIGHT_MODEL_AMBIENT ? 4 : 1;\n"
+        '#include "error_check_no_context.h"\n'
+        "\tp[0].op = OP_LightModel;\n\tp[1].i = pname;\n"
+        "\tfor (i = 0; i < 4; i++)\n\t\tp[2 + i].f = i < n ? param[i] : 0;\n",
+    ),
+    Replace(
         "src/zgl.h",
         "#define OP_BUFFER_MAX_SIZE 4096",
         "#define OP_BUFFER_MAX_SIZE 64",

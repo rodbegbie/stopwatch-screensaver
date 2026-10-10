@@ -130,6 +130,15 @@ void test_materiali_sets_the_shininess_tinygl_uses(void) {
   TEST_ASSERT_TRUE(specular_red_at_centre(100) <= 1);
 }
 
+/* Two-sided lighting takes one value, and Morph3D passes a one-element array.
+ * TinyGL copied four floats whatever the parameter, which AddressSanitizer
+ * reports as a global-buffer-overflow. */
+void test_a_one_value_light_model_is_not_over_read(void) {
+  static const GLfloat two_side[1] = {GL_TRUE};
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glLightModelfv(GL_LIGHT_MODEL_TWO_SIDE, (GLfloat *)two_side);
+}
+
 void test_is_enabled_reports_texturing_off(void) {
   TEST_ASSERT_EQUAL_INT(0, glIsEnabled(GL_TEXTURE_2D));
 }
@@ -287,6 +296,7 @@ int main(void) {
   RUN_TEST(test_the_first_list_name_is_not_zero);
   RUN_TEST(test_perspective_and_lookat_put_a_point_where_the_maths_says);
   RUN_TEST(test_materiali_sets_the_shininess_tinygl_uses);
+  RUN_TEST(test_a_one_value_light_model_is_not_over_read);
   RUN_TEST(test_is_enabled_reports_texturing_off);
   RUN_TEST(test_swap_buffers_marks_every_row_dirty);
   RUN_TEST(test_releasing_the_display_frees_the_context);

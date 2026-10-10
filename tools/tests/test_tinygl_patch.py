@@ -96,3 +96,11 @@ def test_a_missing_file_is_refused():
 def test_unity_source_lists_c_files_sorted():
     text = tp.unity_source(["src/zgl.h", "src/b.c", "src/a.c", "include/GL/gl.h"])
     assert text == '#include "tinygl/src/a.c"\n#include "tinygl/src/b.c"\n'
+
+
+def test_light_model_reads_only_as_many_values_as_the_parameter_has(patched):
+    """Two-sided lighting takes one value; Morph3D passes a one-element array."""
+    api = patched["src/api.c"]
+    body = api[api.index("void glLightModelfv") : api.index("/* clear */")]
+    assert "pname == GL_LIGHT_MODEL_AMBIENT ? 4 : 1" in body
+    assert "i < n ? param[i] : 0" in body
