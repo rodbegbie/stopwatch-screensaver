@@ -88,6 +88,24 @@ The numbers say what each frame costs, not how it looks: a dot lattice at 14
 fps and a morphing polyhedron at 10 fps are different bets on what Rod will
 want to see on the board.
 
+## Device check: Morph3D
+
+Flashed on 2026-10-09. The first capture was nine 5 second windows of one
+start: 8.0 to 8.4 fps, a step of 78 to 86 ms and a push of 32.6 ms. A second
+capture rotated every 10 seconds for 26 minutes (155 rotations, 4 to 5 laps, no
+resets or panics) and gave five Morph3D starts: four at 8.2 to 8.4 fps (step 78
+to 82 ms) and one at 11.4 fps (step 48 ms). Push was 36 ms on that build.
+PSRAM was identical on every visit; the free heap on entering Morph3D fell 308,
+36 and 40 bytes on the three laps after the first, which is in line with
+Gears' known upstream leak and cannot be attributed to Morph3D.
+
+Against the prediction (step plus push 87 to 114 ms, so a step of 55 to 82 ms):
+the 48 ms start sits just under the light shape's 55 ms, and the 78 to 82 ms
+starts match the heavy shape's 82 ms. No start landed in the 66 to 68 ms the
+two middle shapes (5,040 and 5,100 vertices) predict, so those shapes have not
+been seen on the board, and the device does not seed `random()`, so a shape
+cannot be asked for. The model held at both ends; its middle is unchecked.
+
 ## What this does not tell us
 
 - **Only Gears is calibrated.** One heavy and one light scene, both made of

@@ -34,8 +34,8 @@ it with `uv run tools/score_hacks.py`.
 | S | 2D, and the unmodified source compiles against the shim | 18 |
 | M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 13 |
 | L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 80 |
-| XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 139 |
-| Ported | Already running on the device, so no rating | 33 |
+| XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 138 |
+| Ported | Already running on the device, so no rating | 34 |
 
 ## Speed
 
@@ -513,12 +513,12 @@ needing few additions come first.
 | grav | 2d | S | low (0.0039 ms) | - | - | - | 360 |
 | halftone | 2d | S | high (2.1 ms) | - | - | pixmaps | 413 |
 | ifs | 2d | S | high (0.35 ms) | - | - | pixmaps | 560 |
-| interaggregate | 2d | S | high (0.66 ms) | - | - | - | 989 |
+| interaggregate | 2d | S | high (0.65 ms) | - | - | - | 989 |
 | laser | 2d | S | high (0.14 ms) | - | - | - | 356 |
 | lissie | 2d | S | low (0.0042 ms) | - | - | - | 323 |
 | lmorph | 2d | S | high (0.28 ms) | - | - | float-heavy | 580 |
 | rotor | 2d | S | low (0.0011 ms) | - | - | - | 394 |
-| scooter | 2d | S | high (0.19 ms) | - | - | - | 975 |
+| scooter | 2d | S | high (0.18 ms) | - | - | - | 975 |
 | truchet | 2d | S | high (3 ms) | - | - | pixmaps | 541 |
 | wormhole | 2d | S | high (1.6 ms) | - | - | pixmaps | 734 |
 | abstractile | 2d | M | - | - | `BlackPixelOfScreen`, `make_color_loop`, `make_color_ramp`, `rgb_to_hsv` | - | 1625 |
@@ -705,7 +705,6 @@ needing few additions come first.
 | moebius | gl | XL | - | - | `XDestroyImage` | - | 794 |
 | moebiusgears | gl | XL | - | - | `XLookupString` | - | 446 |
 | molecule | gl | XL | - | - | `XLookupString` | - | 1716 |
-| morph3d | gl | XL | - | - | - | - | 841 |
 | nakagin | gl | XL | - | - | - | - | 1636 |
 | noof | gl | XL | - | - | - | - | 530 |
 | papercube | gl | XL | - | - | - | - | 1111 |
@@ -786,6 +785,7 @@ needing few additions come first.
 | xspirograph | 2d | - | 54-56 ms measured | ✅ | - | - | 338 |
 | pacman | 2d | - | 1.3-1.9 ms measured | ✅ | `BLUE`, `GHOSTS`, `GHOST_DANGER`, `JAILHEIGHT`, `LEVHEIGHT`, `LEVWIDTH`, `MAXGDIR`, `MAXGFLASH`, `MAXGWAG`, `MAXMOUTH`, `MINGRIDSIZE`, `MINSIZE`, `NOWHERE`, `NUM_BONUS_DOTS`, `PAC_DEATH_FRAMES`, `START`, `XDrawString`, `XLoadQueryFont`, `chasing`, `error: expected expression`, `error: invalid application of 'sizeof' to an incomplete type 'argtype[]'`, `ghoststruct`, `goingin`, `goingout`, `hiding`, `images/gen/pacman_png.h`, `inbox`, `pacman.h`, `pacman_ai.h`, `pacman_bonus_dot_eaten`, `pacman_bonus_dot_pos`, `pacman_createnewlevel`, `pacman_eat_bonus_dot`, `pacman_ghost_update`, `pacman_is_bonus_dot`, `pacman_level.h`, `pacman_png`, `pacman_trackmouse`, `pacman_update`, `pacmangamestruct`, `pp`, `ps_chasing`, `ps_dieing`, `ps_eating` | pixmaps, text, clipmask | 1479 |
 | gears | gl | - | 65-330 ms measured | ✅ | - | - | 953 |
+| morph3d | gl | - | - | ✅ | - | - | 841 |
 
 ## Failed ports
 

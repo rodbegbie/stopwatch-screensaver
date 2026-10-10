@@ -44,6 +44,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Epicycle | 22.8-44.0 | 0.3-2.1 ms | 0.3-0.8 ms | 22.0-59.5 ms | none measurable |
 | Kaleidescope | 27.8-34.4 | 7.0-9.8 ms | 17.7-25.5 ms | 0-3.7 ms | none measurable |
 | Gears | 2.8-10.0 | 65-330 ms | 32.3-34.5 ms | 0 ms | 0.7-1.4 MB |
+| Morph3D | 8.0-11.4 | 48-86 ms | 32.6-36.2 ms | 5.2-8.8 ms | 0 (PSRAM identical every visit) |
 | Celtic | 1.0-20.4 | 29-1025 ms | 0.1-5.5 ms | 7.9-928 ms | none measurable |
 
 Maze's row is 26 five-second readings over 160 seconds, taken on a build that

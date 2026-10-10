@@ -5,6 +5,8 @@ paths:
   - "firmware/src/xs_support/glx/**"
   - "firmware/src/hacks/gears/**"
   - "firmware/src/hacks/gears_gl.c"
+  - "firmware/src/hacks/morph3d/**"
+  - "firmware/src/hacks/morph3d_gl.c"
   - "firmware/patch_tinygl.py"
   - "tools/tinygl_patch.py"
   - "tools/gl_budget.py"
@@ -77,3 +79,14 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   TinyGL never has them. Its fill cost is fitted to one Gears scene, so it
   over-predicts few-large-triangle scenes, and lines and points cost nothing
   beyond vertex setup. Add a second calibration point after each GL port.
+- TinyGL's `glLightModelfv` copied four floats whatever the parameter, so
+  `glLightModelfv(GL_LIGHT_MODEL_TWO_SIDE, one_float)` (Morph3D) read past the
+  array: AddressSanitizer's global-buffer-overflow. `tinygl_patch.py` now copies
+  four only for `GL_LIGHT_MODEL_AMBIENT`. `glopLightModel` still reads the
+  value back as an int from a float slot, which only works because any
+  non-zero float has non-zero bits; leave it unless a hack passes 0.
+- Morph3D is small and wanders by design: a window (not iconic) build scales
+  the object to 0.3 and moves it on a Lissajous path, so it is about 70 px
+  across on the 466 px canvas and its position differs frame to frame. It
+  cannot be enlarged without patching the hack. It enables two lights and
+  two-sided lighting; `docs/gl-budget.md` predicts 6 to 11 fps.

@@ -51,7 +51,8 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Mountain",
                                          "Epicycle",
                                          "Kaleidescope",
-                                         "Gears"};
+                                         "Gears",
+                                         "Morph3D"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -361,6 +362,7 @@ static const uint64_t kBaseline[] = {
     0xa19684045106b327ull, /* Epicycle: taken after looking at the frames */
     0xdeb3899d2483b5b7ull, /* Kaleidescope: taken after looking at the frames */
     0x41f708d6203d8140ull, /* Gears: taken after looking at the frames */
+    0x5a1dd5b30e81a013ull, /* Morph3D: taken after looking at the frames */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -586,15 +588,15 @@ void test_prev_from_first_wraps_to_last_hack(void) {
   runner_destroy(r);
 }
 
-static void start_step_and_stop_gears(int gears) {
+static void start_step_and_stop_gl_hack(int index, const char *name) {
   HackRunner *r = runner_create(&cv);
-  runner_start(r, gears);
+  runner_start(r, index);
   for (int f = 0; f < 5; f++) runner_step(r);
-  TEST_ASSERT_TRUE_MESSAGE(glshim_is_open(), "Gears did not open a GL context");
+  TEST_ASSERT_TRUE_MESSAGE(glshim_is_open(), name);
   runner_destroy(r);
   /* Checked here, not left to the next start: opening a context closes the
    * old one, which would hide a missing release hook. */
-  TEST_ASSERT_FALSE_MESSAGE(glshim_is_open(), "the GL context outlived the hack");
+  TEST_ASSERT_FALSE_MESSAGE(glshim_is_open(), name);
 }
 
 /* The GL context (a 434 KB z-buffer on the board) is freed by the shim's
@@ -609,9 +611,22 @@ void test_gears_start_and_stop_do_not_leak(void) {
   const int gears = index_of("Gears");
   TEST_ASSERT_TRUE(gears >= 0);
   srandom(1);
-  for (int i = 0; i < 3; i++) start_step_and_stop_gears(gears);
+  for (int i = 0; i < 3; i++) start_step_and_stop_gl_hack(gears, "Gears");
   const size_t before = __sanitizer_get_current_allocated_bytes();
-  for (int i = 0; i < 40; i++) start_step_and_stop_gears(gears);
+  for (int i = 0; i < 40; i++) start_step_and_stop_gl_hack(gears, "Gears");
+  const size_t after = __sanitizer_get_current_allocated_bytes();
+  TEST_ASSERT_TRUE_MESSAGE(after < before + 64 * 1024, "allocated bytes grew");
+}
+
+/* Morph3D builds no display lists and keeps one small struct, so the only
+ * thing that can grow is the GL context itself: 64 KB is far below one. */
+void test_morph3d_start_and_stop_do_not_leak(void) {
+  const int morph3d = index_of("Morph3D");
+  TEST_ASSERT_TRUE(morph3d >= 0);
+  srandom(1);
+  for (int i = 0; i < 3; i++) start_step_and_stop_gl_hack(morph3d, "Morph3D");
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  for (int i = 0; i < 40; i++) start_step_and_stop_gl_hack(morph3d, "Morph3D");
   const size_t after = __sanitizer_get_current_allocated_bytes();
   TEST_ASSERT_TRUE_MESSAGE(after < before + 64 * 1024, "allocated bytes grew");
 }
@@ -658,6 +673,7 @@ int main(void) {
   RUN_TEST(test_epicycle_stops_do_not_leak);
   RUN_TEST(test_kaleidescope_stops_do_not_leak);
   RUN_TEST(test_gears_start_and_stop_do_not_leak);
+  RUN_TEST(test_morph3d_start_and_stop_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
