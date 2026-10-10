@@ -1,11 +1,3 @@
-<!-- markdownlint-disable MD041 -->
-<!-- entire-graph:begin -->
-This repo has the entire-graph code graph installed. Before exploring code with
-grep/find/whole-file reads, read .entire/graph-agent.md — resolution-first guidance
-for using graph retrieval, focused source inspection, and verification.
-@.entire/graph-agent.md
-<!-- entire-graph:end -->
-
 # stopwatch-screensaver
 
 xscreensaver "hacks" running on an M5Stack StopWatch (SKU C152, ESP32-S3,
@@ -246,3 +238,10 @@ ones below apply everywhere.
   green and brown strokes, though every test had passed.
 - Board details (pins, power, recovery) are in
   `.claude/skills/m5stack-stopwatch/`.
+
+<!-- entire-graph:begin -->
+This repo has the entire-graph code graph installed. Before exploring code with
+grep/find/whole-file reads, read .entire/graph-agent.md — resolution-first guidance
+for using graph retrieval, focused source inspection, and verification.
+@.entire/graph-agent.md
+<!-- entire-graph:end -->
