@@ -8,6 +8,7 @@ description: Use when opening, updating, rebasing, merging or cleaning up a bran
 Moved verbatim from AGENTS.md.
 
 - `entire trail create --title ... --type feature --body ...` pushes the branch
+  (`--type` takes only `bug`, `feature` or `task`; `chore` is refused)
   and opens a linked DRAFT PR. The PR body is not synced from the trail: update
   both (`entire trail update --body`, `gh pr edit N --body-file`). Put
   `Fixes #N` in the body, then read the PR back (`gh pr view N --json body`):

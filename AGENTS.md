@@ -201,6 +201,9 @@ ones below apply everywhere.
 - zsh does not word-split `$var`: loop over file lists with `bash -c`. It also
   stops on a glob that matches nothing, so quote `--include='*.c'`, and
   `grep` needs `-e` for a pattern that starts with a dash (`-e '->px'`).
+- macOS tools: BSD `sed -i` needs a suffix argument (`sed -i.bak ...`), so
+  edit with Python or the Edit tool; zsh spells `PIPESTATUS` `pipestatus`, so
+  run a command on its own to read its exit status.
 - jwz.org returns 403 to Python's default User-Agent.
 - `esptool` reads of the 16 MB flash need `--baud 921600` (about 3.5 minutes)
   and show no progress when piped.
@@ -208,6 +211,9 @@ ones below apply everywhere.
   retry; never force-push for this.
 - Read `push=` from a hack's second 5 s window on: the name overlay is stamped
   inside the push timing while it shows, so the first window reads high.
+- A boot is deterministic (same hack, layout and windows), so to compare two
+  builds flash them alternately and compare window by window; one reading in
+  three captures was an unexplained outlier, so never trust a single pair.
 - Leak-testing with `-DROTATE_SECONDS=5`: internal heap falls about 26 KB
   during the first lap and then stays flat. Compare lap 2 with lap 3, not
   with lap 1. PSRAM should match exactly on every visit.
