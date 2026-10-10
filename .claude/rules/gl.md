@@ -79,7 +79,15 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
 - Polygon offset was stored and never read. The fill wrapper applies it:
   `factor` times the polygon's steepest depth slope plus `units` times one
   depth step, pushed away from the viewer. Without it a line drawn on the edge
-  of its own filled polygon is erased in dashes. An earlier depth-fighting
+  of its own filled polygon is erased in dashes. Unknown Pleasures' own
+  `glPolygonOffset (0.5, 0.5)` is not enough here: vertices are snapped to
+  whole pixels, so a polygon's depth is wrong by up to a pixel's slope in each
+  direction, and with only the hack's offset each quad still ate a few percent
+  of its own line, a different few each frame. The wrapper adds
+  `|dz/dx| + |dz/dy|` whenever an offset is asked for (not for an offset of 0, 0).
+  Measured on the host by the second difference of a frame's total brightness
+  while the picture drifts a fifth of a pixel a frame: 3,201 at the hack's own
+  offset, about 500 (the floor) with the margin. An earlier depth-fighting
   experiment found no effect only because blending made every quad invisible:
   change one thing at a time, and check that the thing under test can act.
 - Speed is about 6 us per lit vertex plus about 80 ms a frame (clear 25 ms,

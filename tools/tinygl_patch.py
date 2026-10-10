@@ -218,6 +218,11 @@ static GLint ZB_line_aa(ZBuffer* zb, ZBufferPoint* p1, ZBufferPoint* p2, GLint u
 # nothing reads them, so a line drawn on the edge of its own filled polygon
 # fights it for the depth test. The offset is factor * the polygon's steepest
 # depth slope + units * the smallest depth step, pushed away from the viewer.
+# The rasteriser also snaps a polygon's vertices to whole pixels, so its depth
+# at a pixel can be wrong by a pixel's slope in each direction, which the
+# hack's own numbers assume away: when an offset is asked for, that margin
+# (|dz/dx| + |dz/dy|) is added. Without it the polygon still erased a few
+# percent of its own line, a different few each frame, which flickered.
 #
 # Alpha: TinyGL has no alpha, which is what GL's SRC_ALPHA / ONE_MINUS_SRC_ALPHA
 # calls an alpha of 1, an opaque fill. Its own blend adds the colours, and reads
@@ -235,13 +240,14 @@ void gl_draw_triangle_fill(GLVertex* p0, GLVertex* p1, GLVertex* p2) {
 		GLfloat ax = (GLfloat)(p1->zp.x - p0->zp.x), ay = (GLfloat)(p1->zp.y - p0->zp.y), az = (GLfloat)(p1->zp.z - p0->zp.z);
 		GLfloat bx = (GLfloat)(p2->zp.x - p0->zp.x), by = (GLfloat)(p2->zp.y - p0->zp.y), bz = (GLfloat)(p2->zp.z - p0->zp.z);
 		GLfloat det = ax * by - ay * bx;
-		GLfloat slope = 0.0f;
+		GLfloat slope = 0.0f, snap = 0.0f;
 		if (det != 0.0f) {
 			GLfloat dzdx = fabsf((az * by - ay * bz) / det);
 			GLfloat dzdy = fabsf((ax * bz - az * bx) / det);
 			slope = dzdx > dzdy ? dzdx : dzdy;
+			snap = (c->offset_factor != 0.0f || c->offset_units != 0.0f) ? dzdx + dzdy : 0.0f;
 		}
-		bias = (GLint)(c->offset_factor * slope + c->offset_units * (GLfloat)(1 << ZB_POINT_Z_FRAC_BITS));
+		bias = (GLint)(c->offset_factor * slope + snap + c->offset_units * (GLfloat)(1 << ZB_POINT_Z_FRAC_BITS));
 	}
 	if (bias) {
 		p0->zp.z -= bias;

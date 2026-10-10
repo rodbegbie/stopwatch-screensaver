@@ -726,6 +726,51 @@ void test_a_zero_offset_leaves_the_tie_to_the_later_fill(void) {
   TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), second_fill_over_the_first(1, 0, 0, 0));
 }
 
+/* A line on the edge of its own opaque polygon, as in Unknown Pleasures: each
+ * row is a smooth line drawn over the top edge of a black quad on a plane that
+ * tilts away from the viewer, with the offset the hack asks for. TinyGL snaps
+ * the quad's vertices to whole pixels, so as the pair drifts the quad's depth
+ * at the line's pixels moves by up to a pixel's worth of slope, and the quad
+ * ate parts of its line. */
+static double line_brightness_on_its_quad(float shift, float tilt) {
+  open_line_scene(1);
+  glEnable(GL_DEPTH_TEST);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glEnable(GL_POLYGON_OFFSET_FILL);
+  glPolygonOffset(0.5f, 0.5f);
+  const float top = 0.1f + shift, depth = 0.3f;
+  glColor3f(1, 1, 1);
+  glBegin(GL_LINE_STRIP);
+  glVertex3f(-0.7f, top, depth);
+  glVertex3f(0.7f, top, depth);
+  glEnd();
+  glColor3f(0, 0, 0);
+  glBegin(GL_QUAD_STRIP);
+  glVertex3f(-0.7f, top, depth);
+  glVertex3f(-0.7f, top - 0.4f, depth - 0.4f * tilt);
+  glVertex3f(0.7f, top, depth);
+  glVertex3f(0.7f, top - 0.4f, depth - 0.4f * tilt);
+  glEnd();
+  double total, centroid;
+  measure_line(0, &total, &centroid);
+  glshim_close();
+  return total;
+}
+
+void test_a_smooth_line_is_not_eaten_by_its_own_polygon_as_they_drift(void) {
+  const float tilts[] = {0.5f, 1.0f, 2.0f};
+  for (int t = 0; t < 3; t++) {
+    double best = 0, worst = 1e30;
+    for (int k = 0; k < 16; k++) {
+      const double b = line_brightness_on_its_quad(k * 0.0625f * PIXEL_NDC, tilts[t]);
+      if (b > best) best = b;
+      if (b < worst) worst = b;
+    }
+    TEST_ASSERT_TRUE_MESSAGE(best > 0, "nothing drawn");
+    TEST_ASSERT_TRUE_MESSAGE(worst >= 0.98 * best, "the polygon ate part of the line");
+  }
+}
+
 void test_the_device_is_never_turned(void) {
   TEST_ASSERT_TRUE(current_device_rotation() == 0.0);
 }
@@ -746,6 +791,7 @@ int main(void) {
   RUN_TEST(test_a_positive_offset_pushes_a_fill_back_behind_its_twin);
   RUN_TEST(test_the_offset_factor_scales_with_the_slope_of_the_fill);
   RUN_TEST(test_a_zero_offset_leaves_the_tie_to_the_later_fill);
+  RUN_TEST(test_a_smooth_line_is_not_eaten_by_its_own_polygon_as_they_drift);
   RUN_TEST(test_recompiling_a_list_under_the_same_name_does_not_grow_memory);
   RUN_TEST(test_line_width_is_accepted_and_changes_nothing);
   RUN_TEST(test_draw_arrays_honours_a_byte_stride);

@@ -168,7 +168,8 @@ def test_filled_triangles_apply_polygon_offset_and_treat_alpha_one_as_opaque(pat
     wrapper = clip[clip.index("void gl_draw_triangle_fill(") :]
     wrapper = wrapper[: wrapper.index("gl_draw_triangle_fill_plain(GLVertex* p0")]
     assert "c->offset_states & TGL_OFFSET_FILL" in wrapper
-    assert "c->offset_factor * slope + c->offset_units" in wrapper
+    assert "c->offset_factor * slope + snap + c->offset_units" in wrapper
+    assert "snap = (c->offset_factor != 0.0f || c->offset_units != 0.0f)" in wrapper
     assert "p0->zp.z -= bias;" in wrapper
     assert "GL_SRC_ALPHA" in wrapper and "GL_ONE_MINUS_SRC_ALPHA" in wrapper
     assert "c->zb->enable_blend = blend;" in wrapper
