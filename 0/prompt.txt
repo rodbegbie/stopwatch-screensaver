@@ -1,0 +1,13 @@
+flash the build please!
+
+---
+
+Great! That worked.  Want to do a test with another URL? Maybe https://github.com/rodbegbie/stopwatch-screensaver
+
+---
+
+Nice! That worked too.  OK, reflash the board with the default and let's open a PR
+
+---
+
+/address-findings 33

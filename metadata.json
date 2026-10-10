@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4KSMHT9JXD6YAKNANGE8KBR",
+  "strategy": "manual-commit",
+  "branch": "feature/60-qr-overlay",
+  "checkpoints_count": 5,
+  "files_touched": [
+    "firmware/src/main.cpp",
+    "firmware/src/runner/overlay.c",
+    "firmware/src/runner/overlay.h",
+    "firmware/test/test_overlay/test_overlay.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 34,
+    "cache_creation_tokens": 14643,
+    "cache_read_tokens": 2045628,
+    "output_tokens": 7788,
+    "api_call_count": 17
+  }
+}
