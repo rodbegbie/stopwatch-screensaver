@@ -1,0 +1,198 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4K5TBVB3D0ERYHBX55AJV84",
+  "session_id": "0bb1328b-af94-4efc-9fdb-8fcd3a320ffa",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-10T15:10:04.474027Z",
+  "branch": "feature/port-deluxe",
+  "checkpoints_count": 2,
+  "save_step_count": 2,
+  "files_touched": [
+    "firmware/src/x11shim/stroke.c",
+    "firmware/test/test_xshim/test_xshim.c"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "63846205674c",
+  "checkpoint_transcript_start": 2037,
+  "transcript_lines_at_start": 2037,
+  "compact_transcript_start": 180,
+  "token_usage": {
+    "input_tokens": 22,
+    "cache_creation_tokens": 15067,
+    "cache_read_tokens": 3159833,
+    "output_tokens": 7581,
+    "api_call_count": 11
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01FSiKqaU5rS6aMgFCWUs86T",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "port-hack"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "8033bf6245a3",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 35,
+        "end": 36,
+        "entry_ids": [
+          "9a0336e0-cedd-4927-bc91-81d0a05709e4"
+        ],
+        "tool_use_id": "toolu_01FSiKqaU5rS6aMgFCWUs86T"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01FSiKqaU5rS6aMgFCWUs86T"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: port-hack",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_019Lv21o6fwYK2g4UEMPKDTr",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "deliver-branch"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "7b090df76226",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 1495,
+        "end": 1496,
+        "entry_ids": [
+          "5239db3c-ece6-4f99-8540-06945e629f8d"
+        ],
+        "tool_use_id": "toolu_019Lv21o6fwYK2g4UEMPKDTr"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_019Lv21o6fwYK2g4UEMPKDTr"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: deliver-branch",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01JomHg9FhwZK5tEzyg9esCy",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "7b090df76226",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 1541,
+        "end": 1542,
+        "entry_ids": [
+          "0e1c4f6c-f2f6-4c67-a5b9-d69e4a9a899d"
+        ],
+        "tool_use_id": "toolu_01JomHg9FhwZK5tEzyg9esCy"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01JomHg9FhwZK5tEzyg9esCy"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "prompt-skill-claude-code-address-findings-2026-10-10T15:05:45.303859Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "address-findings"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "d662a8b42467",
+      "timestamp": "2026-10-10T15:05:45.303859Z",
+      "native": {
+        "command": "/address-findings"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/address-findings",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 11
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-10-10T15:10:04.421553Z",
+    "agent_lines": 41,
+    "agent_removed": 3,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 41,
+    "total_lines_changed": 44,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 127,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".private-journal/2026-10-07/19-59-30-000000-79f41e20.md": 8,
+        ".private-journal/2026-10-07/22-51-53-000000-2f0b9ece.md": 8,
+        ".private-journal/2026-10-08/07-50-07-000000-0110d472.md": 8,
+        ".private-journal/2026-10-08/15-15-15-000000-4004028d.md": 19,
+        ".private-journal/2026-10-08/15-45-25-000000-61b97d2d.md": 8,
+        ".private-journal/2026-10-08/17-26-54-000000-98ba9899.md": 12,
+        ".private-journal/2026-10-09/00-21-50-000000-1de20801.md": 8,
+        ".private-journal/2026-10-09/12-29-59-000000-8e4c6857.md": 16,
+        ".private-journal/2026-10-09/15-14-18-000000-357340fa.md": 8,
+        ".private-journal/2026-10-09/20-40-34-000000-16250e9e.md": 8,
+        ".private-journal/2026-10-09/23-14-53-000000-38a6b176.md": 8,
+        ".private-journal/2026-10-10/00-39-42-000000-64095098.md": 8,
+        ".private-journal/2026-10-10/06-35-48-000000-d0ecd666.md": 8
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 41,
+      "agent_lines_removed": 3
+    }
+  ]
+}
