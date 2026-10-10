@@ -33,6 +33,30 @@ void gluLookAt(GLdouble eyex, GLdouble eyey, GLdouble eyez, GLdouble cx,
                GLdouble cy, GLdouble cz, GLdouble upx, GLdouble upy,
                GLdouble upz);
 
+/* TinyGL counts a vertex array's stride in floats and reads the array when a
+ * display list is replayed. GL counts bytes and reads at the draw call, and
+ * hacks free an array straight after drawing it. So hacks' array calls come
+ * here, and a draw is expanded at once into glBegin, glNormal3f, glVertex3f
+ * and glEnd. A stride of 0 means tightly packed. Texture coordinates are
+ * accepted and ignored. */
+void glshim_VertexPointer(GLint size, GLenum type, GLsizei stride,
+                          const GLvoid *pointer);
+void glshim_NormalPointer(GLenum type, GLsizei stride, const GLvoid *pointer);
+void glshim_ColorPointer(GLint size, GLenum type, GLsizei stride,
+                         const GLvoid *pointer);
+void glshim_TexCoordPointer(GLint size, GLenum type, GLsizei stride,
+                            const GLvoid *pointer);
+void glshim_EnableClientState(GLenum array);
+void glshim_DisableClientState(GLenum array);
+void glshim_DrawArrays(GLenum mode, GLint first, GLsizei count);
+#define glVertexPointer glshim_VertexPointer
+#define glNormalPointer glshim_NormalPointer
+#define glColorPointer glshim_ColorPointer
+#define glTexCoordPointer glshim_TexCoordPointer
+#define glEnableClientState glshim_EnableClientState
+#define glDisableClientState glshim_DisableClientState
+#define glDrawArrays glshim_DrawArrays
+
 void glMateriali(GLint face, GLint pname, GLint value);
 /* The only caller asks about GL_TEXTURE_2D, which no hack here enables. */
 int glIsEnabled(GLint cap);

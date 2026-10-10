@@ -1,5 +1,7 @@
 #include <sanitizer/allocator_interface.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unity.h>
 
 #include "GL/gl.h"
@@ -126,8 +128,101 @@ void test_opening_on_an_empty_canvas_returns_null(void) {
   TEST_ASSERT_EQUAL_UINT64(before, __sanitizer_get_current_allocated_bytes());
 }
 
+/* Vertex arrays, as tube.c and sphere.c build them: one interleaved struct per
+ * vertex, a stride in bytes, freed straight after the draw. */
+typedef struct {
+  float n[3];
+  float v[3];
+  float pad[2];
+} Vtx; /* 32 bytes */
+
+static const Vtx kTri[3] = {{{0, 0, 1}, {-0.8f, -0.8f, 0}, {0, 0}},
+                            {{0, 0, 1}, {0.8f, -0.8f, 0}, {0, 0}},
+                            {{0, 0, 1}, {0.0f, 0.8f, 0}, {0, 0}}};
+
+static uint16_t reference[SIZE * SIZE];
+
+static void open_flat_red_scene(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glViewport(0, 0, SIZE, SIZE);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  glDisable(GL_LIGHTING);
+  glColor3f(1, 0, 0);
+  glDisableClientState(GL_VERTEX_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+}
+
+static void draw_triangle_immediately(void) {
+  glBegin(GL_TRIANGLES);
+  for (int i = 0; i < 3; i++) glVertex3f(kTri[i].v[0], kTri[i].v[1], kTri[i].v[2]);
+  glEnd();
+}
+
+static void take_reference_and_clear(void) {
+  draw_triangle_immediately();
+  memcpy(reference, cv.px, sizeof reference);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+static int count_set(void) {
+  int n = 0;
+  for (int i = 0; i < SIZE * SIZE; i++) n += cv.px[i] != 0;
+  return n;
+}
+
+static void point_at(const Vtx *tri) {
+  glVertexPointer(3, GL_FLOAT, sizeof(Vtx), &tri->v);
+  glNormalPointer(GL_FLOAT, sizeof(Vtx), &tri->n);
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glEnableClientState(GL_NORMAL_ARRAY);
+}
+
+void test_draw_arrays_honours_a_byte_stride(void) {
+  open_flat_red_scene();
+  take_reference_and_clear();
+  point_at(kTri);
+  glDrawArrays(GL_TRIANGLES, 0, 3);
+  TEST_ASSERT_TRUE(count_set() > 100);
+  TEST_ASSERT_EQUAL_MEMORY(reference, cv.px, sizeof reference);
+}
+
+/* This is the bug that drew needles: TinyGL read the array when the list was
+ * replayed, after the hack had freed it. */
+void test_a_display_list_keeps_the_arrays_it_recorded(void) {
+  open_flat_red_scene();
+  take_reference_and_clear();
+  Vtx *tri = malloc(sizeof kTri);
+  memcpy(tri, kTri, sizeof kTri);
+  point_at(tri);
+  const GLuint list = glGenLists(1);
+  glNewList(list, GL_COMPILE);
+  glDrawArrays(GL_TRIANGLES, 0, 3);
+  glEndList();
+  memset(tri, 0xFF, sizeof kTri);
+  free(tri);
+  glCallList(list);
+  TEST_ASSERT_TRUE(count_set() > 100);
+  TEST_ASSERT_EQUAL_MEMORY(reference, cv.px, sizeof reference);
+}
+
+void test_draw_arrays_with_nothing_enabled_or_a_zero_count_draws_nothing(void) {
+  open_flat_red_scene();
+  glVertexPointer(3, GL_FLOAT, sizeof(Vtx), &kTri[0].v);
+  glDrawArrays(GL_TRIANGLES, 0, 3); /* pointers set, nothing enabled */
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glDrawArrays(GL_TRIANGLES, 0, 0);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+}
+
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_draw_arrays_honours_a_byte_stride);
+  RUN_TEST(test_a_display_list_keeps_the_arrays_it_recorded);
+  RUN_TEST(test_draw_arrays_with_nothing_enabled_or_a_zero_count_draws_nothing);
   RUN_TEST(test_clear_writes_canvas_byte_order);
   RUN_TEST(test_the_first_list_name_is_not_zero);
   RUN_TEST(test_perspective_and_lookat_put_a_point_where_the_maths_says);

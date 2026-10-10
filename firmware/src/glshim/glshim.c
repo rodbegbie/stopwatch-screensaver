@@ -50,6 +50,96 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable) {
   if (g_canvas) canvas_mark_dirty(g_canvas, 0, 0, g_canvas->w, g_canvas->h);
 }
 
+typedef struct {
+  const char *data;
+  int size;
+  int stride; /* bytes between elements */
+  int on;
+} ClientArray;
+
+static ClientArray g_vertex, g_normal, g_color;
+
+static int stride_in_bytes(int stride, int size) {
+  return stride ? stride : size * (int)sizeof(GLfloat);
+}
+
+void glshim_VertexPointer(GLint size, GLenum type, GLsizei stride,
+                          const GLvoid *pointer) {
+  (void)type;
+  g_vertex.data = pointer;
+  g_vertex.size = size;
+  g_vertex.stride = stride_in_bytes(stride, size);
+}
+
+void glshim_NormalPointer(GLenum type, GLsizei stride, const GLvoid *pointer) {
+  (void)type;
+  g_normal.data = pointer;
+  g_normal.size = 3;
+  g_normal.stride = stride_in_bytes(stride, 3);
+}
+
+void glshim_ColorPointer(GLint size, GLenum type, GLsizei stride,
+                         const GLvoid *pointer) {
+  (void)type;
+  g_color.data = pointer;
+  g_color.size = size;
+  g_color.stride = stride_in_bytes(stride, size);
+}
+
+void glshim_TexCoordPointer(GLint size, GLenum type, GLsizei stride,
+                            const GLvoid *pointer) {
+  (void)size;
+  (void)type;
+  (void)stride;
+  (void)pointer;
+}
+
+static ClientArray *client_array(GLenum array) {
+  switch (array) {
+    case GL_VERTEX_ARRAY:
+      return &g_vertex;
+    case GL_NORMAL_ARRAY:
+      return &g_normal;
+    case GL_COLOR_ARRAY:
+      return &g_color;
+    default:
+      return NULL;
+  }
+}
+
+void glshim_EnableClientState(GLenum array) {
+  ClientArray *a = client_array(array);
+  if (a) a->on = 1;
+}
+
+void glshim_DisableClientState(GLenum array) {
+  ClientArray *a = client_array(array);
+  if (a) a->on = 0;
+}
+
+static const GLfloat *element(const ClientArray *a, GLint i) {
+  return (const GLfloat *)(a->data + (size_t)i * (size_t)a->stride);
+}
+
+void glshim_DrawArrays(GLenum mode, GLint first, GLsizei count) {
+  glBegin(mode);
+  for (GLint i = first; i < first + count; i++) {
+    if (g_color.on) {
+      const GLfloat *c = element(&g_color, i);
+      glColor4f(c[0], c[1], c[2], g_color.size > 3 ? c[3] : 1.0f);
+    }
+    if (g_normal.on) {
+      const GLfloat *n = element(&g_normal, i);
+      glNormal3f(n[0], n[1], n[2]);
+    }
+    if (g_vertex.on) {
+      const GLfloat *v = element(&g_vertex, i);
+      glVertex3f(v[0], v[1], g_vertex.size > 2 ? v[2] : 0.0f);
+    }
+  }
+  glEnd();
+}
+
 void glMateriali(GLint face, GLint pname, GLint value) {
   GLfloat v[4] = {(GLfloat)value, 0, 0, 1};
   glMaterialfv(face, pname, v);
