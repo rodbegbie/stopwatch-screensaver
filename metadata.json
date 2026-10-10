@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4KWXAEV8KN2DWAD464SV602",
+  "strategy": "manual-commit",
+  "branch": "feature/58-pixmap-surfaces-truchet",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/src/x11shim/pixmap.c",
+    "firmware/src/x11shim/pixmap.h",
+    "firmware/src/x11shim/xshim.c",
+    "firmware/test/test_xshim/test_xshim.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 128,
+    "cache_creation_tokens": 192912,
+    "cache_read_tokens": 9295482,
+    "output_tokens": 54902,
+    "api_call_count": 64
+  }
+}
