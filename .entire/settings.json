@@ -22,7 +22,8 @@
         }
       },
       "judge": {
-        "agent": "codex"
+        "agent": "claude-code",
+        "model": "sonnet"
       },
       "output": "trail"
     }
