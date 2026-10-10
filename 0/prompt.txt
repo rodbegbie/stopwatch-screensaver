@@ -1,0 +1,9 @@
+Approved. Merge it.
+
+---
+
+/claude-md-management:revise-claude-md
+
+---
+
+apply them all, straight to main
