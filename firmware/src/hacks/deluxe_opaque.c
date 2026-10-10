@@ -1,8 +1,7 @@
 /* Builds the unmodified deluxe.c with resources that suit the shim. Its
  * `transparent` default draws through colour-plane masks, which an RGB565
- * canvas cannot do, and its `doubleBuffer` default draws into pixmaps, but
- * the shim only draws on the canvas, so the copy to the window would erase
- * the picture.
+ * canvas cannot do, and its `doubleBuffer` default draws into two pixmaps,
+ * which would cost 868 KB and a full-frame copy each frame.
  *
  * Its circles are 50 pixels wide arcs up to 700 across. The shim strokes an
  * arc as a polyline of about a thousand wide segments, each filled a row at a

@@ -55,10 +55,13 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   checked.
 - A colour pixmap is a `Canvas`, and every drawing primitive draws on the
   drawable it is given (`xshim_target` in `pixmap.c`); a bitmap or `None`
-  draws nothing, and only `XCopyArea` writes into a bitmap. No registered hack
-  drew into a pixmap before this (the `HAVE_JWXYZ` wrappers and Deluxe's
-  `doubleBuffer: False` turn double-buffering off), so keep those: a back
-  buffer costs 434 KB and a full-frame copy, and dirties every row. Without a
+  draws nothing, and only `XCopyArea` writes into a bitmap. Two exceptions
+  still draw on the window whatever they are given: `XCopyPlane`, and
+  Deluxe's wrapper, which calls `stroke_circle(dpy->canvas, ...)`. No
+  registered hack drew into a pixmap before this (the `HAVE_JWXYZ` wrappers
+  and Deluxe's `doubleBuffer: False` turn double-buffering off), so keep
+  those: a back buffer costs 434 KB and a full-frame copy, and dirties every
+  row. Without a
   clip mask, `XCopyArea` copies colour rows whole with `canvas_paste_rect`. A
   pixmap wider or taller than `INT16_MAX` is `None` (the canvas's dirty spans
   are `int16_t`). Truchet draws into one (issue #61). The display tracks every

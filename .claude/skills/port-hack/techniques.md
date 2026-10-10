@@ -117,7 +117,9 @@ When: one allocation of 100 KB or more, or the hack calls `exit()` if it fails.
 
 ## Images
 
-Only `XCopyArea` writes into a pixmap; `XCopyPlane` reads one. There is no PNG
+Colour pixmaps are canvases: every drawing primitive and `XCopyArea` draw
+into them. Bitmaps take only `XCopyArea` from another bitmap, and
+`XCopyPlane` always draws on the window. There is no PNG
 decoder: `image_data_to_pixmap` reads a raw RGB565 blob and
 mask (format in `ximage-loader.h`), made by `tools/make_logo_blob.py`.
 `XS_LOGO=<image>` (relative to the repository root) swaps the logo for a local
@@ -130,9 +132,11 @@ script and never committed; write it to a `.partial` file and rename it.
 
 When: a plain screenhack makes two pixmaps, draws into them and `XCopyArea`s the
 result to the window (Anemone, Anemotaxis, Compass, FuzzyFlakes, Halftone,
-Interaggregate, LMorph, Wormhole). The shim draws every primitive on the canvas
-even when given a pixmap, so the copy from a blank pixmap erases the picture:
-the frame is all black and the "draws something" test fails.
+Interaggregate, LMorph, Wormhole). Since #61 this works as copied, but a back
+buffer costs 434 KB of PSRAM and a full-frame copy each frame, and dirties
+every row, so the push loses what the dirty rectangle (#52) saves. Draw
+straight on the canvas instead, as below. (These eight were ported before #61,
+when the copy from a blank pixmap erased the picture.)
 
 - A pinned hash of a blank frame passes silently (`0xa4f79500bd791711ull`, which
   is also Pedal's at frame 200). Look at the frame before pinning.
@@ -143,9 +147,9 @@ the frame is all black and the "draws something" test fails.
   register its `HackEntry`. Exclude the original from `build_src_filter` in all
   three environments. `grep HAVE_JWXYZ` first: Interaggregate also uses it for
   pixel packing, but only in the 24 and 32 bit cases, and the canvas is 16 bit.
-- It cannot help a hack that uses a pixmap as storage. Truchet draws a canvas
-  bigger than the window into a pixmap and scrolls it with `XCopyArea` offsets,
-  so it stays unported until the shim can draw into pixmaps (asked Rod).
+- A hack that uses a pixmap as storage needs no wrapper. Truchet draws a canvas
+  bigger than the window into an 866 by 866 pixmap (1.5 MB of PSRAM) and
+  scrolls it with `XCopyArea` offsets.
 
 ## Restart leak test
 
