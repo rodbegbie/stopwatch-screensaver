@@ -1,0 +1,67 @@
+---
+paths:
+  - "firmware/src/glshim/**"
+  - "firmware/src/tinygl/**"
+  - "firmware/src/xs_support/glx/**"
+  - "firmware/src/hacks/gears/**"
+  - "firmware/src/hacks/gears_gl.c"
+  - "firmware/patch_tinygl.py"
+  - "tools/tinygl_patch.py"
+---
+
+# GL layer and TinyGL gotchas
+
+OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
+`36a7987`, zlib-style licence). Issues #42 to #46 hold the numbers and ideas.
+
+- `src/tinygl/` is byte-identical to upstream and excluded from every env.
+  `firmware/patch_tinygl.py` runs `tools/tinygl_patch.py` and writes the
+  patched tree, plus one unity file, into `.pio/build/<env>/generated/`;
+  `glshim/tinygl_build.c` compiles it. Each patch checks its anchor and fails
+  with "has upstream changed?". TinyGL's README allows building it as one
+  unit, and it compiles cleanly that way.
+- A GL hack gets `USE_GL` from a one-line wrapper: `hacks/<name>_gl.c` for
+  the hack, `glshim/glx_<name>.c` for each helper copied to
+  `xs_support/glx/`. Exclude the copies in all three envs' `build_src_filter`
+  and keep `-Isrc/xs_support/glx` in `build_flags`. Never define `HAVE_GL`:
+  it adds `glx_context` to `ModeInfo`, which `xlockmore.c` (built without
+  it) allocates smaller. Build each helper as its own unit: `tube.h` and
+  `normals.h` define clashing types.
+- TinyGL draws straight into `canvas->px` at the canvas size, with its
+  pixel packer patched to the canvas's byte-swapped RGB565. Test colours
+  with exact `rgb565()` values: white looks the same either way round.
+- Display list name 0 means "invalid" to hacks (`if (!glGenLists(1)) abort()`)
+  and TinyGL handed it out first; the patch starts at 1. Its list buffers
+  are 64 slots, not 4,096: each list took 16 KB and 500 lists overflowed
+  PSRAM (boot loop, `StoreProhibited` at `0x4000` in `alloc_list`).
+- TinyGL counts vertex-array stride in floats and reads the array when a
+  display list is replayed; GL counts bytes and reads at the draw call, and
+  hacks free the array straight after (`tube.c`, `sphere.c`). Hacks'
+  `glVertexPointer` and friends are renamed to `glshim_*` by macros in
+  `glshim.h`, and `glDrawArrays` expands at once. The symptom of the old
+  behaviour was needles through the tubes.
+- The context is freed by the shim: `glshim_open` registers
+  `xshim_set_release_hook`, which `xshim_release_pixmaps` (the runner's
+  `stop()`) runs. A second `init_GL` replaces the first, which hides a
+  missing hook, so test `glshim_is_open()` right after the hack stops.
+- TinyGL leaves specular lighting off (`zEnableSpecular = 0`) unless the
+  application calls `glSetEnableSpecular(1)`, so Gears has no highlights
+  and `glMateriali` is invisible without it. Enabling it costs speed (#43).
+- TinyGL lacks `glTexGeni`, `glFog*` and `glInterleavedArrays` (#46). The
+  header declares `glFog*` and the `GL_SPHERE_MAP` enum; the library defines
+  neither.
+- Speed is about 6 us per lit vertex plus about 80 ms a frame (clear 25 ms,
+  push 32 ms): Gears runs at 4 to 5 fps for its heaviest layout and about 9
+  for light ones. `-O2` for TinyGL and specular lookup tables changed
+  nothing; whole-firmware `-O2` crashes the compiler in `braid_single.c`.
+  After patching, `gl_clipcode` and `gl_shade_vertex` still call software
+  `double` helpers (`CLIP_EPSILON` is an exponent literal, which
+  `float_literals.py` leaves alone).
+- Gears picks a random layout on each start, so a running Gears holds 0.9 to
+  2.5 MB. Measure leaks while stopped, not by comparing two running moments.
+  `free_gears` never frees `bp->gears`: 40 to 1,500 bytes a start, upstream.
+- The host stack figure for Gears (21 KB, unoptimised and under
+  AddressSanitizer) is not the board's (2.4 KB used in the spike); the host
+  test is a tripwire and the board is the proof.
+- `dump_main.c` raw frames are already un-swapped; `rgb565_to_png.py` reads
+  them as plain RGB565. Swapping them again gives psychedelic stripes.

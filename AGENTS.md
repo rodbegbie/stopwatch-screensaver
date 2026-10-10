@@ -16,6 +16,10 @@ embedded-specific choices as you make them. See `README.md` for setup and
 
 - `firmware/src/hacks/<name>/`: hack sources copied from xscreensaver.
   `hacks/registry.[ch]` (ours) lists them in button order.
+- `firmware/src/glshim/` (ours) is the GL layer for OpenGL hacks, over
+  `firmware/src/tinygl/` (TinyGL, byte-identical, patched at build by
+  `tools/tinygl_patch.py`). `xs_support/glx/` holds the copied GL helpers.
+  Gears is the first GL hack.
 - `tools/failed_ports.txt` lists abandoned ports (`name: reason`); the scorer
   marks them ❌, and ✅ comes from `g_hacks[]` in `registry.c`.
 - `.claude/skills/port-hack/`: the order of work for porting a hack, and a
@@ -147,7 +151,8 @@ Use the `deliver-branch` skill.
 
 Gotchas tied to one area live in `.claude/rules/` and load when Claude reads
 files there: `device-display.md` (main.cpp, core, runner), `x11shim.md`,
-`hacks.md` and `tools-scoring.md`. Add a new gotcha to the matching file. The
+`hacks.md`, `gl.md` (glshim, tinygl, the GL helpers) and `tools-scoring.md`.
+Add a new gotcha to the matching file. The
 ones below apply everywhere.
 
 - In `platformio.ini` use `platform = platformio/native`; plain `native`
