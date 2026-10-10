@@ -73,3 +73,7 @@ Yup, push the next version
 ---
 
 Flickr is reduced, but still shows from time to time.  It shows on individual lines, not all of them.  Feels like it's on the flat-ish areas next to the main central peaks.  Motion is *just* perceptible.
+
+---
+
+Yes, go ahead with antialiased lines
