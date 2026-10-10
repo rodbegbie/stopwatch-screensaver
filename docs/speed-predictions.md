@@ -101,3 +101,15 @@ All five claims passed. What that does and does not show:
   this is a test of the bands, not of my choice of hacks.
 - No hack landed near a band edge except kaleidescope (0.0695 against 0.05),
   so how well the thresholds themselves hold is still unmeasured.
+
+## S-hack batch (2026-10-10)
+
+Sixteen more hacks were ported after the bands were fixed. Their predictions
+were the Speed column of `docs/porting-assessment.md` as committed on `main`
+before the batch, not a separate write-up, so they are held out of the fit
+like the four above.
+
+- Seven batch rows are in the backtest only because their measured rows were
+  renamed to the bare hack name, which is the registered build (Euler2D at 512
+  particles, for example); Halftone counts as a failed port with a measured row.
+- The bands were not refitted.

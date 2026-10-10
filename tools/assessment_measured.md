@@ -63,17 +63,21 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Rotor | 84.8 | 0.5 ms | 0.5 ms | 10.8 ms | none measurable |
 | Scooter | 17.8-19.2 | 19.0-23.1 ms | 32.3 ms | 0 ms | about 162 KB |
 | Grav | 75.6-77.8 | 1.5-1.9 ms | 0.7-0.8 ms | 10.5-10.7 ms | none measurable |
-| Euler2D (count 512, single precision) | 17.8 | 27.9 ms | 27.6 ms | 0 ms | about 71 KB |
-| Anemone (64 arms, single precision) | 12.6-17.0 | 25.5-46.3 ms | 32.4 ms | 0 ms | about 98 KB |
+| Euler2D | 17.8 | 27.9 ms | 27.6 ms | 0 ms | about 71 KB |
+| Anemone | 12.6-17.0 | 25.5-46.3 ms | 32.4 ms | 0 ms | about 98 KB |
 | Anemotaxis | 17.8-18.8 | 19.8-22.5 ms | 32.5 ms | 0 ms | none measurable |
-| Compass (single precision) | 15.4-15.6 | 30.5-31.5 ms | 32.5 ms | 0 ms | none measurable |
-| FuzzyFlakes (density 3, single precision) | 15.6 | 30.2-30.9 ms | 32.5 ms | 0 ms | none measurable |
+| Compass | 15.4-15.6 | 30.5-31.5 ms | 32.5 ms | 0 ms | none measurable |
+| FuzzyFlakes | 15.6 | 30.2-30.9 ms | 32.5 ms | 0 ms | none measurable |
 | IFS | 22.2-24.4 | 19.0-23.2 ms | 2.5-5.9 ms | 16.2-19.7 ms | about 35 KB |
-| Interaggregate (single precision) | 14.0-14.8 | 42.1-45.2 ms | 24.8-25.8 ms | 0 ms | about 853 KB |
-| LMorph (no pause, single precision) | 14.8-17.2 | 24.7-34.3 ms | 32.5 ms | 0 ms | none measurable |
+| Interaggregate | 14.0-14.8 | 42.1-45.2 ms | 24.8-25.8 ms | 0 ms | about 853 KB |
+| LMorph | 14.8-17.2 | 24.7-34.3 ms | 32.5 ms | 0 ms | none measurable |
 | Wormhole | 17.6-17.8 | 22.4-23.1 ms | 32.4 ms | 0 ms | about 32 KB |
-| Halftone (single precision; not registered) | 4.5-5.2 | 163-193 ms | 32.5 ms | 0 ms | none measurable |
+| Halftone | 4.5-5.2 | 163-193 ms | 32.5 ms | 0 ms | none measurable |
 
+Each batch row is the registered build: Euler2D with 512 particles, Anemone
+with 64 arms, FuzzyFlakes at density 3, LMorph without its pause, and
+Compass, Interaggregate and the first four in single precision. Halftone's row
+is single precision and not registered.
 The sixteen rows from Forest to Halftone are the S-hack batch, read on one
 lap of the final build (30 s a hack, the first five-second window of each
 dropped, four to five windows read; Halftone's row is from the earlier
@@ -97,6 +101,12 @@ frame rate drifts as the picture fills, so both sit on the 15 fps line.
 Halftone with `XFillArc` returning at once measured 15.4 fps (step 31.8 ms), so
 its dots' ellipse fills are about 80% of its step (issue #57). Forest waits
 500 ms between trees by design.
+
+Rod looked at the fourteen registered hacks of the batch on the device on
+2026-10-10 and found them performant and in line with the same hacks on other
+platforms. Colours were part of that look. All fourteen stay in the rotation,
+Forest included. Halftone stays out (issue #57) and Truchet is not ported
+(issue #58).
 
 Maze's row is 26 five-second readings over 160 seconds, taken on a build that
 includes the overlay stamping. Its steps are cheap, and its frame rate is set
