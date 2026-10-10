@@ -6,8 +6,6 @@
 #include "screenhackI.h"
 #include "x11shim/xshim.h"
 
-#define RUNNER_WINDOW ((Window)1)
-
 struct HackRunner {
   Canvas *canvas;
   Display *dpy;
@@ -58,7 +56,7 @@ static Callbacks callbacks_for(const HackEntry *e) {
 
 static void stop(HackRunner *r) {
   if (!r->running) return;
-  callbacks_for(r->hacks[r->index]).free(r->dpy, RUNNER_WINDOW, r->closure);
+  callbacks_for(r->hacks[r->index]).free(r->dpy, XSHIM_WINDOW, r->closure);
   /* The display outlives the hack, so release what the hack forgot to free, as
    * an X server does when a client disconnects. */
   xshim_release_pixmaps(r->dpy);
@@ -86,9 +84,9 @@ int runner_start(HackRunner *r, int index) {
      * xlockmore one takes its function table as a third. */
     void *(*init3)(Display *, Window, void *) =
         (void *(*)(Display *, Window, void *))cb.init;
-    r->closure = init3(r->dpy, RUNNER_WINDOW, cb.setup_arg);
+    r->closure = init3(r->dpy, XSHIM_WINDOW, cb.setup_arg);
   } else {
-    r->closure = cb.init(r->dpy, RUNNER_WINDOW);
+    r->closure = cb.init(r->dpy, XSHIM_WINDOW);
   }
   r->running = 1;
   return 0;
@@ -97,7 +95,7 @@ int runner_start(HackRunner *r, int index) {
 unsigned long runner_step(HackRunner *r) {
   if (!r->running) return RUNNER_MAX_DELAY_US;
   unsigned long d =
-      callbacks_for(r->hacks[r->index]).draw(r->dpy, RUNNER_WINDOW, r->closure);
+      callbacks_for(r->hacks[r->index]).draw(r->dpy, XSHIM_WINDOW, r->closure);
   if (d < RUNNER_MIN_DELAY_US) return RUNNER_MIN_DELAY_US;
   if (d > RUNNER_MAX_DELAY_US) return RUNNER_MAX_DELAY_US;
   return d;

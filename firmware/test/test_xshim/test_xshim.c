@@ -19,7 +19,7 @@
 
 static Canvas cv;
 static Display *dpy;
-static Window win = 1;
+static Window win = XSHIM_WINDOW;
 
 static size_t live_before;
 
@@ -1981,6 +1981,17 @@ void test_copy_plane_into_a_colour_pixmap_lands_in_the_pixmap(void) {
   XFreeGC(dpy, gc);
 }
 
+void test_root_window_is_the_window_the_shim_draws_on(void) {
+  const Window root = RootWindowOfScreen(NULL);
+  unsigned int w = 0, h = 0;
+  TEST_ASSERT_TRUE(XGetGeometry(dpy, root, NULL, NULL, NULL, &w, &h, NULL, NULL));
+  TEST_ASSERT_EQUAL_UINT(cv.w, w);
+  GC gc = new_gc(0xFFFF, 0);
+  XFillRectangle(dpy, root, gc, 0, 0, 2, 2);
+  TEST_ASSERT_EQUAL_INT(4, count_set());
+  XFreeGC(dpy, gc);
+}
+
 void test_create_pixmap_wider_than_int16_returns_none(void) {
   TEST_ASSERT_EQUAL(None, XCreatePixmap(dpy, win, 40000, 2, 16));
   TEST_ASSERT_EQUAL(None, XCreatePixmap(dpy, win, 2, 40000, 16));
@@ -2316,6 +2327,7 @@ int main(void) {
   RUN_TEST(test_drawing_into_a_pixmap_clips_at_the_pixmap_edges);
   RUN_TEST(test_primitives_on_a_bitmap_or_none_draw_nothing);
   RUN_TEST(test_copy_plane_into_a_colour_pixmap_lands_in_the_pixmap);
+  RUN_TEST(test_root_window_is_the_window_the_shim_draws_on);
   RUN_TEST(test_create_pixmap_wider_than_int16_returns_none);
   RUN_TEST(test_pixmaps_drawn_into_leave_no_memory_behind);
   RUN_TEST(test_copy_area_within_one_pixmap_downwards_reads_before_it_overwrites);
