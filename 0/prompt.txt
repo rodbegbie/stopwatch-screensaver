@@ -1,0 +1,5 @@
+OK, I've approved the trail.  Merge this branch.  And then let's try porting cubicgrid since that was our other candidate. Once we've got gears, morph3d and cubicgrid running on device, we will have better understanding of the accuracy of our harness, and can more confidently move forward with using it (and/or optimising the GL code)
+
+---
+
+Flash the device.  BTW, you can stop passing the "Rod B." name -- that was just intended to be a temporary test. Use the default name again.

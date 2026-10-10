@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4J5QN0N93XFG7TGEC207GBN",
+  "strategy": "manual-commit",
+  "branch": "feature/cubicgrid-port",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "docs/gl-budget.md",
+    "tools/assessment_measured.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 26,
+    "cache_creation_tokens": 12615,
+    "cache_read_tokens": 4109915,
+    "output_tokens": 10140,
+    "api_call_count": 13
+  }
+}
