@@ -1,0 +1,17 @@
+Let's work through a load of remaining hacks in one go.
+
+Let's do the 17 "S" hacks in porting-assessment.md that we haven't tried so far.
+
+Try and do as much as you can uninterrupted.  Keep track of things you want my human eyes on, and present them to me at the end.  You have permission to flash and re-flash the attached device as often as you like in this session.
+
+If a hack's on-device fps is > 15fps, then it's a success.  If it's lower, then consider if there are any quick fixes you can try to improve it. But don't rabbit-hole -- file an issue to come back to things later if there's more investigation needed.
+
+Once you're done with the 17, I'll review them all together with you, and we can decide which ones we want to keep in the rotation, and which we'll punt on for later.  Commit as you go along, but let's keep the work on one branch.  Don't open the PR until I say we're good to go.
+
+Remember you can use entire to search for context from previous sessions.
+
+Any questions before you get going?
+
+---
+
+1. Plain branch is OK.  2. Sequential makes sense. 3. That is correct.  We might re-enable them in the rotation for my review, but default to taking slow ones out.
