@@ -11,3 +11,11 @@ BTW, I thought we *had* xlockmore support built already?
 ---
 
 Yes, go ahead with the spike.  (BTW, something that would be good to remember to come back to: Why did you think xlockmore was something we still had to implement? Should we update docs to make it more clear that it's already been implemented?)
+
+---
+
+/claude-md-management:revise-claude-md
+
+---
+
+Please do. Then end the session.
