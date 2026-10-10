@@ -53,8 +53,19 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   wrapper's object for `__muldf3` and friends with `xtensa-esp32s3-elf-nm`.
   The older wrappers (Galaxy, Drift, Discrete, Flame, Substrate) have not been
   checked.
-- Only `XCopyArea` writes into a pixmap (`XCreatePixmap`, same depth); drawing
-  primitives given a pixmap still draw on the canvas. The display tracks every
+- A colour pixmap is a `Canvas`, and every drawing primitive draws on the
+  drawable it is given (`xshim_target` in `pixmap.c`); a bitmap or `None`
+  draws nothing, and only `XCopyArea` writes into a bitmap (`XCopyPlane`
+  follows the same rule). One exception still draws on the window whatever
+  it is given: Deluxe's wrapper, which calls `stroke_circle(dpy->canvas,
+  ...)`. No
+  registered hack drew into a pixmap before this (the `HAVE_JWXYZ` wrappers
+  and Deluxe's `doubleBuffer: False` turn double-buffering off), so keep
+  those: a back buffer costs 434 KB and a full-frame copy, and dirties every
+  row. Without a
+  clip mask, `XCopyArea` copies colour rows whole with `canvas_paste_rect`. A
+  pixmap wider or taller than `INT16_MAX` is `None` (the canvas's dirty spans
+  are `int16_t`). Truchet draws into one (issue #61). The display tracks every
   pixmap a hack holds and the runner frees what a stopped hack left behind
   (Pacman leaked 514 KB per start). The GC keeps its own copy of a clip mask
   because hacks free the pixmap right after `XSetClipMask`. There is no PNG

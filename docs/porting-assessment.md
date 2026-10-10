@@ -31,11 +31,11 @@ it with `uv run tools/score_hacks.py`.
 
 | Rating | Meaning | Count |
 | --- | --- | --- |
-| S | 2D, and the unmodified source compiles against the shim | 3 |
+| S | 2D, and the unmodified source compiles against the shim | 2 |
 | M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 13 |
 | L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 79 |
 | XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 137 |
-| Ported | Already running on the device, so no rating | 51 |
+| Ported | Already running on the device, so no rating | 52 |
 
 ## Speed
 
@@ -95,7 +95,7 @@ does not yet provide every GL helper under `xs_support/glx/`.
 
 ## Measured on the device
 
-Fifty-one hacks have been run so far (default settings, 466×466 canvas
+Fifty-two hacks have been run so far (default settings, 466×466 canvas
 pushed to the display every frame, canvas held in PSRAM). The firmware times
 each frame in three parts, averaged over 5 seconds: **step** is the hack's own
 draw call, **push** is sending the canvas to the display, and **wait** is what
@@ -158,17 +158,31 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Rotor | 84.8 | 0.5 ms | 0.5 ms | 10.8 ms | none measurable |
 | Scooter | 17.8-19.2 | 19.0-23.1 ms | 32.3 ms | 0 ms | about 162 KB |
 | Grav | 75.6-77.8 | 1.5-1.9 ms | 0.7-0.8 ms | 10.5-10.7 ms | none measurable |
-| Euler2D (count 512, single precision) | 17.8 | 27.9 ms | 27.6 ms | 0 ms | about 71 KB |
-| Anemone (64 arms, single precision) | 12.6-17.0 | 25.5-46.3 ms | 32.4 ms | 0 ms | about 98 KB |
+| Euler2D | 17.8 | 27.9 ms | 27.6 ms | 0 ms | about 71 KB |
+| Anemone | 12.6-17.0 | 25.5-46.3 ms | 32.4 ms | 0 ms | about 98 KB |
 | Anemotaxis | 17.8-18.8 | 19.8-22.5 ms | 32.5 ms | 0 ms | none measurable |
-| Compass (single precision) | 15.4-15.6 | 30.5-31.5 ms | 32.5 ms | 0 ms | none measurable |
-| FuzzyFlakes (density 3, single precision) | 15.6 | 30.2-30.9 ms | 32.5 ms | 0 ms | none measurable |
+| Compass | 15.4-15.6 | 30.5-31.5 ms | 32.5 ms | 0 ms | none measurable |
+| FuzzyFlakes | 15.6 | 30.2-30.9 ms | 32.5 ms | 0 ms | none measurable |
 | IFS | 22.2-24.4 | 19.0-23.2 ms | 2.5-5.9 ms | 16.2-19.7 ms | about 35 KB |
-| Interaggregate (single precision) | 14.0-14.8 | 42.1-45.2 ms | 24.8-25.8 ms | 0 ms | about 853 KB |
-| LMorph (no pause, single precision) | 14.8-17.2 | 24.7-34.3 ms | 32.5 ms | 0 ms | none measurable |
+| Interaggregate | 13.4-15.0 | 41.8-47.4 ms | 24.3-28.9 ms | 0 ms | about 853 KB |
+| LMorph | 14.8-17.2 | 24.7-34.3 ms | 32.5 ms | 0 ms | none measurable |
 | Wormhole | 17.6-17.8 | 22.4-23.1 ms | 32.4 ms | 0 ms | about 32 KB |
-| Halftone (single precision; not registered) | 4.5-5.2 | 163-193 ms | 32.5 ms | 0 ms | none measurable |
+| Halftone | 4.5-5.2 | 163-193 ms | 32.5 ms | 0 ms | none measurable |
+| Truchet | 0.8-1.0 | 652-900 ms | 34.4-36.1 ms | 404-406 ms | about 1.5 MB |
+| Truchet (scrolling mode) | 7.2-8.0 | 19.8-36.0 ms | 31.5-39.9 ms | 66-75 ms | about 1.5 MB |
 
+Truchet's rows are from a pinned build (2026-10-10). Each start picks one of
+twelve modes at random. The tiling row is two windows from one start (650 to
+900 ms per tiling, then its 400 ms pause), and the scrolling row is fourteen
+windows from another (each step is a 466 by 466 copy from its pixmap, then a
+100 ms pause). Its 866 by 866 pixmap lowers free PSRAM by about 1.5 MB, and
+the reading is the same on every visit of a `ROTATE_SECONDS=5` capture of
+three and a half laps.
+
+Each batch row is the registered build: Euler2D with 512 particles, Anemone
+with 64 arms, FuzzyFlakes at density 3, LMorph without its pause, and
+Compass, Interaggregate and the first four in single precision. Halftone's row
+is single precision and not registered.
 The sixteen rows from Forest to Halftone are the S-hack batch, read on one
 lap of the final build (30 s a hack, the first five-second window of each
 dropped, four to five windows read; Halftone's row is from the earlier
@@ -192,6 +206,18 @@ frame rate drifts as the picture fills, so both sit on the 15 fps line.
 Halftone with `XFillArc` returning at once measured 15.4 fps (step 31.8 ms), so
 its dots' ellipse fills are about 80% of its step (issue #57). Forest waits
 500 ms between trees by design.
+
+Interaggregate's alpha blend was fixed after the batch lap (the wrapper now
+swaps pixels at the hack's boundary, as Substrate's does). Its row is from a
+45 s pinned run after the fix (13.4-15.0 fps, heap flat), and Rod checked on
+the device that it draws earth tones, not a rainbow.
+
+Rod looked at all fifteen registered hacks of the batch on the device on
+2026-10-10 and found them performant and in line with the same hacks on other
+platforms (Anemotaxis was missing from his written list; he confirmed after
+that he had looked at it). All fifteen stay in the rotation, Forest included.
+Halftone stays out (issue #57). Truchet, the batch's last S hack, was ported
+later, once primitives could draw into pixmaps (issues #58 and #61).
 
 Maze's row is 26 five-second readings over 160 seconds, taken on a build that
 includes the overlay stamping. Its steps are cheap, and its frame rate is set
@@ -585,9 +611,8 @@ needing few additions come first.
 
 | Hack | Kind | Effort | Speed | Ported | Shim gaps | Flags | LOC |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| celtic | 2d | S | high (1.2 ms) | ❌ | - | - | 1141 |
-| halftone | 2d | S | high (2.1 ms) | ❌ | - | pixmaps | 413 |
-| truchet | 2d | S | high (3 ms) | - | - | pixmaps | 541 |
+| celtic | 2d | S | high (1.1 ms) | ❌ | - | - | 1141 |
+| halftone | 2d | S | high (0.65 ms) | ❌ | - | pixmaps | 413 |
 | abstractile | 2d | M | - | - | `BlackPixelOfScreen`, `make_color_loop`, `make_color_ramp`, `rgb_to_hsv` | - | 1625 |
 | bouboule | 2d | M | - | - | `GXor`, `XSetFunction` | xor | 860 |
 | cwaves | 2d | M | - | - | `BlackPixelOfScreen` | - | 219 |
@@ -817,35 +842,35 @@ needing few additions come first.
 | winduprobot | gl | XL | - | - | `XDestroyImage`, `XLookupString` | float-heavy | 2505 |
 | worldpieces | gl | XL | - | - | `XDestroyImage` | float-heavy | 2194 |
 | xshadertoy | gl | XL | - | - | `XFetchName`, `XStoreName` | - | 1192 |
-| anemone | 2d | - | - | ✅ | - | pixmaps | 458 |
+| anemone | 2d | - | 25.5-46.3 ms measured | ✅ | - | pixmaps | 458 |
 | anemotaxis | 2d | - | 19.8-22.5 ms measured | ✅ | - | pixmaps | 760 |
 | blaster | 2d | - | 3.6-3.7 ms measured | ✅ | - | - | 1208 |
 | braid | 2d | - | 95-296 ms measured | ✅ | - | - | 444 |
 | cloudlife | 2d | - | 8.8-8.9 ms measured | ✅ | - | - | 440 |
-| compass | 2d | - | - | ✅ | - | pixmaps, float-heavy | 999 |
+| compass | 2d | - | 30.5-31.5 ms measured | ✅ | - | pixmaps, float-heavy | 999 |
 | coral | 2d | - | 15-25 ms measured | ✅ | - | - | 328 |
 | critical | 2d | - | 0.7 ms measured | ✅ | - | - | 462 |
 | deluxe | 2d | - | 44.6-62.6 ms measured | ✅ | - | pixmaps, float-heavy | 480 |
 | discrete | 2d | - | 149-160 ms measured | ✅ | - | - | 442 |
 | drift | 2d | - | 11-13 ms measured | ✅ | - | - | 674 |
 | epicycle | 2d | - | 0.3-2.1 ms measured | ✅ | - | - | 803 |
-| euler2d | 2d | - | - | ✅ | - | float-heavy | 893 |
+| euler2d | 2d | - | 27.9 ms measured | ✅ | - | float-heavy | 893 |
 | fadeplot | 2d | - | 2.9-3.2 ms measured | ✅ | - | - | 243 |
 | flame | 2d | - | 26-107 ms measured | ✅ | - | - | 457 |
 | forest | 2d | - | 13-58.9 ms measured | ✅ | - | - | 241 |
-| fuzzyflakes | 2d | - | - | ✅ | - | pixmaps | 655 |
+| fuzzyflakes | 2d | - | 30.2-30.9 ms measured | ✅ | - | pixmaps | 655 |
 | galaxy | 2d | - | 58-75 ms measured | ✅ | - | - | 462 |
 | grav | 2d | - | 1.5-1.9 ms measured | ✅ | - | - | 360 |
 | helix | 2d | - | 0.9-2.1 ms measured | ✅ | - | - | 358 |
 | hopalong | 2d | - | 7.3-20.1 ms measured | ✅ | - | - | 563 |
 | hypercube | 2d | - | 2.7-2.9 ms measured | ✅ | - | - | 576 |
 | ifs | 2d | - | 19-23.2 ms measured | ✅ | - | pixmaps | 560 |
-| interaggregate | 2d | - | - | ✅ | - | - | 989 |
+| interaggregate | 2d | - | 41.8-47.4 ms measured | ✅ | - | - | 989 |
 | kaleidescope | 2d | - | 7-9.8 ms measured | ✅ | - | - | 514 |
 | laser | 2d | - | 21.6-25.1 ms measured | ✅ | - | - | 356 |
 | lightning | 2d | - | 1.8-1.9 ms measured | ✅ | - | - | 602 |
 | lissie | 2d | - | 0.3-0.4 ms measured | ✅ | - | - | 323 |
-| lmorph | 2d | - | - | ✅ | - | float-heavy | 580 |
+| lmorph | 2d | - | 24.7-34.3 ms measured | ✅ | - | float-heavy | 580 |
 | maze | 2d | - | 0.1-1.3 ms measured | ✅ | - | pixmaps, clipmask | 1681 |
 | mountain | 2d | - | 0-0.4 ms measured | ✅ | - | - | 283 |
 | pedal | 2d | - | 126-519 ms measured | ✅ | - | - | 339 |
@@ -860,6 +885,7 @@ needing few additions come first.
 | squiral | 2d | - | 0.1-0.3 ms measured | ✅ | - | - | 335 |
 | substrate | 2d | - | 2.9-43.9 ms measured | ✅ | - | - | 780 |
 | thornbird | 2d | - | 2-2.2 ms measured | ✅ | - | - | 270 |
+| truchet | 2d | - | 652-900 ms measured | ✅ | - | pixmaps | 541 |
 | vines | 2d | - | 133-160 ms measured | ✅ | - | - | 190 |
 | whirlwindwarp | 2d | - | 6.2-26.4 ms measured | ✅ | - | - | 509 |
 | wormhole | 2d | - | 22.4-23.1 ms measured | ✅ | - | pixmaps | 734 |

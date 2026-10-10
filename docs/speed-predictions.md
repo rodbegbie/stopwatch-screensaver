@@ -113,3 +113,21 @@ like the four above.
   renamed to the bare hack name, which is the registered build (Euler2D at 512
   particles, for example); Halftone counts as a failed port with a measured row.
 - The bands were not refitted.
+
+## Truchet (2026-10-10)
+
+Written before Truchet was copied, at `d134f0c`, the commit that lets
+primitives draw into pixmaps, so the probe times the drawing Truchet really
+does.
+
+| Hack | Band | Host ms | Predicted device step |
+| --- | --- | --- | --- |
+| truchet | high | 1.6523 | 99-2,478 ms |
+
+- The step should mostly be the tiling: wide round-capped arcs and lines
+  drawn into an 866 by 866 pixmap, a fill of that pixmap and a 466 by 466 copy
+  to the window. It has few `double`s, so I expect the low end of the range.
+- Truchet waits 400 ms between tilings, so a step under 400 ms leaves its
+  rate unchanged. Two of its twelve random modes scroll instead, with 100 ms
+  between scroll steps, and each scroll step is only the copy. The median
+  across windows is the number to compare.

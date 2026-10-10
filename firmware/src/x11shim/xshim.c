@@ -107,8 +107,8 @@ int XClearWindow(Display *dpy, Window w) {
 }
 
 int XDrawPoint(Display *dpy, Drawable d, GC gc, int x, int y) {
-  (void)d;
-  canvas_point(dpy->canvas, x, y, (uint16_t)gc->foreground);
+  Canvas *c = xshim_target(dpy, d);
+  if (c) canvas_point(c, x, y, (uint16_t)gc->foreground);
   return 0;
 }
 
@@ -121,11 +121,12 @@ int XDrawPoints(Display *dpy, Drawable d, GC gc, XPoint *pts, int n,
 
 int XDrawLine(Display *dpy, Drawable d, GC gc, int x1, int y1, int x2,
               int y2) {
-  (void)d;
+  Canvas *c = xshim_target(dpy, d);
+  if (!c) return 0;
   if (gc->line_width > 1)
-    stroke_segment(dpy->canvas, gc, x1, y1, x2, y2);
+    stroke_segment(c, gc, x1, y1, x2, y2);
   else
-    canvas_line(dpy->canvas, x1, y1, x2, y2, (uint16_t)gc->foreground);
+    canvas_line(c, x1, y1, x2, y2, (uint16_t)gc->foreground);
   return 0;
 }
 
@@ -142,7 +143,8 @@ int XDrawRectangle(Display *dpy, Drawable d, GC gc, int x, int y,
   int y2 = clamp_coord((int64_t)y + h);
   if (gc->line_width > 1) {
     const int xy[8] = {x, y, x2, y, x2, y2, x, y2};
-    stroke_polyline(dpy->canvas, gc, xy, 4, 1);
+    Canvas *c = xshim_target(dpy, d);
+    if (c) stroke_polyline(c, gc, xy, 4, 1);
     return 0;
   }
   XDrawLine(dpy, d, gc, x, y, x2, y);
@@ -155,6 +157,8 @@ int XDrawRectangle(Display *dpy, Drawable d, GC gc, int x, int y,
 int XDrawLines(Display *dpy, Drawable d, GC gc, XPoint *pts, int n, int mode) {
   (void)mode;
   if (gc->line_width > 1 && n > 0) {
+    Canvas *c = xshim_target(dpy, d);
+    if (!c) return 0;
     int stack_xy[2 * 64];
     int *xy = stack_xy;
     if (n > 64) {
@@ -165,7 +169,7 @@ int XDrawLines(Display *dpy, Drawable d, GC gc, XPoint *pts, int n, int mode) {
       xy[2 * i] = pts[i].x;
       xy[2 * i + 1] = pts[i].y;
     }
-    stroke_polyline(dpy->canvas, gc, xy, n, 0);
+    stroke_polyline(c, gc, xy, n, 0);
     if (xy != stack_xy) free(xy);
     return 0;
   }
@@ -182,8 +186,9 @@ int XDrawSegments(Display *dpy, Drawable d, GC gc, XSegment *segs, int n) {
 
 int XFillRectangle(Display *dpy, Drawable d, GC gc, int x, int y,
                    unsigned int w, unsigned int h) {
-  (void)d;
-  canvas_fill_rect(dpy->canvas, x, y, w > 0x7FFFFFFF ? 0x7FFFFFFF : (int)w,
+  Canvas *c = xshim_target(dpy, d);
+  if (!c) return 0;
+  canvas_fill_rect(c, x, y, w > 0x7FFFFFFF ? 0x7FFFFFFF : (int)w,
                    h > 0x7FFFFFFF ? 0x7FFFFFFF : (int)h,
                    (uint16_t)gc->foreground);
   return 0;
@@ -210,7 +215,8 @@ Bool screenhack_event_helper(Display *dpy, Window w, XEvent *event) {
 
 int XDrawArc(Display *dpy, Drawable d, GC gc, int x, int y, unsigned int w,
              unsigned int h, int angle1, int angle2) {
-  (void)d;
+  Canvas *c = xshim_target(dpy, d);
+  if (!c) return 0;
   const int n = arc_point_count(w, h, angle2);
   if (n < 2) return 0;
   int stack_xy[2 * ARC_STACK_POINTS];
@@ -221,10 +227,10 @@ int XDrawArc(Display *dpy, Drawable d, GC gc, int x, int y, unsigned int w,
   }
   arc_points(x, y, w, h, angle1, angle2, xy, n);
   if (gc->line_width > 1) {
-    stroke_polyline(dpy->canvas, gc, xy, n, angle2 >= FULL_ARC || angle2 <= -FULL_ARC);
+    stroke_polyline(c, gc, xy, n, angle2 >= FULL_ARC || angle2 <= -FULL_ARC);
   } else {
     for (int i = 1; i < n; i++)
-      canvas_line(dpy->canvas, xy[2 * i - 2], xy[2 * i - 1], xy[2 * i],
+      canvas_line(c, xy[2 * i - 2], xy[2 * i - 1], xy[2 * i],
                   xy[2 * i + 1], (uint16_t)gc->foreground);
   }
   if (xy != stack_xy) free(xy);
@@ -240,9 +246,10 @@ int XDrawArcs(Display *dpy, Drawable d, GC gc, XArc *arcs, int n) {
 
 int XFillArc(Display *dpy, Drawable d, GC gc, int x, int y, unsigned int w,
              unsigned int h, int angle1, int angle2) {
-  (void)d;
+  Canvas *c = xshim_target(dpy, d);
+  if (!c) return 0;
   if (angle2 >= FULL_ARC || angle2 <= -FULL_ARC) {
-    canvas_fill_ellipse(dpy->canvas, x, y, w > 0x7FFFFFFF ? 0x7FFFFFFF : (int)w,
+    canvas_fill_ellipse(c, x, y, w > 0x7FFFFFFF ? 0x7FFFFFFF : (int)w,
                         h > 0x7FFFFFFF ? 0x7FFFFFFF : (int)h,
                         (uint16_t)gc->foreground);
     return 0;
@@ -258,7 +265,7 @@ int XFillArc(Display *dpy, Drawable d, GC gc, int x, int y, unsigned int w,
   xy[0] = (int)lrintf((float)x + (float)w / 2.0f);
   xy[1] = (int)lrintf((float)y + (float)h / 2.0f);
   arc_points(x, y, w, h, angle1, angle2, xy + 2, n);
-  canvas_fill_polygon(dpy->canvas, xy, n + 1, (uint16_t)gc->foreground);
+  canvas_fill_polygon(c, xy, n + 1, (uint16_t)gc->foreground);
   if (xy != stack_xy) free(xy);
   return 0;
 }
@@ -272,10 +279,10 @@ int XFillArcs(Display *dpy, Drawable d, GC gc, XArc *arcs, int n) {
 
 int XFillPolygon(Display *dpy, Drawable d, GC gc, XPoint *pts, int n,
                  int shape, int mode) {
-  (void)d;
   (void)shape;
   (void)mode;
-  if (n < 3) return 0;
+  Canvas *c = xshim_target(dpy, d);
+  if (!c || n < 3) return 0;
   int stack_xy[2 * 64];
   int *xy = stack_xy;
   if (n > 64) {
@@ -286,7 +293,7 @@ int XFillPolygon(Display *dpy, Drawable d, GC gc, XPoint *pts, int n,
     xy[2 * i] = pts[i].x;
     xy[2 * i + 1] = pts[i].y;
   }
-  canvas_fill_polygon(dpy->canvas, xy, n, (uint16_t)gc->foreground);
+  canvas_fill_polygon(c, xy, n, (uint16_t)gc->foreground);
   if (xy != stack_xy) free(xy);
   return 0;
 }

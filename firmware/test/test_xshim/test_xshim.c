@@ -1831,11 +1831,207 @@ void test_scale_pixmap_loop_like_pacman_fills_the_destination(void) {
   XFreePixmap(dpy, dest);
 }
 
-void test_drawing_primitive_with_a_pixmap_drawable_still_draws_to_the_canvas(void) {
+void test_fill_rectangle_into_a_pixmap_lands_in_the_pixmap(void) {
   Pixmap p = XCreatePixmap(dpy, win, 8, 8, 16);
   GC gc = new_gc(0xFFFF, 0);
   XFillRectangle(dpy, p, gc, 1, 1, 2, 2);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XCopyArea(dpy, p, win, gc, 0, 0, 8, 8, 0, 0);
   TEST_ASSERT_EQUAL_INT(4, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(1, 1));
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+}
+
+static void draw_point(Drawable d, GC gc) { XDrawPoint(dpy, d, gc, 3, 4); }
+static void draw_points(Drawable d, GC gc) {
+  XPoint pts[] = {{1, 1}, {5, 9}, {14, 2}};
+  XDrawPoints(dpy, d, gc, pts, 3, CoordModeOrigin);
+}
+static void draw_thin_line(Drawable d, GC gc) { XDrawLine(dpy, d, gc, 0, 2, 15, 11); }
+static void draw_wide_line(Drawable d, GC gc) {
+  XSetLineAttributes(dpy, gc, 5, LineSolid, CapRound, JoinRound);
+  XDrawLine(dpy, d, gc, 2, 3, 12, 10);
+}
+static void draw_segments(Drawable d, GC gc) {
+  XSegment segs[] = {{0, 0, 7, 7}, {9, 1, 9, 14}};
+  XDrawSegments(dpy, d, gc, segs, 2);
+}
+static void draw_thin_lines(Drawable d, GC gc) {
+  XPoint pts[] = {{1, 1}, {12, 3}, {6, 14}};
+  XDrawLines(dpy, d, gc, pts, 3, CoordModeOrigin);
+}
+static void draw_wide_lines(Drawable d, GC gc) {
+  XSetLineAttributes(dpy, gc, 3, LineSolid, CapButt, JoinMiter);
+  XPoint pts[] = {{1, 1}, {12, 3}, {6, 14}};
+  XDrawLines(dpy, d, gc, pts, 3, CoordModeOrigin);
+}
+static void draw_thin_rectangle(Drawable d, GC gc) { XDrawRectangle(dpy, d, gc, 2, 3, 9, 7); }
+static void draw_wide_rectangle(Drawable d, GC gc) {
+  XSetLineAttributes(dpy, gc, 3, LineSolid, CapButt, JoinMiter);
+  XDrawRectangle(dpy, d, gc, 2, 3, 9, 7);
+}
+static void fill_rectangles(Drawable d, GC gc) {
+  XRectangle r[] = {{1, 1, 3, 4}, {8, 6, 5, 2}};
+  XFillRectangles(dpy, d, gc, r, 2);
+}
+static void draw_thin_arc(Drawable d, GC gc) { XDrawArc(dpy, d, gc, 1, 2, 12, 10, 0, 360 * 64); }
+static void draw_wide_quarter_arc(Drawable d, GC gc) {
+  XSetLineAttributes(dpy, gc, 4, LineSolid, CapRound, JoinRound);
+  XDrawArc(dpy, d, gc, -6, -6, 20, 20, 270 * 64, 90 * 64);
+}
+static void fill_full_arc(Drawable d, GC gc) { XFillArc(dpy, d, gc, 2, 1, 11, 13, 0, 360 * 64); }
+static void fill_partial_arc(Drawable d, GC gc) { XFillArc(dpy, d, gc, 1, 1, 14, 14, 30 * 64, 200 * 64); }
+static void fill_polygon(Drawable d, GC gc) {
+  XPoint pts[] = {{2, 1}, {14, 5}, {7, 15}, {1, 9}};
+  XFillPolygon(dpy, d, gc, pts, 4, Complex, CoordModeOrigin);
+}
+
+void test_every_primitive_draws_the_same_into_a_pixmap_as_on_the_window(void) {
+  void (*const draw[])(Drawable, GC) = {
+      draw_point,          draw_points,         draw_thin_line,
+      draw_wide_line,      draw_segments,       draw_thin_lines,
+      draw_wide_lines,     draw_thin_rectangle, draw_wide_rectangle,
+      fill_rectangles,     draw_thin_arc,       draw_wide_quarter_arc,
+      fill_full_arc,       fill_partial_arc,    fill_polygon};
+  uint16_t on_window[16 * 16];
+  for (size_t i = 0; i < sizeof draw / sizeof draw[0]; i++) {
+    canvas_clear(&cv, 0);
+    GC gc = new_gc(0xF81F, 0);
+    draw[i](win, gc);
+    TEST_ASSERT_TRUE_MESSAGE(count_set() > 0, "shape drew nothing on the window");
+    memcpy(on_window, cv.px, sizeof on_window);
+    XFreeGC(dpy, gc);
+
+    canvas_clear(&cv, 0);
+    gc = new_gc(0xF81F, 0);
+    Pixmap p = XCreatePixmap(dpy, win, (unsigned)cv.w, (unsigned)cv.h, 16);
+    draw[i](p, gc);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, count_set(), "shape landed on the window");
+    XCopyArea(dpy, p, win, gc, 0, 0, (unsigned)cv.w, (unsigned)cv.h, 0, 0);
+    TEST_ASSERT_EQUAL_MEMORY(on_window, cv.px, sizeof on_window);
+    XFreePixmap(dpy, p);
+    XFreeGC(dpy, gc);
+  }
+}
+
+void test_drawing_into_a_pixmap_clips_at_the_pixmap_edges(void) {
+  GC gc = new_gc(0xFFFF, 0);
+  Pixmap small = XCreatePixmap(dpy, win, 10, 6, 16);
+  XFillRectangle(dpy, small, gc, -5, -5, 100, 100);
+  XSetLineAttributes(dpy, gc, 3, LineSolid, CapRound, JoinRound);
+  XDrawLine(dpy, small, gc, -50, 3, 50, 3);
+  XCopyArea(dpy, small, win, gc, 0, 0, 10, 6, 0, 0);
+  TEST_ASSERT_EQUAL_INT(60, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(9, 5));
+  TEST_ASSERT_EQUAL_HEX16(0, at(10, 5));
+  TEST_ASSERT_EQUAL_HEX16(0, at(9, 6));
+  XFreePixmap(dpy, small);
+
+  canvas_clear(&cv, 0);
+  Pixmap big = XCreatePixmap(dpy, win, (unsigned)cv.w + 40, (unsigned)cv.h + 40, 16);
+  XFillRectangle(dpy, big, gc, cv.w + 10, 0, 5, 5);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XCopyArea(dpy, big, win, gc, cv.w + 10, 0, 5, 5, 0, 0);
+  TEST_ASSERT_EQUAL_INT(25, count_set());
+  XFreePixmap(dpy, big);
+  XFreeGC(dpy, gc);
+}
+
+void test_primitives_on_a_bitmap_or_none_draw_nothing(void) {
+  GC gc = new_gc(0xF800, 0x001F);
+  Pixmap bits = XCreatePixmap(dpy, win, 8, 8, 1);
+  XFillRectangle(dpy, bits, gc, 0, 0, 8, 8);
+  XDrawLine(dpy, bits, gc, 0, 0, 7, 7);
+  XFillRectangle(dpy, None, gc, 0, 0, 8, 8);
+  XDrawLine(dpy, None, gc, 0, 0, 7, 7);
+  XFillArc(dpy, None, gc, 0, 0, 8, 8, 0, 360 * 64);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XCopyPlane(dpy, bits, win, gc, 0, 0, 8, 8, 0, 0, 1);
+  TEST_ASSERT_EQUAL_INT(64, count_colour(0x001F));
+  XFreePixmap(dpy, bits);
+  XFreeGC(dpy, gc);
+}
+
+void test_copy_plane_into_a_colour_pixmap_lands_in_the_pixmap(void) {
+  GC gc = new_gc(0xF800, 0x001F);
+  Pixmap bits = XCreatePixmap(dpy, win, 4, 2, 1);
+  Pixmap colour = XCreatePixmap(dpy, win, 8, 8, 16);
+  XCopyPlane(dpy, bits, colour, gc, 0, 0, 4, 2, 1, 1, 1);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XCopyArea(dpy, colour, win, gc, 0, 0, 8, 8, 0, 0);
+  TEST_ASSERT_EQUAL_INT(8, count_colour(0x001F));
+  TEST_ASSERT_EQUAL_HEX16(0x001F, at(1, 1));
+  TEST_ASSERT_EQUAL_HEX16(0, at(0, 0));
+
+  canvas_clear(&cv, 0);
+  Pixmap mask = None;
+  Pixmap image = load_image(&mask);
+  Pixmap other = XCreatePixmap(dpy, win, 8, 8, 1);
+  XCopyPlane(dpy, mask, other, gc, 0, 0, BLOB_W, BLOB_H, 0, 0, 1);
+  XCopyPlane(dpy, mask, None, gc, 0, 0, BLOB_W, BLOB_H, 0, 0, 1);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XCopyPlane(dpy, other, win, gc, 0, 0, 8, 8, 0, 0, 1);
+  TEST_ASSERT_EQUAL_INT(0, count_colour(0xF800));
+  XFreePixmap(dpy, other);
+  XFreePixmap(dpy, image);
+  XFreePixmap(dpy, mask);
+  XFreePixmap(dpy, colour);
+  XFreePixmap(dpy, bits);
+  XFreeGC(dpy, gc);
+}
+
+void test_create_pixmap_wider_than_int16_returns_none(void) {
+  TEST_ASSERT_EQUAL(None, XCreatePixmap(dpy, win, 40000, 2, 16));
+  TEST_ASSERT_EQUAL(None, XCreatePixmap(dpy, win, 2, 40000, 16));
+}
+
+void test_pixmaps_drawn_into_leave_no_memory_behind(void) {
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  for (int i = 0; i < 50; i++) {
+    GC gc = new_gc(0xFFFF, 0);
+    Pixmap p = XCreatePixmap(dpy, win, 64, 64, 16);
+    XSetLineAttributes(dpy, gc, 5, LineSolid, CapRound, JoinRound);
+    XDrawLine(dpy, p, gc, 0, 0, 63, 40);
+    XFillArc(dpy, p, gc, 10, 10, 30, 30, 0, 360 * 64);
+    XFreeGC(dpy, gc);
+  }
+  xshim_release_pixmaps(dpy);
+  TEST_ASSERT_EQUAL_UINT64(before, __sanitizer_get_current_allocated_bytes());
+}
+
+void test_copy_area_within_one_pixmap_downwards_reads_before_it_overwrites(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 8, 6, 16);
+  const uint16_t colours[3] = {0x1111, 0x2222, 0x3333};
+  GC gc = new_gc(0, 0);
+  for (int y = 0; y < 3; y++) {
+    XSetForeground(dpy, gc, colours[y]);
+    XFillRectangle(dpy, p, gc, 0, y, 8, 1);
+  }
+  XCopyArea(dpy, p, p, gc, 0, 0, 8, 3, 0, 1);
+  XCopyArea(dpy, p, win, gc, 0, 0, 8, 6, 0, 0);
+  TEST_ASSERT_EQUAL_HEX16(0x1111, at(0, 0));
+  TEST_ASSERT_EQUAL_HEX16(0x1111, at(3, 1));
+  TEST_ASSERT_EQUAL_HEX16(0x2222, at(7, 2));
+  TEST_ASSERT_EQUAL_HEX16(0x3333, at(0, 3));
+  TEST_ASSERT_EQUAL_HEX16(0, at(0, 4));
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+}
+
+void test_copy_area_from_a_pixmap_marks_only_the_copied_rows_dirty(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 5, 3, 16);
+  GC gc = new_gc(0xFFFF, 0);
+  canvas_clear_dirty(&cv);
+  XCopyArea(dpy, p, win, gc, 0, 0, 5, 3, 4, 7);
+  int x0, x1;
+  for (int y = 7; y <= 9; y++) {
+    TEST_ASSERT_TRUE(canvas_dirty_row(&cv, y, &x0, &x1));
+    TEST_ASSERT_EQUAL_INT(4, x0);
+    TEST_ASSERT_EQUAL_INT(8, x1);
+  }
+  TEST_ASSERT_FALSE(canvas_dirty_row(&cv, 6, &x0, &x1));
+  TEST_ASSERT_FALSE(canvas_dirty_row(&cv, 10, &x0, &x1));
   XFreeGC(dpy, gc);
   XFreePixmap(dpy, p);
 }
@@ -2115,7 +2311,15 @@ int main(void) {
   RUN_TEST(test_copy_area_clips_at_destination_edges);
   RUN_TEST(test_copy_area_with_a_clip_mask_skips_masked_pixels);
   RUN_TEST(test_scale_pixmap_loop_like_pacman_fills_the_destination);
-  RUN_TEST(test_drawing_primitive_with_a_pixmap_drawable_still_draws_to_the_canvas);
+  RUN_TEST(test_fill_rectangle_into_a_pixmap_lands_in_the_pixmap);
+  RUN_TEST(test_every_primitive_draws_the_same_into_a_pixmap_as_on_the_window);
+  RUN_TEST(test_drawing_into_a_pixmap_clips_at_the_pixmap_edges);
+  RUN_TEST(test_primitives_on_a_bitmap_or_none_draw_nothing);
+  RUN_TEST(test_copy_plane_into_a_colour_pixmap_lands_in_the_pixmap);
+  RUN_TEST(test_create_pixmap_wider_than_int16_returns_none);
+  RUN_TEST(test_pixmaps_drawn_into_leave_no_memory_behind);
+  RUN_TEST(test_copy_area_within_one_pixmap_downwards_reads_before_it_overwrites);
+  RUN_TEST(test_copy_area_from_a_pixmap_marks_only_the_copied_rows_dirty);
   RUN_TEST(test_copy_area_within_one_pixmap_reads_before_it_overwrites);
   RUN_TEST(test_copy_area_into_a_pixmap_that_failed_to_allocate_leaves_the_canvas_alone);
   RUN_TEST(test_set_fill_style_is_accepted_and_drawing_stays_solid);
