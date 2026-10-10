@@ -657,6 +657,18 @@ void test_cubicgrid_registers_a_smaller_grid(void) {
   TEST_ASSERT_TRUE_MESSAGE(found, "CubicGrid does not override *ticks");
 }
 
+/* Morph3D asks for a 40 ms pause after every frame. With the dirty rectangle a
+ * frame takes about 57 ms, so the pause alone held it to 10 fps; 10 ms gives
+ * 14.6. */
+void test_morph3d_registers_a_shorter_pause(void) {
+  const int morph3d = index_of("Morph3D");
+  TEST_ASSERT_TRUE(morph3d >= 0);
+  int found = 0;
+  const char *const *o = g_hacks[morph3d]->overrides;
+  for (; o && *o; o++) found |= strcmp(*o, "*delay: 10000") == 0;
+  TEST_ASSERT_TRUE_MESSAGE(found, "Morph3D does not override *delay");
+}
+
 /* A tripwire, not a proof. On the host this runs unoptimised under
  * AddressSanitizer, which inflates frames several times over: Gears measures
  * 21 KB here against a 2.4 KB high-water mark on the board (the loop task has
@@ -700,6 +712,7 @@ int main(void) {
   RUN_TEST(test_kaleidescope_stops_do_not_leak);
   RUN_TEST(test_gears_start_and_stop_do_not_leak);
   RUN_TEST(test_morph3d_start_and_stop_do_not_leak);
+  RUN_TEST(test_morph3d_registers_a_shorter_pause);
   RUN_TEST(test_cubicgrid_start_and_stop_do_not_leak);
   RUN_TEST(test_cubicgrid_registers_a_smaller_grid);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
