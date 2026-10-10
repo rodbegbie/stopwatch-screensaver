@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4KXQ49RVRFXH8C9T49ZR7D5",
+  "strategy": "manual-commit",
+  "branch": "worktree-port-unknownpleasures",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/test/test_glshim/test_glshim.c",
+    "firmware/test/test_hacks/test_hacks.c",
+    "tools/tests/test_tinygl_patch.py",
+    "tools/tinygl_patch.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 52,
+    "cache_creation_tokens": 30864,
+    "cache_read_tokens": 6386087,
+    "output_tokens": 13400,
+    "api_call_count": 26
+  }
+}
