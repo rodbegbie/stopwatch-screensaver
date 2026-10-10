@@ -1,1 +1,8 @@
 go ahead with the shim header and budget prediction
+
+---
+
+1. I think we should make the shim change to support class-prefixed names.  Our tests should catch if that changes the behaviour of any other hack, right?
+2. Yeah, add an --override switch for this and future work.
+3. I'd like to continue and see how it does on the device.  It's always helpful to check our predictions and learn if we can improve our model.
+4. Commit the shim changes on this branch.  They're definitely worth keeping.
