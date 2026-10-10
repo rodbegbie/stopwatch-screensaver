@@ -106,6 +106,16 @@ two middle shapes (5,040 and 5,100 vertices) predict, so those shapes have not
 been seen on the board, and the device does not seed `random()`, so a shape
 cannot be asked for. The model held at both ends; its middle is unchecked.
 
+## Device check: CubicGrid
+
+Flashed on 2026-10-09 at its default grid (`ticks` 30, 27,000 points), over 45
+seconds with rotation off: 5.6 to 6.0 fps, a step of 137 to 148 ms and a push
+of 32.3 to 36.0 ms, so step plus push is 170 to 180 ms. The harness predicted
+165 ms and 6.1 fps, which is within about 8 percent. The step fell from 148 to
+137 ms over the capture as the grid turned, so it is not constant. Free PSRAM
+read 1.66 MB below Morph3D's, which is the display list of 27,000 points; heap
+was flat. The points the model does not cost were not a large part of the frame.
+
 ## What this does not tell us
 
 - **Only Gears is calibrated.** One heavy and one light scene, both made of
