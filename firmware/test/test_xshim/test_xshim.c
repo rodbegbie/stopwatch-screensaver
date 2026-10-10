@@ -1578,6 +1578,23 @@ void test_round_capped_segment_with_alpha_blends_its_cap_once(void) {
   XFreeGC(dpy, gc);
 }
 
+/* A disc wider than the cached rows (16) took a separate path that ignored
+ * alpha, so a wide round cap stayed opaque beside a blended body. */
+void test_wide_round_cap_with_alpha_blends_like_the_body(void) {
+  use_canvas(64);
+  canvas_clear(&cv, px_swap(0x001F));
+  GC gc = wide_gc(20, CapRound, JoinMiter);
+  gc->foreground = px_swap(0xF800);
+  gc->alpha = 16;
+  stroke_segment(&cv, gc, 24, 30, 44, 30);
+  check_halfway_red_over_blue(at(32, 30));
+  check_halfway_red_over_blue(at(15, 30));
+  check_halfway_red_over_blue(at(24, 30));
+  check_halfway_red_over_blue(at(53, 30));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x001F), at(13, 30));
+  XFreeGC(dpy, gc);
+}
+
 void test_fill_arc_half_fills_a_half_disc(void) {
   use_canvas(64);
   XGCValues v;
@@ -2087,6 +2104,7 @@ int main(void) {
   RUN_TEST(test_polyline_with_alpha_blends_a_join_once);
   RUN_TEST(test_polyline_with_alpha_blends_a_self_crossing_once);
   RUN_TEST(test_round_capped_segment_with_alpha_blends_its_cap_once);
+  RUN_TEST(test_wide_round_cap_with_alpha_blends_like_the_body);
   RUN_TEST(test_fill_arc_half_fills_a_half_disc);
   RUN_TEST(test_fill_arc_quarter_is_a_pie_slice_including_the_centre);
   RUN_TEST(test_create_pixmap_is_zeroed_and_reports_its_geometry);

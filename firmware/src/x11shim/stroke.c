@@ -48,6 +48,25 @@ static void build_disc(int w) {
   g_disc_built[w] = true;
 }
 
+/* The alpha of the GC being drawn with, set at each public entry point. */
+static int g_alpha;
+
+/* A disc wider than the cached rows, with the same arithmetic, drawn through
+ * fill_box so it blends or sets mask bits like the rest of its shape. Only
+ * the rows on the canvas are worked out. */
+static void wide_disc_rows(Canvas *c, wide_t x, wide_t y, int w, uint16_t colour) {
+  const double centre = (w - 1) / 2.0, radius = w / 2.0;
+  const wide_t first = max_w(0, -y), last = min_w(w - 1, (wide_t)c->h - 1 - y);
+  for (wide_t row = first; row <= last; row++) {
+    const double ny = ((double)row - centre) / radius;
+    const double t = 1.0 - ny * ny;
+    if (t < 0) continue;
+    const double half = radius * sqrt(t);
+    const wide_t xa = (wide_t)ceil(centre - half), xb = (wide_t)floor(centre + half);
+    if (xb >= xa) fill_box(c, x + xa, y + row, x + xb, y + row, colour);
+  }
+}
+
 /* A disc of diameter w centred on the pixel (cx, cy). Skipped when it cannot
  * reach the canvas. */
 static void disc(Canvas *c, wide_t cx, wide_t cy, int w, uint16_t colour) {
@@ -55,6 +74,10 @@ static void disc(Canvas *c, wide_t cx, wide_t cy, int w, uint16_t colour) {
       cy > (wide_t)c->h + w)
     return;
   const wide_t x = cx - w / 2, y = cy - w / 2;
+  if (w > DISC_MAX_W && g_alpha) {
+    wide_disc_rows(c, x, y, w, colour);
+    return;
+  }
   if (w < 1 || w > DISC_MAX_W) {
     canvas_fill_ellipse(c, (int)x, (int)y, w, w, colour);
     return;
@@ -65,9 +88,6 @@ static void disc(Canvas *c, wide_t cx, wide_t cy, int w, uint16_t colour) {
     if (d.xb >= d.xa) fill_box(c, x + d.xa, y + row, x + d.xb, y + row, colour);
   }
 }
-
-/* The alpha of the GC being drawn with, set at each public entry point. */
-static int g_alpha;
 
 static uint16_t swap16(uint16_t v) { return (uint16_t)((v << 8) | (v >> 8)); }
 
