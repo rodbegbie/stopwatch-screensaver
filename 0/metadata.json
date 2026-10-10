@@ -341,6 +341,37 @@
         "label": "Skill: superpowers:test-driven-development",
         "default_collapsed": true
       }
+    },
+    {
+      "id": "claude-skill-toolu_01W5wagg3XBKGbSQzgaDVhsG",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "deliver-branch"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "45525a4c915d",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 6427,
+        "end": 6428,
+        "entry_ids": [
+          "77b15b0c-c6ee-41f5-875c-18da28cca1f0"
+        ],
+        "tool_use_id": "toolu_01W5wagg3XBKGbSQzgaDVhsG"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01W5wagg3XBKGbSQzgaDVhsG"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: deliver-branch",
+        "default_collapsed": true
+      }
     }
   ],
   "session_metrics": {
