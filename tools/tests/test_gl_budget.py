@@ -263,3 +263,10 @@ def test_model_predicts_light_gears():
     """Held out: nothing was fitted to this scene. The stop rule for a bad fit
     is 20 percent; the test holds it to 8."""
     assert gears_prediction("light") == pytest.approx(gb.LIGHT_GEARS_MS, rel=0.08)
+
+
+@needs_cc
+def test_a_hack_can_call_glpixelstorei_for_unpack_alignment():
+    """cubicgrid does; TinyGL defines the call but does not declare it."""
+    result = run(init="glPixelStorei(GL_UNPACK_ALIGNMENT, 1);")
+    assert "error" not in result, result.get("error")

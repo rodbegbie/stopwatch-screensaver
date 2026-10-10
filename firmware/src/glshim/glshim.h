@@ -61,6 +61,9 @@ void glshim_DrawArrays(GLenum mode, GLint first, GLsizei count);
 #define glDrawArrays glshim_DrawArrays
 
 void glMateriali(GLint face, GLint pname, GLint value);
+/* TinyGL has this commented out. Pixel unpacking only matters for texture
+ * upload, which no hack here does, so it is accepted and ignored. */
+void glPixelStorei(GLint pname, GLint param);
 /* The only caller asks about GL_TEXTURE_2D, which no hack here enables. */
 int glIsEnabled(GLint cap);
 

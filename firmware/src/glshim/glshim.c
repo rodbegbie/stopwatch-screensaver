@@ -148,6 +148,11 @@ void glMateriali(GLint face, GLint pname, GLint value) {
   glMaterialfv(face, pname, v);
 }
 
+void glPixelStorei(GLint pname, GLint param) {
+  (void)pname;
+  (void)param;
+}
+
 int glIsEnabled(GLint cap) {
   (void)cap;
   return 0;
