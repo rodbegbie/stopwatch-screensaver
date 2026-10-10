@@ -1,5 +1,6 @@
 #include <M5Unified.h>
 #include <esp_heap_caps.h>
+#include <string.h>
 
 extern "C" {
 #include "core/canvas.h"
@@ -8,9 +9,21 @@ extern "C" {
 #include "runner/button_latch.h"
 #include "runner/hack_runner.h"
 #include "runner/overlay.h"
+#include "runner/qr_layout.h"
 #include "runner/rotation.h"
 #include "runner/start_pick.h"
 }
+#include "lgfx/utility/lgfx_qrcode.h"
+/* The encoder's header defines generic names that clash with the rest of the
+ * code. */
+#undef MODE_NUMERIC
+#undef MODE_ALPHANUMERIC
+#undef MODE_BYTE
+#undef ECC_LOW
+#undef ECC_MEDIUM
+#undef ECC_QUARTILE
+#undef ECC_HIGH
+#undef LOCK_VERSION
 
 /* Hacks run on loopTask, whose 8 KB default stack is too small: Rorschach
  * keeps a 9.6 KB array of rectangles on the stack. */
@@ -33,6 +46,18 @@ static const char *const kForcedStart = nullptr;
 #endif
 static const char *const kBadgeName = BADGE_NAME;
 static const int kBadgeScale = 10;
+
+/* The QR code overlay's target; build with -DQR_URL=\"https://example.com\". */
+#ifndef QR_URL
+#define QR_URL "https://linkedin.com/in/rodbegbie"
+#endif
+static const char *const kQrUrl = QR_URL;
+/* The screen is a circle, so the biggest square whose corners all show is the
+ * one inscribed in it: 466 / sqrt(2) = 329.5, rounded down to an even number.
+ * Two modules of white around the code (the standard asks for four, but phone
+ * cameras cope) keep it as big as the circle allows. */
+static const int kQrSide = 328;
+static const int kQrQuietModules = 2;
 
 static const uint32_t kStatsEveryMs = 5000;
 static const uint32_t kNameShownMs = 5000;
@@ -123,6 +148,8 @@ struct Patch {
 
 static M5Canvas stamp;
 static Patch namePatch, infoPatch;
+/* The finished QR code, black on white, drawn once so a frame only copies it. */
+static uint16_t *qrPixels;
 
 /* The outline is a black copy of the text at every offset within `outline`
  * pixels, which grows with the text size so it stays visible. */
@@ -147,6 +174,54 @@ static void stampText(Patch *p, const char *text, int cx, int cy,
   stamp.setTextColor(0xFFFFFF);
   stamp.drawString(text, cx, cy);
   stamp.setTextSize(1);
+  canvas_mark_dirty(&canvas, p->x, p->y, p->w, p->h);
+}
+
+/* Encodes kQrUrl at the lowest version that holds it (M5GFX's own encoder, as
+ * its qrcode() uses, with the lowest error correction so the modules stay big)
+ * and paints it into qrPixels. Leaves qrPixels null if the URL is too long for
+ * any version, or no memory is left. */
+static void buildQr() {
+  qrPixels = (uint16_t *)ps_malloc(kQrSide * kQrSide * sizeof(uint16_t));
+  if (!qrPixels) return;
+  for (uint8_t version = 1; version <= 40; version++) {
+    uint8_t *modules = (uint8_t *)malloc(lgfx_qrcode_getBufferSize(version));
+    if (!modules) break;
+    QRCode code;
+    int8_t err = lgfx_qrcode_initText(&code, modules, version, 0, kQrUrl);
+    if (err == 0) {
+      QrLayout l = qr_layout(code.size, kQrQuietModules, kQrSide);
+      memset(qrPixels, 0xFF, kQrSide * kQrSide * sizeof(uint16_t));
+      for (int my = 0; my < code.size && l.scale; my++)
+        for (int mx = 0; mx < code.size; mx++) {
+          if (!lgfx_qrcode_getModule(&code, mx, my)) continue;
+          for (int py = 0; py < l.scale; py++)
+            memset(qrPixels + (l.origin + my * l.scale + py) * kQrSide +
+                       l.origin + mx * l.scale,
+                   0, l.scale * sizeof(uint16_t));
+        }
+      free(modules);
+      if (l.scale) {
+        Serial.printf("QR %s: version %u, %d modules at %d px\n", kQrUrl,
+                      (unsigned)version, (int)code.size, l.scale);
+        return;
+      }
+      break;
+    }
+    free(modules);
+  }
+  Serial.printf("QR %s does not fit; no QR overlay\n", kQrUrl);
+  free(qrPixels);
+  qrPixels = nullptr;
+}
+
+static void stampQr(Patch *p) {
+  p->w = p->h = kQrSide;
+  p->x = p->y = (kSize - kQrSide) / 2;
+  canvas_copy_rect(&canvas, p->x, p->y, p->w, p->h, p->saved);
+  for (int row = 0; row < kQrSide; row++)
+    memcpy(canvas.px + (p->y + row) * kSize + p->x, qrPixels + row * kQrSide,
+           kQrSide * sizeof(uint16_t));
   canvas_mark_dirty(&canvas, p->x, p->y, p->w, p->h);
 }
 
@@ -175,6 +250,7 @@ static void present() {
   if (overlay_badge_visible(&overlay))
     stampText(&namePatch, kBadgeName, kSize / 2, kSize / 2,
               &fonts::Font8x8C64, kBadgeScale);
+  if (overlay_qr_visible(&overlay) && qrPixels) stampQr(&infoPatch);
   if (overlay_fps_visible(&overlay) || overlay_battery_visible(&overlay)) {
     char text[16];
     if (overlay_fps_visible(&overlay))
@@ -232,7 +308,8 @@ static bool pollRotation() {
   return true;
 }
 
-/* A tap anywhere cycles the readout: nothing, name badge, fps, battery. Call
+/* A tap anywhere cycles the readout: nothing, name badge, QR code, fps,
+ * battery. Call
  * right after M5.update(), which is the only place the touch edge is
  * recorded. */
 static void pollTouch() {
@@ -266,8 +343,12 @@ void setup() {
     halt("PSRAM alloc failed");
   stamp.setBuffer(canvas.px, kSize, kSize, 16);
   namePatch.saved = (uint16_t *)ps_malloc(kSize * kPatchMaxH * sizeof(uint16_t));
-  infoPatch.saved = (uint16_t *)ps_malloc(kSize * kPatchMaxH * sizeof(uint16_t));
+  size_t infoPixels = kQrSide * kQrSide > kSize * kPatchMaxH
+                          ? kQrSide * kQrSide
+                          : kSize * kPatchMaxH;
+  infoPatch.saved = (uint16_t *)ps_malloc(infoPixels * sizeof(uint16_t));
   if (!namePatch.saved || !infoPatch.saved) halt("PSRAM alloc failed");
+  buildQr();
   runner = runner_create(&canvas);
   if (!runner) halt("hack start failed");
   int first = start_pick_index(g_hacks, g_hack_count, kForcedStart, esp_random());

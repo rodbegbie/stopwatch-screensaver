@@ -10,8 +10,15 @@ extern "C" {
 #endif
 
 /* The readout cycled by a tap. INFO_NAME is the name badge: the wearer's name
- * in the middle of the screen, in place of the hack's name. */
-typedef enum { INFO_NONE, INFO_NAME, INFO_FPS, INFO_BATTERY } OverlayInfo;
+ * in the middle of the screen, in place of the hack's name. INFO_QR is a QR code
+ * covering most of the screen. */
+typedef enum {
+  INFO_NONE,
+  INFO_NAME,
+  INFO_QR,
+  INFO_FPS,
+  INFO_BATTERY
+} OverlayInfo;
 
 /* Decides what text to draw over the hack: its name for a few seconds after it
  * starts, and optionally the frame rate or battery level. Holds no drawing
@@ -38,7 +45,7 @@ void overlay_init(Overlay *o, uint32_t name_ms);
  * The chosen readout is kept. */
 void overlay_hack_started(Overlay *o, uint32_t now_ms);
 
-/* Next readout: nothing, badge, fps, battery, nothing... Starts at nothing. */
+/* Next readout: nothing, badge, QR code, fps, battery, nothing... Starts at nothing. */
 void overlay_cycle_info(Overlay *o);
 
 /* A battery reading in percent. Above 100 is clamped; a negative value means
@@ -48,10 +55,12 @@ void overlay_set_battery(Overlay *o, int pct);
 /* One frame was drawn at now_ms. */
 void overlay_frame(Overlay *o, uint32_t now_ms);
 
-/* The hack's name: for a few seconds after a start, except in badge mode. */
+/* The hack's name: for a few seconds after a start, except in badge and QR
+ * modes, which cover it. */
 bool overlay_name_visible(const Overlay *o, uint32_t now_ms);
 bool overlay_fps_visible(const Overlay *o);
 bool overlay_badge_visible(const Overlay *o);
+bool overlay_qr_visible(const Overlay *o);
 bool overlay_battery_visible(const Overlay *o);
 
 /* "12.3 fps", or "-- fps" until a full second of frames has been measured.

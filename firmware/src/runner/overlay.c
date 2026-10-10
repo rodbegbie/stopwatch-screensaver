@@ -37,13 +37,15 @@ void overlay_frame(Overlay *o, uint32_t now_ms) {
 }
 
 bool overlay_name_visible(const Overlay *o, uint32_t now_ms) {
-  return o->info != INFO_NAME && o->name_armed &&
+  return o->info != INFO_NAME && o->info != INFO_QR && o->name_armed &&
          now_ms - o->name_started_ms < o->name_ms;
 }
 
 bool overlay_fps_visible(const Overlay *o) { return o->info == INFO_FPS; }
 
 bool overlay_badge_visible(const Overlay *o) { return o->info == INFO_NAME; }
+
+bool overlay_qr_visible(const Overlay *o) { return o->info == INFO_QR; }
 
 bool overlay_battery_visible(const Overlay *o) {
   return o->info == INFO_BATTERY;

@@ -34,9 +34,9 @@ hack drew are sent to the display, so a hack that draws little costs little.
 - `firmware/src/runner/` starts, steps and switches hacks, painting each
   hack's background colour before it starts, as xscreensaver does.
 - `firmware/src/main.cpp` pushes the canvas to the display each frame,
-  draws the name, badge, fps and battery overlays, and handles the buttons and
-  touch. A small task on core 0 watches both buttons, so a press made while a
-  hack is in a long draw step is kept, not lost.
+  draws the name, badge, QR code, fps and battery overlays, and handles the
+  buttons and touch. A small task on core 0 watches both buttons, so a press
+  made while a hack is in a long draw step is kept, not lost.
 
 The same code builds natively on the Mac, which is how the tests run and how
 frames are dumped to PNG without any hardware.
@@ -80,11 +80,13 @@ The device starts on a random hack and moves on to the next one every 90
 seconds. Button A starts the next hack and button B the previous one, wrapping
 around at either end, and either press restarts the 90 second count. The
 hack's name shows for a few seconds as it starts, and a tap on the screen
-cycles the readout: nothing (the default at boot), a name badge, the frame
-rate, then the battery level. The badge is "Rod" in large letters in the middle
-of the screen, in place of the hack's name; build with
-`-DBADGE_NAME=\"Ann\"` to change it. The frame rate and battery sit below the
-hack's name. The choice stays when the hack changes.
+cycles the readout: nothing (the default at boot), a name badge, a QR code, the
+frame rate, then the battery level. The badge is "Rod" in large letters in the
+middle of the screen, in place of the hack's name; build with
+`-DBADGE_NAME=\"Ann\"` to change it. The QR code is white-backed and covers
+most of the screen, pointing at `https://linkedin.com/in/rodbegbie`; build with
+`-DQR_URL=\"https://example.com\"` to change it. The frame rate and battery
+sit below the hack's name. The choice stays when the hack changes.
 
 Two build flags change this (set them with `PLATFORMIO_BUILD_FLAGS`, and
 rebuild without them afterwards, since the define sticks to the build):

@@ -39,37 +39,42 @@ void test_the_name_time_survives_the_millisecond_counter_wrapping(void) {
   TEST_ASSERT_FALSE(overlay_name_visible(&ov, 4000));
 }
 
-static void expect_only(bool badge, bool fps, bool battery) {
+static void expect_only(bool badge, bool qr, bool fps, bool battery) {
   TEST_ASSERT_EQUAL(badge, overlay_badge_visible(&ov));
+  TEST_ASSERT_EQUAL(qr, overlay_qr_visible(&ov));
   TEST_ASSERT_EQUAL(fps, overlay_fps_visible(&ov));
   TEST_ASSERT_EQUAL(battery, overlay_battery_visible(&ov));
 }
 
-void test_info_starts_as_nothing_and_taps_cycle_badge_fps_battery_nothing(void) {
-  expect_only(false, false, false);
+void test_info_starts_as_nothing_and_taps_cycle_badge_qr_fps_battery_nothing(void) {
+  expect_only(false, false, false, false);
   overlay_cycle_info(&ov);
-  expect_only(true, false, false);
+  expect_only(true, false, false, false);
   overlay_cycle_info(&ov);
-  expect_only(false, true, false);
+  expect_only(false, true, false, false);
   overlay_cycle_info(&ov);
-  expect_only(false, false, true);
+  expect_only(false, false, true, false);
   overlay_cycle_info(&ov);
-  expect_only(false, false, false);
+  expect_only(false, false, false, true);
+  overlay_cycle_info(&ov);
+  expect_only(false, false, false, false);
 }
 
 void test_the_chosen_readout_stays_when_a_new_hack_starts(void) {
-  OverlayInfo modes[] = {INFO_NAME, INFO_FPS, INFO_BATTERY};
-  for (int i = 0; i < 3; i++) {
+  OverlayInfo modes[] = {INFO_NAME, INFO_QR, INFO_FPS, INFO_BATTERY};
+  for (int i = 0; i < 4; i++) {
     show(modes[i]);
     overlay_hack_started(&ov, 100);
     TEST_ASSERT_EQUAL(modes[i], ov.info);
   }
 }
 
-void test_the_hack_name_is_hidden_only_in_badge_mode(void) {
+void test_the_hack_name_is_hidden_only_in_badge_and_qr_modes(void) {
   overlay_hack_started(&ov, 0);
   TEST_ASSERT_TRUE(overlay_name_visible(&ov, 100));
   show(INFO_NAME);
+  TEST_ASSERT_FALSE(overlay_name_visible(&ov, 100));
+  show(INFO_QR);
   TEST_ASSERT_FALSE(overlay_name_visible(&ov, 100));
   show(INFO_FPS);
   TEST_ASSERT_TRUE(overlay_name_visible(&ov, 100));
@@ -212,9 +217,9 @@ int main(void) {
   RUN_TEST(test_the_name_shows_for_exactly_the_name_time_after_a_start);
   RUN_TEST(test_switching_hacks_restarts_the_name_time);
   RUN_TEST(test_the_name_time_survives_the_millisecond_counter_wrapping);
-  RUN_TEST(test_info_starts_as_nothing_and_taps_cycle_badge_fps_battery_nothing);
+  RUN_TEST(test_info_starts_as_nothing_and_taps_cycle_badge_qr_fps_battery_nothing);
   RUN_TEST(test_the_chosen_readout_stays_when_a_new_hack_starts);
-  RUN_TEST(test_the_hack_name_is_hidden_only_in_badge_mode);
+  RUN_TEST(test_the_hack_name_is_hidden_only_in_badge_and_qr_modes);
   RUN_TEST(test_the_hack_name_returns_when_leaving_badge_mode_within_its_time);
   RUN_TEST(test_battery_text_is_a_whole_percentage);
   RUN_TEST(test_battery_text_is_a_placeholder_until_a_level_is_known);
