@@ -1,0 +1,497 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4HHYYKWXVGZ86T6F1RA9V8P",
+  "session_id": "677be71b-6b3b-46bc-98ff-f004e6cfc668",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-10T00:03:48.927061Z",
+  "branch": "worktree-spike-tinygl",
+  "checkpoints_count": 2,
+  "save_step_count": 7,
+  "files_touched": [
+    "firmware/platformio.ini",
+    "firmware/src/glshim/glshim.c",
+    "firmware/src/glshim/glshim.h",
+    "firmware/src/hacks/gears_gl.c",
+    "firmware/src/hacks/gl_helper_gltrackball.c",
+    "firmware/src/hacks/gl_helper_involute.c",
+    "firmware/src/hacks/gl_helper_normals.c",
+    "firmware/src/hacks/gl_helper_quaternion.c",
+    "firmware/src/hacks/gl_helper_rotator.c",
+    "firmware/src/hacks/gl_helper_trackball.c",
+    "firmware/src/hacks/gl_helper_tube.c",
+    "firmware/src/hacks/registry.c",
+    "firmware/src/hacks/tglspike.c",
+    "firmware/src/x11shim/include/screenhackI.h",
+    "firmware/src/x11shim/include/yarandom.h",
+    "firmware/src/x11shim/xshim.h"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "241408c2b121",
+  "checkpoint_transcript_start": 1819,
+  "transcript_lines_at_start": 1819,
+  "compact_transcript_start": 187,
+  "token_usage": {
+    "input_tokens": 236,
+    "cache_creation_tokens": 182299,
+    "cache_read_tokens": 48269361,
+    "output_tokens": 123899,
+    "api_call_count": 118
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01YJz4g9kiZJeBYgrEPXcr3q",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "port-hack"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "1983538d4cd8",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 35,
+        "end": 36,
+        "entry_ids": [
+          "74dd623a-d633-43dc-b484-26b80ff9e4bd"
+        ],
+        "tool_use_id": "toolu_01YJz4g9kiZJeBYgrEPXcr3q"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01YJz4g9kiZJeBYgrEPXcr3q"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: port-hack",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_014q1dmNKogGTHL9z4dNoCTx",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "entire:using-entire"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "1983538d4cd8",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 86,
+        "end": 87,
+        "entry_ids": [
+          "4286c861-7ec1-4fe6-8f3a-25596712630b"
+        ],
+        "tool_use_id": "toolu_014q1dmNKogGTHL9z4dNoCTx"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_014q1dmNKogGTHL9z4dNoCTx"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: entire:using-entire",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_012eWXNEoBzayaPB41ozTqZA",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:using-superpowers"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "1983538d4cd8",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 87,
+        "end": 88,
+        "entry_ids": [
+          "24b77243-eb2a-4dc4-b788-5c9e126baf0a"
+        ],
+        "tool_use_id": "toolu_012eWXNEoBzayaPB41ozTqZA"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_012eWXNEoBzayaPB41ozTqZA"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:using-superpowers",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_012ox9auKdYQFpk8WeZ9u6UP",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:brainstorming"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "1983538d4cd8",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 106,
+        "end": 107,
+        "entry_ids": [
+          "c3b70d2c-dd27-4065-bd9a-1f6dc0f4fde9"
+        ],
+        "tool_use_id": "toolu_012ox9auKdYQFpk8WeZ9u6UP"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_012ox9auKdYQFpk8WeZ9u6UP"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:brainstorming",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01LtLtB2GiMkZu9qLyhxSLbw",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:using-git-worktrees"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "1983538d4cd8",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 234,
+        "end": 235,
+        "entry_ids": [
+          "5828e5d1-6956-4d7f-be32-2635b9421071"
+        ],
+        "tool_use_id": "toolu_01LtLtB2GiMkZu9qLyhxSLbw"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01LtLtB2GiMkZu9qLyhxSLbw"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:using-git-worktrees",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01A7d4KwqMPcQhX4gae5R3i3",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "1983538d4cd8",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 933,
+        "end": 934,
+        "entry_ids": [
+          "5ddd48f6-1dd1-4e24-8860-a5a726a9e437"
+        ],
+        "tool_use_id": "toolu_01A7d4KwqMPcQhX4gae5R3i3"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01A7d4KwqMPcQhX4gae5R3i3"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 9
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-10-10T00:03:48.820311Z",
+    "agent_lines": 387,
+    "agent_removed": 1,
+    "human_added": 192,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 579,
+    "total_lines_changed": 588,
+    "agent_percentage": 65.98639455782312,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 95,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".private-journal/2026-10-07/19-59-30-000000-79f41e20.md": 8,
+        ".private-journal/2026-10-07/22-51-53-000000-2f0b9ece.md": 8,
+        ".private-journal/2026-10-08/07-50-07-000000-0110d472.md": 8,
+        ".private-journal/2026-10-08/15-15-15-000000-4004028d.md": 19,
+        ".private-journal/2026-10-08/15-45-25-000000-61b97d2d.md": 8,
+        ".private-journal/2026-10-08/17-26-54-000000-98ba9899.md": 12,
+        ".private-journal/2026-10-09/00-21-50-000000-1de20801.md": 8,
+        ".private-journal/2026-10-09/12-29-59-000000-8e4c6857.md": 16,
+        ".private-journal/2026-10-09/15-14-18-000000-357340fa.md": 8
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 15824,
+      "agent_lines_removed": 1
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 428,
+      "user_lines_removed": 202,
+      "agent_lines_added": 15932,
+      "agent_lines_removed": 1,
+      "user_added_per_file": {
+        "firmware/spike_tinygl/src/memory.c": 1,
+        "firmware/spike_tinygl/src/zgl.h": 1,
+        "spike_build_pinned.log": 161,
+        "spike_dump_build.log": 229,
+        "spike_upload.log": 36
+      },
+      "user_removed_per_file": {
+        "firmware/spike_tinygl/src/memory.c": 1,
+        "firmware/spike_tinygl/src/zgl.h": 1,
+        "spike_build_pinned.log": 161,
+        "spike_dump_build.log": 3,
+        "spike_upload.log": 36
+      }
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 2792,
+      "user_lines_removed": 242,
+      "agent_lines_added": 15963,
+      "agent_lines_removed": 1,
+      "user_added_per_file": {
+        "firmware/spike_tinygl/src/clip.c": 2,
+        "firmware/spike_tinygl/src/init.c": 19,
+        "firmware/spike_tinygl/src/light.c": 2,
+        "firmware/spike_tinygl/src/matrix.c": 4,
+        "firmware/spike_tinygl/src/memory.c": 1,
+        "firmware/spike_tinygl/src/vertex.c": 2,
+        "firmware/spike_tinygl/src/zmath.c": 6,
+        "firmware/spike_tinygl/src/zraster.c": 1,
+        "firmware/spike_tinygl/src/ztriangle.c": 2,
+        "firmware/spike_tinygl/src/ztriangle.h": 2,
+        "spike_build_pinned.log": 161,
+        "spike_dump_build.log": 229,
+        "spike_upload.log": 2361
+      },
+      "user_removed_per_file": {
+        "firmware/spike_tinygl/src/clip.c": 2,
+        "firmware/spike_tinygl/src/init.c": 19,
+        "firmware/spike_tinygl/src/light.c": 2,
+        "firmware/spike_tinygl/src/matrix.c": 4,
+        "firmware/spike_tinygl/src/memory.c": 1,
+        "firmware/spike_tinygl/src/vertex.c": 2,
+        "firmware/spike_tinygl/src/zmath.c": 6,
+        "firmware/spike_tinygl/src/zraster.c": 1,
+        "firmware/spike_tinygl/src/ztriangle.c": 2,
+        "firmware/spike_tinygl/src/ztriangle.h": 2,
+        "spike_build_pinned.log": 161,
+        "spike_dump_build.log": 3,
+        "spike_upload.log": 37
+      }
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 2791,
+      "user_lines_removed": 241,
+      "agent_lines_added": 15969,
+      "agent_lines_removed": 1,
+      "user_added_per_file": {
+        "firmware/spike_tinygl/src/clip.c": 2,
+        "firmware/spike_tinygl/src/init.c": 19,
+        "firmware/spike_tinygl/src/light.c": 2,
+        "firmware/spike_tinygl/src/matrix.c": 4,
+        "firmware/spike_tinygl/src/memory.c": 1,
+        "firmware/spike_tinygl/src/vertex.c": 2,
+        "firmware/spike_tinygl/src/zmath.c": 6,
+        "firmware/spike_tinygl/src/zraster.c": 1,
+        "firmware/spike_tinygl/src/ztriangle.c": 2,
+        "firmware/spike_tinygl/src/ztriangle.h": 2,
+        "spike_build_pinned.log": 161,
+        "spike_dump_build.log": 229,
+        "spike_upload.log": 2360
+      },
+      "user_removed_per_file": {
+        "firmware/spike_tinygl/src/clip.c": 2,
+        "firmware/spike_tinygl/src/init.c": 19,
+        "firmware/spike_tinygl/src/light.c": 2,
+        "firmware/spike_tinygl/src/matrix.c": 4,
+        "firmware/spike_tinygl/src/memory.c": 1,
+        "firmware/spike_tinygl/src/vertex.c": 2,
+        "firmware/spike_tinygl/src/zmath.c": 6,
+        "firmware/spike_tinygl/src/zraster.c": 1,
+        "firmware/spike_tinygl/src/ztriangle.c": 2,
+        "firmware/spike_tinygl/src/ztriangle.h": 2,
+        "spike_build_pinned.log": 161,
+        "spike_dump_build.log": 3,
+        "spike_upload.log": 36
+      }
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 2793,
+      "user_lines_removed": 243,
+      "agent_lines_added": 15981,
+      "agent_lines_removed": 1,
+      "user_added_per_file": {
+        "firmware/spike_tinygl/src/clip.c": 2,
+        "firmware/spike_tinygl/src/init.c": 19,
+        "firmware/spike_tinygl/src/light.c": 2,
+        "firmware/spike_tinygl/src/matrix.c": 4,
+        "firmware/spike_tinygl/src/memory.c": 1,
+        "firmware/spike_tinygl/src/vertex.c": 2,
+        "firmware/spike_tinygl/src/zmath.c": 6,
+        "firmware/spike_tinygl/src/zraster.c": 1,
+        "firmware/spike_tinygl/src/ztriangle.c": 2,
+        "firmware/spike_tinygl/src/ztriangle.h": 2,
+        "spike_build_pinned.log": 161,
+        "spike_dump_build.log": 229,
+        "spike_upload.log": 2362
+      },
+      "user_removed_per_file": {
+        "firmware/spike_tinygl/src/clip.c": 2,
+        "firmware/spike_tinygl/src/init.c": 19,
+        "firmware/spike_tinygl/src/light.c": 2,
+        "firmware/spike_tinygl/src/matrix.c": 4,
+        "firmware/spike_tinygl/src/memory.c": 1,
+        "firmware/spike_tinygl/src/vertex.c": 2,
+        "firmware/spike_tinygl/src/zmath.c": 6,
+        "firmware/spike_tinygl/src/zraster.c": 1,
+        "firmware/spike_tinygl/src/ztriangle.c": 2,
+        "firmware/spike_tinygl/src/ztriangle.h": 2,
+        "spike_build_pinned.log": 161,
+        "spike_dump_build.log": 3,
+        "spike_upload.log": 38
+      }
+    },
+    {
+      "checkpoint_number": 7,
+      "user_lines_added": 10161,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "firmware/spike_tinygl/include/GL/gl.h": 1017,
+        "firmware/spike_tinygl/include/zbuffer.h": 362,
+        "firmware/spike_tinygl/include/zfeatures.h": 142,
+        "firmware/spike_tinygl/src/accum.c": 2,
+        "firmware/spike_tinygl/src/api.c": 648,
+        "firmware/spike_tinygl/src/arrays.c": 525,
+        "firmware/spike_tinygl/src/clear.c": 26,
+        "firmware/spike_tinygl/src/clip.c": 475,
+        "firmware/spike_tinygl/src/error_check.h": 40,
+        "firmware/spike_tinygl/src/error_check_no_context.h": 19,
+        "firmware/spike_tinygl/src/font8x8_basic.h": 284,
+        "firmware/spike_tinygl/src/get.c": 687,
+        "firmware/spike_tinygl/src/image_util.c": 124,
+        "firmware/spike_tinygl/src/init.c": 377,
+        "firmware/spike_tinygl/src/light.c": 394,
+        "firmware/spike_tinygl/src/list.c": 303,
+        "firmware/spike_tinygl/src/matrix.c": 274,
+        "firmware/spike_tinygl/src/memory.c": 41,
+        "firmware/spike_tinygl/src/misc.c": 259,
+        "firmware/spike_tinygl/src/msghandling.c": 64,
+        "firmware/spike_tinygl/src/msghandling.h": 8,
+        "firmware/spike_tinygl/src/opinfo.h": 92,
+        "firmware/spike_tinygl/src/select.c": 354,
+        "firmware/spike_tinygl/src/specbuf.c": 60,
+        "firmware/spike_tinygl/src/spike_single.h": 11,
+        "firmware/spike_tinygl/src/texture.c": 432,
+        "firmware/spike_tinygl/src/vertex.c": 388,
+        "firmware/spike_tinygl/src/zbuffer.c": 389,
+        "firmware/spike_tinygl/src/zgl.h": 474,
+        "firmware/spike_tinygl/src/zline.c": 126,
+        "firmware/spike_tinygl/src/zline.h": 123,
+        "firmware/spike_tinygl/src/zmath.c": 311,
+        "firmware/spike_tinygl/src/zmath.h": 89,
+        "firmware/spike_tinygl/src/zpostprocess.c": 14,
+        "firmware/spike_tinygl/src/zraster.c": 229,
+        "firmware/spike_tinygl/src/ztext.c": 94,
+        "firmware/spike_tinygl/src/ztriangle.c": 490,
+        "firmware/spike_tinygl/src/ztriangle.h": 414
+      }
+    },
+    {
+      "checkpoint_number": 8,
+      "user_lines_added": 9799,
+      "user_lines_removed": 0,
+      "agent_lines_added": 4082,
+      "agent_lines_removed": 1,
+      "user_added_per_file": {
+        "firmware/spike_tinygl/include/GL/gl.h": 1017,
+        "firmware/spike_tinygl/include/zfeatures.h": 142,
+        "firmware/spike_tinygl/src/accum.c": 2,
+        "firmware/spike_tinygl/src/api.c": 648,
+        "firmware/spike_tinygl/src/arrays.c": 525,
+        "firmware/spike_tinygl/src/clear.c": 26,
+        "firmware/spike_tinygl/src/clip.c": 475,
+        "firmware/spike_tinygl/src/error_check.h": 40,
+        "firmware/spike_tinygl/src/error_check_no_context.h": 19,
+        "firmware/spike_tinygl/src/font8x8_basic.h": 284,
+        "firmware/spike_tinygl/src/get.c": 687,
+        "firmware/spike_tinygl/src/image_util.c": 124,
+        "firmware/spike_tinygl/src/init.c": 377,
+        "firmware/spike_tinygl/src/light.c": 394,
+        "firmware/spike_tinygl/src/list.c": 303,
+        "firmware/spike_tinygl/src/matrix.c": 274,
+        "firmware/spike_tinygl/src/memory.c": 41,
+        "firmware/spike_tinygl/src/misc.c": 259,
+        "firmware/spike_tinygl/src/msghandling.c": 64,
+        "firmware/spike_tinygl/src/msghandling.h": 8,
+        "firmware/spike_tinygl/src/opinfo.h": 92,
+        "firmware/spike_tinygl/src/select.c": 354,
+        "firmware/spike_tinygl/src/specbuf.c": 60,
+        "firmware/spike_tinygl/src/spike_single.h": 11,
+        "firmware/spike_tinygl/src/texture.c": 432,
+        "firmware/spike_tinygl/src/vertex.c": 388,
+        "firmware/spike_tinygl/src/zbuffer.c": 389,
+        "firmware/spike_tinygl/src/zgl.h": 474,
+        "firmware/spike_tinygl/src/zline.c": 126,
+        "firmware/spike_tinygl/src/zline.h": 123,
+        "firmware/spike_tinygl/src/zmath.c": 311,
+        "firmware/spike_tinygl/src/zmath.h": 89,
+        "firmware/spike_tinygl/src/zpostprocess.c": 14,
+        "firmware/spike_tinygl/src/zraster.c": 229,
+        "firmware/spike_tinygl/src/ztext.c": 94,
+        "firmware/spike_tinygl/src/ztriangle.c": 490,
+        "firmware/spike_tinygl/src/ztriangle.h": 414
+      }
+    }
+  ]
+}
