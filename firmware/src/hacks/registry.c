@@ -62,6 +62,7 @@ XLOCKMORE_HACK_WITH(morph3d, "Morph3D", kMorph3dOverrides);
 static const char *const kCubicGridOverrides[] = {"*ncolors: 64", "*cycles: 0",
                                                   "*ticks: 20", NULL};
 XLOCKMORE_HACK_WITH(cubicgrid, "CubicGrid", kCubicGridOverrides);
+XLOCKMORE_HACK(forest, "Forest");
 
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
@@ -89,5 +90,6 @@ const HackEntry *const g_hacks[] = {
     &gears_hack,
     &morph3d_hack,
     &cubicgrid_hack,
-    &deluxe_hack};
+    &deluxe_hack,
+    &forest_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);
