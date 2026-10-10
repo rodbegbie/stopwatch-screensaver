@@ -23,6 +23,18 @@ static int deluxe_draw_arc(Display *dpy, Drawable d, GC gc, int x, int y,
 
 #define XDrawArc deluxe_draw_arc
 
+/* Upstream's translucent path draws each shape at alpha 0xCC of 0xFF; 26 of 32
+ * is the same weight. Only the throbbers' GCs set a line width. */
+#define DELUXE_ALPHA 26
+static GC deluxe_create_gc(Display *dpy, Drawable d, unsigned long mask,
+                           XGCValues *v) {
+  GC gc = XCreateGC(dpy, d, mask, v);
+  if (gc && (mask & GCLineWidth)) gc->alpha = DELUXE_ALPHA;
+  return gc;
+}
+
+#define XCreateGC deluxe_create_gc
+
 #undef XSCREENSAVER_MODULE
 #define XSCREENSAVER_MODULE(CLASS, PREFIX)
 

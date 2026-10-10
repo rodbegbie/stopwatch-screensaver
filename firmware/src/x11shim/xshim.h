@@ -38,6 +38,9 @@ typedef struct XshimGC {
   struct XshimPixmap *clip;
   int clip_x, clip_y;
   int line_width, cap_style, join_style;
+  /* 0 draws opaque. 1 to 31 is the weight out of 32 given to this GC's colour
+   * when a wide line or circle (stroke.c) is blended over the canvas. */
+  int alpha;
 } *GC;
 
 typedef struct XshimScreen Screen;

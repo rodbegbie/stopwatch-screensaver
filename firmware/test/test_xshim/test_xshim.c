@@ -1471,6 +1471,69 @@ void test_stroke_circle_is_clipped_to_the_canvas(void) {
   XFreeGC(dpy, gc);
 }
 
+/* A GC with an alpha blends over what is already on the canvas. Red over blue
+ * at 16/32 is halfway: about 15.5 of 31 in each of the two channels. */
+static void check_halfway_red_over_blue(uint16_t stored) {
+  const uint16_t v = px_swap(stored);
+  const int r = (v >> 11) & 31, g = (v >> 5) & 63, b = v & 31;
+  TEST_ASSERT_TRUE_MESSAGE(r >= 15 && r <= 16, "red is halfway");
+  TEST_ASSERT_TRUE_MESSAGE(b >= 15 && b <= 16, "blue is halfway");
+  TEST_ASSERT_EQUAL_INT(0, g);
+}
+
+void test_wide_line_with_alpha_blends_over_the_canvas(void) {
+  use_canvas(64);
+  canvas_clear(&cv, px_swap(0x001F));
+  canvas_clear_dirty(&cv);
+  GC gc = wide_gc(8, CapButt, JoinMiter);
+  gc->foreground = px_swap(0xF800);
+  gc->alpha = 16;
+  stroke_segment(&cv, gc, 10, 30, 50, 30);
+  check_halfway_red_over_blue(at(30, 30));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x001F), at(30, 50));
+  int x0, x1;
+  TEST_ASSERT_TRUE(canvas_dirty_row(&cv, 30, &x0, &x1));
+  TEST_ASSERT_TRUE(x0 <= 10 && x1 >= 49);
+  XFreeGC(dpy, gc);
+}
+
+void test_wide_line_without_alpha_still_overwrites(void) {
+  use_canvas(64);
+  canvas_clear(&cv, px_swap(0x001F));
+  GC gc = wide_gc(8, CapButt, JoinMiter);
+  gc->foreground = px_swap(0xF800);
+  stroke_segment(&cv, gc, 10, 30, 50, 30);
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0xF800), at(30, 30));
+  XFreeGC(dpy, gc);
+}
+
+void test_stroke_circle_with_alpha_blends_each_pixel_once(void) {
+  use_canvas(200);
+  canvas_clear(&cv, px_swap(0x001F));
+  GC gc = wide_gc(30, CapButt, JoinMiter);
+  gc->foreground = px_swap(0xF800);
+  gc->alpha = 16;
+  stroke_circle(&cv, gc, 20, 20, 160);
+  check_halfway_red_over_blue(at(100, 20 + 5));
+  check_halfway_red_over_blue(at(20 + 5, 100));
+  XFreeGC(dpy, gc);
+}
+
+void test_alpha_does_not_leak_into_the_next_gc(void) {
+  use_canvas(64);
+  canvas_clear(&cv, px_swap(0x001F));
+  GC blended = wide_gc(8, CapButt, JoinMiter);
+  blended->foreground = px_swap(0xF800);
+  blended->alpha = 16;
+  stroke_segment(&cv, blended, 10, 30, 50, 30);
+  GC opaque = wide_gc(8, CapButt, JoinMiter);
+  opaque->foreground = px_swap(0xF800);
+  stroke_segment(&cv, opaque, 10, 10, 50, 10);
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0xF800), at(30, 10));
+  XFreeGC(dpy, blended);
+  XFreeGC(dpy, opaque);
+}
+
 void test_fill_arc_half_fills_a_half_disc(void) {
   use_canvas(64);
   XGCValues v;
@@ -1973,6 +2036,10 @@ int main(void) {
   RUN_TEST(test_stroke_circle_covers_what_the_wide_arc_draws);
   RUN_TEST(test_stroke_circle_narrower_than_its_line_is_a_filled_disc);
   RUN_TEST(test_stroke_circle_is_clipped_to_the_canvas);
+  RUN_TEST(test_wide_line_with_alpha_blends_over_the_canvas);
+  RUN_TEST(test_wide_line_without_alpha_still_overwrites);
+  RUN_TEST(test_stroke_circle_with_alpha_blends_each_pixel_once);
+  RUN_TEST(test_alpha_does_not_leak_into_the_next_gc);
   RUN_TEST(test_fill_arc_half_fills_a_half_disc);
   RUN_TEST(test_fill_arc_quarter_is_a_pie_slice_including_the_centre);
   RUN_TEST(test_create_pixmap_is_zeroed_and_reports_its_geometry);
