@@ -1,0 +1,102 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4KRB797QKGZNPXTC490NB7Q",
+  "session_id": "9d71f26a-c142-4e8b-8cfa-7d87f723ffcc",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-10T20:33:52.794234Z",
+  "branch": "feature/60-qr-overlay",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "README.md",
+    "firmware/src/main.cpp",
+    "firmware/src/runner/overlay.c",
+    "firmware/src/runner/overlay.h",
+    "firmware/src/runner/qr_layout.c",
+    "firmware/src/runner/qr_layout.h",
+    "firmware/test/test_overlay/test_overlay.c",
+    "firmware/test/test_qr_layout/test_qr_layout.c"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "9dd055c30fb4",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 50,
+    "cache_creation_tokens": 85880,
+    "cache_read_tokens": 2108047,
+    "output_tokens": 21229,
+    "api_call_count": 25
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01FSQuKFmymNowJ6wjdhoYYK",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "9dd055c30fb4",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 257,
+        "end": 258,
+        "entry_ids": [
+          "61f4619f-1bde-45c0-b66f-81b0412fcc7d"
+        ],
+        "tool_use_id": "toolu_01FSQuKFmymNowJ6wjdhoYYK"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01FSQuKFmymNowJ6wjdhoYYK"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "initial_attribution": {
+    "calculated_at": "2026-10-10T20:33:52.778132Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 195,
+    "human_modified": 27,
+    "human_removed": 0,
+    "total_committed": 195,
+    "total_lines_changed": 229,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 143,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".private-journal/2026-10-07/19-59-30-000000-79f41e20.md": 8,
+        ".private-journal/2026-10-07/22-51-53-000000-2f0b9ece.md": 8,
+        ".private-journal/2026-10-08/07-50-07-000000-0110d472.md": 8,
+        ".private-journal/2026-10-08/15-15-15-000000-4004028d.md": 19,
+        ".private-journal/2026-10-08/15-45-25-000000-61b97d2d.md": 8,
+        ".private-journal/2026-10-08/17-26-54-000000-98ba9899.md": 12,
+        ".private-journal/2026-10-09/00-21-50-000000-1de20801.md": 8,
+        ".private-journal/2026-10-09/12-29-59-000000-8e4c6857.md": 16,
+        ".private-journal/2026-10-09/15-14-18-000000-357340fa.md": 8,
+        ".private-journal/2026-10-09/20-40-34-000000-16250e9e.md": 8,
+        ".private-journal/2026-10-09/23-14-53-000000-38a6b176.md": 8,
+        ".private-journal/2026-10-10/00-39-42-000000-64095098.md": 8,
+        ".private-journal/2026-10-10/06-35-48-000000-d0ecd666.md": 8,
+        ".private-journal/2026-10-10/08-14-59-000000-d35e8085.md": 8,
+        ".private-journal/2026-10-10/13-26-22-000000-2fbe913b.md": 8
+      }
+    }
+  ]
+}
