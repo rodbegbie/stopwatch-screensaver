@@ -1,0 +1,9 @@
+Don't worry about reflashing -- we'll move on to the next project shortly.  The trail is approved, so you can land the PR
+
+---
+
+/claude-md-management:revise-claude-md AGENTS.md
+
+---
+
+Apply them, then do your end session ritual.
