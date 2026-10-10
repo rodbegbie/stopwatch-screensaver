@@ -88,6 +88,17 @@ The numbers say what each frame costs, not how it looks: a dot lattice at 14
 fps and a morphing polyhedron at 10 fps are different bets on what Rod will
 want to see on the board.
 
+## First device check: Morph3D
+
+Flashed on 2026-10-09 and captured over nine 5 second windows of one start:
+8.0 to 8.4 fps, a step of 78 to 86 ms, a push of 32.6 ms, 8.8 ms of wait, and
+heap and PSRAM flat. Step plus push is 111 to 118 ms, against a prediction of
+87 to 114 ms across the four shapes: at the top of the range, so the model was
+optimistic, but only just. The shape that ran is not known (the device does
+not seed `random()`), so this checks the range rather than one prediction.
+One start is also one shape; a longer capture across restarts would show the
+others.
+
 ## What this does not tell us
 
 - **Only Gears is calibrated.** One heavy and one light scene, both made of
