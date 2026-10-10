@@ -1,0 +1,3 @@
+OK, let's port another GL hack before we try doing some optimisations.
+
+First of all, let's attack Issue #41 so our assessment doc is in a bit of a better shape.
