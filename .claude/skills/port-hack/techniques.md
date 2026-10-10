@@ -75,7 +75,14 @@ When: a ported hack runs under about 10 fps and the push is not the cause
   changes were worth 2.7-3.2 times, 1.05, and 1.3.
 - Wide lines (`line_width` above 1) are the costly path: a quad filled a row at
   a time, plus two discs for round caps. `stroke.c` keeps a table of disc rows
-  by width up to 16.
+  by width up to 16. A wide full circle through `XDrawArc` is about a thousand
+  such segments (Deluxe: 94% of a frame, 2-5 fps); `stroke_circle` fills it as
+  a ring in two spans a row.
+- When the cost is overpaint, not `double` maths, a host split does find the
+  dominant call: `#define XDrawArc(...) 0` in the wrapper, `pio run -e dump`,
+  then `/usr/bin/time -p .pio/build/dump/program <index> 400 out.raw` three
+  times, against the baseline. It cannot see costs that live in memory
+  traffic (Deluxe's alpha mask: nothing on the host, 3-5 ms on the board).
 - A hack that redraws its whole picture every frame to animate colour (Braid)
   costs its full draw each frame whatever the push does. Check this before
   porting; the scorer does not flag it yet.

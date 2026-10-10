@@ -14,7 +14,10 @@ hack, and holds a recipe per trap. The steps:
 4. Fill shim gaps test-first in `firmware/test/test_xshim/`. The compile
    check in `score_hacks.py` shows what is missing.
 5. Host tests pass, dump a frame and look at it, then (with Rod's go-ahead)
-   flash and measure fps and free heap/PSRAM over serial.
+   flash and measure fps and free heap/PSRAM over serial. To pin its frame
+   hash after looking at the frame, put `0x1ull` in `kBaseline`, run
+   `pio test -e native -f test_hacks`, convert the "Was N" in the failure line
+   with `python3 -c "print(hex(N))"`, and run it again.
 6. Regenerate the assessment and add measurements to
    `tools/assessment_measured.md`, then re-run the speed backtest: each port
    adds a point to the check of the Speed bands, which were fitted to the first
