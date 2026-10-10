@@ -1534,6 +1534,50 @@ void test_alpha_does_not_leak_into_the_next_gc(void) {
   XFreeGC(dpy, opaque);
 }
 
+/* The quads of a polyline overlap at its joins and where it crosses itself,
+ * and a blended overlap would show darker or brighter than the rest. */
+void test_polyline_with_alpha_blends_a_join_once(void) {
+  use_canvas(64);
+  canvas_clear(&cv, px_swap(0x001F));
+  GC gc = wide_gc(20, CapButt, JoinMiter);
+  gc->foreground = px_swap(0xF800);
+  gc->alpha = 16;
+  const int xy[] = {10, 50, 40, 50, 40, 10};
+  stroke_polyline(&cv, gc, xy, 3, 0);
+  check_halfway_red_over_blue(at(25, 50));
+  check_halfway_red_over_blue(at(35, 45));
+  XFreeGC(dpy, gc);
+}
+
+void test_polyline_with_alpha_blends_a_self_crossing_once(void) {
+  use_canvas(64);
+  canvas_clear(&cv, px_swap(0x001F));
+  GC gc = wide_gc(8, CapButt, JoinMiter);
+  gc->foreground = px_swap(0xF800);
+  gc->alpha = 16;
+  const int xy[] = {10, 10, 50, 50, 50, 10, 10, 50};
+  stroke_polyline(&cv, gc, xy, 4, 0);
+  check_halfway_red_over_blue(at(30, 30));
+  check_halfway_red_over_blue(at(20, 20));
+  XFreeGC(dpy, gc);
+}
+
+void test_round_capped_segment_with_alpha_blends_its_cap_once(void) {
+  use_canvas(64);
+  canvas_clear(&cv, px_swap(0x001F));
+  GC gc = wide_gc(12, CapRound, JoinMiter);
+  gc->foreground = px_swap(0xF800);
+  gc->alpha = 16;
+  stroke_segment(&cv, gc, 20, 30, 44, 30);
+  check_halfway_red_over_blue(at(21, 30));
+  check_halfway_red_over_blue(at(32, 30));
+  check_halfway_red_over_blue(at(14, 30));
+  check_halfway_red_over_blue(at(49, 30));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x001F), at(13, 30));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x001F), at(50, 30));
+  XFreeGC(dpy, gc);
+}
+
 void test_fill_arc_half_fills_a_half_disc(void) {
   use_canvas(64);
   XGCValues v;
@@ -2040,6 +2084,9 @@ int main(void) {
   RUN_TEST(test_wide_line_without_alpha_still_overwrites);
   RUN_TEST(test_stroke_circle_with_alpha_blends_each_pixel_once);
   RUN_TEST(test_alpha_does_not_leak_into_the_next_gc);
+  RUN_TEST(test_polyline_with_alpha_blends_a_join_once);
+  RUN_TEST(test_polyline_with_alpha_blends_a_self_crossing_once);
+  RUN_TEST(test_round_capped_segment_with_alpha_blends_its_cap_once);
   RUN_TEST(test_fill_arc_half_fills_a_half_disc);
   RUN_TEST(test_fill_arc_quarter_is_a_pie_slice_including_the_centre);
   RUN_TEST(test_create_pixmap_is_zeroed_and_reports_its_geometry);

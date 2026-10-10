@@ -92,6 +92,48 @@ static void blend_box(Canvas *c, int x, int y, int w, int h, uint16_t colour) {
   canvas_mark_dirty(c, x, y, w, h);
 }
 
+/* A shape made of overlapping pieces (a polyline's segments and joins, a
+ * round cap and its segment) would blend twice where they overlap. While a
+ * mask is open, pieces only set bits in it, one per pixel of the canvas, and
+ * close_mask blends each set pixel once. */
+static uint32_t *g_mask;
+static int g_mask_words;
+
+static void open_mask(const Canvas *c) {
+  g_mask_words = (c->w + 31) / 32;
+  g_mask = (uint32_t *)calloc((size_t)g_mask_words * (size_t)c->h, sizeof(uint32_t));
+}
+
+static void mask_row(int y, int x0, int x1) {
+  uint32_t *row = g_mask + (size_t)y * g_mask_words;
+  for (int w = x0 / 32; w <= x1 / 32; w++) {
+    const int lo = w == x0 / 32 ? x0 % 32 : 0;
+    const int hi = w == x1 / 32 ? x1 % 32 : 31;
+    const uint32_t bits = (hi == 31 ? ~0u : (1u << (hi + 1)) - 1u) & (~0u << lo);
+    row[w] |= bits;
+  }
+}
+
+static void close_mask(Canvas *c, uint16_t colour) {
+  if (!g_mask) return;
+  uint32_t *mask = g_mask;
+  g_mask = NULL;
+  for (int y = 0; y < c->h; y++) {
+    const uint32_t *row = mask + (size_t)y * g_mask_words;
+    for (int w = 0; w < g_mask_words; w++) {
+      uint32_t bits = row[w];
+      while (bits) {
+        const int start = __builtin_ctz(bits);
+        const uint32_t shifted = bits >> start;
+        const int len = shifted == ~0u >> start ? 32 - start : __builtin_ctz(~shifted);
+        blend_box(c, w * 32 + start, y, len, 1, colour);
+        bits = start + len >= 32 ? 0 : bits & (~0u << (start + len));
+      }
+    }
+  }
+  free(mask);
+}
+
 /* Fills x0..x1 by y0..y1 (inclusive), clipped to the canvas first so the
  * ints handed on are small. */
 static void fill_box(Canvas *c, wide_t x0, wide_t y0, wide_t x1, wide_t y1,
@@ -101,6 +143,10 @@ static void fill_box(Canvas *c, wide_t x0, wide_t y0, wide_t x1, wide_t y1,
   x1 = min_w(x1, (wide_t)c->w - 1);
   y1 = min_w(y1, (wide_t)c->h - 1);
   if (x0 > x1 || y0 > y1) return;
+  if (g_mask) {
+    for (wide_t y = y0; y <= y1; y++) mask_row((int)y, (int)x0, (int)x1);
+    return;
+  }
   if (g_alpha) {
     blend_box(c, (int)x0, (int)y0, (int)(x1 - x0 + 1), (int)(y1 - y0 + 1), colour);
     return;
@@ -247,11 +293,10 @@ static void slanted(Canvas *c, wide_t ix1, wide_t iy1, wide_t ix2, wide_t iy2,
                (vec2){(float)x2 + o, (float)y2 + o}, cap1, cap2, w, colour);
 }
 
-void stroke_segment_ends(Canvas *c, const struct XshimGC *gc, int x1, int y1,
-                         int x2, int y2, int cap_start, int cap_end) {
+static void segment_pieces(Canvas *c, const struct XshimGC *gc, int x1, int y1,
+                           int x2, int y2, int cap_start, int cap_end) {
   const int w = gc->line_width;
   const uint16_t colour = (uint16_t)gc->foreground;
-  g_alpha = gc->alpha;
 
   if (cap_start == CapRound) disc(c, x1, y1, w, colour);
   if (cap_end == CapRound) disc(c, x2, y2, w, colour);
@@ -265,6 +310,16 @@ void stroke_segment_ends(Canvas *c, const struct XshimGC *gc, int x1, int y1,
     axis_aligned(c, x1, y1, x2, y2, cap_start, cap_end, w, colour);
   else
     slanted(c, x1, y1, x2, y2, cap_start, cap_end, w, colour);
+}
+
+/* Only a round cap overlaps the segment's own body. */
+void stroke_segment_ends(Canvas *c, const struct XshimGC *gc, int x1, int y1,
+                         int x2, int y2, int cap_start, int cap_end) {
+  g_alpha = gc->alpha;
+  const int overlaps = cap_start == CapRound || cap_end == CapRound;
+  if (g_alpha && overlaps) open_mask(c);
+  segment_pieces(c, gc, x1, y1, x2, y2, cap_start, cap_end);
+  close_mask(c, (uint16_t)gc->foreground);
 }
 
 void stroke_segment(Canvas *c, const struct XshimGC *gc, int x1, int y1, int x2,
@@ -367,6 +422,7 @@ void stroke_polyline(Canvas *c, const struct XshimGC *gc, const int *xy, int n,
     stroke_segment(c, gc, v[0], v[1], v[2 * (m - 1)], v[2 * (m - 1) + 1]);
   } else {
     const int nseg = closed ? m : m - 1;
+    if (g_alpha) open_mask(c);
     for (int i = 0; i < nseg; i++) {
       const int *a = v + 2 * i, *b = v + 2 * ((i + 1) % m);
       const int cap1 = (!closed && i == 0) ? gc->cap_style : STROKE_NO_CAP;
@@ -383,6 +439,7 @@ void stroke_polyline(Canvas *c, const struct XshimGC *gc, const int *xy, int n,
       join_at(c, at[0], at[1], direction(prev, at), direction(at, next), w,
               gc->join_style, colour);
     }
+    close_mask(c, colour);
   }
   if (v != stack_v) free(v);
 }
