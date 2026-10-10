@@ -1,0 +1,123 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4KTDYF0F6BDA3RS4WKEMHJK",
+  "session_id": "f6f86398-1b8a-4d92-bf29-a3fe9f2f45eb",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-10T21:10:18.349793Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "9d9ea656e77f",
+  "checkpoint_transcript_start": 1653,
+  "transcript_lines_at_start": 1653,
+  "compact_transcript_start": 136,
+  "token_usage": {
+    "input_tokens": 38,
+    "cache_creation_tokens": 34504,
+    "cache_read_tokens": 5507350,
+    "output_tokens": 15271,
+    "api_call_count": 19
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01X3ExHRmAfX9tVa41vHNE1Q",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:using-git-worktrees"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "ea865ac843cf",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 35,
+        "end": 36,
+        "entry_ids": [
+          "6a623509-5bda-4a20-ab75-dca16a5cea4b"
+        ],
+        "tool_use_id": "toolu_01X3ExHRmAfX9tVa41vHNE1Q"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01X3ExHRmAfX9tVa41vHNE1Q"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:using-git-worktrees",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01MJ2us6XMZ8cua8pZQHFJKG",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "port-hack"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "ea865ac843cf",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 67,
+        "end": 68,
+        "entry_ids": [
+          "2d33cf08-5d87-40d4-b2cc-713f3cf289ad"
+        ],
+        "tool_use_id": "toolu_01MJ2us6XMZ8cua8pZQHFJKG"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01MJ2us6XMZ8cua8pZQHFJKG"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: port-hack",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01Anxey5dweqpu2uRXhUusmf",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "9d9ea656e77f",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 1610,
+        "end": 1611,
+        "entry_ids": [
+          "4b792997-6818-4427-8757-56d36bb8a6bc"
+        ],
+        "tool_use_id": "toolu_01Anxey5dweqpu2uRXhUusmf"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01Anxey5dweqpu2uRXhUusmf"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 2
+  }
+}
