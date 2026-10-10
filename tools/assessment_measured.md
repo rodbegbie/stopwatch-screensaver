@@ -1,6 +1,6 @@
 ## Measured on the device
 
-Thirty-five hacks have been run so far (default settings, 466×466 canvas
+Fifty-one hacks have been run so far (default settings, 466×466 canvas
 pushed to the display every frame, canvas held in PSRAM). The firmware times
 each frame in three parts, averaged over 5 seconds: **step** is the hack's own
 draw call, **push** is sending the canvas to the display, and **wait** is what
@@ -57,6 +57,61 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Deluxe (opaque, arcs as polylines; first port) | 2.0-5.4 | 154-510 ms | 32.6 ms | 0 ms | not compared with idle (flat at 7,327,227) |
 | Deluxe (opaque, circles as rings) | 13.2-15.4 | 31.5-42.1 ms | 32.5-35.1 ms | 0 ms | not compared with idle (flat at 7,327,227) |
 | Deluxe | 10.4-12.8 | 44.6-62.6 ms | 32.5-32.6 ms | 0 ms | not compared with idle (flat at 7,327,227) |
+| Forest | 1.8 | 13.0-58.9 ms | 1.7-4.0 ms | 550-553 ms | none measurable |
+| Laser | 15.0-15.8 | 21.6-25.1 ms | 21.5-23.6 ms | 18.3-20.8 ms | none measurable |
+| Lissie | 85.6 | 0.3-0.4 ms | 0.4 ms | 10.9 ms | none measurable |
+| Rotor | 84.8 | 0.5 ms | 0.5 ms | 10.8 ms | none measurable |
+| Scooter | 17.8-19.2 | 19.0-23.1 ms | 32.3 ms | 0 ms | about 162 KB |
+| Grav | 75.6-77.8 | 1.5-1.9 ms | 0.7-0.8 ms | 10.5-10.7 ms | none measurable |
+| Euler2D | 17.8 | 27.9 ms | 27.6 ms | 0 ms | about 71 KB |
+| Anemone | 12.6-17.0 | 25.5-46.3 ms | 32.4 ms | 0 ms | about 98 KB |
+| Anemotaxis | 17.8-18.8 | 19.8-22.5 ms | 32.5 ms | 0 ms | none measurable |
+| Compass | 15.4-15.6 | 30.5-31.5 ms | 32.5 ms | 0 ms | none measurable |
+| FuzzyFlakes | 15.6 | 30.2-30.9 ms | 32.5 ms | 0 ms | none measurable |
+| IFS | 22.2-24.4 | 19.0-23.2 ms | 2.5-5.9 ms | 16.2-19.7 ms | about 35 KB |
+| Interaggregate | 13.4-15.0 | 41.8-47.4 ms | 24.3-28.9 ms | 0 ms | about 853 KB |
+| LMorph | 14.8-17.2 | 24.7-34.3 ms | 32.5 ms | 0 ms | none measurable |
+| Wormhole | 17.6-17.8 | 22.4-23.1 ms | 32.4 ms | 0 ms | about 32 KB |
+| Halftone | 4.5-5.2 | 163-193 ms | 32.5 ms | 0 ms | none measurable |
+
+Each batch row is the registered build: Euler2D with 512 particles, Anemone
+with 64 arms, FuzzyFlakes at density 3, LMorph without its pause, and
+Compass, Interaggregate and the first four in single precision. Halftone's row
+is single precision and not registered.
+The sixteen rows from Forest to Halftone are the S-hack batch, read on one
+lap of the final build (30 s a hack, the first five-second window of each
+dropped, four to five windows read; Halftone's row is from the earlier
+20 s laps). Free heap was flat across each hack's windows (Anemotaxis fell
+636 bytes, Forest 232 and Scooter 88 over its visit), and no stack canary,
+panic or reboot appeared in any capture. "Extra PSRAM" is the drop from the
+idle 7,327,227 bytes. How each slow hack improved, on 20 s laps:
+
+| Hack | As copied (double) | Single precision | Plus float literals | Plus lighter setting |
+| --- | --- | --- | --- | --- |
+| Euler2D | 2.6 fps, step 384 ms | 11.8 fps, 57 ms | 12.4 fps, 53 ms | 17.8 fps, 28 ms (count 512) |
+| Anemone | 7.5 fps, step 95 ms | 11.3 fps, 49 ms | 11.3 fps, 49 ms | 14.9 fps (64 arms) |
+| Interaggregate | 3.6 fps, step 259 ms | 15.2 fps, 41 ms | 14.0-16.3 fps | none |
+| LMorph | 9.3 fps, step 35 ms | 9.9 fps, 27 ms | 10.2 fps, 24 ms | 15.4 fps (no 70 ms pause) |
+| FuzzyFlakes | 12.1 fps, step 50 ms | 13.5 fps, 41 ms | 13.6 fps, 40 ms | 15.6 fps (density 3) |
+| Compass | 14.9 fps, step 34 ms | 15.3 fps, 32 ms | 15.5 fps, 31 ms | none |
+| Halftone | 2.5 fps, step 381 ms | 4.8 fps, 178 ms | 5.2 fps, 163 ms | none |
+
+Anemone's step moves between 26 and 46 ms as its arms grow, and Interaggregate's
+frame rate drifts as the picture fills, so both sit on the 15 fps line.
+Halftone with `XFillArc` returning at once measured 15.4 fps (step 31.8 ms), so
+its dots' ellipse fills are about 80% of its step (issue #57). Forest waits
+500 ms between trees by design.
+
+Interaggregate's alpha blend was fixed after the batch lap (the wrapper now
+swaps pixels at the hack's boundary, as Substrate's does). Its row is from a
+45 s pinned run after the fix (13.4-15.0 fps, heap flat), and Rod checked on
+the device that it draws earth tones, not a rainbow.
+
+Rod looked at all fifteen registered hacks of the batch on the device on
+2026-10-10 and found them performant and in line with the same hacks on other
+platforms (Anemotaxis was missing from his written list; he confirmed after
+that he had looked at it). All fifteen stay in the rotation, Forest included.
+Halftone stays out (issue #57) and Truchet is not ported (issue #58).
 
 Maze's row is 26 five-second readings over 160 seconds, taken on a build that
 includes the overlay stamping. Its steps are cheap, and its frame rate is set

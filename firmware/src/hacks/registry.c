@@ -62,6 +62,24 @@ XLOCKMORE_HACK_WITH(morph3d, "Morph3D", kMorph3dOverrides);
 static const char *const kCubicGridOverrides[] = {"*ncolors: 64", "*cycles: 0",
                                                   "*ticks: 20", NULL};
 XLOCKMORE_HACK_WITH(cubicgrid, "CubicGrid", kCubicGridOverrides);
+XLOCKMORE_HACK(forest, "Forest");
+XLOCKMORE_HACK(laser, "Laser");
+XLOCKMORE_HACK(lissie, "Lissie");
+XLOCKMORE_HACK(rotor, "Rotor");
+XLOCKMORE_HACK(scooter, "Scooter");
+XLOCKMORE_HACK(grav, "Grav");
+/* 1024 particles took a 53 ms step in single precision; 512 keep the flow
+ * readable and the frame rate nearer 15. */
+static const char *const kEuler2dOverrides[] = {"*count: 512", NULL};
+XLOCKMORE_HACK_WITH(euler2d, "Euler2D", kEuler2dOverrides);
+extern const HackEntry anemone_hack;
+extern const HackEntry anemotaxis_hack;
+extern const HackEntry compass_hack;
+extern const HackEntry fuzzyflakes_hack;
+extern const HackEntry ifs_hack;
+extern const HackEntry interaggregate_hack;
+extern const HackEntry lmorph_hack;
+extern const HackEntry wormhole_hack;
 
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
@@ -89,5 +107,20 @@ const HackEntry *const g_hacks[] = {
     &gears_hack,
     &morph3d_hack,
     &cubicgrid_hack,
-    &deluxe_hack};
+    &deluxe_hack,
+    &forest_hack,
+    &laser_hack,
+    &lissie_hack,
+    &rotor_hack,
+    &scooter_hack,
+    &grav_hack,
+    &euler2d_hack,
+    &anemone_hack,
+    &anemotaxis_hack,
+    &compass_hack,
+    &fuzzyflakes_hack,
+    &ifs_hack,
+    &interaggregate_hack,
+    &lmorph_hack,
+    &wormhole_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);

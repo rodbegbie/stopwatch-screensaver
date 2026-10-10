@@ -50,3 +50,26 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   `stroke_circle`. A plain screenhack's `HackEntry` has no overrides unless a
   wrapper builds it. Its step is 45-63 ms on the device against a 32.5 ms push,
   so about 11-13 fps; ideas for more are in issue #54.
+- Eight of the S-hack batch (Anemone, Anemotaxis, Compass, FuzzyFlakes,
+  Halftone, Interaggregate, LMorph, Wormhole) are built through
+  `hacks/<name>_direct.c` (pixmap double buffering, see `techniques.md`;
+  LMorph's is `lmorph_single.c` because it needs no `HAVE_JWXYZ`). All but
+  Anemotaxis and Wormhole, and Euler2D (`euler2d_single.c`), also use
+  `single_precision.h` plus build-time float literals (`patch_float_literals.py`
+  lists them). `single_precision.h` leaves `floor` and `ceil` on the double
+  versions: Euler2D's wrapper maps them itself. After the literal pass, `nm`
+  still shows soft-double helpers in Euler2D, Halftone, Interaggregate and
+  Anemone; their source was not chased.
+- `test_frames_of_every_hack_but_maze_match_main` stops at the first hash that
+  differs, in registry order, so repinning several hacks takes one test run
+  each (about 85 s), earliest first. A hack whose frames do not change under a
+  wrapper (Compass and Halftone in single precision) keeps its hash.
+- Anemone's step moves between 31 and 56 ms as its arms grow and shrink, so its
+  fps is 11 to 15.5 whatever one 20 s window says. Forest waits 500 ms between
+  trees by design (about 2 fps, and the push is 88 rows).
+- A hack that unpacks pixel values itself (Substrate and Interaggregate, in
+  their `point2rgb`) assumes ordinary RGB565, but the canvas holds the bytes
+  swapped. Its wrapper swaps pixels where they cross `XAllocColor` and
+  `XSetForeground`. Interaggregate shipped without this: its alpha blends
+  mixed the wrong bit fields and drew rainbow noise instead of green and brown
+  strokes. `test_interaggregate_blend` includes the wrapper to check one blend.

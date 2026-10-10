@@ -54,7 +54,22 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Gears",
                                          "Morph3D",
                                          "CubicGrid",
-                                         "Deluxe"};
+                                         "Deluxe",
+                                         "Forest",
+                                         "Laser",
+                                         "Lissie",
+                                         "Rotor",
+                                         "Scooter",
+                                         "Grav",
+                                         "Euler2D",
+                                         "Anemone",
+                                         "Anemotaxis",
+                                         "Compass",
+                                         "FuzzyFlakes",
+                                         "IFS",
+                                         "Interaggregate",
+                                         "LMorph",
+                                         "Wormhole"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -367,6 +382,21 @@ static const uint64_t kBaseline[] = {
     0x5a1dd5b30e81a013ull, /* Morph3D: taken after looking at the frames */
     0xc2b1b6b7d671b4c7ull, /* CubicGrid at ticks 20: taken after looking at the frames */
     0xa4e023f1e9864c48ull, /* Deluxe, translucent, each shape blended once: taken after looking at the frames */
+    0xef553ace7fbfbaf4ull, /* Forest: taken after looking at the frames */
+    0x3796f88202299960ull, /* Laser: taken after looking at the frames */
+    0xe48eab27f8a1f05bull, /* Lissie: taken after looking at the frames */
+    0x618997512963b7d9ull, /* Rotor: taken after looking at the frames */
+    0xc76242aaacbe8177ull, /* Scooter: taken after looking at the frames */
+    0x9d5e492757aab42bull, /* Grav: taken after looking at the frames */
+    0x41f6a76aad432b20ull, /* Euler2D: taken after looking at the frames */
+    0x59bf16ddeccecc15ull, /* Anemone: taken after looking at the frames */
+    0x1ad9e9fe2718ba88ull, /* Anemotaxis: taken after looking at the frames */
+    0xb7feaf3a248c76f2ull, /* Compass: taken after looking at the frames */
+    0xe94fb924120c76a5ull, /* FuzzyFlakes: taken after looking at the frames */
+    0x3cc7ad2eeeea2850ull, /* IFS: taken after looking at the frames */
+    0x78c62badb21d8dddull, /* Interaggregate: after looking at the frames, pixels swapped */
+    0x7118310d47ee4197ull, /* LMorph: taken after looking at the frames */
+    0xe73572fd64eef48full, /* Wormhole: taken after looking at the frames */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -703,6 +733,86 @@ void test_gears_stack_use_on_the_host_has_not_run_away(void) {
   TEST_ASSERT_TRUE_MESSAGE(worst < 32 * 1024, "Gears used 32 KB of host stack or more");
 }
 
+void test_forest_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Forest", 1);
+}
+
+void test_laser_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Laser", 1);
+}
+
+void test_lissie_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Lissie", 1);
+}
+
+void test_rotor_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Rotor", 1);
+}
+
+void test_scooter_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Scooter", 1);
+}
+
+void test_grav_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Grav", 1);
+}
+
+void test_euler2d_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Euler2D", 1);
+}
+
+void test_anemone_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Anemone", 0);
+}
+
+void test_anemotaxis_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Anemotaxis", 0);
+}
+
+void test_compass_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Compass", 0);
+}
+
+void test_fuzzyflakes_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("FuzzyFlakes", 0);
+}
+
+void test_ifs_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("IFS", 0);
+}
+
+void test_interaggregate_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Interaggregate", 0);
+}
+
+void test_lmorph_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("LMorph", 0);
+}
+
+void test_wormhole_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Wormhole", 0);
+}
+
+/* Each of these runs below 15 fps at upstream's defaults on the board: Euler2D
+ * moves 1024 particles, Anemone grows 128 arms, FuzzyFlakes drops a flake
+ * density of 5, and LMorph pauses 70 ms between frames. */
+static int overrides_contain(const char *hack, const char *wanted) {
+  const int i = index_of(hack);
+  if (i < 0) return 0;
+  const char *const *o = g_hacks[i]->overrides;
+  for (; o && *o; o++)
+    if (strcmp(*o, wanted) == 0) return 1;
+  return 0;
+}
+
+void test_slow_hacks_register_their_lighter_settings(void) {
+  TEST_ASSERT_TRUE_MESSAGE(overrides_contain("Euler2D", "*count: 512"), "Euler2D *count");
+  TEST_ASSERT_TRUE_MESSAGE(overrides_contain("Anemone", "*arms: 64"), "Anemone *arms");
+  TEST_ASSERT_TRUE_MESSAGE(overrides_contain("FuzzyFlakes", "*density: 3"),
+                           "FuzzyFlakes *density");
+  TEST_ASSERT_TRUE_MESSAGE(overrides_contain("LMorph", "*delay: 10000"), "LMorph *delay");
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -734,6 +844,22 @@ int main(void) {
   RUN_TEST(test_morph3d_registers_a_shorter_pause);
   RUN_TEST(test_cubicgrid_start_and_stop_do_not_leak);
   RUN_TEST(test_cubicgrid_registers_a_smaller_grid);
+  RUN_TEST(test_forest_stops_do_not_leak);
+  RUN_TEST(test_laser_stops_do_not_leak);
+  RUN_TEST(test_lissie_stops_do_not_leak);
+  RUN_TEST(test_rotor_stops_do_not_leak);
+  RUN_TEST(test_scooter_stops_do_not_leak);
+  RUN_TEST(test_grav_stops_do_not_leak);
+  RUN_TEST(test_euler2d_stops_do_not_leak);
+  RUN_TEST(test_anemone_stops_do_not_leak);
+  RUN_TEST(test_anemotaxis_stops_do_not_leak);
+  RUN_TEST(test_compass_stops_do_not_leak);
+  RUN_TEST(test_fuzzyflakes_stops_do_not_leak);
+  RUN_TEST(test_ifs_stops_do_not_leak);
+  RUN_TEST(test_interaggregate_stops_do_not_leak);
+  RUN_TEST(test_lmorph_stops_do_not_leak);
+  RUN_TEST(test_wormhole_stops_do_not_leak);
+  RUN_TEST(test_slow_hacks_register_their_lighter_settings);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);

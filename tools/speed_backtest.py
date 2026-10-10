@@ -12,6 +12,7 @@ import argparse
 import statistics
 import subprocess
 import sys
+import textwrap
 from pathlib import Path
 
 import probe_hacks
@@ -22,8 +23,14 @@ RUNS = 3
 BANDS = ("low", "medium", "high")
 
 # Ported after the bands were fixed, with predictions committed first in
-# docs/speed-predictions.md. They are kept out of the fit and reported apart.
-HOLDOUT = frozenset({"mountain", "epicycle", "kaleidescope", "celtic"})
+# docs/speed-predictions.md (the S batch's are in porting-assessment.md on main).
+# They are kept out of the fit and reported apart.
+HOLDOUT = frozenset(
+    {"mountain", "epicycle", "kaleidescope", "celtic"}
+    | {"forest", "laser", "lissie", "rotor", "scooter", "grav", "euler2d"}
+    | {"anemone", "anemotaxis", "compass", "fuzzyflakes", "ifs"}
+    | {"interaggregate", "lmorph", "wormhole", "halftone"}
+)
 
 class BacktestError(Exception):
     pass
@@ -173,6 +180,10 @@ def _worst(band: dict) -> str:
     return "-" if band["max_device_ms"] is None else f"{band['max_device_ms']:.1f}"
 
 
+def _wrapped(text: str) -> str:
+    return textwrap.fill(text, 76, subsequent_indent="  ")
+
+
 def _slow_and_bands(s: dict) -> str:
     """The bullets that say how the bands did, for one set of hacks."""
     low, med, high = s["bands"]["low"], s["bands"]["medium"], s["bands"]["high"]
@@ -185,7 +196,7 @@ def _slow_and_bands(s: dict) -> str:
   {len(s['caught'])}.
   Missed: {', '.join(s['missed']) or 'none'}.
 - High band but under {SLOW_DEVICE_MS:g} ms on the device:
-  {', '.join(s['false_high']) or 'none'}.
+  {_wrapped(', '.join(s['false_high']) or 'none')}.
 """
 
 
