@@ -51,6 +51,17 @@ LIGHT_GEARS_MS = 111.0
 
 
 @dataclass
+class Coverage:
+    """Fractions of the canvas, averaged over frames. `bbox` is the box around
+    everything a frame drew. A hack that clears only the previous frame's box
+    clears `clear`, and pushes the rows of the old and new boxes, `push`."""
+
+    bbox: float
+    clear: float
+    push: float
+
+
+@dataclass
 class FrameCounts:
     """What an average frame asks of TinyGL."""
 
@@ -86,12 +97,31 @@ COUNTER_NAMES = (
     "pixels",
 )
 
-COUNTS_DECLARATION = "extern double gl_budget_counts[6];\n"
+COUNTS_DECLARATION = (
+    "extern double gl_budget_counts[6];\n"
+    "extern double gl_budget_bbox[4]; /* xmin, ymin, xmax, ymax this frame */\n"
+)
 
 # Adds to the fill count the screen area of a triangle about to be
 # rasterised, overdraw included, capped at the framebuffer.
 TRIANGLE_HELPER = """\
 extern double gl_budget_counts[6];
+extern double gl_budget_bbox[4];
+
+static void gl_budget_cover(GLint x0, GLint y0, GLint x1, GLint y1) {
+	GLContext* c = gl_get_context();
+	double w = c->zb->xsize - 1, h = c->zb->ysize - 1;
+	double lo_x = x0 < x1 ? x0 : x1, hi_x = x0 < x1 ? x1 : x0;
+	double lo_y = y0 < y1 ? y0 : y1, hi_y = y0 < y1 ? y1 : y0;
+	if (lo_x < 0) lo_x = 0;
+	if (lo_y < 0) lo_y = 0;
+	if (hi_x > w) hi_x = w;
+	if (hi_y > h) hi_y = h;
+	if (lo_x < gl_budget_bbox[0]) gl_budget_bbox[0] = lo_x;
+	if (lo_y < gl_budget_bbox[1]) gl_budget_bbox[1] = lo_y;
+	if (hi_x > gl_budget_bbox[2]) gl_budget_bbox[2] = hi_x;
+	if (hi_y > gl_budget_bbox[3]) gl_budget_bbox[3] = hi_y;
+}
 
 static void gl_budget_triangle(GLContext* c, GLVertex* p0, GLVertex* p1,
                                GLVertex* p2) {
@@ -101,6 +131,17 @@ static void gl_budget_triangle(GLContext* c, GLVertex* p0, GLVertex* p1,
 	if (area < 0) area = -area;
 	gl_budget_counts[2]++;
 	gl_budget_counts[5] += area < screen ? area : screen;
+	{
+		GLint lx = p0->zp.x < p1->zp.x ? p0->zp.x : p1->zp.x;
+		GLint hx = p0->zp.x < p1->zp.x ? p1->zp.x : p0->zp.x;
+		GLint ly = p0->zp.y < p1->zp.y ? p0->zp.y : p1->zp.y;
+		GLint hy = p0->zp.y < p1->zp.y ? p1->zp.y : p0->zp.y;
+		if (p2->zp.x < lx) lx = p2->zp.x;
+		if (p2->zp.x > hx) hx = p2->zp.x;
+		if (p2->zp.y < ly) ly = p2->zp.y;
+		if (p2->zp.y > hy) hy = p2->zp.y;
+		gl_budget_cover(lx, ly, hx, hy);
+	}
 }
 
 """
@@ -134,13 +175,19 @@ INSTRUMENTATION = (
         "void gl_draw_point(GLVertex* p0) {\n",
         1,
         TRIANGLE_HELPER
-        + "void gl_draw_point(GLVertex* p0) {\n\tgl_budget_counts[4]++;\n",
+        + "void gl_draw_point(GLVertex* p0) {\n\tgl_budget_counts[4]++;\n"
+        "\tif (p0->clip_code == 0)\n"
+        "\t\tgl_budget_cover(p0->zp.x - 3, p0->zp.y - 3, p0->zp.x + 3, p0->zp.y + 3);\n",
     ),
     (
         "src/clip.c",
         "void gl_draw_line(GLVertex* p1, GLVertex* p2) {\n",
         1,
-        "void gl_draw_line(GLVertex* p1, GLVertex* p2) {\n\tgl_budget_counts[3]++;\n",
+        "void gl_draw_line(GLVertex* p1, GLVertex* p2) {\n\tgl_budget_counts[3]++;\n"
+        "\tif ((p1->clip_code | p2->clip_code) == 0)\n"
+        "\t\tgl_budget_cover(p1->zp.x, p1->zp.y, p2->zp.x, p2->zp.y);\n"
+        "\telse /* clipped: assume it can reach anywhere */\n"
+        "\t\tgl_budget_cover(0, 0, 100000, 100000);\n",
     ),
     (
         "src/clip.c",
@@ -203,8 +250,9 @@ def shim_sources(root: Path) -> list[Path]:
     return files
 
 
-def parse_counts(stdout: str) -> tuple[FrameCounts, int, float]:
-    """Reads the driver's one `counts` line: (counts, frames, host_ms)."""
+def parse_counts(stdout: str) -> tuple[FrameCounts, int, float, Coverage]:
+    """Reads the driver's one `counts` line: (counts, frames, host_ms,
+    coverage)."""
     match = COUNTS_LINE.search(stdout)
     if not match:
         raise probe_hacks.ProbeError(
@@ -212,7 +260,12 @@ def parse_counts(stdout: str) -> tuple[FrameCounts, int, float]:
         )
     values = dict(pair.split("=") for pair in match.group(2).split())
     counts = FrameCounts(**{name: float(values[name]) for name in COUNTER_NAMES})
-    return counts, int(match.group(1)), float(values["host_ms"])
+    coverage = Coverage(
+        bbox=float(values["bbox"]),
+        clear=float(values["clear"]),
+        push=float(values["push"]),
+    )
+    return counts, int(match.group(1)), float(values["host_ms"]), coverage
 
 
 def write_tinygl(root: Path, generated: Path) -> None:
@@ -295,8 +348,13 @@ def measure(
                     else f"exit {run.returncode}"
                 )
                 return {"error": f"crashed on the host ({how})"}
-            counts, ran, host_ms = parse_counts(run.stdout)
-            return {"counts": counts, "frames": ran, "host_ms": host_ms}
+            counts, ran, host_ms, cover = parse_counts(run.stdout)
+            return {
+                "counts": counts,
+                "frames": ran,
+                "host_ms": host_ms,
+                "coverage": cover,
+            }
     except subprocess.TimeoutExpired:
         return {"error": f"timed out after {RUN_TIMEOUT_S} s on the host"}
     except FileNotFoundError:
@@ -332,11 +390,17 @@ def note_for(row: dict) -> str:
 def render_report(rows: list[dict]) -> str:
     lines = [
         "| Hack | Seed | Vertices | Lit | Triangles | Lines | Points | Pixels "
-        "| Predicted ms | Predicted fps | Note |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+        "| Box % | Clear % | Push % | Predicted ms | Predicted fps | Note |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for row in rows:
         note = note_for(row)
+        cov = row.get("coverage")
+        cover = (
+            f"{cov.bbox * 100:.0f} | {cov.clear * 100:.0f} | {cov.push * 100:.0f}"
+            if cov
+            else "- | - | -"
+        )
         if "counts" in row:
             c = row["counts"]
             numbers = (
@@ -352,7 +416,8 @@ def render_report(rows: list[dict]) -> str:
             numbers = " | ".join("-" for _ in COUNTER_NAMES)
             prediction = "- | -"
         lines.append(
-            f"| {row['name']} | {row['seed']} | {numbers} | {prediction} | {note} |"
+            f"| {row['name']} | {row['seed']} | {numbers} | {cover} | {prediction} "
+            f"| {note} |"
         )
     model = ", ".join(f"{key}={value:g}" for key, value in MODEL.items())
     return "\n".join(lines) + f"\n\nPredictions, not measurements. Model: {model}.\n"

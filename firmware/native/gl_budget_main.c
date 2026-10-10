@@ -11,8 +11,32 @@
  * per-frame counts that tools/gl_budget.py reads. The counters live inside a
  * private copy of TinyGL built by that tool. */
 double gl_budget_counts[6];
+double gl_budget_bbox[4]; /* xmin, ymin, xmax, ymax of what a frame drew */
 
 enum { WARMUP = 10 };
+
+typedef struct {
+  double x0, y0, x1, y1; /* inclusive; x0 > x1 when nothing was drawn */
+} Box;
+
+static Box take_bbox(void) {
+  Box b = {gl_budget_bbox[0], gl_budget_bbox[1], gl_budget_bbox[2],
+           gl_budget_bbox[3]};
+  gl_budget_bbox[0] = gl_budget_bbox[1] = 1e9;
+  gl_budget_bbox[2] = gl_budget_bbox[3] = -1e9;
+  return b;
+}
+
+static double area(Box b) {
+  if (b.x0 > b.x1 || b.y0 > b.y1) return 0;
+  return (b.x1 - b.x0 + 1) * (b.y1 - b.y0 + 1);
+}
+
+static double overlap(Box a, Box b) {
+  Box i = {a.x0 > b.x0 ? a.x0 : b.x0, a.y0 > b.y0 ? a.y0 : b.y0,
+           a.x1 < b.x1 ? a.x1 : b.x1, a.y1 < b.y1 ? a.y1 : b.y1};
+  return area(i);
+}
 
 static double now_ms(void) {
   struct timespec t;
@@ -36,10 +60,24 @@ int main(int argc, char **argv) {
     fprintf(stderr, "could not start the hack\n");
     return 1;
   }
-  for (int i = 0; i < WARMUP; i++) runner_step(r);
+  take_bbox();
+  Box prev = {1e9, 1e9, -1e9, -1e9};
+  for (int i = 0; i < WARMUP; i++) {
+    runner_step(r);
+    prev = take_bbox();
+  }
   for (int i = 0; i < 6; i++) gl_budget_counts[i] = 0;
+  const double screen = (double)cv.w * cv.h;
+  double sum_bbox = 0, sum_clear = 0, sum_push = 0;
   const double start = now_ms();
-  for (int i = 0; i < frames; i++) runner_step(r);
+  for (int i = 0; i < frames; i++) {
+    runner_step(r);
+    const Box cur = take_bbox();
+    sum_bbox += area(cur) / screen;
+    sum_clear += area(prev) / screen;
+    sum_push += (area(prev) + area(cur) - overlap(prev, cur)) / screen;
+    prev = cur;
+  }
   const double host_ms = (now_ms() - start) / frames;
 
   printf("counts frames=%d", frames);
@@ -47,7 +85,8 @@ int main(int argc, char **argv) {
                           "lines",    "points",       "pixels"};
   for (int i = 0; i < 6; i++)
     printf(" %s=%.4f", names[i], gl_budget_counts[i] / frames);
-  printf(" host_ms=%.4f\n", host_ms);
+  printf(" host_ms=%.4f bbox=%.4f clear=%.4f push=%.4f\n", host_ms,
+         sum_bbox / frames, sum_clear / frames, sum_push / frames);
   runner_destroy(r);
   canvas_free(&cv);
   return 0;

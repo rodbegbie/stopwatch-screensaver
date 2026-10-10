@@ -270,3 +270,48 @@ def test_a_hack_can_call_glpixelstorei_for_unpack_alignment():
     """cubicgrid does; TinyGL defines the call but does not declare it."""
     result = run(init="glPixelStorei(GL_UNPACK_ALIGNMENT, 1);")
     assert "error" not in result, result.get("error")
+
+
+def coverage(draw: str, init: str = "") -> "gb.Coverage":
+    return run(init, draw)["coverage"]
+
+
+@needs_cc
+def test_coverage_of_a_static_triangle_is_its_bounding_box():
+    """A triangle from (-.5,-.5) to (.5,.5) covers a quarter of the canvas, and
+    drawing the same one again means the previous box is the current box."""
+    draw = f"glBegin(GL_TRIANGLES); {TRIANGLE} glEnd();"
+    cov = coverage(draw)
+    assert cov.bbox == pytest.approx(0.25, abs=0.03)
+    assert cov.clear == pytest.approx(0.25, abs=0.03)
+    assert cov.push == pytest.approx(0.25, abs=0.03)
+
+
+@needs_cc
+def test_a_moving_triangle_pushes_both_its_old_and_new_place():
+    """The triangle sits left on even frames and right on odd ones. Each box is
+    about a twelfth of the canvas; the push covers both."""
+    draw = (
+        "static int n; float dx = (n++ & 1) ? 0.45f : -0.45f;"
+        "glBegin(GL_TRIANGLES);"
+        "glVertex3f(dx-.2f,-.2f,0); glVertex3f(dx+.2f,-.2f,0);"
+        "glVertex3f(dx,.2f,0); glEnd();"
+    )
+    cov = coverage(draw)
+    assert cov.bbox == pytest.approx(0.04, abs=0.02)
+    assert cov.push == pytest.approx(2 * cov.bbox, abs=0.02)
+
+
+@needs_cc
+def test_a_full_screen_triangle_covers_everything():
+    draw = (
+        "glBegin(GL_TRIANGLES); glVertex3f(-1,-1,0); glVertex3f(3,-1,0);"
+        "glVertex3f(-1,3,0); glEnd();"
+    )
+    assert coverage(draw).bbox == pytest.approx(1.0, abs=0.02)
+
+
+@needs_cc
+def test_a_hack_that_draws_nothing_has_empty_coverage():
+    cov = coverage("")
+    assert (cov.bbox, cov.clear, cov.push) == (0, 0, 0)
