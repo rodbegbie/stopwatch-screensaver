@@ -9,6 +9,8 @@ paths:
   - "firmware/src/hacks/morph3d_gl.c"
   - "firmware/src/hacks/cubicgrid/**"
   - "firmware/src/hacks/cubicgrid_gl.c"
+  - "firmware/src/hacks/unknownpleasures/**"
+  - "firmware/src/hacks/unknownpleasures_gl.c"
   - "firmware/native/gl_budget_main.c"
   - "firmware/patch_tinygl.py"
   - "tools/tinygl_patch.py"
@@ -61,6 +63,25 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
 - TinyGL lacks `glTexGeni`, `glFog*` and `glInterleavedArrays` (#46). The
   header declares `glFog*` and the `GL_SPHERE_MAP` enum; the library defines
   neither.
+- TinyGL snaps every vertex to a whole pixel (`zp.x`, `zp.y`) before it draws,
+  so a line that moves a little jumps a whole pixel somewhere along its length:
+  Unknown Pleasures' flat stretches hopped, which read as flicker. The patch
+  keeps the fractional position (`zp.fx`, `zp.fy`) and draws a line with Wu's
+  algorithm when a hack enables `GL_LINE_SMOOTH`. Only lines get it; filled
+  triangles are still snapped. A line whose two colours differ is drawn plain.
+- TinyGL has no alpha: the blend macro adds colours, ignores the blend
+  function's alpha, and decodes pixels as if they were not byte-swapped, so
+  it is only right for black and white. A white-on-black frame hides this, and
+  smooth (grey) lines did not. The fill wrapper (`gl_draw_triangle_fill` in
+  `tinygl_patch.py`) treats `SRC_ALPHA, ONE_MINUS_SRC_ALPHA`, which is alpha 1
+  in real GL, as an opaque fill. Other blend functions still use the macro and
+  are wrong for any colour but black and white.
+- Polygon offset was stored and never read. The fill wrapper applies it:
+  `factor` times the polygon's steepest depth slope plus `units` times one
+  depth step, pushed away from the viewer. Without it a line drawn on the edge
+  of its own filled polygon is erased in dashes. An earlier depth-fighting
+  experiment found no effect only because blending made every quad invisible:
+  change one thing at a time, and check that the thing under test can act.
 - Speed is about 6 us per lit vertex plus about 80 ms a frame (clear 25 ms,
   push 32 ms): Gears runs at 4 to 5 fps for its heaviest layout and about 9
   for light ones. `-O2` for TinyGL and specular lookup tables changed

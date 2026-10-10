@@ -413,7 +413,7 @@ static const uint64_t kBaseline[] = {
     0x7118310d47ee4197ull, /* LMorph: taken after looking at the frames */
     0xe73572fd64eef48full, /* Wormhole: taken after looking at the frames */
     0x7dd7d7130551c261ull, /* Truchet: taken after looking at the frames */
-    0x24da09e0c4177305ull, /* UnknownPleasures: taken after looking at the frames, with the fake clock */
+    0xccb422a6d762c9feull, /* UnknownPleasures: after looking at the frames, with the fake clock and smooth lines */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
