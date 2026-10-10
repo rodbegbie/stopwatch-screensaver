@@ -1,0 +1,17 @@
+Everything looks goo on screen.  Want to try dropping Gears's pause too and throw it on the device to see the effect?
+
+---
+
+Nice.  OK, now address the findings on the trail
+
+---
+
+commit and push it.
+
+---
+
+Trail is approved so merge the PR
+
+---
+
+run your end session tasks

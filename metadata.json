@@ -1,0 +1,24 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4JN9T59WJT99E8TE8DWZSE1",
+  "strategy": "manual-commit",
+  "branch": "chore/50-overnight-capture-and-light-cost",
+  "checkpoints_count": 5,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 672,
+    "cache_creation_tokens": 1155094,
+    "cache_read_tokens": 115731793,
+    "output_tokens": 351727,
+    "api_call_count": 336
+  }
+}
