@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4HNAXB5409110FZ7Z1J1MP1",
+  "strategy": "manual-commit",
+  "branch": "feature/42-gears-gl",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/platformio.ini",
+    "firmware/src/hacks/gears_gl.c",
+    "firmware/src/hacks/registry.c",
+    "firmware/src/x11shim/include/screenhackI.h",
+    "firmware/src/x11shim/include/yarandom.h",
+    "firmware/src/x11shim/xshim.h"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 36,
+    "cache_creation_tokens": 26312,
+    "cache_read_tokens": 13291731,
+    "output_tokens": 16397,
+    "api_call_count": 18
+  }
+}
