@@ -69,7 +69,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Compass | 15.4-15.6 | 30.5-31.5 ms | 32.5 ms | 0 ms | none measurable |
 | FuzzyFlakes | 15.6 | 30.2-30.9 ms | 32.5 ms | 0 ms | none measurable |
 | IFS | 22.2-24.4 | 19.0-23.2 ms | 2.5-5.9 ms | 16.2-19.7 ms | about 35 KB |
-| Interaggregate | 14.0-14.8 | 42.1-45.2 ms | 24.8-25.8 ms | 0 ms | about 853 KB |
+| Interaggregate | 13.4-15.0 | 41.8-47.4 ms | 24.3-28.9 ms | 0 ms | about 853 KB |
 | LMorph | 14.8-17.2 | 24.7-34.3 ms | 32.5 ms | 0 ms | none measurable |
 | Wormhole | 17.6-17.8 | 22.4-23.1 ms | 32.4 ms | 0 ms | about 32 KB |
 | Halftone | 4.5-5.2 | 163-193 ms | 32.5 ms | 0 ms | none measurable |
@@ -102,9 +102,10 @@ Halftone with `XFillArc` returning at once measured 15.4 fps (step 31.8 ms), so
 its dots' ellipse fills are about 80% of its step (issue #57). Forest waits
 500 ms between trees by design.
 
-Interaggregate's row was measured before its alpha blend was fixed (the
-wrapper now swaps pixels at the hack's boundary, as Substrate's does), and it
-has not been re-measured or looked at on the device since.
+Interaggregate's alpha blend was fixed after the batch lap (the wrapper now
+swaps pixels at the hack's boundary, as Substrate's does). Its row is from a
+45 s pinned run after the fix (13.4-15.0 fps, heap flat), and Rod checked on
+the device that it draws earth tones, not a rainbow.
 
 Rod looked at all fifteen registered hacks of the batch on the device on
 2026-10-10 and found them performant and in line with the same hacks on other
