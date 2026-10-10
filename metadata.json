@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4J9ZWT7MHD5QCZEEW19HSPV",
+  "strategy": "manual-commit",
+  "branch": "feature/43-dirty-rect-spike",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/gl-budget.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 4,
+    "cache_creation_tokens": 3320,
+    "cache_read_tokens": 963627,
+    "output_tokens": 2610,
+    "api_call_count": 2
+  }
+}
