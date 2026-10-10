@@ -3,6 +3,7 @@ vendor/
 .platformio/
 .pio/
 .superpowers/
+.claude/worktrees/
 __pycache__/
 .pytest_cache/
 backups/
