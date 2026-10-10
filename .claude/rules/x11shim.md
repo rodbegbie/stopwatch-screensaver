@@ -74,9 +74,11 @@ Moved verbatim from the Gotchas section of AGENTS.md.
 - A wide circle through `XDrawArc` is a polyline of about a thousand wide
   segments, each filled a row at a time: 40 times the fills of a ring, and the
   polyline leaves gaps in it. `stroke_circle` (`x11shim/stroke.c`) fills the
-  ring in two spans a row. Only Deluxe's wrapper calls it, so Pacman's and
-  Celtic's arcs still take the polyline. Moving them would change their pinned
-  frames: ask Rod.
+  ring in two spans a row. Only Deluxe's wrapper calls it, and it does full
+  circles only: Pacman's wall arcs are quarters and Celtic's wide strokes are
+  lines, so they still take the stroker. Issue #56 asks whether the stroker's
+  gaps and overpaint touch them. Changing shared stroke code can move their
+  pinned frames: ask Rod.
 - `XshimGC.alpha` (0 is opaque, 1 to 31 is the weight out of 32) makes the
   wide-line code in `stroke.c` blend over the canvas instead of overwriting it;
   fills, `canvas_line` and the other primitives ignore it. The canvas is
