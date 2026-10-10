@@ -126,6 +126,27 @@ image at build time. Keep a third-party logo under `vendor/`, out of git.
 A big blob (Pacman's is 3 MB as C text) is built from `vendor/` by a `pre:`
 script and never committed; write it to a `.partial` file and rename it.
 
+## Pixmap double buffering
+
+When: a plain screenhack makes two pixmaps, draws into them and `XCopyArea`s the
+result to the window (Anemone, Anemotaxis, Compass, FuzzyFlakes, Halftone,
+Interaggregate, LMorph, Wormhole). The shim draws every primitive on the canvas
+even when given a pixmap, so the copy from a blank pixmap erases the picture:
+the frame is all black and the "draws something" test fails.
+
+- A pinned hash of a blank frame passes silently (`0xa4f79500bd791711ull`, which
+  is also Pedal's at frame 200). Look at the frame before pinning.
+- Upstream switches the buffering off under `HAVE_JWXYZ` ("Don't second-guess
+  Quartz's double-buffering"), or reads a `doubleBuffer` resource. Write
+  `hacks/<name>_direct.c`: include `screenhack.h` and the math headers, empty
+  `XSCREENSAVER_MODULE`, `#define HAVE_JWXYZ`, include the unmodified hack and
+  register its `HackEntry`. Exclude the original from `build_src_filter` in all
+  three environments. `grep HAVE_JWXYZ` first: Interaggregate also uses it for
+  pixel packing, but only in the 24 and 32 bit cases, and the canvas is 16 bit.
+- It cannot help a hack that uses a pixmap as storage. Truchet draws a canvas
+  bigger than the window into a pixmap and scrolls it with `XCopyArea` offsets,
+  so it stays unported until the shim can draw into pixmaps (asked Rod).
+
 ## Restart leak test
 
 When: the hack restarts itself. Override its cycle resource in the test (for
