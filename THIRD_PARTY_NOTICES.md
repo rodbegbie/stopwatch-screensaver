@@ -163,3 +163,37 @@ this repository does not contain it. `firmware/pacman_sprites.py` reads it from
 `vendor/` at build time and converts it to the raw blob described in
 `ximage-loader.h` (3 MB as C text) in the build directory. The sprites are not
 part of the MIT-licensed code in this repository.
+
+## TinyGL
+
+**This product uses TinyGL**, a small software OpenGL by Fabrice Bellard, in
+the fork maintained by C-Chads (<https://github.com/C-Chads/tinygl>, commit
+`36a7987`). It draws the OpenGL hacks. The licence below requires this
+acknowledgment in the product and its documentation.
+
+The sources in `firmware/src/tinygl/` are committed unchanged, with the
+upstream `LICENSE`. The firmware does not compile them as they are:
+`tools/tinygl_patch.py` writes an altered copy into the build directory (16-bit
+byte-swapped pixels, a PSRAM allocator, display list names from 1, single
+precision maths, and fixes for three upstream bugs), and that altered copy is
+what runs on the board. It is not the original TinyGL.
+
+```text
+ (C) 1997-2021 Fabrice Bellard, Gek (DMHSW), C-Chads
+
+  This software is provided 'as-is', without any express or implied
+  warranty.  In no event will the authors be held liable for any damages
+  arising from the use of this software.
+
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
+
+  1. The origin of this software must not be misrepresented; you must not
+     claim that you wrote the original software. If you use this software
+     in a product, an acknowledgment in the product and its documentation
+     *is* required.
+  2. Altered source versions must be plainly marked as such, and must not be
+     misrepresented as being the original software.
+  3. This notice may not be removed or altered from any source distribution.
+```
