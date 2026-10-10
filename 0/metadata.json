@@ -148,6 +148,37 @@
         "label": "Skill: superpowers:test-driven-development",
         "default_collapsed": true
       }
+    },
+    {
+      "id": "claude-skill-toolu_01M8UdBm6ehrwuQyePqn2XCV",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "port-hack"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "b7670444aa45",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 812,
+        "end": 813,
+        "entry_ids": [
+          "22a30aba-725a-4f5f-8de8-44be73d944fd"
+        ],
+        "tool_use_id": "toolu_01M8UdBm6ehrwuQyePqn2XCV"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01M8UdBm6ehrwuQyePqn2XCV"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: port-hack",
+        "default_collapsed": true
+      }
     }
   ],
   "session_metrics": {
