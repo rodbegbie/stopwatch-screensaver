@@ -6,6 +6,7 @@
 
 #include "GL/gl.h"
 #include "core/canvas.h"
+#include "fps.h"
 #include "glshim/glshim.h"
 #include "x11shim/xshim.h"
 #include "zbuffer.h"
@@ -440,8 +441,25 @@ void test_the_swap_marks_only_the_old_and_new_boxes_dirty(void) {
                             "a row between the two boxes was marked");
 }
 
+void test_line_width_is_accepted_and_changes_nothing(void) {
+  open_flat_red_scene();
+  take_reference_and_clear();
+
+  draw_triangle_immediately();
+  glLineWidth(4);
+  TEST_ASSERT_EQUAL_MEMORY(reference, cv.px, sizeof reference);
+  draw_triangle_immediately();
+  TEST_ASSERT_EQUAL_MEMORY(reference, cv.px, sizeof reference);
+}
+
+void test_the_device_is_never_turned(void) {
+  TEST_ASSERT_TRUE(current_device_rotation() == 0.0);
+}
+
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_the_device_is_never_turned);
+  RUN_TEST(test_line_width_is_accepted_and_changes_nothing);
   RUN_TEST(test_draw_arrays_honours_a_byte_stride);
   RUN_TEST(test_a_display_list_keeps_the_arrays_it_recorded);
   RUN_TEST(test_a_new_context_starts_with_no_client_arrays_enabled);

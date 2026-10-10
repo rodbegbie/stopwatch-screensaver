@@ -28,6 +28,11 @@ Pixmap image_data_to_pixmap(Display *, Window, const unsigned char *data,
                             unsigned long size, int *width_ret,
                             int *height_ret, Pixmap *mask_ret);
 
+/* Upstream reads an image file. The device has no filesystem for hacks and no
+ * decoder, so this always returns NULL, and a hack that loads an optional
+ * picture carries on without one. */
+XImage *file_to_ximage(Display *, Visual *, const char *filename);
+
 #ifdef __cplusplus
 }
 #endif

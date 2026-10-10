@@ -121,6 +121,8 @@ typedef union {
 #define Button3 3
 #define Button4 4
 #define Button5 5
+#define Button6 6
+#define Button7 7
 
 typedef struct {
   char *option;
@@ -261,6 +263,31 @@ int XCopyArea(Display *, Drawable src, Drawable dst, GC, int src_x, int src_y,
 int XCopyPlane(Display *, Drawable src, Drawable dst, GC, int src_x,
                int src_y, unsigned int w, unsigned int h, int dst_x,
                int dst_y, unsigned long plane);
+/* An XImage is a block of pixels in the hack's own memory; nothing draws it.
+ * Only 32-bit ZPixmap images exist, which is all the hacks that use one (a
+ * mask scaled down from a loaded picture) ask for. */
+#define ZPixmap 2
+typedef struct XImage {
+  int width, height;
+  int depth;
+  int bits_per_pixel;
+  int bytes_per_line;
+  char *data;
+} XImage;
+
+/* Returns NULL for a depth other than 24 or 32, a zero or oversized image, or
+ * no memory. A bytes_per_line of 0 means a tight row, padded to bitmap_pad
+ * bits. `data` may be NULL: the hack then points it at its own allocation of
+ * height * bytes_per_line bytes, and XDestroyImage frees whatever it holds. */
+XImage *XCreateImage(Display *, Visual *, unsigned int depth, int format,
+                     int offset, char *data, unsigned int w, unsigned int h,
+                     int bitmap_pad, int bytes_per_line);
+/* A pixel outside the image, or in an image with no data, reads as 0 and
+ * writes nothing. */
+unsigned long XGetPixel(XImage *, int x, int y);
+int XPutPixel(XImage *, int x, int y, unsigned long pixel);
+int XDestroyImage(XImage *);
+
 /* Drawing is synchronous, so there is nothing to wait for. */
 int XSync(Display *, Bool discard);
 

@@ -9,4 +9,8 @@ void fps_compute(fps_state *, unsigned long polys, double depth);
 void fps_draw(fps_state *);
 void fps_free(fps_state *);
 
+/* How far the device is turned, in degrees. The board is never turned. Defined
+ * in glshim/xlock_gl.c. */
+double current_device_rotation(void);
+
 #endif
