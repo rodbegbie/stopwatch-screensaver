@@ -116,6 +116,17 @@ of 32.3 to 36.0 ms, so step plus push is 170 to 180 ms. The harness predicted
 read 1.66 MB below Morph3D's, which is the display list of 27,000 points; heap
 was flat. The points the model does not cost were not a large part of the frame.
 
+### CubicGrid at 20 ticks
+
+The registry now sets `*ticks: 20` (8,000 points). The harness's arithmetic for
+that was about 89 ms and 11 fps, with `ticks` 15 at about 70 ms and 14 fps.
+Measured on the board over 45 seconds: 11.2 to 12.4 fps, a step of 48 to 52 ms
+and a push of 32.2 to 36.1 ms, so step plus push is 80 to 88 ms, a little
+under the prediction. Free PSRAM was 0.49 MB below Morph3D's. Two points on
+the same hack, 27,000 points at 170 to 180 ms and 8,000 at 80 to 88 ms, give
+about 4.7 us a point, close to the model's 4 us a vertex; the points are
+cheap, as the model assumed.
+
 ## What this does not tell us
 
 - **Only Gears is calibrated.** One heavy and one light scene, both made of
