@@ -269,14 +269,16 @@ int XCopyArea(Display *dpy, Drawable src, Drawable dst, GC gc, int sx, int sy,
   return 0;
 }
 
-/* Always draws on the canvas, whatever dst is. */
+/* Draws on the window or a colour pixmap, as the primitives do; a bitmap or
+ * None as the destination draws nothing. */
 int XCopyPlane(Display *dpy, Drawable src, Drawable dst, GC gc, int sx,
                int sy, unsigned int w, unsigned int h, int dx, int dy,
                unsigned long plane) {
-  (void)dst;
   const struct XshimPixmap *pm = pixmap_of(src);
+  struct XshimPixmap *target = pixmap_of(dst);
+  if (!xshim_target(dpy, dst)) return 0;
   if (pm && pm->depth == 1 && plane == 1)
-    copy_region(dpy, gc, pm, NULL, sx, sy, w, h, dx, dy);
+    copy_region(dpy, gc, pm, target, sx, sy, w, h, dx, dy);
   return 0;
 }
 

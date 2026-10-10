@@ -117,9 +117,9 @@ When: one allocation of 100 KB or more, or the hack calls `exit()` if it fails.
 
 ## Images
 
-Colour pixmaps are canvases: every drawing primitive and `XCopyArea` draw
-into them. Bitmaps take only `XCopyArea` from another bitmap, and
-`XCopyPlane` always draws on the window. There is no PNG
+Colour pixmaps are canvases: every drawing primitive, `XCopyArea` and
+`XCopyPlane` draw into them. Bitmaps take only `XCopyArea` from another
+bitmap. There is no PNG
 decoder: `image_data_to_pixmap` reads a raw RGB565 blob and
 mask (format in `ximage-loader.h`), made by `tools/make_logo_blob.py`.
 `XS_LOGO=<image>` (relative to the repository root) swaps the logo for a local

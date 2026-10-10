@@ -1953,6 +1953,34 @@ void test_primitives_on_a_bitmap_or_none_draw_nothing(void) {
   XFreeGC(dpy, gc);
 }
 
+void test_copy_plane_into_a_colour_pixmap_lands_in_the_pixmap(void) {
+  GC gc = new_gc(0xF800, 0x001F);
+  Pixmap bits = XCreatePixmap(dpy, win, 4, 2, 1);
+  Pixmap colour = XCreatePixmap(dpy, win, 8, 8, 16);
+  XCopyPlane(dpy, bits, colour, gc, 0, 0, 4, 2, 1, 1, 1);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XCopyArea(dpy, colour, win, gc, 0, 0, 8, 8, 0, 0);
+  TEST_ASSERT_EQUAL_INT(8, count_colour(0x001F));
+  TEST_ASSERT_EQUAL_HEX16(0x001F, at(1, 1));
+  TEST_ASSERT_EQUAL_HEX16(0, at(0, 0));
+
+  canvas_clear(&cv, 0);
+  Pixmap mask = None;
+  Pixmap image = load_image(&mask);
+  Pixmap other = XCreatePixmap(dpy, win, 8, 8, 1);
+  XCopyPlane(dpy, mask, other, gc, 0, 0, BLOB_W, BLOB_H, 0, 0, 1);
+  XCopyPlane(dpy, mask, None, gc, 0, 0, BLOB_W, BLOB_H, 0, 0, 1);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XCopyPlane(dpy, other, win, gc, 0, 0, 8, 8, 0, 0, 1);
+  TEST_ASSERT_EQUAL_INT(0, count_colour(0xF800));
+  XFreePixmap(dpy, other);
+  XFreePixmap(dpy, image);
+  XFreePixmap(dpy, mask);
+  XFreePixmap(dpy, colour);
+  XFreePixmap(dpy, bits);
+  XFreeGC(dpy, gc);
+}
+
 void test_create_pixmap_wider_than_int16_returns_none(void) {
   TEST_ASSERT_EQUAL(None, XCreatePixmap(dpy, win, 40000, 2, 16));
   TEST_ASSERT_EQUAL(None, XCreatePixmap(dpy, win, 2, 40000, 16));
@@ -2287,6 +2315,7 @@ int main(void) {
   RUN_TEST(test_every_primitive_draws_the_same_into_a_pixmap_as_on_the_window);
   RUN_TEST(test_drawing_into_a_pixmap_clips_at_the_pixmap_edges);
   RUN_TEST(test_primitives_on_a_bitmap_or_none_draw_nothing);
+  RUN_TEST(test_copy_plane_into_a_colour_pixmap_lands_in_the_pixmap);
   RUN_TEST(test_create_pixmap_wider_than_int16_returns_none);
   RUN_TEST(test_pixmaps_drawn_into_leave_no_memory_behind);
   RUN_TEST(test_copy_area_within_one_pixmap_downwards_reads_before_it_overwrites);
