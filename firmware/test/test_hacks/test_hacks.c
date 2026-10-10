@@ -60,7 +60,8 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Lissie",
                                          "Rotor",
                                          "Scooter",
-                                         "Grav"};
+                                         "Grav",
+                                         "Euler2D"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -379,6 +380,7 @@ static const uint64_t kBaseline[] = {
     0x618997512963b7d9ull, /* Rotor: taken after looking at the frames */
     0xc76242aaacbe8177ull, /* Scooter: taken after looking at the frames */
     0x9d5e492757aab42bull, /* Grav: taken after looking at the frames */
+    0xfc99519d85e6ffa8ull, /* Euler2D: taken after looking at the frames */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -739,6 +741,10 @@ void test_grav_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("Grav", 1);
 }
 
+void test_euler2d_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Euler2D", 1);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -776,6 +782,7 @@ int main(void) {
   RUN_TEST(test_rotor_stops_do_not_leak);
   RUN_TEST(test_scooter_stops_do_not_leak);
   RUN_TEST(test_grav_stops_do_not_leak);
+  RUN_TEST(test_euler2d_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
