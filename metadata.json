@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4HM7EKE9NTNEEYYYBM8GV9D",
+  "strategy": "manual-commit",
+  "branch": "feature/42-gears-gl",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/platformio.ini"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 38,
+    "cache_creation_tokens": 32455,
+    "cache_read_tokens": 11778201,
+    "output_tokens": 13783,
+    "api_call_count": 19
+  }
+}
