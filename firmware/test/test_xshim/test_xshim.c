@@ -251,6 +251,48 @@ void test_overrides_beat_the_hacks_own_defaults(void) {
   TEST_ASSERT_EQUAL_INT(-5, get_integer_resource(dpy, "count", "Int"));
 }
 
+/* xlockmore.c puts "<Class>.foreground: white" in a hack's defaults. */
+void test_a_class_prefixed_default_is_found(void) {
+  static const char *const own[] = {"UnknownPleasures.foreground: white",
+                                    "*count: 80", NULL};
+  xshim_set_defaults(own);
+  TEST_ASSERT_EQUAL_HEX(0xFFFF,
+                        get_pixel_resource(dpy, 1, "foreground", "Foreground"));
+  char *s = get_string_resource(dpy, "foreground", "Foreground");
+  TEST_ASSERT_NOT_NULL(s);
+  TEST_ASSERT_EQUAL_STRING("white", s);
+  free(s);
+  TEST_ASSERT_EQUAL_INT(80, get_integer_resource(dpy, "count", "Int"));
+}
+
+/* xlockmore.c lists "<Class>.background: black" before the hack's own
+ * "*background: white" (Substrate), and the hack's own line must win. */
+void test_a_plain_default_beats_a_class_prefixed_one_listed_earlier(void) {
+  static const char *const own[] = {"Substrate.background: black",
+                                    "*background: white", NULL};
+  xshim_set_defaults(own);
+  TEST_ASSERT_EQUAL_HEX(0xFFFF,
+                        get_pixel_resource(dpy, 1, "background", "Background"));
+  TEST_ASSERT_EQUAL_HEX(0xFFFF, xshim_background_pixel());
+}
+
+void test_an_override_beats_a_class_prefixed_default(void) {
+  static const char *const own[] = {"Cls.foreground: white", NULL};
+  static const char *const over[] = {"*foreground: black", NULL};
+  xshim_set_defaults(own);
+  xshim_set_overrides(over);
+  TEST_ASSERT_EQUAL_HEX(0x0000,
+                        get_pixel_resource(dpy, 1, "foreground", "Foreground"));
+  xshim_set_overrides(NULL);
+}
+
+void test_a_class_prefix_does_not_match_a_longer_or_different_name(void) {
+  static const char *const own[] = {"Cls.foregroundish: white",
+                                    "Cls.xforeground: white", NULL};
+  xshim_set_defaults(own);
+  TEST_ASSERT_NULL(get_string_resource(dpy, "foreground", "Foreground"));
+}
+
 void test_progclass_is_set(void) {
   TEST_ASSERT_NOT_NULL(progclass);
   TEST_ASSERT_TRUE(strlen(progclass) > 0);
@@ -2356,6 +2398,10 @@ int main(void) {
   RUN_TEST(test_xrectangle_type_exists);
   RUN_TEST(test_progname_is_set);
   RUN_TEST(test_overrides_beat_the_hacks_own_defaults);
+  RUN_TEST(test_a_class_prefixed_default_is_found);
+  RUN_TEST(test_a_plain_default_beats_a_class_prefixed_one_listed_earlier);
+  RUN_TEST(test_an_override_beats_a_class_prefixed_default);
+  RUN_TEST(test_a_class_prefix_does_not_match_a_longer_or_different_name);
   RUN_TEST(test_progclass_is_set);
   RUN_TEST(test_framework_resources_fall_back_to_builtin_defaults);
   RUN_TEST(test_hack_defaults_beat_the_builtin_fallbacks);
