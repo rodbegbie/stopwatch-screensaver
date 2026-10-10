@@ -34,7 +34,7 @@ it with `uv run tools/score_hacks.py`.
 | S | 2D, and the unmodified source compiles against the shim | {n_s} |
 | M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | {n_m} |
 | L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | {n_l} |
-| XL | GL: needs a software rasteriser (see below) | {n_xl} |
+| XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | {n_xl} |
 | Ported | Already running on the device, so no rating | {n_ported} |
 
 ## Speed
@@ -79,11 +79,16 @@ hack at 8 ms and a heavy one at 830 ms
 - `float-heavy`: 20 or more `sin`, `cos`, `sqrt` or `pow` calls. The
   ESP32-S3 has a single-precision FPU only, so double-precision maths is
   slow in software. Expect these to need profiling.
-- `needs-xlockmore`: built on the `xlockmore.h` framework, which the shim
-  does not provide yet.
+
+About 40 hacks are built on the `xlockmore.h` framework. The shim provides it
+(`firmware/src/xs_support/xlockmore.c`), so it is not a flag: it costs nothing
+to port.
 
 ## GL hacks
 
-The XL hacks use fixed-function OpenGL. A port would need a software
-rasteriser (TinyGL has been ported to the ESP32) at reduced resolution. No
-performance numbers exist yet, so this stays a separate future project.
+The XL hacks use fixed-function OpenGL. They run on the GL layer in
+`firmware/src/glshim/`, a thin shim over TinyGL (a software rasteriser) that
+draws straight into the canvas. Gears is the first GL hack ported; the
+speed and ideas are in issues #43 to #46. An unported XL hack still needs its
+own checking: the GL calls it makes may not all be in TinyGL, and the shim
+does not yet provide every GL helper under `xs_support/glx/`.

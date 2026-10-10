@@ -138,8 +138,6 @@ def score(
     flags = [name for name, calls in FLAG_CALLS.items() if used & calls]
     if len(MATH_CALL.findall(clean)) >= FLOAT_HEAVY_THRESHOLD:
         flags.append("float-heavy")
-    if re.search(r'#\s*include\s*"xlockmore\.h"', source):
-        flags.append("needs-xlockmore")
     gaps = sorted(set(missing) | set(blockers or []))
     if kind == "gl":
         effort = "XL"

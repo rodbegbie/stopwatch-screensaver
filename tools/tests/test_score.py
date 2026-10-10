@@ -63,11 +63,17 @@ def test_score_effort_M_L_XL():
     assert gl["effort"] == "XL"
 
 
-def test_score_float_heavy_and_xlockmore_flags():
-    src = '#include "xlockmore.h"\n' + "x = sin(a) + cos(b);\n" * 10
+def test_score_float_heavy_flag():
+    src = "x = sin(a) + cos(b);\n" * 10
     row = sh.score(Path("hacks/e.c"), src, PROVIDED)
     assert "float-heavy" in row["flags"]
-    assert "needs-xlockmore" in row["flags"]
+
+
+def test_xlockmore_include_is_not_a_flag():
+    src = '#include "xlockmore.h"\n' + "x = sin(a) + cos(b);\n" * 10
+    row = sh.score(Path("hacks/e.c"), src, PROVIDED)
+    assert row["flags"] == ["float-heavy"]
+    assert row["effort"] == "S"
 
 
 def test_rank_missing_prefers_calls_blocking_nearly_ready_hacks():
