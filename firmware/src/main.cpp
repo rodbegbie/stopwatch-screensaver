@@ -356,7 +356,7 @@ void setup() {
     Serial.printf("START_HACK \"%s\" not found, starting at random\n",
                   kForcedStart);
   if (runner_start(runner, first) != 0) halt("hack start failed");
-  overlay_init(&overlay, kNameShownMs);
+  overlay_init(&overlay, kNameShownMs, qrPixels != nullptr);
   rotation_init(&rotation, kRotateMs, millis());
   hackStarted();
   printStats("boot");

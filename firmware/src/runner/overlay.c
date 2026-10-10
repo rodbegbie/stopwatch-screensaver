@@ -4,8 +4,11 @@
 
 #define FPS_WINDOW_MS 1000u
 
-void overlay_init(Overlay *o, uint32_t name_ms) {
-  *o = (Overlay){.name_ms = name_ms, .battery_pct = -1, .drawn_battery_pct = -1};
+void overlay_init(Overlay *o, uint32_t name_ms, bool qr_available) {
+  *o = (Overlay){.name_ms = name_ms,
+                 .qr_available = qr_available,
+                 .battery_pct = -1,
+                 .drawn_battery_pct = -1};
 }
 
 void overlay_hack_started(Overlay *o, uint32_t now_ms) {
@@ -18,6 +21,7 @@ void overlay_hack_started(Overlay *o, uint32_t now_ms) {
 
 void overlay_cycle_info(Overlay *o) {
   o->info = o->info == INFO_BATTERY ? INFO_NONE : o->info + 1;
+  if (o->info == INFO_QR && !o->qr_available) o->info = INFO_FPS;
 }
 
 void overlay_set_battery(Overlay *o, int pct) {

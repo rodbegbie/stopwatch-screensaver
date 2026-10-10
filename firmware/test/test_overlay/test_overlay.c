@@ -11,7 +11,7 @@ static void show(OverlayInfo mode) {
   while (ov.info != mode) overlay_cycle_info(&ov);
 }
 
-void setUp(void) { overlay_init(&ov, NAME_MS); }
+void setUp(void) { overlay_init(&ov, NAME_MS, true); }
 void tearDown(void) {}
 
 void test_nothing_is_shown_before_a_hack_starts(void) {
@@ -58,6 +58,17 @@ void test_info_starts_as_nothing_and_taps_cycle_badge_qr_fps_battery_nothing(voi
   expect_only(false, false, false, true);
   overlay_cycle_info(&ov);
   expect_only(false, false, false, false);
+}
+
+void test_taps_skip_the_qr_code_when_none_could_be_built(void) {
+  overlay_init(&ov, NAME_MS, false);
+  OverlayInfo expected[] = {INFO_NAME, INFO_FPS, INFO_BATTERY, INFO_NONE,
+                            INFO_NAME};
+  for (int i = 0; i < 5; i++) {
+    overlay_cycle_info(&ov);
+    TEST_ASSERT_EQUAL(expected[i], ov.info);
+    TEST_ASSERT_FALSE(overlay_qr_visible(&ov));
+  }
 }
 
 void test_the_chosen_readout_stays_when_a_new_hack_starts(void) {
@@ -218,6 +229,7 @@ int main(void) {
   RUN_TEST(test_switching_hacks_restarts_the_name_time);
   RUN_TEST(test_the_name_time_survives_the_millisecond_counter_wrapping);
   RUN_TEST(test_info_starts_as_nothing_and_taps_cycle_badge_qr_fps_battery_nothing);
+  RUN_TEST(test_taps_skip_the_qr_code_when_none_could_be_built);
   RUN_TEST(test_the_chosen_readout_stays_when_a_new_hack_starts);
   RUN_TEST(test_the_hack_name_is_hidden_only_in_badge_and_qr_modes);
   RUN_TEST(test_the_hack_name_returns_when_leaving_badge_mode_within_its_time);

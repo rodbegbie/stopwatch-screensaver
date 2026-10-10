@@ -32,6 +32,7 @@ typedef struct {
   float fps;
   bool name_armed;
   bool has_fps;
+  bool qr_available;
   OverlayInfo info;
   int battery_pct;
   bool drawn_name;
@@ -39,7 +40,9 @@ typedef struct {
   int drawn_battery_pct;
 } Overlay;
 
-void overlay_init(Overlay *o, uint32_t name_ms);
+/* qr_available is false when no QR code could be built, so taps skip that
+ * readout instead of showing a blank screen. */
+void overlay_init(Overlay *o, uint32_t name_ms, bool qr_available);
 
 /* A hack (re)started: show its name again and measure its frame rate afresh.
  * The chosen readout is kept. */
