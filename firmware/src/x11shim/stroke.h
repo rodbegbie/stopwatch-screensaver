@@ -31,4 +31,10 @@ void stroke_segment_ends(Canvas *c, const struct XshimGC *gc, int x1, int y1,
 void stroke_polyline(Canvas *c, const struct XshimGC *gc, const int *xy, int n,
                      int closed);
 
+/* The outline of the circle XDrawArc would draw for the box x, y, w by w and a
+ * full sweep, with the GC's width: a ring, filled a row at a time. The
+ * polyline stroke_polyline would draw for the same arc takes about 40 times as
+ * many fills. It differs from that polyline only at the pixels on an edge. */
+void stroke_circle(Canvas *c, const struct XshimGC *gc, int x, int y, unsigned w);
+
 #endif

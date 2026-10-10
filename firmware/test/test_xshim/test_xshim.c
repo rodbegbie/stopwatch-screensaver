@@ -13,6 +13,7 @@
 #include "screenhack.h"
 #include "utils.h"
 #include "x11shim/arc.h"
+#include "x11shim/stroke.h"
 #include "x11shim/xshim.h"
 #include "ximage-loader.h"
 
@@ -1411,6 +1412,65 @@ void test_draw_arc_wide_uses_the_stroke_code(void) {
   XFreeGC(dpy, wide);
 }
 
+/* A pixel well inside the band is drawn and one well outside it is not; only
+ * the pixels at an edge may go either way. */
+void test_stroke_circle_fills_the_band_between_its_two_radii(void) {
+  use_canvas(200);
+  GC gc = wide_gc(30, CapButt, JoinMiter);
+  stroke_circle(&cv, gc, 20, 20, 160);
+  for (int y = 0; y < cv.h; y++)
+    for (int x = 0; x < cv.w; x++) {
+      const float r = hypotf((float)x + 0.5f - 100.0f, (float)y + 0.5f - 100.0f);
+      if (r < 93.0f && r > 67.0f)
+        TEST_ASSERT_EQUAL_HEX16_MESSAGE(0xFFFF, at(x, y), "a pixel in the band is missing");
+      if (r > 97.0f || r < 63.0f)
+        TEST_ASSERT_EQUAL_HEX16_MESSAGE(0, at(x, y), "a pixel outside the band is set");
+    }
+  XFreeGC(dpy, gc);
+}
+
+/* The wide polyline round a full circle is the picture the ring stands in for.
+ * It has gaps the ring does not, so it is the ring that must cover it. */
+void test_stroke_circle_covers_what_the_wide_arc_draws(void) {
+  use_canvas(200);
+  GC gc = wide_gc(30, CapButt, JoinMiter);
+  XDrawArc(dpy, win, gc, 20, 20, 160, 160, 0, 360 * 64);
+  uint16_t *reference = (uint16_t *)malloc((size_t)cv.w * cv.h * sizeof(uint16_t));
+  memcpy(reference, cv.px, (size_t)cv.w * cv.h * sizeof(uint16_t));
+  use_canvas(200);
+  stroke_circle(&cv, gc, 20, 20, 160);
+  for (int y = 0; y < cv.h; y++)
+    for (int x = 0; x < cv.w; x++) {
+      if (reference[y * cv.w + x] == 0 || at(x, y) != 0) continue;
+      const float r = hypotf((float)x + 0.5f - 100.0f, (float)y + 0.5f - 100.0f);
+      TEST_ASSERT_TRUE_MESSAGE(fabsf(r - 95.0f) < 1.6f || fabsf(r - 65.0f) < 1.6f,
+                               "the wide arc draws a pixel the ring leaves out");
+    }
+  free(reference);
+  XFreeGC(dpy, gc);
+}
+
+void test_stroke_circle_narrower_than_its_line_is_a_filled_disc(void) {
+  use_canvas(64);
+  GC gc = wide_gc(30, CapButt, JoinMiter);
+  stroke_circle(&cv, gc, 22, 22, 20);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(32, 32));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(32, 10));
+  TEST_ASSERT_EQUAL_HEX16(0, at(2, 2));
+  XFreeGC(dpy, gc);
+}
+
+void test_stroke_circle_is_clipped_to_the_canvas(void) {
+  use_canvas(64);
+  GC gc = wide_gc(50, CapButt, JoinMiter);
+  stroke_circle(&cv, gc, -18, -18, 100);
+  TEST_ASSERT_EQUAL_HEX16(0, at(32, 32));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(2, 32));
+  stroke_circle(&cv, gc, -300, -300, 699);
+  stroke_circle(&cv, gc, 2000000000, 2000000000, 699);
+  XFreeGC(dpy, gc);
+}
+
 void test_fill_arc_half_fills_a_half_disc(void) {
   use_canvas(64);
   XGCValues v;
@@ -1909,6 +1969,10 @@ int main(void) {
   RUN_TEST(test_draw_arc_quarter_draws_only_that_quadrant);
   RUN_TEST(test_draw_arc_full_ellipse_is_a_closed_outline);
   RUN_TEST(test_draw_arc_wide_uses_the_stroke_code);
+  RUN_TEST(test_stroke_circle_fills_the_band_between_its_two_radii);
+  RUN_TEST(test_stroke_circle_covers_what_the_wide_arc_draws);
+  RUN_TEST(test_stroke_circle_narrower_than_its_line_is_a_filled_disc);
+  RUN_TEST(test_stroke_circle_is_clipped_to_the_canvas);
   RUN_TEST(test_fill_arc_half_fills_a_half_disc);
   RUN_TEST(test_fill_arc_quarter_is_a_pie_slice_including_the_centre);
   RUN_TEST(test_create_pixmap_is_zeroed_and_reports_its_geometry);

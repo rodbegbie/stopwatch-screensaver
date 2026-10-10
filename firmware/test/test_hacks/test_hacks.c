@@ -366,7 +366,7 @@ static const uint64_t kBaseline[] = {
     0x41f708d6203d8140ull, /* Gears: taken after looking at the frames */
     0x5a1dd5b30e81a013ull, /* Morph3D: taken after looking at the frames */
     0xc2b1b6b7d671b4c7ull, /* CubicGrid at ticks 20: taken after looking at the frames */
-    0x78f0d2c1cc062601ull, /* Deluxe: taken after looking at the frames */
+    0x7c352225345ac500ull, /* Deluxe, rings drawn by stroke_circle: taken after looking at the frames */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {

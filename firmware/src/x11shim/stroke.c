@@ -273,6 +273,34 @@ static void join_at(Canvas *c, int ix, int iy, vec2 d1, vec2 d2, int w,
   fill_convex(c, tri, 3, colour);
 }
 
+void stroke_circle(Canvas *c, const struct XshimGC *gc, int x, int y, unsigned w) {
+  const int lw = gc->line_width;
+  const uint16_t colour = (uint16_t)gc->foreground;
+  const float o = centre_offset(lw);
+  const float radius = (float)w / 2.0f;
+  const float cx = (float)x + radius + o, cy = (float)y + radius + o;
+  const float outer = radius + (float)lw / 2.0f;
+  const float inner = radius - (float)lw / 2.0f;
+  const wide_t y0 = max_w(0, (wide_t)floorf(cy - outer));
+  const wide_t y1 = min_w((wide_t)c->h - 1, (wide_t)ceilf(cy + outer));
+  for (wide_t row = y0; row <= y1; row++) {
+    const float dy = (float)row + 0.5f - cy;
+    if (fabsf(dy) >= outer) continue;
+    const float ho = sqrtf(outer * outer - dy * dy);
+    const wide_t xo0 = (wide_t)ceilf(cx - ho - 0.5f);
+    const wide_t xo1 = (wide_t)floorf(cx + ho - 0.5f);
+    if (inner <= 0.0f || fabsf(dy) >= inner) {
+      fill_box(c, xo0, row, xo1, row, colour);
+      continue;
+    }
+    const float hi = sqrtf(inner * inner - dy * dy);
+    const wide_t xi0 = (wide_t)ceilf(cx - hi - 0.5f);
+    const wide_t xi1 = (wide_t)floorf(cx + hi - 0.5f);
+    fill_box(c, xo0, row, xi0 - 1, row, colour);
+    fill_box(c, xi1 + 1, row, xo1, row, colour);
+  }
+}
+
 static vec2 direction(const int *from, const int *to) {
   const float dx = (float)((wide_t)to[0] - from[0]);
   const float dy = (float)((wide_t)to[1] - from[1]);
