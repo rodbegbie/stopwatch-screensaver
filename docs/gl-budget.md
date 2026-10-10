@@ -229,6 +229,7 @@ frame, out of 466):
 | Morph3D | step 75 to 83, push 32.5, wait 8.8, rows 466, 8.2 to 8.8 fps | step 55 to 59, push 2 to 9, wait 34 to 42, rows 92 to 192, 9.8 to 10.2 fps |
 | Morph3D, `*delay: 10000` (now registered) | | step 54 to 58, push 2 to 9, wait 2.6 to 9.4, 14.4 to 15.2 fps |
 | Gears, first layout after boot | step 65 to 79, push 32 to 34, wait 0, 9.0 to 10.2 fps | step 44 to 63, push 4 to 12, wait 20 to 29, rows 194 to 303, 10.6 to 13.0 fps |
+| Gears, `*delay: 10000` (now registered) | | step 46 to 65, push 5 to 14, wait 0 to 6, rows 184 to 290, 12.6 to 17.6 fps (about 14.5 on average) |
 | CubicGrid | step 46.7, push 32, rows 466 | step 47.7, push 32, rows 466 |
 
 - **The work shrinks a lot and the frame rate barely follows**, because both
@@ -236,8 +237,10 @@ frame, out of 466):
   Gears) and the loop only credits the push against it. Morph3D's frame is now
   step plus a 40 ms pause. Shortening the pause is a per-hack registry override.
   Morph3D now registers `*delay: 10000`: 10 ms instead of 40 gives about
-  14.6 fps, 75 percent over the 8.4 fps it started the evening at. Gears keeps
-  its 30 ms pause.
+  14.6 fps, 75 percent over the 8.4 fps it started the evening at. Gears now
+  registers the same 10 ms: its first layout went from 9 to 10 fps to about
+  14.5, with the work unchanged. A heavy Gears layout is render-bound and the
+  pause makes no difference to it.
 - **CubicGrid pays about 1 ms (2 percent)** for the bookkeeping on every point,
   and gains nothing, because its points span the whole screen.
 - **Correctness:** the pinned frame hash of every hack is unchanged, so the

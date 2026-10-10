@@ -669,6 +669,17 @@ void test_morph3d_registers_a_shorter_pause(void) {
   TEST_ASSERT_TRUE_MESSAGE(found, "Morph3D does not override *delay");
 }
 
+/* Gears asks for a 30 ms pause after every frame. With the dirty rectangle a
+ * light layout takes 44 to 63 ms, so the pause alone held it to 11 to 13 fps. */
+void test_gears_registers_a_shorter_pause(void) {
+  const int gears = index_of("Gears");
+  TEST_ASSERT_TRUE(gears >= 0);
+  int found = 0;
+  const char *const *o = g_hacks[gears]->overrides;
+  for (; o && *o; o++) found |= strcmp(*o, "*delay: 10000") == 0;
+  TEST_ASSERT_TRUE_MESSAGE(found, "Gears does not override *delay");
+}
+
 /* A tripwire, not a proof. On the host this runs unoptimised under
  * AddressSanitizer, which inflates frames several times over: Gears measures
  * 21 KB here against a 2.4 KB high-water mark on the board (the loop task has
@@ -711,6 +722,7 @@ int main(void) {
   RUN_TEST(test_epicycle_stops_do_not_leak);
   RUN_TEST(test_kaleidescope_stops_do_not_leak);
   RUN_TEST(test_gears_start_and_stop_do_not_leak);
+  RUN_TEST(test_gears_registers_a_shorter_pause);
   RUN_TEST(test_morph3d_start_and_stop_do_not_leak);
   RUN_TEST(test_morph3d_registers_a_shorter_pause);
   RUN_TEST(test_cubicgrid_start_and_stop_do_not_leak);

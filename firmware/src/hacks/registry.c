@@ -46,8 +46,10 @@ extern const HackEntry substrate_hack;
 extern const HackEntry epicycle_hack;
 extern const HackEntry kaleidescope_hack;
 /* The xlockmore framework reads ncolors and cycles; Gears defines neither, and
- * nothing in Gears uses them. */
-static const char *const kGearsOverrides[] = {"*ncolors: 64", "*cycles: 0", NULL};
+ * nothing in Gears uses them. Its own 30 ms pause held a light layout to 11 to
+ * 13 fps once the dirty rectangle made a frame 44 to 63 ms; 10 ms removes it. */
+static const char *const kGearsOverrides[] = {"*ncolors: 64", "*cycles: 0",
+                                              "*delay: 10000", NULL};
 XLOCKMORE_HACK_WITH(gears, "Gears", kGearsOverrides);
 /* The hack asks for a 40 ms pause after each frame, which held it to 10 fps
  * once a frame took 57 ms; 10 ms gives 14.6 fps. */
