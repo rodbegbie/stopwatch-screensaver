@@ -389,11 +389,11 @@ static const uint64_t kBaseline[] = {
     0x618997512963b7d9ull, /* Rotor: taken after looking at the frames */
     0xc76242aaacbe8177ull, /* Scooter: taken after looking at the frames */
     0x9d5e492757aab42bull, /* Grav: taken after looking at the frames */
-    0x1c7c01bcae767504ull, /* Euler2D: taken after looking at the frames */
+    0x41f6a76aad432b20ull, /* Euler2D: taken after looking at the frames */
     0x59bf16ddeccecc15ull, /* Anemone: taken after looking at the frames */
     0x1ad9e9fe2718ba88ull, /* Anemotaxis: taken after looking at the frames */
     0xb7feaf3a248c76f2ull, /* Compass: taken after looking at the frames */
-    0x0ee7f9ba1b22b39full, /* FuzzyFlakes: taken after looking at the frames */
+    0xe94fb924120c76a5ull, /* FuzzyFlakes: taken after looking at the frames */
     0x1a725b98c23a7f8cull, /* Halftone: taken after looking at the frames */
     0x3cc7ad2eeeea2850ull, /* IFS: taken after looking at the frames */
     0xa99817e1ad5b5318ull, /* Interaggregate: taken after looking at the frames */
@@ -799,6 +799,26 @@ void test_wormhole_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("Wormhole", 0);
 }
 
+/* Each of these runs below 15 fps at upstream's defaults on the board: Euler2D
+ * moves 1024 particles, Anemone grows 128 arms, FuzzyFlakes drops a flake
+ * density of 5, and LMorph pauses 70 ms between frames. */
+static int overrides_contain(const char *hack, const char *wanted) {
+  const int i = index_of(hack);
+  if (i < 0) return 0;
+  const char *const *o = g_hacks[i]->overrides;
+  for (; o && *o; o++)
+    if (strcmp(*o, wanted) == 0) return 1;
+  return 0;
+}
+
+void test_slow_hacks_register_their_lighter_settings(void) {
+  TEST_ASSERT_TRUE_MESSAGE(overrides_contain("Euler2D", "*count: 512"), "Euler2D *count");
+  TEST_ASSERT_TRUE_MESSAGE(overrides_contain("Anemone", "*arms: 64"), "Anemone *arms");
+  TEST_ASSERT_TRUE_MESSAGE(overrides_contain("FuzzyFlakes", "*density: 3"),
+                           "FuzzyFlakes *density");
+  TEST_ASSERT_TRUE_MESSAGE(overrides_contain("LMorph", "*delay: 10000"), "LMorph *delay");
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -846,6 +866,7 @@ int main(void) {
   RUN_TEST(test_interaggregate_stops_do_not_leak);
   RUN_TEST(test_lmorph_stops_do_not_leak);
   RUN_TEST(test_wormhole_stops_do_not_leak);
+  RUN_TEST(test_slow_hacks_register_their_lighter_settings);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);

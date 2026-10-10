@@ -23,5 +23,7 @@
 
 #include "fuzzyflakes_floatlit.c"
 
+static const char *const k_fuzzyflakes_overrides[] = {"*density: 3", NULL};
+
 const HackEntry fuzzyflakes_hack = {"FuzzyFlakes", fuzzyflakes_defaults, fuzzyflakes_init,
-                                fuzzyflakes_draw, fuzzyflakes_free, NULL, NULL};
+                                fuzzyflakes_draw, fuzzyflakes_free, NULL, k_fuzzyflakes_overrides};

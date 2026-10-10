@@ -68,7 +68,10 @@ XLOCKMORE_HACK(lissie, "Lissie");
 XLOCKMORE_HACK(rotor, "Rotor");
 XLOCKMORE_HACK(scooter, "Scooter");
 XLOCKMORE_HACK(grav, "Grav");
-XLOCKMORE_HACK(euler2d, "Euler2D");
+/* 1024 particles took a 53 ms step in single precision; 512 keep the flow
+ * readable and the frame rate nearer 15. */
+static const char *const kEuler2dOverrides[] = {"*count: 512", NULL};
+XLOCKMORE_HACK_WITH(euler2d, "Euler2D", kEuler2dOverrides);
 extern const HackEntry anemone_hack;
 extern const HackEntry anemotaxis_hack;
 extern const HackEntry compass_hack;
