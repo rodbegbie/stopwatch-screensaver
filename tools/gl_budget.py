@@ -24,14 +24,30 @@ import tinygl_patch
 # Milliseconds a frame spends on fixed work (clearing colour and z, then the
 # push to the display), microseconds per vertex set up, extra microseconds per
 # lit vertex, and nanoseconds per filled pixel. Issue #43 measured the first
-# four on the device; pixel_ns is fitted to Gears in the calibration test.
+# four on the device. pixel_ns is fitted so that the heavy Gears scene's fill
+# comes to the 40 ms measured there (40e6 ns / 69,761 pixels). It is an
+# effective figure for scenes of many small triangles: it also absorbs the
+# rasteriser's per-triangle overhead, so a scene of few, large triangles is
+# likely over-predicted. Lines and points are not costed at all.
 MODEL = {
     "clear_ms": 24.6,
     "push_ms": 32.0,
     "vertex_us": 4.0,
     "lit_vertex_us": 2.8,
-    "pixel_ns": 40.0,
+    "pixel_ns": 570.0,
 }
+
+
+# Seeds of this repo's Gears that reproduce the two scenes measured on the
+# device in issue #43: the heavy planetary layout (17,706 vertices) and a light
+# one (about 4,300). The spike's own seed numbers do not apply here.
+GEARS_SEEDS = {"heavy": 13, "light": 11}
+CALIBRATION_FRAMES = 60
+
+# Issue #43's breakdown of the heavy scene, in milliseconds a frame: the sum of
+# its parts is 197 to 217. Light layouts ran at about 9 fps.
+HEAVY_GEARS_MS = 207.0
+LIGHT_GEARS_MS = 111.0
 
 
 @dataclass

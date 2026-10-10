@@ -224,3 +224,26 @@ def test_the_command_line_runs_gears_end_to_end(capsys):
     assert gb.main(["--frames", "5", "gears:1"]) == 0
     out = capsys.readouterr().out
     assert "| gears | 1 |" in out
+
+
+def gears_prediction(which: str) -> float:
+    result = gb.measure(
+        "gears",
+        gb.hack_path(ROOT, "gears").read_text(errors="surrogateescape"),
+        ROOT,
+        frames=gb.CALIBRATION_FRAMES,
+        seed=gb.GEARS_SEEDS[which],
+    )
+    return gb.predict_ms(result["counts"])
+
+
+@needs_cc
+def test_model_reproduces_heavy_gears():
+    """pixel_ns is fitted to this scene, so this one is in-sample."""
+    assert gears_prediction("heavy") == pytest.approx(gb.HEAVY_GEARS_MS, rel=0.10)
+
+
+@needs_cc
+def test_model_predicts_light_gears():
+    """Held out: nothing was fitted to this scene."""
+    assert gears_prediction("light") == pytest.approx(gb.LIGHT_GEARS_MS, rel=0.20)
