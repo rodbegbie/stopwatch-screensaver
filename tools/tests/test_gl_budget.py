@@ -270,3 +270,82 @@ def test_a_hack_can_call_glpixelstorei_for_unpack_alignment():
     """cubicgrid does; TinyGL defines the call but does not declare it."""
     result = run(init="glPixelStorei(GL_UNPACK_ALIGNMENT, 1);")
     assert "error" not in result, result.get("error")
+
+
+def coverage(draw: str, init: str = "") -> "gb.Coverage":
+    return run(init, draw)["coverage"]
+
+
+@needs_cc
+def test_coverage_of_a_static_triangle_is_its_bounding_box():
+    """A triangle from (-.5,-.5) to (.5,.5) covers a quarter of the canvas, and
+    drawing the same one again means the previous box is the current box."""
+    draw = f"glBegin(GL_TRIANGLES); {TRIANGLE} glEnd();"
+    cov = coverage(draw)
+    assert cov.bbox == pytest.approx(0.25, abs=0.03)
+    assert cov.clear == pytest.approx(0.25, abs=0.03)
+    assert cov.push == pytest.approx(0.25, abs=0.03)
+
+
+@needs_cc
+def test_a_moving_triangle_pushes_both_its_old_and_new_place():
+    """The triangle sits left on even frames and right on odd ones. Each box is
+    about a twelfth of the canvas; the push covers both."""
+    draw = (
+        "static int n; float dx = (n++ & 1) ? 0.45f : -0.45f;"
+        "glBegin(GL_TRIANGLES);"
+        "glVertex3f(dx-.2f,-.2f,0); glVertex3f(dx+.2f,-.2f,0);"
+        "glVertex3f(dx,.2f,0); glEnd();"
+    )
+    cov = coverage(draw)
+    assert cov.bbox == pytest.approx(0.04, abs=0.02)
+    assert cov.push == pytest.approx(2 * cov.bbox, abs=0.02)
+
+
+@needs_cc
+def test_a_full_screen_triangle_covers_everything():
+    draw = (
+        "glBegin(GL_TRIANGLES); glVertex3f(-1,-1,0); glVertex3f(3,-1,0);"
+        "glVertex3f(-1,3,0); glEnd();"
+    )
+    assert coverage(draw).bbox == pytest.approx(1.0, abs=0.02)
+
+
+@needs_cc
+def test_a_hack_that_draws_nothing_has_empty_coverage():
+    cov = coverage("")
+    assert (cov.bbox, cov.clear, cov.push) == (0, 0, 0)
+
+
+@needs_cc
+def test_a_point_covers_what_the_firmware_gives_it():
+    """glPointSize(5) at the centre: the firmware's box is the point's size plus
+    one pixel each side, 13 pixels square (glshim_note_box)."""
+    draw = "glPointSize(5); glBegin(GL_POINTS); glVertex3f(0, 0, 0); glEnd();"
+    cov = coverage(draw)
+    assert cov.bbox == pytest.approx(13 * 13 / (466 * 466), rel=0.05)
+
+
+@needs_cc
+def test_a_triangle_wholly_off_screen_covers_nothing():
+    draw = (
+        "glBegin(GL_TRIANGLES); glVertex3f(3,3,0); glVertex3f(4,3,0);"
+        "glVertex3f(3,4,0); glEnd();"
+    )
+    assert coverage(draw).bbox == 0
+
+
+@needs_cc
+def test_a_line_has_the_same_box_whichever_way_it_runs():
+    def line(a, b):
+        return f"glBegin(GL_LINES); glVertex3f({a}); glVertex3f({b}); glEnd();"
+
+    forward = coverage(line("-.5f,-.5f,0", ".5f,.5f,0"))
+    backward = coverage(line(".5f,.5f,0", "-.5f,-.5f,0"))
+    assert forward.bbox == backward.bbox > 0
+
+
+@needs_cc
+def test_a_clipped_line_is_assumed_to_reach_anywhere():
+    draw = "glBegin(GL_LINES); glVertex3f(-3,0,0); glVertex3f(3,0,0); glEnd();"
+    assert coverage(draw).bbox == pytest.approx(1.0, abs=0.01)
