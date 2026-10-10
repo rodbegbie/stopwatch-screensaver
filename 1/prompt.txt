@@ -1,0 +1,125 @@
+go ahead with the shim header and budget prediction
+
+---
+
+1. I think we should make the shim change to support class-prefixed names.  Our tests should catch if that changes the behaviour of any other hack, right?
+2. Yeah, add an --override switch for this and future work.
+3. I'd like to continue and see how it does on the device.  It's always helpful to check our predictions and learn if we can improve our model.
+4. Commit the shim changes on this branch.  They're definitely worth keeping.
+
+---
+
+Yes, flash it. I'm watching the screen.
+
+---
+
+1. Stuttery and flickery.
+2. There's no difference in line brightness anywhere that I can see.
+3. Yes. White on black.
+4. Done.
+
+---
+
+<task-notification>
+<task-id>bj03uhh7l</task-id>
+<tool-use-id>toolu_01WMUHiuAThmFqkmBNpY4TFx</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f6f86398-1b8a-4d92-bf29-a3fe9f2f45eb/tasks/bj03uhh7l.output</output-file>
+<status>completed</status>
+<summary>Background command "Capture 100 seconds of serial output from the board" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Lets try lighter settings, and addressing the flicker.  It looks lovely, so even if it's slow, if the flicker is gone I'd keep it in the rotation.
+
+It's individual lines that flicker rather than the whole screen.
+
+---
+
+Your leading explanation seems likely.  Yes, you can flash the device.
+
+---
+
+1. Flicker is about the same.
+2. Stutter is maybe a *little* better.
+3. Sparseness is OK.
+
+---
+
+<task-notification>
+<task-id>b0aqabfa1</task-id>
+<tool-use-id>toolu_01Gtka1vLNaDoSdYeYdrNSwf</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f6f86398-1b8a-4d92-bf29-a3fe9f2f45eb/tasks/b0aqabfa1.output</output-file>
+<status>completed</status>
+<summary>Background command "Capture 100 seconds of serial output from the lighter build" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Yes flash this new build
+
+---
+
+Nothing is flickering. It's just a static-looking picture.
+
+---
+
+Nothing is flickering. It's just a static-looking picture. Small movements are visible if I look closely.
+
+---
+
+Yup, push the next version
+
+---
+
+Flickr is reduced, but still shows from time to time.  It shows on individual lines, not all of them.  Feels like it's on the flat-ish areas next to the main central peaks.  Motion is *just* perceptible.
+
+---
+
+Yes, go ahead with antialiased lines
+
+---
+
+flash it
+
+---
+
+<task-notification>
+<task-id>bktk4nr41</task-id>
+<tool-use-id>toolu_019eojnrtQhVaf7d6NEmwE61</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f6f86398-1b8a-4d92-bf29-a3fe9f2f45eb/tasks/bktk4nr41.output</output-file>
+<status>completed</status>
+<summary>Background command "Capture 100 seconds of serial output from the antialiased build" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+It's still stuttery and flickery, but goddamn it looks lovely.
+
+---
+
+Yes, you may flash it. Thanks!
+
+---
+
+<task-notification>
+<task-id>bdbcnw4oh</task-id>
+<tool-use-id>toolu_01UJo6D8ghaLL4jjoakBgDND</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f6f86398-1b8a-4d92-bf29-a3fe9f2f45eb/tasks/bdbcnw4oh.output</output-file>
+<status>completed</status>
+<summary>Background command "Capture 100 seconds of serial output from the offset-margin build" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+I've recorded a slo-mo HD video of the display.  If I shared it with you, would you be able to analyse it?
+
+---
+
+OK, there's two video files in your scratchpad. IMG_5787.MOV is the slo-mo one.  The other is 120fps full-speed.  Let me know if they're helpful.
+
+---
+
+Yes, I'm still seeing flickr, and it's both the overall redrew, but also pieces disappearing and re-appearing.  In the slo-mo video I see a section of line disappear round about 00:12.60 in the bottom-left and bottom-right.
+
+But also, try stabilise it and trace the lines and see if that helps.
