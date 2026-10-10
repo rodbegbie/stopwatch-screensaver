@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4J02DA4N8S8B4R82V41GQG1",
+  "strategy": "manual-commit",
+  "branch": "feature/45-gl-budget-harness",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "tools/tests/test_gl_budget.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 4,
+    "cache_creation_tokens": 3258,
+    "cache_read_tokens": 412428,
+    "output_tokens": 2295,
+    "api_call_count": 2
+  }
+}
