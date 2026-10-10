@@ -1,0 +1,33 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4JBWPG5DYRC126KVBK1E1XD",
+  "strategy": "manual-commit",
+  "branch": "feature/43-dirty-rect-spike",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "firmware/native/gl_budget_main.c",
+    "firmware/src/glshim/glshim.c",
+    "firmware/src/glshim/glshim.h",
+    "firmware/test/test_glshim/test_glshim.c",
+    "tools/gl_budget.py",
+    "tools/tests/test_gl_budget.py",
+    "tools/tests/test_tinygl_patch.py",
+    "tools/tinygl_patch.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 594,
+    "cache_creation_tokens": 535186,
+    "cache_read_tokens": 93387796,
+    "output_tokens": 303511,
+    "api_call_count": 297
+  }
+}
