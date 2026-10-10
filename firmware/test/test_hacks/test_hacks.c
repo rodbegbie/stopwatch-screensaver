@@ -8,6 +8,7 @@
 #include <unity.h>
 
 #include "core/canvas.h"
+#include "doubletime.h"
 #include "screenhack.h"
 #include "xlockmore.h"
 #include "hacks/fast_trig.h"
@@ -18,8 +19,20 @@
 
 static Canvas cv;
 
-void setUp(void) { TEST_ASSERT_EQUAL_INT(0, canvas_init(&cv, 466, 466, malloc)); }
-void tearDown(void) { canvas_free(&cv); }
+/* A hack that animates from wall time (UnknownPleasures) would draw different
+ * frames each run. This clock moves a thirtieth of a second a reading. */
+static double fake_now;
+static double fake_clock(void) { return fake_now += 1.0 / 30.0; }
+
+void setUp(void) {
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&cv, 466, 466, malloc));
+  fake_now = 1000.0;
+  xshim_set_clock(fake_clock);
+}
+void tearDown(void) {
+  xshim_set_clock(NULL);
+  canvas_free(&cv);
+}
 
 static int non_black(void) {
   int n = 0;
@@ -70,7 +83,8 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Interaggregate",
                                          "LMorph",
                                          "Wormhole",
-                                         "Truchet"};
+                                         "Truchet",
+                                         "UnknownPleasures"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -399,6 +413,7 @@ static const uint64_t kBaseline[] = {
     0x7118310d47ee4197ull, /* LMorph: taken after looking at the frames */
     0xe73572fd64eef48full, /* Wormhole: taken after looking at the frames */
     0x7dd7d7130551c261ull, /* Truchet: taken after looking at the frames */
+    0x24da09e0c4177305ull, /* UnknownPleasures: taken after looking at the frames, with the fake clock */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -718,6 +733,18 @@ void test_gears_registers_a_shorter_pause(void) {
   TEST_ASSERT_TRUE_MESSAGE(found, "Gears does not override *delay");
 }
 
+/* UnknownPleasures holds 40 rows of two display lists each, and the context. */
+void test_unknownpleasures_start_and_stop_do_not_leak(void) {
+  const int unk = index_of("UnknownPleasures");
+  TEST_ASSERT_TRUE(unk >= 0);
+  srandom(1);
+  for (int i = 0; i < 3; i++) start_step_and_stop_gl_hack(unk, "UnknownPleasures");
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  for (int i = 0; i < 40; i++) start_step_and_stop_gl_hack(unk, "UnknownPleasures");
+  const size_t after = __sanitizer_get_current_allocated_bytes();
+  TEST_ASSERT_TRUE_MESSAGE(after < before + 64 * 1024, "allocated bytes grew");
+}
+
 /* A tripwire, not a proof. On the host this runs unoptimised under
  * AddressSanitizer, which inflates frames several times over: Gears measures
  * 21 KB here against a 2.4 KB high-water mark on the board (the loop task has
@@ -850,6 +877,7 @@ int main(void) {
   RUN_TEST(test_morph3d_start_and_stop_do_not_leak);
   RUN_TEST(test_morph3d_registers_a_shorter_pause);
   RUN_TEST(test_cubicgrid_start_and_stop_do_not_leak);
+  RUN_TEST(test_unknownpleasures_start_and_stop_do_not_leak);
   RUN_TEST(test_cubicgrid_registers_a_smaller_grid);
   RUN_TEST(test_forest_stops_do_not_leak);
   RUN_TEST(test_laser_stops_do_not_leak);

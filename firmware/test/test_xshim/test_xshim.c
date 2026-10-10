@@ -2328,6 +2328,18 @@ void test_ease_none_returns_its_input(void) {
   TEST_ASSERT_TRUE(ease(EASE_NONE, 7.0) == 7.0);
 }
 
+static double fake_now;
+static double fake_clock(void) { return fake_now += 0.25; }
+
+void test_a_replacement_clock_is_used_until_it_is_cleared(void) {
+  fake_now = 100.0;
+  xshim_set_clock(fake_clock);
+  TEST_ASSERT_TRUE(double_time() == 100.25);
+  TEST_ASSERT_TRUE(double_time() == 100.5);
+  xshim_set_clock(NULL);
+  TEST_ASSERT_TRUE_MESSAGE(double_time() > 1e9, "real clock not restored");
+}
+
 void test_double_time_is_wall_clock_seconds_and_moves_forward(void) {
   double a = double_time();
   usleep(20000);
@@ -2351,6 +2363,7 @@ int main(void) {
   RUN_TEST(test_ease_in_sine_and_out_sine_are_the_two_halves);
   RUN_TEST(test_ease_none_returns_its_input);
   RUN_TEST(test_double_time_is_wall_clock_seconds_and_moves_forward);
+  RUN_TEST(test_a_replacement_clock_is_used_until_it_is_cleared);
   RUN_TEST(test_release_hook_runs_once_with_the_display_and_is_then_cleared);
   RUN_TEST(test_image_data_to_pixmap_makes_a_colour_pixmap_and_a_mask);
   RUN_TEST(test_image_data_to_pixmap_rejects_a_blob_that_is_not_ours);

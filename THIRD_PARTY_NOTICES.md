@@ -72,6 +72,7 @@ implied warranty.
 | `firmware/src/hacks/deluxe/deluxe.c` | Copyright (c) 1999-2018 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/wormhole/wormhole.c` | Copyright (c) 1992-2011 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/truchet/truchet.c` | Copyright (c) 1998 Adrian Likins | jwz permission notice (above) |
+| `firmware/src/hacks/unknownpleasures/unknownpleasures.c` | Copyright (c) 2013-2025 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/lmorph/lmorph.c` | Copyright (c) 1993-1999 Sverre H. Huseby and Glenn T. Lines | jwz permission notice (above) |
 | `firmware/src/hacks/interaggregate/interaggregate.c` | Copyright (c) 1997, 1998, 2002 Jamie Zawinski; InterAggregate by dagraz, based on j.tarbell's Intersection Aggregate (complexification.net, 2004) | jwz permission notice (above) |
 | `firmware/src/hacks/ifs/ifs.c` | Copyright © Chris Le Sueur and Robby Griffin, 2005-2006 | MIT |

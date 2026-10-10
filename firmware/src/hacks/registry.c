@@ -81,6 +81,12 @@ extern const HackEntry interaggregate_hack;
 extern const HackEntry lmorph_hack;
 extern const HackEntry wormhole_hack;
 extern const HackEntry truchet_hack;
+/* The xlockmore framework reads ncolors and cycles, which the hack does not
+ * define. Its own 30 ms pause is the gap after each frame, as for Gears. */
+static const char *const kUnknownPleasuresOverrides[] = {
+    "*ncolors: 64", "*cycles: 0", "*delay: 10000", NULL};
+XLOCKMORE_HACK_WITH(unknownpleasures, "UnknownPleasures",
+                    kUnknownPleasuresOverrides);
 
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
@@ -124,5 +130,6 @@ const HackEntry *const g_hacks[] = {
     &interaggregate_hack,
     &lmorph_hack,
     &wormhole_hack,
-    &truchet_hack};
+    &truchet_hack,
+    &unknownpleasures_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);

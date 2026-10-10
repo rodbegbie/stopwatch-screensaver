@@ -452,6 +452,30 @@ void test_line_width_is_accepted_and_changes_nothing(void) {
   TEST_ASSERT_EQUAL_MEMORY(reference, cv.px, sizeof reference);
 }
 
+static void compile_a_quad_strip_into(GLuint list) {
+  glNewList(list, GL_COMPILE);
+  glBegin(GL_QUAD_STRIP);
+  for (int i = 0; i < 100; i++) {
+    glVertex3f(i / 100.0f, 0, 0.5f);
+    glVertex3f(i / 100.0f, 0, 0);
+  }
+  glEnd();
+  glEndList();
+}
+
+/* UnknownPleasures rebuilds one row's lists every tick under the same names.
+ * TinyGL must free the old contents, or the board runs out of PSRAM. */
+void test_recompiling_a_list_under_the_same_name_does_not_grow_memory(void) {
+  open_flat_red_scene();
+  GLuint list = glGenLists(1);
+  TEST_ASSERT_NOT_EQUAL_UINT(0, list);
+  compile_a_quad_strip_into(list);
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  for (int i = 0; i < 300; i++) compile_a_quad_strip_into(list);
+  const size_t after = __sanitizer_get_current_allocated_bytes();
+  TEST_ASSERT_TRUE_MESSAGE(after <= before + 4096, "memory grew");
+}
+
 void test_the_device_is_never_turned(void) {
   TEST_ASSERT_TRUE(current_device_rotation() == 0.0);
 }
@@ -459,6 +483,7 @@ void test_the_device_is_never_turned(void) {
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_the_device_is_never_turned);
+  RUN_TEST(test_recompiling_a_list_under_the_same_name_does_not_grow_memory);
   RUN_TEST(test_line_width_is_accepted_and_changes_nothing);
   RUN_TEST(test_draw_arrays_honours_a_byte_stride);
   RUN_TEST(test_a_display_list_keeps_the_arrays_it_recorded);
