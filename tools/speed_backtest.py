@@ -30,6 +30,7 @@ HOLDOUT = frozenset(
     | {"forest", "laser", "lissie", "rotor", "scooter", "grav", "euler2d"}
     | {"anemone", "anemotaxis", "compass", "fuzzyflakes", "ifs"}
     | {"interaggregate", "lmorph", "wormhole", "halftone"}
+    | {"truchet"}
 )
 
 class BacktestError(Exception):

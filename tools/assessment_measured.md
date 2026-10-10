@@ -1,6 +1,6 @@
 ## Measured on the device
 
-Fifty-one hacks have been run so far (default settings, 466×466 canvas
+Fifty-two hacks have been run so far (default settings, 466×466 canvas
 pushed to the display every frame, canvas held in PSRAM). The firmware times
 each frame in three parts, averaged over 5 seconds: **step** is the hack's own
 draw call, **push** is sending the canvas to the display, and **wait** is what
@@ -73,6 +73,16 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | LMorph | 14.8-17.2 | 24.7-34.3 ms | 32.5 ms | 0 ms | none measurable |
 | Wormhole | 17.6-17.8 | 22.4-23.1 ms | 32.4 ms | 0 ms | about 32 KB |
 | Halftone | 4.5-5.2 | 163-193 ms | 32.5 ms | 0 ms | none measurable |
+| Truchet | 0.8-1.0 | 652-900 ms | 34.4-36.1 ms | 404-406 ms | about 1.5 MB |
+| Truchet (scrolling mode) | 7.2-8.0 | 19.8-36.0 ms | 31.5-39.9 ms | 66-75 ms | about 1.5 MB |
+
+Truchet's rows are from a pinned build (2026-10-10). Each start picks one of
+twelve modes at random. The tiling row is two windows from one start (650 to
+900 ms per tiling, then its 400 ms pause), and the scrolling row is fourteen
+windows from another (each step is a 466 by 466 copy from its pixmap, then a
+100 ms pause). Its 866 by 866 pixmap lowers free PSRAM by about 1.5 MB, and
+the reading is the same on every visit of a `ROTATE_SECONDS=5` capture of
+three and a half laps.
 
 Each batch row is the registered build: Euler2D with 512 particles, Anemone
 with 64 arms, FuzzyFlakes at density 3, LMorph without its pause, and
@@ -111,7 +121,8 @@ Rod looked at all fifteen registered hacks of the batch on the device on
 2026-10-10 and found them performant and in line with the same hacks on other
 platforms (Anemotaxis was missing from his written list; he confirmed after
 that he had looked at it). All fifteen stay in the rotation, Forest included.
-Halftone stays out (issue #57) and Truchet is not ported (issue #58).
+Halftone stays out (issue #57). Truchet, the batch's last S hack, was ported
+later, once primitives could draw into pixmaps (issues #58 and #61).
 
 Maze's row is 26 five-second readings over 160 seconds, taken on a build that
 includes the overlay stamping. Its steps are cheap, and its frame rate is set
