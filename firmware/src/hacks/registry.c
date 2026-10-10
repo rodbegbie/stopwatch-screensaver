@@ -80,6 +80,7 @@ extern const HackEntry ifs_hack;
 extern const HackEntry interaggregate_hack;
 extern const HackEntry lmorph_hack;
 extern const HackEntry wormhole_hack;
+extern const HackEntry truchet_hack;
 
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
@@ -122,5 +123,6 @@ const HackEntry *const g_hacks[] = {
     &ifs_hack,
     &interaggregate_hack,
     &lmorph_hack,
-    &wormhole_hack};
+    &wormhole_hack,
+    &truchet_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);

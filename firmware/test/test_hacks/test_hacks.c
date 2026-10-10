@@ -69,7 +69,8 @@ void test_registry_lists_hacks_in_order(void) {
                                          "IFS",
                                          "Interaggregate",
                                          "LMorph",
-                                         "Wormhole"};
+                                         "Wormhole",
+                                         "Truchet"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -397,6 +398,7 @@ static const uint64_t kBaseline[] = {
     0x78c62badb21d8dddull, /* Interaggregate: after looking at the frames, pixels swapped */
     0x7118310d47ee4197ull, /* LMorph: taken after looking at the frames */
     0xe73572fd64eef48full, /* Wormhole: taken after looking at the frames */
+    0x7dd7d7130551c261ull, /* Truchet: taken after looking at the frames */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -793,6 +795,11 @@ void test_wormhole_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("Wormhole", 0);
 }
 
+/* Truchet holds an 866 by 866 pixmap (1.5 MB) for as long as it runs. */
+void test_truchet_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Truchet", 0);
+}
+
 /* Each of these runs below 15 fps at upstream's defaults on the board: Euler2D
  * moves 1024 particles, Anemone grows 128 arms, FuzzyFlakes drops a flake
  * density of 5, and LMorph pauses 70 ms between frames. */
@@ -859,6 +866,7 @@ int main(void) {
   RUN_TEST(test_interaggregate_stops_do_not_leak);
   RUN_TEST(test_lmorph_stops_do_not_leak);
   RUN_TEST(test_wormhole_stops_do_not_leak);
+  RUN_TEST(test_truchet_stops_do_not_leak);
   RUN_TEST(test_slow_hacks_register_their_lighter_settings);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
