@@ -48,6 +48,9 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Morph3D (dirty rectangle, `*delay: 10000`) | 14.4-15.2 | 54-58 ms | 2.0-9.2 ms | 2.6-9.4 ms | not re-measured |
 | Gears (dirty rectangle, first layout after boot) | 10.6-13.0 | 44-63 ms | 4.4-12.1 ms | 20-29 ms | not re-measured |
 | Gears (dirty rectangle, `*delay: 10000`, first layout after boot) | 12.6-17.6 | 46-65 ms | 5.5-13.5 ms | 0-5.8 ms | not re-measured |
+| Morph3D, five shapes (final code, overnight, 23 starts) | 11.6-31.2 | 20-75 ms | 6.3-9.1 ms | 2.6-5.2 ms | 0 (PSRAM identical every visit) |
+| CubicGrid (final code, overnight, 37 windows) | 11.2-14.0 | 38-53 ms | 32.1-36.1 ms | 0 ms | 0 (PSRAM identical every visit) |
+| Gears (final code, overnight, 29 windows, many layouts) | 4.0-19.8 | 39-241 ms | 6.1-23.7 ms | 0-5.2 ms | 0 (PSRAM identical; heap falls 388 B a lap, its known leak) |
 | CubicGrid (ticks 30, 27,000 points; not registered) | 5.6-6.0 | 137-148 ms | 32.3-36.0 ms | 0 ms | 1.66 MB more than Morph3D (display list) |
 | CubicGrid (ticks 20, 8,000 points; registered) | 11.2-12.4 | 48-52 ms | 32.2-36.1 ms | 0 ms | 0.49 MB more than Morph3D (display list) |
 | Celtic | 1.0-20.4 | 29-1025 ms | 0.1-5.5 ms | 7.9-928 ms | none measurable |

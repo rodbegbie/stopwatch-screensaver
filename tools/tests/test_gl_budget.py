@@ -45,6 +45,27 @@ def test_predict_with_nothing_drawn_is_the_fixed_cost():
     assert gb.predict_ms(nothing) == gb.MODEL["clear_ms"] + gb.MODEL["push_ms"]
 
 
+def test_lighting_is_charged_for_each_enabled_light():
+    """Morph3D has two lights; the model's lit cost was measured with one."""
+    model = {
+        "clear_ms": 0,
+        "push_ms": 0,
+        "vertex_us": 0,
+        "lit_vertex_us": 2,
+        "pixel_ns": 0,
+    }
+    counts = gb.FrameCounts(
+        vertices=1000,
+        lit_vertices=1000,
+        triangles=0,
+        lines=0,
+        points=0,
+        pixels=0,
+        light_terms=2000,
+    )
+    assert gb.predict_ms(counts, model) == pytest.approx(4.0)
+
+
 def test_each_term_adds_its_own_cost():
     model = {
         "clear_ms": 0,
@@ -54,7 +75,13 @@ def test_each_term_adds_its_own_cost():
         "pixel_ns": 10,
     }
     counts = gb.FrameCounts(
-        vertices=1000, lit_vertices=500, triangles=0, lines=0, points=0, pixels=100000
+        vertices=1000,
+        lit_vertices=500,
+        triangles=0,
+        lines=0,
+        points=0,
+        pixels=100000,
+        light_terms=500,
     )
     assert gb.predict_ms(counts, model) == pytest.approx(6.0)
 
@@ -195,6 +222,12 @@ def test_report_shows_the_counts_and_a_prediction():
     ms = gb.predict_ms(measured_row()["counts"])
     assert f"{ms:.0f}" in report
     assert f"{gb.fps(ms):.1f}" in report
+
+
+def test_an_error_row_has_one_cell_for_each_header():
+    report = gb.render_report([{"name": "bad", "seed": 1, "error": "x"}])
+    header, _, row = report.splitlines()[:3]
+    assert row.count("|") == header.count("|")
 
 
 def test_report_shows_an_error_instead_of_numbers():
@@ -349,3 +382,18 @@ def test_a_line_has_the_same_box_whichever_way_it_runs():
 def test_a_clipped_line_is_assumed_to_reach_anywhere():
     draw = "glBegin(GL_LINES); glVertex3f(-3,0,0); glVertex3f(3,0,0); glEnd();"
     assert coverage(draw).bbox == pytest.approx(1.0, abs=0.01)
+
+
+@needs_cc
+def test_each_enabled_light_adds_a_light_term_per_lit_vertex():
+    init = "glEnable(GL_LIGHTING); glEnable(GL_LIGHT0); glEnable(GL_LIGHT1);"
+    draw = f"glBegin(GL_TRIANGLES); glNormal3f(0,0,1); {TRIANGLE} glEnd();"
+    counts = run(init=init, draw=draw)["counts"]
+    assert (counts.vertices, counts.lit_vertices, counts.light_terms) == (3, 3, 6)
+
+
+@needs_cc
+def test_a_lit_vertex_with_no_light_enabled_has_no_light_terms():
+    draw = f"glBegin(GL_TRIANGLES); glNormal3f(0,0,1); {TRIANGLE} glEnd();"
+    counts = run(init="glEnable(GL_LIGHTING);", draw=draw)["counts"]
+    assert (counts.lit_vertices, counts.light_terms) == (3, 0)

@@ -71,6 +71,8 @@ class FrameCounts:
     lines: float
     points: float
     pixels: float
+    # Enabled lights summed over lit vertices: each light is shaded separately.
+    light_terms: float = 0.0
 
 
 def predict_ms(counts: FrameCounts, model: dict[str, float] = MODEL) -> float:
@@ -78,7 +80,7 @@ def predict_ms(counts: FrameCounts, model: dict[str, float] = MODEL) -> float:
         model["clear_ms"]
         + model["push_ms"]
         + counts.vertices * model["vertex_us"] / 1e3
-        + counts.lit_vertices * model["lit_vertex_us"] / 1e3
+        + counts.light_terms * model["lit_vertex_us"] / 1e3
         + counts.pixels * model["pixel_ns"] / 1e6
     )
 
@@ -95,14 +97,15 @@ COUNTER_NAMES = (
     "lines",
     "points",
     "pixels",
+    "light_terms",
 )
 
-COUNTS_DECLARATION = "extern double gl_budget_counts[6];\n"
+COUNTS_DECLARATION = "extern double gl_budget_counts[7];\n"
 
 # Adds to the fill count the screen area of a triangle about to be
 # rasterised, overdraw included, capped at the framebuffer.
 TRIANGLE_HELPER = """\
-extern double gl_budget_counts[6];
+extern double gl_budget_counts[7];
 
 static void gl_budget_triangle(GLContext* c, GLVertex* p0, GLVertex* p1,
                                GLVertex* p2) {
@@ -136,9 +139,12 @@ INSTRUMENTATION = (
         "src/vertex.c",
         VERTEX_ENTRY,
         1,
-        VERTEX_ENTRY
-        + "\tgl_budget_counts[0]++;\n"
-        + "\tif (c->lighting_enabled) gl_budget_counts[1]++;\n",
+        VERTEX_ENTRY + "\tgl_budget_counts[0]++;\n" + "\tif (c->lighting_enabled) {\n"
+        "\t\tGLLight* gl_budget_l;\n"
+        "\t\tgl_budget_counts[1]++;\n"
+        "\t\tfor (gl_budget_l = c->first_light; gl_budget_l; gl_budget_l = gl_budget_l->next)\n"
+        "\t\t\tgl_budget_counts[6]++;\n"
+        "\t}\n",
     ),
     (
         "src/clip.c",
@@ -377,7 +383,7 @@ def render_report(rows: list[dict]) -> str:
                 ms = predict_ms(c)
                 prediction = f"{ms:.0f} | {fps(ms):.1f}"
         else:
-            numbers = " | ".join("-" for _ in COUNTER_NAMES)
+            numbers = " | ".join("-" for _ in range(6))
             prediction = "- | -"
         lines.append(
             f"| {row['name']} | {row['seed']} | {numbers} | {cover} | {prediction} "
