@@ -167,6 +167,42 @@ the same hack, 27,000 points at 170 to 180 ms and 8,000 at 80 to 88 ms, give
 about 4.7 us a point, close to the model's 4 us a vertex; the points are
 cheap, as the model assumed.
 
+## Where a frame goes (CubicGrid profile)
+
+After the clip-epsilon fix (#43), CubicGrid's step at 8,000 points is 46.7 ms
+in its first window. Temporary early returns in TinyGL, built only for the
+experiment and never committed, split it on the board (each boot is
+deterministic, so windows compare directly):
+
+| Part | Time | Share |
+| --- | --- | --- |
+| Colour clear (a build with no colour clear ran at 34.0 ms) | 12.7 ms | 27% |
+| List read and op dispatch, the hack's own work (the rest of the 22.3 ms floor left when `glopVertex` returns at once) | about 9.6 ms | 21% |
+| Vertex pipeline: transform, clip code, projection (35.6 ms with `gl_draw_point` also skipped, less the floor) | 13.3 ms, about 1.7 us a vertex | 28% |
+| `gl_draw_point` | 11.1 ms, about 1.4 us a point | 24% |
+
+What this says for #43:
+
+- **`gl_shade_vertex` has no `double` work left on the per-vertex path** for
+  these hacks. After the epsilon fix the only soft-double references in
+  TinyGL are `glFrustum`, `glopLight`, `glopRotate`, `glClearDepth` and a debug
+  printer (all per call), and two compares against `1E-3` in `gl_shade_vertex`
+  that run only for positional lights and specular. Gears and Morph3D use
+  directional lights with specular off, so they never run. That patch would be
+  a guess without a hack to time it on.
+- **CubicGrid asks only for a colour clear**, so skipping a z clear would save
+  nothing there, and Gears and Morph3D need theirs for depth test.
+- **The colour clear runs at about 34 MB/s** (434 KB in 12.7 ms), and the list
+  is probably also read from PSRAM at about that rate, which is a guess, not a
+  measurement. These costs are memory bandwidth, not arithmetic.
+- **Untried, and the largest idea on the table:** a dirty-rectangle for GL.
+  Track the bounding box of everything drawn, clear only that box and push only
+  its rows. Morph3D's flower is about 70 px across and wanders over a 250 px
+  range, so it might cut its clear from about 25 to 7 ms and its push from 33 to
+  about 18 ms (about 9 to 13 fps by arithmetic, not measured). CubicGrid's
+  points span the whole screen, so it would gain nothing. Overlapping the push
+  with the next frame is the other big lever (see #43).
+
 ## What this does not tell us
 
 - **Only Gears is calibrated**, although three hacks now agree with it. The fit
