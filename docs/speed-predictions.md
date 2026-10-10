@@ -131,3 +131,23 @@ does.
   rate unchanged. Two of its twelve random modes scroll instead, with 100 ms
   between scroll steps, and each scroll step is only the copy. The median
   across windows is the number to compare.
+
+### Truchet results
+
+| Mode | Predicted | Device step | Device / host |
+| --- | --- | --- | --- |
+| Tiling | 99-2,478 ms | 652-900 ms (two windows) | 470 |
+| Scrolling | not predicted | 19.8-36.0 ms (fourteen windows) | - |
+
+- The range held: the tiling step is inside it, as the high band said.
+- "The low end of the range" did not. At 470 times the host time, the step
+  is in the middle of the 60 to 1,500 spread, not near the 60 to 100 that the
+  low end would mean. Truchet has few `double`s, so the cost is probably
+  drawing rather than maths; the wide arcs go through the general stroker,
+  as a polyline of wide segments. That split hasn't been measured.
+- The step is longer than Truchet's 400 ms pause, so a new tiling appears
+  about once a second, not two and a half times a second.
+- Each scroll step is just the 466 by 466 copy from PSRAM, and runs at 7.2 to
+  8.0 fps once Truchet's 100 ms pause is added.
+- Only two tiling windows were measured, from one boot. The backtest uses
+  them as Truchet's held-out point.
