@@ -1,0 +1,1 @@
+Yes, open a PR and take a look at gl_shade_vertex.  Same rules apply - flash the device all you like to get the data you need
