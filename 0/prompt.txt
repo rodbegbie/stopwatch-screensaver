@@ -1,0 +1,13 @@
+I've just looked at them.  Can confirm that the following all look performant and in line with the hacks running on other platforms: Forest, Laser, Lissie, Rotor, Scooter, Grav, Euler2D, Anemone, Compass, Fuzzy Flakes, IFS, Interaggregate, LMorph, Wormhole.  Keep them all for now.
+
+Thanks for filing the Truchet ticket.  I'm definitely interested in getting that one working. I'm curious if the HAVE_JWXYZ is a clue to an approach: We could maybe investigate the jwxyz cross-platform library and see if writing a version of it that works for the ESP32-S3 device is an approach worth taking.
+
+Halftone is also interesting -- let's file a ticket to come back to it too, if you haven't already.
+
+Is there any work you think we should do before you open a PR for this?
+
+---
+
+File an investigation ticket for jwxyz.  I think a spike on it would be a good use of time.
+
+I approve the next steps.  Do all five, in that order.
