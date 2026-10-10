@@ -27,6 +27,11 @@ void glshim_close(void);
 int glshim_is_open(void);
 
 Bool glXMakeCurrent(Display *dpy, GLXDrawable drawable, GLXContext ctx);
+/* Called with every box (clamped, non-empty) that TinyGL reports it has drawn
+ * in, in canvas pixels. NULL in the firmware; tools/gl_budget.py sets it so
+ * that it measures exactly the boxes the dirty rectangle sees. */
+extern void (*glshim_box_observer)(int x0, int y0, int x1, int y1);
+
 /* TinyGL has drawn into the canvas already; this marks what it drew since the
  * last swap, and what the last clear erased, dirty. */
 void glXSwapBuffers(Display *dpy, GLXDrawable drawable);

@@ -112,3 +112,23 @@ def test_clip_epsilon_is_a_float_literal(patched):
     zgl = patched["src/zgl.h"]
     assert "#define CLIP_EPSILON (1E-5f)" in zgl
     assert "#define CLIP_EPSILON (1E-5)\n" not in zgl
+
+
+def test_every_writer_of_the_canvas_reports_its_box(patched):
+    """The dirty rectangle must see everything TinyGL draws: triangles, lines,
+    points, text, and glDrawPixels (which cannot run on a 64-bit host)."""
+    assert "glshim_note_box(0, 0, 100000, 100000);" in patched["src/zraster.c"]
+    assert "glshim_note_box(x % c->zb->xsize" in patched["src/ztext.c"]
+    clip = patched["src/clip.c"]
+    for site in ("glshim_note_triangle(p0, p1, p2);", "glshim_note_box(lx - 1, ly - 1"):
+        assert site in clip
+
+
+def test_the_line_box_is_ordered_before_its_margin_is_added(patched):
+    """p1 can be right of or below p2: `p1.x - 1` to `p2.x + 1` then shrinks the
+    box by two pixels instead of growing it."""
+    clip = patched["src/clip.c"]
+    line = clip[clip.index("void gl_draw_line") :]
+    line = line[: line.index("}\n\telse") if "}\n\telse" in line else 600]
+    assert "p1->zp.x < p2->zp.x ? p1->zp.x : p2->zp.x" in line
+    assert "p1->zp.x - 1" not in line

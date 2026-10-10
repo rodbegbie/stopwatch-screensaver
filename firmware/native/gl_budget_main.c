@@ -3,6 +3,7 @@
 #include <time.h>
 
 #include "core/canvas.h"
+#include "glshim/glshim.h"
 #include "hacks/registry.h"
 #include "runner/hack_runner.h"
 
@@ -12,6 +13,15 @@
  * private copy of TinyGL built by that tool. */
 double gl_budget_counts[6];
 double gl_budget_bbox[4]; /* xmin, ymin, xmax, ymax of what a frame drew */
+
+/* The boxes come from glshim itself, after its clamping and ordering, so this
+ * measures what the firmware's dirty rectangle sees and not a copy of its rules. */
+static void on_box(int x0, int y0, int x1, int y1) {
+  if (x0 < gl_budget_bbox[0]) gl_budget_bbox[0] = x0;
+  if (y0 < gl_budget_bbox[1]) gl_budget_bbox[1] = y0;
+  if (x1 > gl_budget_bbox[2]) gl_budget_bbox[2] = x1;
+  if (y1 > gl_budget_bbox[3]) gl_budget_bbox[3] = y1;
+}
 
 enum { WARMUP = 10 };
 
@@ -60,6 +70,7 @@ int main(int argc, char **argv) {
     fprintf(stderr, "could not start the hack\n");
     return 1;
   }
+  glshim_box_observer = on_box;
   take_bbox();
   Box prev = {1e9, 1e9, -1e9, -1e9};
   for (int i = 0; i < WARMUP; i++) {

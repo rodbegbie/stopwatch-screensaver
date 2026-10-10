@@ -14,6 +14,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "core/canvas.h"
 #include "zbuffer.h"
@@ -59,30 +60,61 @@ static void reset_dirty_rectangle(void) {
   g_swap_erased = g_canvas ? whole_canvas() : kEmptyBox;
 }
 
+/* Puts a box in order, clamps it to a w by h canvas and stores it as
+ * {x0, y0, x1, y1}; returns 0 if nothing is left. The one rule for what a drawn
+ * primitive covers: the dirty rectangle and, through the observer below,
+ * tools/gl_budget.py both get its result. */
+static int glshim_clamp_box(GLint x0, GLint y0, GLint x1, GLint y1, int w, int h,
+                            int out[4]) {
+  if (x0 > x1) {
+    const GLint t = x0;
+    x0 = x1;
+    x1 = t;
+  }
+  if (y0 > y1) {
+    const GLint t = y0;
+    y0 = y1;
+    y1 = t;
+  }
+  if (x0 < 0) x0 = 0;
+  if (y0 < 0) y0 = 0;
+  if (x1 > w - 1) x1 = w - 1;
+  if (y1 > h - 1) y1 = h - 1;
+  if (x0 > x1 || y0 > y1) return 0;
+  out[0] = x0;
+  out[1] = y0;
+  out[2] = x1;
+  out[3] = y1;
+  return 1;
+}
+
+void (*glshim_box_observer)(int x0, int y0, int x1, int y1);
+
 /* Called by TinyGL for everything it draws, in canvas pixels. */
 void glshim_note_box(GLint x0, GLint y0, GLint x1, GLint y1) {
   if (!g_zb) return;
-  Box b = {x0, y0, x1, y1};
-  const Box all = whole_canvas();
-  if (b.x0 < all.x0) b.x0 = all.x0;
-  if (b.y0 < all.y0) b.y0 = all.y0;
-  if (b.x1 > all.x1) b.x1 = all.x1;
-  if (b.y1 > all.y1) b.y1 = all.y1;
+  int c[4];
+  if (!glshim_clamp_box(x0, y0, x1, y1, g_canvas->w, g_canvas->h, c)) return;
+  const Box b = {c[0], c[1], c[2], c[3]};
+  if (glshim_box_observer) glshim_box_observer(c[0], c[1], c[2], c[3]);
   box_add(&g_color_box, b);
   box_add(&g_z_box, b);
   box_add(&g_swap_drawn, b);
 }
 
-/* Two pixels at a time: `p` is 16-bit and not always 4-byte aligned. */
+/* Two pixels at a time. `p` is 16-bit and not always 4-byte aligned, so one
+ * pixel is written first if needed; memcpy then writes each pair without
+ * reading the memory through a differently typed pointer (strict aliasing),
+ * and the alignment hint lets it compile to one 32-bit store. */
 static void fill_pixels(uint16_t *p, uint16_t v, int n) {
   if (n > 0 && ((uintptr_t)p & 2)) {
     *p++ = v;
     n--;
   }
-  uint32_t *q = (uint32_t *)p;
   const uint32_t pair = ((uint32_t)v << 16) | v;
-  for (; n >= 2; n -= 2) *q++ = pair;
-  if (n) *(uint16_t *)q = v;
+  uint16_t *a = __builtin_assume_aligned(p, 4);
+  for (; n >= 2; n -= 2, a += 2) memcpy(a, &pair, sizeof pair);
+  if (n) *a = v;
 }
 
 void glshim_clear(ZBuffer *zb, GLint clear_z, GLint z, GLint clear_color,

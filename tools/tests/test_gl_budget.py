@@ -315,3 +315,37 @@ def test_a_full_screen_triangle_covers_everything():
 def test_a_hack_that_draws_nothing_has_empty_coverage():
     cov = coverage("")
     assert (cov.bbox, cov.clear, cov.push) == (0, 0, 0)
+
+
+@needs_cc
+def test_a_point_covers_what_the_firmware_gives_it():
+    """glPointSize(5) at the centre: the firmware's box is the point's size plus
+    one pixel each side, 13 pixels square (glshim_note_box)."""
+    draw = "glPointSize(5); glBegin(GL_POINTS); glVertex3f(0, 0, 0); glEnd();"
+    cov = coverage(draw)
+    assert cov.bbox == pytest.approx(13 * 13 / (466 * 466), rel=0.05)
+
+
+@needs_cc
+def test_a_triangle_wholly_off_screen_covers_nothing():
+    draw = (
+        "glBegin(GL_TRIANGLES); glVertex3f(3,3,0); glVertex3f(4,3,0);"
+        "glVertex3f(3,4,0); glEnd();"
+    )
+    assert coverage(draw).bbox == 0
+
+
+@needs_cc
+def test_a_line_has_the_same_box_whichever_way_it_runs():
+    def line(a, b):
+        return f"glBegin(GL_LINES); glVertex3f({a}); glVertex3f({b}); glEnd();"
+
+    forward = coverage(line("-.5f,-.5f,0", ".5f,.5f,0"))
+    backward = coverage(line(".5f,.5f,0", "-.5f,-.5f,0"))
+    assert forward.bbox == backward.bbox > 0
+
+
+@needs_cc
+def test_a_clipped_line_is_assumed_to_reach_anywhere():
+    draw = "glBegin(GL_LINES); glVertex3f(-3,0,0); glVertex3f(3,0,0); glEnd();"
+    assert coverage(draw).bbox == pytest.approx(1.0, abs=0.01)

@@ -97,31 +97,12 @@ COUNTER_NAMES = (
     "pixels",
 )
 
-COUNTS_DECLARATION = (
-    "extern double gl_budget_counts[6];\n"
-    "extern double gl_budget_bbox[4]; /* xmin, ymin, xmax, ymax this frame */\n"
-)
+COUNTS_DECLARATION = "extern double gl_budget_counts[6];\n"
 
 # Adds to the fill count the screen area of a triangle about to be
 # rasterised, overdraw included, capped at the framebuffer.
 TRIANGLE_HELPER = """\
 extern double gl_budget_counts[6];
-extern double gl_budget_bbox[4];
-
-static void gl_budget_cover(GLint x0, GLint y0, GLint x1, GLint y1) {
-	GLContext* c = gl_get_context();
-	double w = c->zb->xsize - 1, h = c->zb->ysize - 1;
-	double lo_x = x0 < x1 ? x0 : x1, hi_x = x0 < x1 ? x1 : x0;
-	double lo_y = y0 < y1 ? y0 : y1, hi_y = y0 < y1 ? y1 : y0;
-	if (lo_x < 0) lo_x = 0;
-	if (lo_y < 0) lo_y = 0;
-	if (hi_x > w) hi_x = w;
-	if (hi_y > h) hi_y = h;
-	if (lo_x < gl_budget_bbox[0]) gl_budget_bbox[0] = lo_x;
-	if (lo_y < gl_budget_bbox[1]) gl_budget_bbox[1] = lo_y;
-	if (hi_x > gl_budget_bbox[2]) gl_budget_bbox[2] = hi_x;
-	if (hi_y > gl_budget_bbox[3]) gl_budget_bbox[3] = hi_y;
-}
 
 static void gl_budget_triangle(GLContext* c, GLVertex* p0, GLVertex* p1,
                                GLVertex* p2) {
@@ -131,17 +112,6 @@ static void gl_budget_triangle(GLContext* c, GLVertex* p0, GLVertex* p1,
 	if (area < 0) area = -area;
 	gl_budget_counts[2]++;
 	gl_budget_counts[5] += area < screen ? area : screen;
-	{
-		GLint lx = p0->zp.x < p1->zp.x ? p0->zp.x : p1->zp.x;
-		GLint hx = p0->zp.x < p1->zp.x ? p1->zp.x : p0->zp.x;
-		GLint ly = p0->zp.y < p1->zp.y ? p0->zp.y : p1->zp.y;
-		GLint hy = p0->zp.y < p1->zp.y ? p1->zp.y : p0->zp.y;
-		if (p2->zp.x < lx) lx = p2->zp.x;
-		if (p2->zp.x > hx) hx = p2->zp.x;
-		if (p2->zp.y < ly) ly = p2->zp.y;
-		if (p2->zp.y > hy) hy = p2->zp.y;
-		gl_budget_cover(lx, ly, hx, hy);
-	}
 }
 
 """
@@ -175,19 +145,13 @@ INSTRUMENTATION = (
         "void gl_draw_point(GLVertex* p0) {\n",
         1,
         TRIANGLE_HELPER
-        + "void gl_draw_point(GLVertex* p0) {\n\tgl_budget_counts[4]++;\n"
-        "\tif (p0->clip_code == 0)\n"
-        "\t\tgl_budget_cover(p0->zp.x - 3, p0->zp.y - 3, p0->zp.x + 3, p0->zp.y + 3);\n",
+        + "void gl_draw_point(GLVertex* p0) {\n\tgl_budget_counts[4]++;\n",
     ),
     (
         "src/clip.c",
         "void gl_draw_line(GLVertex* p1, GLVertex* p2) {\n",
         1,
-        "void gl_draw_line(GLVertex* p1, GLVertex* p2) {\n\tgl_budget_counts[3]++;\n"
-        "\tif ((p1->clip_code | p2->clip_code) == 0)\n"
-        "\t\tgl_budget_cover(p1->zp.x, p1->zp.y, p2->zp.x, p2->zp.y);\n"
-        "\telse /* clipped: assume it can reach anywhere */\n"
-        "\t\tgl_budget_cover(0, 0, 100000, 100000);\n",
+        "void gl_draw_line(GLVertex* p1, GLVertex* p2) {\n\tgl_budget_counts[3]++;\n",
     ),
     (
         "src/clip.c",

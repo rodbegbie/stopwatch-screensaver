@@ -87,10 +87,15 @@ DIRTY_POINT = """void gl_draw_point(GLVertex* p0) {
 """
 
 DIRTY_LINE = """void gl_draw_line(GLVertex* p1, GLVertex* p2) {
-	if ((p1->clip_code | p2->clip_code) == 0)
-		glshim_note_box(p1->zp.x - 1, p1->zp.y - 1, p2->zp.x + 1, p2->zp.y + 1);
-	else /* clipped: it may reach anywhere */
+	if ((p1->clip_code | p2->clip_code) == 0) {
+		GLint lx = p1->zp.x < p2->zp.x ? p1->zp.x : p2->zp.x;
+		GLint hx = p1->zp.x < p2->zp.x ? p2->zp.x : p1->zp.x;
+		GLint ly = p1->zp.y < p2->zp.y ? p1->zp.y : p2->zp.y;
+		GLint hy = p1->zp.y < p2->zp.y ? p2->zp.y : p1->zp.y;
+		glshim_note_box(lx - 1, ly - 1, hx + 1, hy + 1);
+	} else { /* clipped: it may reach anywhere */
 		glshim_note_box(0, 0, 100000, 100000);
+	}
 """
 
 REPLACEMENTS: tuple[Replace, ...] = (
@@ -162,6 +167,16 @@ REPLACEMENTS: tuple[Replace, ...] = (
         "c->draw_triangle_back(p0, p1, p2);",
         "{ glshim_note_triangle(p0, p1, p2); c->draw_triangle_back(p0, p1, p2); }",
         count=2,
+    ),
+    Replace(
+        "src/zraster.c",
+        "void glopDrawPixels(GLParam* p) {\n",
+        "void glopDrawPixels(GLParam* p) {\n\tglshim_note_box(0, 0, 100000, 100000);\n",
+    ),
+    Replace(
+        "src/ztext.c",
+        "\tc->zb->pbuf[x] = pix;\n",
+        "\tglshim_note_box(x % c->zb->xsize, x / c->zb->xsize, x % c->zb->xsize,\n\t\t\t\tx / c->zb->xsize);\n\tc->zb->pbuf[x] = pix;\n",
     ),
     Replace(
         "src/clear.c",

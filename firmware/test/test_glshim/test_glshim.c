@@ -311,13 +311,60 @@ void test_a_region_clear_still_leaves_the_whole_canvas_clear(void) {
   TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glClearColor(1, 0, 0, 0);
   clear_all();
+  /* Two disjoint primitives a frame, so a box that failed to grow to cover
+   * both would leave one of them behind. */
   triangle(-0.9f, -0.9f, -0.5f, -0.9f, -0.9f, -0.5f, 0, 0, 0, 1);
-  glXSwapBuffers(dpy, 0);
-  clear_all();
   triangle(0.5f, 0.5f, 0.9f, 0.5f, 0.9f, 0.9f, 0, 0, 0, 1);
   glXSwapBuffers(dpy, 0);
   clear_all();
+  triangle(0.5f, -0.9f, 0.9f, -0.9f, 0.9f, -0.5f, 0, 0, 0, 1);
+  triangle(-0.9f, 0.5f, -0.5f, 0.5f, -0.9f, 0.9f, 0, 0, 0, 1);
+  glXSwapBuffers(dpy, 0);
+  clear_all();
   assert_canvas_is(rgb565(255, 0, 0), "a region clear left a stale pixel");
+}
+
+/* A line can run in any direction, so its endpoints arrive in any order. */
+void test_a_line_drawn_in_any_direction_is_cleared_again(void) {
+  const float ends[4][4] = {{-0.8f, -0.6f, 0.8f, 0.6f},
+                            {0.8f, 0.6f, -0.8f, -0.6f},
+                            {-0.8f, 0.6f, 0.8f, -0.6f},
+                            {0.8f, -0.6f, -0.8f, 0.6f}};
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glClearColor(1, 0, 0, 0);
+  clear_all();
+  for (int i = 0; i < 4; i++) {
+    glBegin(GL_LINES);
+    glColor3f(0, 0, 1);
+    glVertex3f(ends[i][0], ends[i][1], 0);
+    glVertex3f(ends[i][2], ends[i][3], 0);
+    glEnd();
+    glXSwapBuffers(dpy, 0);
+    clear_all();
+    assert_canvas_is(rgb565(255, 0, 0), "a line left stale pixels after a clear");
+  }
+}
+
+static int pixels_not(uint16_t colour) {
+  int n = 0;
+  for (int i = 0; i < SIZE * SIZE; i++) n += cv.px[i] != colour;
+  return n;
+}
+
+/* TinyGL also writes the canvas outside its primitives: text, and glDrawPixels
+ * (which cannot be tested here: it keeps its data pointer in a 4-byte GLParam,
+ * which only holds a pointer on the 32-bit board). Both must be inside the box
+ * a clear erases. */
+void test_text_is_cleared_again(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glClearColor(1, 0, 0, 0);
+  clear_all();
+  glXSwapBuffers(dpy, 0);
+  glDrawText((const GLubyte *)"A", 20, 20, 0x0000FF);
+  glXSwapBuffers(dpy, 0);
+  TEST_ASSERT_TRUE_MESSAGE(pixels_not(rgb565(255, 0, 0)) > 0, "no text was drawn");
+  clear_all();
+  assert_canvas_is(rgb565(255, 0, 0), "text left stale pixels after a clear");
 }
 
 void test_the_first_clear_after_opening_clears_over_whatever_was_there(void) {
@@ -380,6 +427,14 @@ void test_the_swap_marks_only_the_old_and_new_boxes_dirty(void) {
   int x0, x1, dirty_rows = 0;
   for (int y = 0; y < SIZE; y++) dirty_rows += canvas_dirty_row(&cv, y, &x0, &x1);
   TEST_ASSERT_TRUE_MESSAGE(dirty_rows > 0, "nothing was marked dirty");
+  /* One triangle was drawn now and the other was erased: a row from each
+   * band, at the top and the bottom of the canvas, must be marked. */
+  int top = 0, bottom = 0;
+  for (int y = 0; y < SIZE / 4; y++) top += canvas_dirty_row(&cv, y, &x0, &x1);
+  for (int y = SIZE * 3 / 4; y < SIZE; y++)
+    bottom += canvas_dirty_row(&cv, y, &x0, &x1);
+  TEST_ASSERT_TRUE_MESSAGE(top > 0, "the top band was not marked");
+  TEST_ASSERT_TRUE_MESSAGE(bottom > 0, "the bottom band was not marked");
   TEST_ASSERT_TRUE_MESSAGE(dirty_rows < SIZE * 3 / 4, "almost every row was marked");
   TEST_ASSERT_FALSE_MESSAGE(canvas_dirty_row(&cv, SIZE / 2, &x0, &x1),
                             "a row between the two boxes was marked");
@@ -396,6 +451,8 @@ int main(void) {
   RUN_TEST(test_perspective_and_lookat_put_a_point_where_the_maths_says);
   RUN_TEST(test_materiali_sets_the_shininess_tinygl_uses);
   RUN_TEST(test_a_region_clear_still_leaves_the_whole_canvas_clear);
+  RUN_TEST(test_a_line_drawn_in_any_direction_is_cleared_again);
+  RUN_TEST(test_text_is_cleared_again);
   RUN_TEST(test_the_first_clear_after_opening_clears_over_whatever_was_there);
   RUN_TEST(test_a_new_clear_colour_clears_everything);
   RUN_TEST(test_stale_depth_does_not_hide_the_next_frame);
