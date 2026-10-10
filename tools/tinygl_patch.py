@@ -101,6 +101,11 @@ REPLACEMENTS: tuple[Replace, ...] = (
     ),
     Replace(
         "src/zgl.h",
+        "#define CLIP_EPSILON (1E-5)",
+        "#define CLIP_EPSILON (1E-5f)",
+    ),
+    Replace(
+        "src/zgl.h",
         "#define OP_BUFFER_MAX_SIZE 4096",
         "#define OP_BUFFER_MAX_SIZE 64",
     ),

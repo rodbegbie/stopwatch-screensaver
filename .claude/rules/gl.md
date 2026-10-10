@@ -62,9 +62,11 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   push 32 ms): Gears runs at 4 to 5 fps for its heaviest layout and about 9
   for light ones. `-O2` for TinyGL and specular lookup tables changed
   nothing; whole-firmware `-O2` crashes the compiler in `braid_single.c`.
-  After patching, `gl_clipcode` and `gl_shade_vertex` still call software
-  `double` helpers (`CLIP_EPSILON` is an exponent literal, which
-  `float_literals.py` leaves alone).
+  `CLIP_EPSILON` was an exponent literal (`1E-5`), which `float_literals.py`
+  leaves alone, so `gl_clipcode` ran a software `double` multiply on every
+  vertex; `tinygl_patch.py` now makes it `1E-5f`, which took 5.6 ms off
+  CubicGrid's 52 ms step (0.7 us a vertex) and about 3 ms off Morph3D's.
+  `gl_shade_vertex` has not been checked for `double` the same way.
 - Gears picks a random layout on each start, so a running Gears holds 0.9 to
   2.5 MB. Measure leaks while stopped, not by comparing two running moments.
   `free_gears` never frees `bp->gears`: 40 to 1,500 bytes a start, upstream.

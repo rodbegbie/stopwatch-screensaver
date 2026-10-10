@@ -104,3 +104,11 @@ def test_light_model_reads_only_as_many_values_as_the_parameter_has(patched):
     body = api[api.index("void glLightModelfv") : api.index("/* clear */")]
     assert "pname == GL_LIGHT_MODEL_AMBIENT ? 4 : 1" in body
     assert "i < n ? param[i] : 0" in body
+
+
+def test_clip_epsilon_is_a_float_literal(patched):
+    """`1E-5` is a double, so `w1 * (1.0f + CLIP_EPSILON)` ran a software
+    double multiply and two conversions for every vertex."""
+    zgl = patched["src/zgl.h"]
+    assert "#define CLIP_EPSILON (1E-5f)" in zgl
+    assert "#define CLIP_EPSILON (1E-5)\n" not in zgl
