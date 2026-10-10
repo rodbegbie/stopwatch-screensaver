@@ -195,13 +195,56 @@ What this says for #43:
 - **The colour clear runs at about 34 MB/s** (434 KB in 12.7 ms), and the list
   is probably also read from PSRAM at about that rate, which is a guess, not a
   measurement. These costs are memory bandwidth, not arithmetic.
-- **Untried, and the largest idea on the table:** a dirty-rectangle for GL.
-  Track the bounding box of everything drawn, clear only that box and push only
-  its rows. Morph3D's flower is about 70 px across and wanders over a 250 px
-  range, so it might cut its clear from about 25 to 7 ms and its push from 33 to
-  about 18 ms (about 9 to 13 fps by arithmetic, not measured). CubicGrid's
-  points span the whole screen, so it would gain nothing. Overlapping the push
-  with the next frame is the other big lever (see #43).
+- **The largest idea was a dirty rectangle for GL** (clear and push only the
+  box a hack drew). It is prototyped below; overlapping the push with the next
+  frame is the other big lever and is untried.
+
+## Dirty rectangle prototype (#43)
+
+`tools/gl_budget.py` now reports, per frame, the box around what a hack drew
+and what clearing and pushing only that area would cost, as a percentage of the
+canvas. Over 300 frames:
+
+| Hack | Box | Clear | Push |
+| --- | --- | --- | --- |
+| Morph3D, all four shapes | 6 to 9% | 6 to 9% | 7 to 9% |
+| Gears, four seeds (light to heaviest) | 19 to 27% | 19 to 27% | 19 to 27% |
+| CubicGrid | 100% | 100% | 100% |
+
+Morph3D's flower is small, so the box is far smaller than the 30 percent I
+first guessed. The prototype (`glshim_note_box` and `glshim_clear` in
+`firmware/src/glshim/glshim.c`, hooked in by `tools/tinygl_patch.py`) tracks
+that box. `glClear` clears only the box drawn since the last clear; a swap
+marks only what was drawn and what the clear erased. A new context starts with
+a full clear and a full push, and a new clear colour is a full clear, so it
+cannot leave stale pixels behind. It assumes nothing else draws on the canvas
+while a GL hack runs, which the overlay already respects (it restores what it
+stamps).
+
+On the board, same boots, step and push in ms (rows is the canvas rows sent a
+frame, out of 466):
+
+| Hack | Before | Dirty rectangle |
+| --- | --- | --- |
+| Morph3D | step 75 to 83, push 32.5, wait 8.8, rows 466, 8.2 to 8.8 fps | step 55 to 59, push 2 to 9, wait 34 to 42, rows 92 to 192, 9.8 to 10.2 fps |
+| Morph3D, `*delay: 10000` (temporary) | | step 57 to 58, push 2 to 9, wait 2.6 to 9.4, 14.4 to 14.8 fps |
+| Gears, first layout after boot | step 65 to 79, push 32 to 34, wait 0, 9.0 to 10.2 fps | step 44 to 63, push 4 to 12, wait 20 to 29, rows 194 to 303, 10.6 to 13.0 fps |
+| CubicGrid | step 46.7, push 32, rows 466 | step 47.7, push 32, rows 466 |
+
+- **The work shrinks a lot and the frame rate barely follows**, because both
+  hacks ask for a pause after each frame (`*delay` 40 ms for Morph3D, 30 ms for
+  Gears) and the loop only credits the push against it. Morph3D's frame is now
+  step plus a 40 ms pause. Shortening the pause is a per-hack registry override
+  and a taste call; with 10 ms Morph3D reached 14.6 fps, 75 percent over the
+  8.4 fps it started the evening at.
+- **CubicGrid pays about 1 ms (2 percent)** for the bookkeeping on every point,
+  and gains nothing, because its points span the whole screen.
+- **Correctness:** the pinned frame hash of every hack is unchanged, so the
+  output is pixel-identical, and the shadow-display replay in `test_push_present`
+  still passes, so no changed row went unmarked. New tests in `test_glshim`
+  cover a moving box, depth, a new clear colour and the first frame.
+- The cost model's clear and push constants (24.6 and 32 ms) assume a full
+  canvas; with this change they scale by the percentages above.
 
 ## What this does not tell us
 
