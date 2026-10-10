@@ -27,3 +27,7 @@ Yes, commit and push this spike branch to the origin so we have it in our back p
 ---
 
 Gears, Morph3d and Stonerview are all good candidates.  Try gears, and let's find out what happens.  You have permission to flash and reflash the device whenever you like while working on Gears.
+
+---
+
+Dude! That's badass! I see pink, violet and light orange cogs turning and rotating in space.  I also flipped to and from the hack a few times, and the speed varied between 2.9 and 9.2 fps.  (2.9 is what's currently on screen, 5 cogs one of which is very thick)
