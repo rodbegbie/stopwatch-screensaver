@@ -163,3 +163,64 @@ def test_the_same_seed_gives_the_same_counts():
     other = run(draw=draw, frames=50, seed=4)["counts"]
     assert first == again
     assert first != other
+
+
+def test_hack_path_finds_gears_in_the_firmware_tree():
+    path = gb.hack_path(ROOT, "gears")
+    assert path == ROOT / "firmware" / "src" / "hacks" / "gears" / "gears.c"
+
+
+def test_hack_path_names_the_missing_vendor_file():
+    with pytest.raises(FileNotFoundError, match="no_such_hack.c"):
+        gb.hack_path(ROOT, "no_such_hack")
+
+
+def measured_row(**counts) -> dict:
+    values = dict(
+        vertices=1000, lit_vertices=0, triangles=300, lines=0, points=0, pixels=5e4
+    )
+    values.update(counts)
+    return {
+        "name": "demo",
+        "seed": 2,
+        "counts": gb.FrameCounts(**values),
+        "frames": 10,
+        "host_ms": 1.0,
+    }
+
+
+def test_report_shows_the_counts_and_a_prediction():
+    report = gb.render_report([measured_row()])
+    assert "| demo | 2 | 1000 | 0 | 300 | 0 | 0 | 50000 |" in report
+    ms = gb.predict_ms(measured_row()["counts"])
+    assert f"{ms:.0f}" in report
+    assert f"{gb.fps(ms):.1f}" in report
+
+
+def test_report_shows_an_error_instead_of_numbers():
+    report = gb.render_report(
+        [{"name": "bad", "seed": 1, "error": "does not link: gllist"}]
+    )
+    assert "does not link: gllist" in report
+    assert "inf" not in report
+
+
+def test_a_hack_that_draws_nothing_gets_no_frame_rate():
+    report = gb.render_report([measured_row(vertices=0, triangles=0, pixels=0)])
+    assert "draws nothing" in report
+    assert (
+        f"{gb.fps(gb.predict_ms(gb.FrameCounts(0, 0, 0, 0, 0, 0))):.1f}" not in report
+    )
+
+
+def test_parse_arguments_gives_a_named_hack_its_own_seed():
+    args = gb.parse_arguments(["--frames", "20", "gears:7", "cubicgrid"])
+    assert args.frames == 20
+    assert args.hacks == [("gears", [7]), ("cubicgrid", [1, 2, 3])]
+
+
+@needs_cc
+def test_the_command_line_runs_gears_end_to_end(capsys):
+    assert gb.main(["--frames", "5", "gears:1"]) == 0
+    out = capsys.readouterr().out
+    assert "| gears | 1 |" in out

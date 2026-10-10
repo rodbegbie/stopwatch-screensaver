@@ -9,8 +9,10 @@ It predicts, it does not measure: the model knows nothing about PSRAM
 contention, and the figures are only as good as its calibration against Gears.
 """
 
+import argparse
 import re
 import subprocess
+import sys
 import tempfile
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -285,3 +287,100 @@ def measure(
         return {"error": f"compiler not found: {cc}"}
     except probe_hacks.ProbeError as err:
         return {"error": str(err)}
+
+
+DEFAULT_SEEDS = [1, 2, 3]
+VENDOR_GLX = Path("vendor") / "xscreensaver-6.16" / "hacks" / "glx"
+
+
+def hack_path(root: Path, name: str) -> Path:
+    """Gears is ported, so its source is in the firmware tree. Anything else
+    comes from the local, git-ignored xscreensaver checkout."""
+    if name == "gears":
+        return root / "firmware" / "src" / "hacks" / "gears" / "gears.c"
+    path = root / VENDOR_GLX / f"{name}.c"
+    if not path.exists():
+        raise FileNotFoundError(f"no source for {name}: {path} does not exist")
+    return path
+
+
+def note_for(row: dict) -> str:
+    if "error" in row:
+        return row["error"]
+    counts = row["counts"]
+    if counts.vertices == 0:
+        return "draws nothing"
+    return ""
+
+
+def render_report(rows: list[dict]) -> str:
+    lines = [
+        "| Hack | Seed | Vertices | Lit | Triangles | Lines | Points | Pixels "
+        "| Predicted ms | Predicted fps | Note |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for row in rows:
+        note = note_for(row)
+        if "counts" in row:
+            c = row["counts"]
+            numbers = (
+                f"{c.vertices:.0f} | {c.lit_vertices:.0f} | {c.triangles:.0f} | "
+                f"{c.lines:.0f} | {c.points:.0f} | {c.pixels:.0f}"
+            )
+            if c.vertices == 0:
+                prediction = "- | -"
+            else:
+                ms = predict_ms(c)
+                prediction = f"{ms:.0f} | {fps(ms):.1f}"
+        else:
+            numbers = " | ".join("-" for _ in COUNTER_NAMES)
+            prediction = "- | -"
+        lines.append(
+            f"| {row['name']} | {row['seed']} | {numbers} | {prediction} | {note} |"
+        )
+    model = ", ".join(f"{key}={value:g}" for key, value in MODEL.items())
+    return "\n".join(lines) + f"\n\nPredictions, not measurements. Model: {model}.\n"
+
+
+def parse_arguments(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Predict the device frame rate of GL hacks from host counts."
+    )
+    parser.add_argument("--frames", type=int, default=300)
+    parser.add_argument(
+        "--seeds",
+        default=",".join(map(str, DEFAULT_SEEDS)),
+        help="comma-separated seeds tried for each hack without its own",
+    )
+    parser.add_argument(
+        "hacks", nargs="+", help="hack name, or name:seed to give it one seed"
+    )
+    args = parser.parse_args(argv)
+    seeds = [int(seed) for seed in args.seeds.split(",")]
+    parsed = []
+    for spec in args.hacks:
+        name, _, seed = spec.partition(":")
+        parsed.append((name, [int(seed)] if seed else seeds))
+    args.hacks = parsed
+    return args
+
+
+def main(argv: list[str]) -> int:
+    args = parse_arguments(argv)
+    root = Path(__file__).resolve().parent.parent
+    rows = []
+    for name, seeds in args.hacks:
+        try:
+            source = hack_path(root, name).read_text(errors="surrogateescape")
+        except FileNotFoundError as err:
+            rows += [{"name": name, "seed": seed, "error": str(err)} for seed in seeds]
+            continue
+        for seed in seeds:
+            result = measure(name, source, root, frames=args.frames, seed=seed)
+            rows.append({"name": name, "seed": seed, **result})
+    print(render_report(rows), end="")
+    return 1 if any("error" in row for row in rows) else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))
