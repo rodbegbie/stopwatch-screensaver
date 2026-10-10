@@ -40,3 +40,13 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   in init but allocates in draw), so `hacks/blaster_safe.c` includes the
   unmodified hack with `XSCREENSAVER_MODULE` emptied and registers it with a
   free that zeroes `NUM_ROBOTS` when `robots` is NULL.
+- Deluxe is built through `hacks/deluxe_opaque.c`, which includes the unmodified
+  hack with `XSCREENSAVER_MODULE` emptied and registers it with overrides:
+  `*transparent: False` (upstream's plane masks need colour planes, which
+  `allocate_alpha_colors` reports none of) and `*doubleBuffer: False` (the
+  shim draws only on the canvas, so the `XCopyArea` from its blank pixmap
+  erased the picture). The wrapper then gives each throbber's GC an alpha of 26
+  of 32 (upstream's translucent weight) and sends full wide circles to
+  `stroke_circle`. A plain screenhack's `HackEntry` has no overrides unless a
+  wrapper builds it. Its step is 45-63 ms on the device against a 32.5 ms push,
+  so about 11-13 fps; ideas for more are in issue #54.

@@ -53,7 +53,8 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Kaleidescope",
                                          "Gears",
                                          "Morph3D",
-                                         "CubicGrid"};
+                                         "CubicGrid",
+                                         "Deluxe"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -365,6 +366,7 @@ static const uint64_t kBaseline[] = {
     0x41f708d6203d8140ull, /* Gears: taken after looking at the frames */
     0x5a1dd5b30e81a013ull, /* Morph3D: taken after looking at the frames */
     0xc2b1b6b7d671b4c7ull, /* CubicGrid at ticks 20: taken after looking at the frames */
+    0xa4e023f1e9864c48ull, /* Deluxe, translucent, each shape blended once: taken after looking at the frames */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -527,6 +529,10 @@ void test_braid_restarts_and_stops_do_not_leak(void) {
 
 void test_mountain_restarts_and_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("Mountain", 1);
+}
+
+void test_deluxe_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Deluxe", 0);
 }
 
 void test_epicycle_stops_do_not_leak(void) {
@@ -719,6 +725,7 @@ int main(void) {
   RUN_TEST(test_pacman_ghosts_take_the_same_routes_home);
   RUN_TEST(test_braid_restarts_and_stops_do_not_leak);
   RUN_TEST(test_mountain_restarts_and_stops_do_not_leak);
+  RUN_TEST(test_deluxe_stops_do_not_leak);
   RUN_TEST(test_epicycle_stops_do_not_leak);
   RUN_TEST(test_kaleidescope_stops_do_not_leak);
   RUN_TEST(test_gears_start_and_stop_do_not_leak);

@@ -48,6 +48,25 @@ static void build_disc(int w) {
   g_disc_built[w] = true;
 }
 
+/* The alpha of the GC being drawn with, set at each public entry point. */
+static int g_alpha;
+
+/* A disc wider than the cached rows, with the same arithmetic, drawn through
+ * fill_box so it blends or sets mask bits like the rest of its shape. Only
+ * the rows on the canvas are worked out. */
+static void wide_disc_rows(Canvas *c, wide_t x, wide_t y, int w, uint16_t colour) {
+  const double centre = (w - 1) / 2.0, radius = w / 2.0;
+  const wide_t first = max_w(0, -y), last = min_w(w - 1, (wide_t)c->h - 1 - y);
+  for (wide_t row = first; row <= last; row++) {
+    const double ny = ((double)row - centre) / radius;
+    const double t = 1.0 - ny * ny;
+    if (t < 0) continue;
+    const double half = radius * sqrt(t);
+    const wide_t xa = (wide_t)ceil(centre - half), xb = (wide_t)floor(centre + half);
+    if (xb >= xa) fill_box(c, x + xa, y + row, x + xb, y + row, colour);
+  }
+}
+
 /* A disc of diameter w centred on the pixel (cx, cy). Skipped when it cannot
  * reach the canvas. */
 static void disc(Canvas *c, wide_t cx, wide_t cy, int w, uint16_t colour) {
@@ -55,6 +74,10 @@ static void disc(Canvas *c, wide_t cx, wide_t cy, int w, uint16_t colour) {
       cy > (wide_t)c->h + w)
     return;
   const wide_t x = cx - w / 2, y = cy - w / 2;
+  if (w > DISC_MAX_W && g_alpha) {
+    wide_disc_rows(c, x, y, w, colour);
+    return;
+  }
   if (w < 1 || w > DISC_MAX_W) {
     canvas_fill_ellipse(c, (int)x, (int)y, w, w, colour);
     return;
@@ -66,6 +89,71 @@ static void disc(Canvas *c, wide_t cx, wide_t cy, int w, uint16_t colour) {
   }
 }
 
+static uint16_t swap16(uint16_t v) { return (uint16_t)((v << 8) | (v >> 8)); }
+
+/* Red and blue in bits 0-4 and 11-15, green in bits 21-26, so one multiply
+ * scales all three channels and the gaps take the carries. */
+#define SPREAD_MASK 0x07E0F81Fu
+static uint32_t spread(uint16_t v) { return ((uint32_t)v | ((uint32_t)v << 16)) & SPREAD_MASK; }
+static uint16_t unspread(uint32_t v) { return (uint16_t)((v & 0xFFFFu) | (v >> 16)); }
+
+/* The canvas holds byte-swapped RGB565, so each pixel is swapped to blend and
+ * swapped back. The box is already clipped. */
+static void blend_box(Canvas *c, int x, int y, int w, int h, uint16_t colour) {
+  const uint32_t src = spread(swap16(colour));
+  const uint32_t a = (uint32_t)g_alpha;
+  for (int yy = y; yy < y + h; yy++) {
+    uint16_t *row = c->px + (size_t)yy * c->w + x;
+    for (int i = 0; i < w; i++) {
+      const uint32_t dst = spread(swap16(row[i]));
+      row[i] = swap16(unspread((((src - dst) * a >> 5) + dst) & SPREAD_MASK));
+    }
+  }
+  canvas_mark_dirty(c, x, y, w, h);
+}
+
+/* A shape made of overlapping pieces (a polyline's segments and joins, a
+ * round cap and its segment) would blend twice where they overlap. While a
+ * mask is open, pieces only set bits in it, one per pixel of the canvas, and
+ * close_mask blends each set pixel once. */
+static uint32_t *g_mask;
+static int g_mask_words;
+
+static void open_mask(const Canvas *c) {
+  g_mask_words = (c->w + 31) / 32;
+  g_mask = (uint32_t *)calloc((size_t)g_mask_words * (size_t)c->h, sizeof(uint32_t));
+}
+
+static void mask_row(int y, int x0, int x1) {
+  uint32_t *row = g_mask + (size_t)y * g_mask_words;
+  for (int w = x0 / 32; w <= x1 / 32; w++) {
+    const int lo = w == x0 / 32 ? x0 % 32 : 0;
+    const int hi = w == x1 / 32 ? x1 % 32 : 31;
+    const uint32_t bits = (hi == 31 ? ~0u : (1u << (hi + 1)) - 1u) & (~0u << lo);
+    row[w] |= bits;
+  }
+}
+
+static void close_mask(Canvas *c, uint16_t colour) {
+  if (!g_mask) return;
+  uint32_t *mask = g_mask;
+  g_mask = NULL;
+  for (int y = 0; y < c->h; y++) {
+    const uint32_t *row = mask + (size_t)y * g_mask_words;
+    for (int w = 0; w < g_mask_words; w++) {
+      uint32_t bits = row[w];
+      while (bits) {
+        const int start = __builtin_ctz(bits);
+        const uint32_t shifted = bits >> start;
+        const int len = shifted == ~0u >> start ? 32 - start : __builtin_ctz(~shifted);
+        blend_box(c, w * 32 + start, y, len, 1, colour);
+        bits = start + len >= 32 ? 0 : bits & (~0u << (start + len));
+      }
+    }
+  }
+  free(mask);
+}
+
 /* Fills x0..x1 by y0..y1 (inclusive), clipped to the canvas first so the
  * ints handed on are small. */
 static void fill_box(Canvas *c, wide_t x0, wide_t y0, wide_t x1, wide_t y1,
@@ -75,6 +163,14 @@ static void fill_box(Canvas *c, wide_t x0, wide_t y0, wide_t x1, wide_t y1,
   x1 = min_w(x1, (wide_t)c->w - 1);
   y1 = min_w(y1, (wide_t)c->h - 1);
   if (x0 > x1 || y0 > y1) return;
+  if (g_mask) {
+    for (wide_t y = y0; y <= y1; y++) mask_row((int)y, (int)x0, (int)x1);
+    return;
+  }
+  if (g_alpha) {
+    blend_box(c, (int)x0, (int)y0, (int)(x1 - x0 + 1), (int)(y1 - y0 + 1), colour);
+    return;
+  }
   canvas_fill_rect(c, (int)x0, (int)y0, (int)(x1 - x0 + 1), (int)(y1 - y0 + 1),
                    colour);
 }
@@ -217,8 +313,8 @@ static void slanted(Canvas *c, wide_t ix1, wide_t iy1, wide_t ix2, wide_t iy2,
                (vec2){(float)x2 + o, (float)y2 + o}, cap1, cap2, w, colour);
 }
 
-void stroke_segment_ends(Canvas *c, const struct XshimGC *gc, int x1, int y1,
-                         int x2, int y2, int cap_start, int cap_end) {
+static void segment_pieces(Canvas *c, const struct XshimGC *gc, int x1, int y1,
+                           int x2, int y2, int cap_start, int cap_end) {
   const int w = gc->line_width;
   const uint16_t colour = (uint16_t)gc->foreground;
 
@@ -234,6 +330,16 @@ void stroke_segment_ends(Canvas *c, const struct XshimGC *gc, int x1, int y1,
     axis_aligned(c, x1, y1, x2, y2, cap_start, cap_end, w, colour);
   else
     slanted(c, x1, y1, x2, y2, cap_start, cap_end, w, colour);
+}
+
+/* Only a round cap overlaps the segment's own body. */
+void stroke_segment_ends(Canvas *c, const struct XshimGC *gc, int x1, int y1,
+                         int x2, int y2, int cap_start, int cap_end) {
+  g_alpha = gc->alpha;
+  const int overlaps = cap_start == CapRound || cap_end == CapRound;
+  if (g_alpha && overlaps) open_mask(c);
+  segment_pieces(c, gc, x1, y1, x2, y2, cap_start, cap_end);
+  close_mask(c, (uint16_t)gc->foreground);
 }
 
 void stroke_segment(Canvas *c, const struct XshimGC *gc, int x1, int y1, int x2,
@@ -273,6 +379,35 @@ static void join_at(Canvas *c, int ix, int iy, vec2 d1, vec2 d2, int w,
   fill_convex(c, tri, 3, colour);
 }
 
+void stroke_circle(Canvas *c, const struct XshimGC *gc, int x, int y, unsigned w) {
+  const int lw = gc->line_width;
+  const uint16_t colour = (uint16_t)gc->foreground;
+  g_alpha = gc->alpha;
+  const float o = centre_offset(lw);
+  const float radius = (float)w / 2.0f;
+  const float cx = (float)x + radius + o, cy = (float)y + radius + o;
+  const float outer = radius + (float)lw / 2.0f;
+  const float inner = radius - (float)lw / 2.0f;
+  const wide_t y0 = max_w(0, (wide_t)floorf(cy - outer));
+  const wide_t y1 = min_w((wide_t)c->h - 1, (wide_t)ceilf(cy + outer));
+  for (wide_t row = y0; row <= y1; row++) {
+    const float dy = (float)row + 0.5f - cy;
+    if (fabsf(dy) >= outer) continue;
+    const float ho = sqrtf(outer * outer - dy * dy);
+    const wide_t xo0 = (wide_t)ceilf(cx - ho - 0.5f);
+    const wide_t xo1 = (wide_t)floorf(cx + ho - 0.5f);
+    if (inner <= 0.0f || fabsf(dy) >= inner) {
+      fill_box(c, xo0, row, xo1, row, colour);
+      continue;
+    }
+    const float hi = sqrtf(inner * inner - dy * dy);
+    const wide_t xi0 = (wide_t)ceilf(cx - hi - 0.5f);
+    const wide_t xi1 = (wide_t)floorf(cx + hi - 0.5f);
+    fill_box(c, xo0, row, xi0 - 1, row, colour);
+    fill_box(c, xi1 + 1, row, xo1, row, colour);
+  }
+}
+
 static vec2 direction(const int *from, const int *to) {
   const float dx = (float)((wide_t)to[0] - from[0]);
   const float dy = (float)((wide_t)to[1] - from[1]);
@@ -285,6 +420,7 @@ void stroke_polyline(Canvas *c, const struct XshimGC *gc, const int *xy, int n,
   if (n <= 0) return;
   const int w = gc->line_width;
   const uint16_t colour = (uint16_t)gc->foreground;
+  g_alpha = gc->alpha;
 
   int stack_v[2 * 64];
   int *v = stack_v;
@@ -306,6 +442,7 @@ void stroke_polyline(Canvas *c, const struct XshimGC *gc, const int *xy, int n,
     stroke_segment(c, gc, v[0], v[1], v[2 * (m - 1)], v[2 * (m - 1) + 1]);
   } else {
     const int nseg = closed ? m : m - 1;
+    if (g_alpha) open_mask(c);
     for (int i = 0; i < nseg; i++) {
       const int *a = v + 2 * i, *b = v + 2 * ((i + 1) % m);
       const int cap1 = (!closed && i == 0) ? gc->cap_style : STROKE_NO_CAP;
@@ -322,6 +459,7 @@ void stroke_polyline(Canvas *c, const struct XshimGC *gc, const int *xy, int n,
       join_at(c, at[0], at[1], direction(prev, at), direction(at, next), w,
               gc->join_style, colour);
     }
+    close_mask(c, colour);
   }
   if (v != stack_v) free(v);
 }

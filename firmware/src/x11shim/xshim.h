@@ -38,6 +38,9 @@ typedef struct XshimGC {
   struct XshimPixmap *clip;
   int clip_x, clip_y;
   int line_width, cap_style, join_style;
+  /* 0 draws opaque. 1 to 31 is the weight out of 32 given to this GC's colour
+   * when a wide line or circle (stroke.c) is blended over the canvas. */
+  int alpha;
 } *GC;
 
 typedef struct XshimScreen Screen;
@@ -45,11 +48,12 @@ typedef struct XshimVisual Visual;
 
 /* function is accepted but ignored: drawing is always GXcopy. Lines honour
  * line_width, cap_style and join_style (width 0 or 1 draws a plain
- * one-pixel line). */
+ * one-pixel line). plane_mask is accepted and ignored. */
 typedef struct {
   unsigned long foreground;
   unsigned long background;
   int function;
+  unsigned long plane_mask;
   int line_width;
   int cap_style;
   int join_style;
@@ -128,6 +132,7 @@ typedef struct {
 enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
 
 #define GCFunction (1L << 0)
+#define GCPlaneMask (1L << 1)
 #define GCForeground (1L << 2)
 #define GCBackground (1L << 3)
 #define GCLineWidth (1L << 4)

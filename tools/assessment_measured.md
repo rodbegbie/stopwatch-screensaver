@@ -1,6 +1,6 @@
 ## Measured on the device
 
-Thirty-four hacks have been run so far (default settings, 466×466 canvas
+Thirty-five hacks have been run so far (default settings, 466×466 canvas
 pushed to the display every frame, canvas held in PSRAM). The firmware times
 each frame in three parts, averaged over 5 seconds: **step** is the hack's own
 draw call, **push** is sending the canvas to the display, and **wait** is what
@@ -54,6 +54,9 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | CubicGrid (ticks 30, 27,000 points; not registered) | 5.6-6.0 | 137-148 ms | 32.3-36.0 ms | 0 ms | 1.66 MB more than Morph3D (display list) |
 | CubicGrid (ticks 20, 8,000 points; registered) | 11.2-12.4 | 48-52 ms | 32.2-36.1 ms | 0 ms | 0.49 MB more than Morph3D (display list) |
 | Celtic | 1.0-20.4 | 29-1025 ms | 0.1-5.5 ms | 7.9-928 ms | none measurable |
+| Deluxe (opaque, arcs as polylines; first port) | 2.0-5.4 | 154-510 ms | 32.6 ms | 0 ms | not compared with idle (flat at 7,327,227) |
+| Deluxe (opaque, circles as rings) | 13.2-15.4 | 31.5-42.1 ms | 32.5-35.1 ms | 0 ms | not compared with idle (flat at 7,327,227) |
+| Deluxe | 10.4-12.8 | 44.6-62.6 ms | 32.5-32.6 ms | 0 ms | not compared with idle (flat at 7,327,227) |
 
 Maze's row is 26 five-second readings over 160 seconds, taken on a build that
 includes the overlay stamping. Its steps are cheap, and its frame rate is set
@@ -394,3 +397,33 @@ and each was flashed unmodified, pinned with the rotation off, for 180 seconds
 
 None showed a stack canary, panic or reboot, and free PSRAM was constant
 within each run (Mountain's 20 KB is its offset from the idle figure).
+
+## Deluxe
+
+Deluxe was rated L (`GCPlaneMask`, `allocate_alpha_colors`, pixmaps) and
+sat in the high Speed band. Its source is unchanged. `deluxe_opaque.c`
+includes it with `*transparent` and `*doubleBuffer` off (plane masks and
+pixmap double buffering cannot work on this canvas) and routes full wide
+circles to `stroke_circle`. Each build was flashed pinned with the rotation
+off and logged for 45 seconds (nine five-second windows, the first read
+high because of the name overlay).
+
+- As first ported (opaque, arcs through the polyline stroker) it ran at
+  2.0-5.4 fps. A host profile put 94% of a frame in the 50 pixel wide
+  circles: 400 frames took 1.14 s, 0.07 s without `XDrawArc`, and 0.81 s with
+  the joins skipped. An arc is about a thousand wide segments, each filled a
+  row at a time, so each pixel was painted about 25 times.
+- `stroke_circle` fills the ring in two spans a row: 400 frames took 0.12 s
+  on the host, and the board ran 13.2-15.4 fps, paced by the 32.5 ms push.
+  The polyline path also leaves gaps in a ring, which the ring does not.
+- Translucency is a per-GC `alpha` (26 of 32, the weight upstream's
+  translucent path uses) that `stroke.c` blends over the canvas. Blending each
+  piece of a polyline separately blended the overlaps twice, so a star's
+  corners showed as bright diamonds (11.2-13.2 fps). Drawing a translucent
+  shape into a one-bit-per-pixel mask and blending it once removed them, and
+  costs 3-5 ms a frame on the board (10.4-12.8 fps) though nothing on the
+  host. That is the registered build.
+- Not measured: PSRAM against an idle build (it was flat at 7,327,227 in every
+  capture, so the 27 KB mask per shape is returned), a restart or lap soak
+  with rotation on, and a long run. Heap held at 322,648-323,056 bytes.
+  Colour was judged by Rod on the screen.

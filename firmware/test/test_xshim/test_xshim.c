@@ -9,9 +9,11 @@
 #include "core/canvas.h"
 #include "erase.h"
 #include "fps.h"
+#include "alpha.h"
 #include "screenhack.h"
 #include "utils.h"
 #include "x11shim/arc.h"
+#include "x11shim/stroke.h"
 #include "x11shim/xshim.h"
 #include "ximage-loader.h"
 
@@ -828,6 +830,26 @@ void test_create_gc_reads_line_width_cap_and_join_from_the_mask(void) {
   XFreeGC(dpy, gc);
 }
 
+void test_gc_accepts_a_plane_mask_and_draws_in_the_foreground_regardless(void) {
+  XGCValues v;
+  v.foreground = 0x1234;
+  v.plane_mask = 0x0F0F;
+  GC gc = XCreateGC(dpy, win, GCForeground | GCPlaneMask, &v);
+  canvas_clear(&cv, 0);
+  XFillRectangle(dpy, win, gc, 2, 2, 3, 3);
+  TEST_ASSERT_EQUAL_UINT16(0x1234, cv.px[3 * cv.w + 3]);
+  XFreeGC(dpy, gc);
+}
+
+void test_allocate_alpha_colors_reports_no_colour_planes(void) {
+  int nplanes = 5;
+  unsigned long *masks = (unsigned long *)0x1;
+  unsigned long base = 99;
+  allocate_alpha_colors(NULL, NULL, 1, &nplanes, True, &masks, &base);
+  TEST_ASSERT_EQUAL_INT(0, nplanes);
+  TEST_ASSERT_NULL(masks);
+}
+
 void test_change_gc_updates_only_the_masked_line_fields(void) {
   XGCValues v;
   v.foreground = 1;
@@ -1390,6 +1412,189 @@ void test_draw_arc_wide_uses_the_stroke_code(void) {
   XFreeGC(dpy, wide);
 }
 
+/* A pixel well inside the band is drawn and one well outside it is not; only
+ * the pixels at an edge may go either way. */
+void test_stroke_circle_fills_the_band_between_its_two_radii(void) {
+  use_canvas(200);
+  GC gc = wide_gc(30, CapButt, JoinMiter);
+  stroke_circle(&cv, gc, 20, 20, 160);
+  for (int y = 0; y < cv.h; y++)
+    for (int x = 0; x < cv.w; x++) {
+      const float r = hypotf((float)x + 0.5f - 100.0f, (float)y + 0.5f - 100.0f);
+      if (r < 93.0f && r > 67.0f)
+        TEST_ASSERT_EQUAL_HEX16_MESSAGE(0xFFFF, at(x, y), "a pixel in the band is missing");
+      if (r > 97.0f || r < 63.0f)
+        TEST_ASSERT_EQUAL_HEX16_MESSAGE(0, at(x, y), "a pixel outside the band is set");
+    }
+  XFreeGC(dpy, gc);
+}
+
+/* The wide polyline round a full circle is the picture the ring stands in for.
+ * It has gaps the ring does not, so it is the ring that must cover it. */
+void test_stroke_circle_covers_what_the_wide_arc_draws(void) {
+  use_canvas(200);
+  GC gc = wide_gc(30, CapButt, JoinMiter);
+  XDrawArc(dpy, win, gc, 20, 20, 160, 160, 0, 360 * 64);
+  uint16_t *reference = (uint16_t *)malloc((size_t)cv.w * cv.h * sizeof(uint16_t));
+  memcpy(reference, cv.px, (size_t)cv.w * cv.h * sizeof(uint16_t));
+  use_canvas(200);
+  stroke_circle(&cv, gc, 20, 20, 160);
+  for (int y = 0; y < cv.h; y++)
+    for (int x = 0; x < cv.w; x++) {
+      if (reference[y * cv.w + x] == 0 || at(x, y) != 0) continue;
+      const float r = hypotf((float)x + 0.5f - 100.0f, (float)y + 0.5f - 100.0f);
+      TEST_ASSERT_TRUE_MESSAGE(fabsf(r - 95.0f) < 1.6f || fabsf(r - 65.0f) < 1.6f,
+                               "the wide arc draws a pixel the ring leaves out");
+    }
+  free(reference);
+  XFreeGC(dpy, gc);
+}
+
+void test_stroke_circle_narrower_than_its_line_is_a_filled_disc(void) {
+  use_canvas(64);
+  GC gc = wide_gc(30, CapButt, JoinMiter);
+  stroke_circle(&cv, gc, 22, 22, 20);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(32, 32));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(32, 10));
+  TEST_ASSERT_EQUAL_HEX16(0, at(2, 2));
+  XFreeGC(dpy, gc);
+}
+
+void test_stroke_circle_is_clipped_to_the_canvas(void) {
+  use_canvas(64);
+  GC gc = wide_gc(50, CapButt, JoinMiter);
+  stroke_circle(&cv, gc, -18, -18, 100);
+  TEST_ASSERT_EQUAL_HEX16(0, at(32, 32));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(2, 32));
+  stroke_circle(&cv, gc, -300, -300, 699);
+  stroke_circle(&cv, gc, 2000000000, 2000000000, 699);
+  XFreeGC(dpy, gc);
+}
+
+/* A GC with an alpha blends over what is already on the canvas. Red over blue
+ * at 16/32 is halfway: about 15.5 of 31 in each of the two channels. */
+static void check_halfway_red_over_blue(uint16_t stored) {
+  const uint16_t v = px_swap(stored);
+  const int r = (v >> 11) & 31, g = (v >> 5) & 63, b = v & 31;
+  TEST_ASSERT_TRUE_MESSAGE(r >= 15 && r <= 16, "red is halfway");
+  TEST_ASSERT_TRUE_MESSAGE(b >= 15 && b <= 16, "blue is halfway");
+  TEST_ASSERT_EQUAL_INT(0, g);
+}
+
+void test_wide_line_with_alpha_blends_over_the_canvas(void) {
+  use_canvas(64);
+  canvas_clear(&cv, px_swap(0x001F));
+  canvas_clear_dirty(&cv);
+  GC gc = wide_gc(8, CapButt, JoinMiter);
+  gc->foreground = px_swap(0xF800);
+  gc->alpha = 16;
+  stroke_segment(&cv, gc, 10, 30, 50, 30);
+  check_halfway_red_over_blue(at(30, 30));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x001F), at(30, 50));
+  int x0, x1;
+  TEST_ASSERT_TRUE(canvas_dirty_row(&cv, 30, &x0, &x1));
+  TEST_ASSERT_TRUE(x0 <= 10 && x1 >= 49);
+  XFreeGC(dpy, gc);
+}
+
+void test_wide_line_without_alpha_still_overwrites(void) {
+  use_canvas(64);
+  canvas_clear(&cv, px_swap(0x001F));
+  GC gc = wide_gc(8, CapButt, JoinMiter);
+  gc->foreground = px_swap(0xF800);
+  stroke_segment(&cv, gc, 10, 30, 50, 30);
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0xF800), at(30, 30));
+  XFreeGC(dpy, gc);
+}
+
+void test_stroke_circle_with_alpha_blends_each_pixel_once(void) {
+  use_canvas(200);
+  canvas_clear(&cv, px_swap(0x001F));
+  GC gc = wide_gc(30, CapButt, JoinMiter);
+  gc->foreground = px_swap(0xF800);
+  gc->alpha = 16;
+  stroke_circle(&cv, gc, 20, 20, 160);
+  check_halfway_red_over_blue(at(100, 20 + 5));
+  check_halfway_red_over_blue(at(20 + 5, 100));
+  XFreeGC(dpy, gc);
+}
+
+void test_alpha_does_not_leak_into_the_next_gc(void) {
+  use_canvas(64);
+  canvas_clear(&cv, px_swap(0x001F));
+  GC blended = wide_gc(8, CapButt, JoinMiter);
+  blended->foreground = px_swap(0xF800);
+  blended->alpha = 16;
+  stroke_segment(&cv, blended, 10, 30, 50, 30);
+  GC opaque = wide_gc(8, CapButt, JoinMiter);
+  opaque->foreground = px_swap(0xF800);
+  stroke_segment(&cv, opaque, 10, 10, 50, 10);
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0xF800), at(30, 10));
+  XFreeGC(dpy, blended);
+  XFreeGC(dpy, opaque);
+}
+
+/* The quads of a polyline overlap at its joins and where it crosses itself,
+ * and a blended overlap would show darker or brighter than the rest. */
+void test_polyline_with_alpha_blends_a_join_once(void) {
+  use_canvas(64);
+  canvas_clear(&cv, px_swap(0x001F));
+  GC gc = wide_gc(20, CapButt, JoinMiter);
+  gc->foreground = px_swap(0xF800);
+  gc->alpha = 16;
+  const int xy[] = {10, 50, 40, 50, 40, 10};
+  stroke_polyline(&cv, gc, xy, 3, 0);
+  check_halfway_red_over_blue(at(25, 50));
+  check_halfway_red_over_blue(at(35, 45));
+  XFreeGC(dpy, gc);
+}
+
+void test_polyline_with_alpha_blends_a_self_crossing_once(void) {
+  use_canvas(64);
+  canvas_clear(&cv, px_swap(0x001F));
+  GC gc = wide_gc(8, CapButt, JoinMiter);
+  gc->foreground = px_swap(0xF800);
+  gc->alpha = 16;
+  const int xy[] = {10, 10, 50, 50, 50, 10, 10, 50};
+  stroke_polyline(&cv, gc, xy, 4, 0);
+  check_halfway_red_over_blue(at(30, 30));
+  check_halfway_red_over_blue(at(20, 20));
+  XFreeGC(dpy, gc);
+}
+
+void test_round_capped_segment_with_alpha_blends_its_cap_once(void) {
+  use_canvas(64);
+  canvas_clear(&cv, px_swap(0x001F));
+  GC gc = wide_gc(12, CapRound, JoinMiter);
+  gc->foreground = px_swap(0xF800);
+  gc->alpha = 16;
+  stroke_segment(&cv, gc, 20, 30, 44, 30);
+  check_halfway_red_over_blue(at(21, 30));
+  check_halfway_red_over_blue(at(32, 30));
+  check_halfway_red_over_blue(at(14, 30));
+  check_halfway_red_over_blue(at(49, 30));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x001F), at(13, 30));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x001F), at(50, 30));
+  XFreeGC(dpy, gc);
+}
+
+/* A disc wider than the cached rows (16) took a separate path that ignored
+ * alpha, so a wide round cap stayed opaque beside a blended body. */
+void test_wide_round_cap_with_alpha_blends_like_the_body(void) {
+  use_canvas(64);
+  canvas_clear(&cv, px_swap(0x001F));
+  GC gc = wide_gc(20, CapRound, JoinMiter);
+  gc->foreground = px_swap(0xF800);
+  gc->alpha = 16;
+  stroke_segment(&cv, gc, 24, 30, 44, 30);
+  check_halfway_red_over_blue(at(32, 30));
+  check_halfway_red_over_blue(at(15, 30));
+  check_halfway_red_over_blue(at(24, 30));
+  check_halfway_red_over_blue(at(53, 30));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x001F), at(13, 30));
+  XFreeGC(dpy, gc);
+}
+
 void test_fill_arc_half_fills_a_half_disc(void) {
   use_canvas(64);
   XGCValues v;
@@ -1845,6 +2050,8 @@ int main(void) {
   RUN_TEST(test_parse_color_rejects_unknown_specs);
   RUN_TEST(test_gc_defaults_are_width_0_butt_miter);
   RUN_TEST(test_create_gc_reads_line_width_cap_and_join_from_the_mask);
+  RUN_TEST(test_gc_accepts_a_plane_mask_and_draws_in_the_foreground_regardless);
+  RUN_TEST(test_allocate_alpha_colors_reports_no_colour_planes);
   RUN_TEST(test_change_gc_updates_only_the_masked_line_fields);
   RUN_TEST(test_set_line_attributes_sets_all_three);
   RUN_TEST(test_wide_horizontal_line_butt_caps);
@@ -1886,6 +2093,18 @@ int main(void) {
   RUN_TEST(test_draw_arc_quarter_draws_only_that_quadrant);
   RUN_TEST(test_draw_arc_full_ellipse_is_a_closed_outline);
   RUN_TEST(test_draw_arc_wide_uses_the_stroke_code);
+  RUN_TEST(test_stroke_circle_fills_the_band_between_its_two_radii);
+  RUN_TEST(test_stroke_circle_covers_what_the_wide_arc_draws);
+  RUN_TEST(test_stroke_circle_narrower_than_its_line_is_a_filled_disc);
+  RUN_TEST(test_stroke_circle_is_clipped_to_the_canvas);
+  RUN_TEST(test_wide_line_with_alpha_blends_over_the_canvas);
+  RUN_TEST(test_wide_line_without_alpha_still_overwrites);
+  RUN_TEST(test_stroke_circle_with_alpha_blends_each_pixel_once);
+  RUN_TEST(test_alpha_does_not_leak_into_the_next_gc);
+  RUN_TEST(test_polyline_with_alpha_blends_a_join_once);
+  RUN_TEST(test_polyline_with_alpha_blends_a_self_crossing_once);
+  RUN_TEST(test_round_capped_segment_with_alpha_blends_its_cap_once);
+  RUN_TEST(test_wide_round_cap_with_alpha_blends_like_the_body);
   RUN_TEST(test_fill_arc_half_fills_a_half_disc);
   RUN_TEST(test_fill_arc_quarter_is_a_pie_slice_including_the_centre);
   RUN_TEST(test_create_pixmap_is_zeroed_and_reports_its_geometry);

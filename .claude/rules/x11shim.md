@@ -71,5 +71,22 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   `unset PLATFORMIO_BUILD_FLAGS` then `XS_LOGO=vendor/workos/workos-icon-256.png
   pio run -e stopwatch -t upload`: build flags stick, so a leftover pin from
   an earlier probe would survive. The logo shows in Maze only.
+- A wide circle through `XDrawArc` is a polyline of about a thousand wide
+  segments, each filled a row at a time: 40 times the fills of a ring, and the
+  polyline leaves gaps in it. `stroke_circle` (`x11shim/stroke.c`) fills the
+  ring in two spans a row. Only Deluxe's wrapper calls it, and it does full
+  circles only: Pacman's wall arcs are quarters and Celtic's wide strokes are
+  lines, so they still take the stroker. Issue #56 asks whether the stroker's
+  gaps and overpaint touch them. Changing shared stroke code can move their
+  pinned frames: ask Rod.
+- `XshimGC.alpha` (0 is opaque, 1 to 31 is the weight out of 32) makes the
+  wide-line code in `stroke.c` blend over the canvas instead of overwriting it;
+  fills, `canvas_line` and the other primitives ignore it. The canvas is
+  byte-swapped RGB565, so the blend swaps each pixel and back. A shape of
+  overlapping pieces (a polyline, a round cap and its segment) sets bits in a
+  mask the size of the canvas (a 27 KB `calloc` per shape, freed at the end)
+  and blends it once, or the overlaps blend twice and a star's corners show
+  as bright diamonds. A failed `calloc` falls back to blending piece by piece.
+  Setting `alpha` takes a wrapper, as in `hacks/deluxe_opaque.c`.
 - Don't declare `xrealloc` or `xmalloc` in the shim: cloudlife defines its own
   static `xrealloc`, which would clash.
