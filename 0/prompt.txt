@@ -1,0 +1,21 @@
+Yes, flash it pinned to Deluxe
+
+---
+
+On screen looks correct, but it's too slow.  Definitely do some profiling to see if there's some ways to speed it up
+
+---
+
+Yes, flash it pinned to Deluxe
+
+---
+
+Yes, this looks good.  One other thought: I'm curious what adding transparency would do to the performance.  Can you try experimenting with that?
+
+---
+
+Yes, flash it pinned to Deluxe
+
+---
+
+Fix the star corner artefact first
