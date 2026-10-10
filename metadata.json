@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4KFY65MDEDF93QKFCR83XZ3",
+  "strategy": "manual-commit",
+  "branch": "feature/port-s-hacks-batch",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".claude/skills/port-hack/techniques.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 194,
+    "cache_creation_tokens": 127320,
+    "cache_read_tokens": 20971416,
+    "output_tokens": 68789,
+    "api_call_count": 97
+  }
+}
