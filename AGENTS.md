@@ -228,5 +228,17 @@ ones below apply everywhere.
 - After a mutation check, `grep` that the change applied: a `sed` that matches
   nothing leaves the tests green and proves nothing. Restore the file and
   confirm with `cmp` or `git diff`.
+- To test code inside a wrapped hack (a `static inline` blend, say), give the
+  test its own dir and `#define <name>_hack <name>_hack_under_test` before
+  `#include "hacks/<name>_direct.c"`: the wrapper exports only that one symbol,
+  so it links beside the registered copy. See `test_interaggregate_blend`.
+- `pio test -e native -f test_<dir>` runs one suite (the xshim and
+  single-hack tests take about a second); `test_hacks` alone takes about 100 s.
+- Count hacks from `g_hacks[]`, not from a list in a message or a note: a PR
+  body said 14 where the registry had 15, and a review list had left one out.
+- When a hack's colours look suspect, dump the same index and frame count
+  from the current build and from `git stash` of the wrapper, and look at both
+  side by side. Interaggregate's blend bug showed as rainbow confetti against
+  green and brown strokes, though every test had passed.
 - Board details (pins, power, recovery) are in
   `.claude/skills/m5stack-stopwatch/`.
