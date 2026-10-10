@@ -21,6 +21,11 @@ typedef struct HackEntry {
   struct xscreensaver_function_table *xsft;
   /* Device-specific resources that beat the hack's own defaults. */
   const char *const *overrides;
+  /* Nonzero to start each push at a fixed point in the panel's refresh, so the
+   * seam between the old and new picture lands where it does no harm (see
+   * main.cpp). It costs up to one refresh of latency a frame, so a hack asks
+   * only if thin lines moving a few pixels a frame show the seam. */
+  int sync_to_refresh;
 } HackEntry;
 
 #ifdef __cplusplus

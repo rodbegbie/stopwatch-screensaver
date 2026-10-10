@@ -40,6 +40,18 @@ static int non_black(void) {
   return n;
 }
 
+/* Starting a push at a fixed point in the panel's refresh costs up to a refresh
+ * of latency a frame, so only a hack whose thin lines show the seam asks for it. */
+void test_only_unknownpleasures_asks_for_refresh_synced_pushes(void) {
+  int asking = 0;
+  for (int i = 0; i < g_hack_count; i++) {
+    if (!g_hacks[i]->sync_to_refresh) continue;
+    asking++;
+    TEST_ASSERT_EQUAL_STRING("UnknownPleasures", g_hacks[i]->name);
+  }
+  TEST_ASSERT_EQUAL_INT(1, asking);
+}
+
 void test_registry_lists_hacks_in_order(void) {
   static const char *const expected[] = {"Pyro", "HyperCube", "XSpirograph",
                                          "Petri", "Helix",
@@ -850,6 +862,7 @@ void test_slow_hacks_register_their_lighter_settings(void) {
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
+  RUN_TEST(test_only_unknownpleasures_asks_for_refresh_synced_pushes);
   RUN_TEST(test_every_hack_can_be_stopped_before_its_first_frame);
   RUN_TEST(test_a_hack_starts_on_the_background_colour_it_asks_for);
   RUN_TEST(test_a_hack_that_never_draws_on_white_is_not_drawing);

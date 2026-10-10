@@ -81,3 +81,36 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   pixels under it are restored. Drawing on the display after `pushImage`
   flickered badly, because the next push erases it. The canvas must end each
   frame exactly as the hack left it.
+- Tearing. The panel scans its memory 60 times a second and `pushImage` is not
+  synchronised with it, so for a refresh the top of the screen shows one
+  picture and the rest another. A thin line that moves a few pixels a frame can
+  fall in the gap and vanish for a frame (Unknown Pleasures' flicker: a flat
+  stretch of one line gone for about 17 ms). The panel's TE line is on GPIO 38
+  (`OLED_TE`), M5GFX programs it (`0x35`, `0x44` at line 466) and nothing waits
+  for it. It pulses every 16.82 ms for 1.1 ms. A full push is 20.6 ms copying
+  into M5GFX's framebuffer plus 11.7 ms flushing to the panel (split by an
+  outer `startWrite()` around the `pushImage`; the flush happens at the
+  `endWrite`). `HackEntry::sync_to_refresh` (`XLOCKMORE_HACK_SYNCED`) starts
+  the push `kTeSyncOffsetUs` after TE rises (`runner/te_sync.h`). Only
+  Unknown Pleasures asks, because it costs up to a refresh of latency a frame.
+- The offset (7.4 ms) is the middle of the clean window, found by a sweep:
+  eight offsets across one refresh, 3 s each, the step number stamped on the
+  screen, filmed at 120 fps. 3.2 to 9.5 ms had no vanished line in 39 updates;
+  1.1 and 15.8 ms did, with the seam at row 495 and row 268: about 107 rows per
+  millisecond, so the bad window is only about 5 ms wide. It is valid for a
+  full-frame push (the 20.6 ms copy). A push of another size moves the flush
+  and the sweep would have to be repeated. `-DTE_DIAG` logs the TE period and
+  where pushes start.
+- Reading a film of the display: iPhone slo-mo files store their first and
+  last seconds at normal speed, so the label changes every ~100 frames there
+  and every 360 in the 120 fps middle. Stabilise against the scenery (four
+  corner patches; a mask edge around the display pins phase correlation at
+  zero), level the rows, and count a vanish only when a line is missing across
+  at least three 24 px windows on one row and not in a settled frame of the
+  same update. A detector that finds nothing must also find the event you know
+  is there: mine reported zero until a known vanish was used as a control, and
+  reported many false events on steep line stretches until settled frames were.
+- Every push also dims the screen: the dimmest band falls to 0.86 of its
+  settled brightness for about 25 ms (three camera frames at 120 fps), at 5 Hz,
+  with or without TE sync (0.860 synced, 0.870 unsynced). It is probably the
+  "whole screen redraws" flicker. Its cause is not known.
