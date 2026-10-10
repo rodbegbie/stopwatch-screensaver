@@ -397,3 +397,26 @@ def test_a_lit_vertex_with_no_light_enabled_has_no_light_terms():
     draw = f"glBegin(GL_TRIANGLES); glNormal3f(0,0,1); {TRIANGLE} glEnd();"
     counts = run(init="glEnable(GL_LIGHTING);", draw=draw)["counts"]
     assert (counts.lit_vertices, counts.light_terms) == (3, 0)
+
+
+def test_parse_arguments_collects_each_override():
+    args = gb.parse_arguments(
+        ["--override", "*count: 40", "--override", "*resolution: 50", "gears"]
+    )
+    assert args.overrides == ["*count: 40", "*resolution: 50"]
+    assert gb.parse_arguments(["gears"]).overrides == []
+
+
+@needs_cc
+def test_an_override_changes_what_the_hack_reads():
+    draw = (
+        'int n = get_integer_resource(MI_DISPLAY(mi), "tris", "Integer");'
+        f"glBegin(GL_TRIANGLES); while (n--) {{ {TRIANGLE} }} glEnd();"
+    )
+    source = stub_hack(draw=f"{{ {draw} }}").replace(
+        "*count: 0\\n", "*count: 0\\n*tris: 1\\n"
+    )
+    plain = gb.measure("stub", source, ROOT, frames=5)
+    over = gb.measure("stub", source, ROOT, frames=5, overrides=["*tris: 6"])
+    assert plain["counts"].triangles == 1
+    assert over["counts"].triangles == 6

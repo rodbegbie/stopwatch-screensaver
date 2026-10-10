@@ -5,13 +5,20 @@ TinyGL, and predicts the device frame time. It was built to choose between two
 candidates for the next GL port (issue #45) without flashing either.
 
 ```text
-uv run tools/gl_budget.py [--frames N] [--seeds a,b,c] name[:seed] ...
+uv run tools/gl_budget.py [--frames N] [--seeds a,b,c]
+    [--override '*name: value' ...] name[:seed] ...
 ```
 
 Gears is read from `firmware/src/hacks/gears/`; any other name from
 `vendor/xscreensaver-6.16/hacks/glx/` (git-ignored, never copied into the
 repo). A hack that does not build is reported with its first error, and the
 exit status is 1.
+
+`--override` gives the hack a resource line that beats its own defaults, as an
+entry in `registry.c`'s override list does on the device. Repeat it for more.
+It applies to every hack named, so run hacks with different overrides
+separately. Use it to try a registry override (`--override '*count: 40'`)
+before committing to it, or to supply one a hack needs to start.
 
 ## What it counts
 
