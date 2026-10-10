@@ -27,3 +27,7 @@ Do your end session tasks!
 ---
 
 Update my settings to allow mcp__pulse__process_thoughts and mcp__pulse__create_post!
+
+---
+
+Oh, add .clause/worktrees to .gitignore!
