@@ -4,8 +4,11 @@
 
 #define FPS_WINDOW_MS 1000u
 
-void overlay_init(Overlay *o, uint32_t name_ms) {
-  *o = (Overlay){.name_ms = name_ms, .battery_pct = -1, .drawn_battery_pct = -1};
+void overlay_init(Overlay *o, uint32_t name_ms, bool qr_available) {
+  *o = (Overlay){.name_ms = name_ms,
+                 .qr_available = qr_available,
+                 .battery_pct = -1,
+                 .drawn_battery_pct = -1};
 }
 
 void overlay_hack_started(Overlay *o, uint32_t now_ms) {
@@ -18,6 +21,7 @@ void overlay_hack_started(Overlay *o, uint32_t now_ms) {
 
 void overlay_cycle_info(Overlay *o) {
   o->info = o->info == INFO_BATTERY ? INFO_NONE : o->info + 1;
+  if (o->info == INFO_QR && !o->qr_available) o->info = INFO_FPS;
 }
 
 void overlay_set_battery(Overlay *o, int pct) {
@@ -37,13 +41,15 @@ void overlay_frame(Overlay *o, uint32_t now_ms) {
 }
 
 bool overlay_name_visible(const Overlay *o, uint32_t now_ms) {
-  return o->info != INFO_NAME && o->name_armed &&
+  return o->info != INFO_NAME && o->info != INFO_QR && o->name_armed &&
          now_ms - o->name_started_ms < o->name_ms;
 }
 
 bool overlay_fps_visible(const Overlay *o) { return o->info == INFO_FPS; }
 
 bool overlay_badge_visible(const Overlay *o) { return o->info == INFO_NAME; }
+
+bool overlay_qr_visible(const Overlay *o) { return o->info == INFO_QR; }
 
 bool overlay_battery_visible(const Overlay *o) {
   return o->info == INFO_BATTERY;
