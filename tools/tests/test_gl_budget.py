@@ -7,9 +7,37 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import gl_budget as gb  # noqa: E402
+import tinygl_patch  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 needs_cc = pytest.mark.skipif(shutil.which("cc") is None, reason="no C compiler")
+
+
+def patched_tree():
+    return tinygl_patch.patch_tree(gb.read_tinygl(ROOT))
+
+
+def test_instrument_adds_a_counter_at_each_site():
+    tree = gb.load_tinygl(ROOT)
+    assert "gl_budget_counts[0]" in tree["src/vertex.c"]
+    assert "gl_budget_counts[1]" in tree["src/vertex.c"]
+    for index in (2, 3, 4, 5):
+        assert f"gl_budget_counts[{index}]" in tree["src/clip.c"]
+    assert "extern double gl_budget_counts" in tree["src/zgl.h"]
+
+
+def test_instrument_fails_when_an_anchor_is_missing():
+    tree = patched_tree()
+    tree["src/clip.c"] = ""
+    with pytest.raises(ValueError, match="has upstream changed"):
+        gb.instrument(tree)
+
+
+def test_instrument_leaves_its_argument_alone():
+    tree = patched_tree()
+    before = dict(tree)
+    gb.instrument(tree)
+    assert tree == before
 
 
 def test_predict_with_nothing_drawn_is_the_fixed_cost():
