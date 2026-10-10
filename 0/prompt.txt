@@ -1,0 +1,5 @@
+Yes, flash it pinned to Deluxe
+
+---
+
+On screen looks correct, but it's too slow.  Definitely do some profiling to see if there's some ways to speed it up
