@@ -1,0 +1,11 @@
+All the on-screen checks pass. Colours, size and lighting are a-ok.  Push and open a PR, and then while I'm handling that, run the longer caputre with rotation on.
+
+---
+
+<task-notification>
+<task-id>by6a8cxdn</task-id>
+<tool-use-id>toolu_01CxL3JFDN8V3XPdkEUUVcBG</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/c2bb6844-8e62-4a0c-8f07-9f6d7f8d05df/tasks/by6a8cxdn.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for the capture to finish" completed (exit code 0)</summary>
+</task-notification>
