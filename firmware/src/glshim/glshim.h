@@ -22,6 +22,9 @@ typedef Drawable GLXDrawable;
 GLXContext *glshim_open(Canvas *canvas);
 /* Frees the context. Safe to call when none is open. */
 void glshim_close(void);
+/* True while a context is open. The tests use it to check that stopping a hack
+ * closed its context. */
+int glshim_is_open(void);
 
 Bool glXMakeCurrent(Display *dpy, GLXDrawable drawable, GLXContext ctx);
 /* TinyGL has drawn into the canvas already; this marks all of it dirty. */

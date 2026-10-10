@@ -23,6 +23,8 @@ void glshim_close(void) {
   g_canvas = NULL;
 }
 
+int glshim_is_open(void) { return g_zb != NULL; }
+
 GLXContext *glshim_open(Canvas *canvas) {
   static GLXContext handle;
 

@@ -89,6 +89,47 @@ void test_perspective_and_lookat_put_a_point_where_the_maths_says(void) {
   TEST_ASSERT_EQUAL_HEX16(0, cv.px[32 * SIZE + 16]);
 }
 
+/* TinyGL lights a vertex with specular only if glSetEnableSpecular(1) is on
+ * (it is off by default, and the hacks here never switch it on, so Gears has
+ * no highlights). With it on, a vertex whose normal is (1, 0, 0) under a
+ * light in direction (0.6, 0, 0.8) gets specular 0.6 ^ shininess: bright at
+ * shininess 1, black at 100. If glMateriali did not reach TinyGL the
+ * shininess would stay 0, and 0.6 ^ 0 is 1: bright in both. */
+static int specular_red_at_centre(int shininess) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glViewport(0, 0, SIZE, SIZE);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  const GLfloat black[4] = {0, 0, 0, 1}, white[4] = {1, 1, 1, 1};
+  const GLfloat direction[4] = {0.6f, 0, 0.8f, 0};
+  glEnable(GL_LIGHTING);
+  glEnable(GL_LIGHT0);
+  glSetEnableSpecular(1);
+  glLightfv(GL_LIGHT0, GL_POSITION, (GLfloat *)direction);
+  glLightfv(GL_LIGHT0, GL_AMBIENT, (GLfloat *)black);
+  glLightfv(GL_LIGHT0, GL_DIFFUSE, (GLfloat *)black);
+  glLightfv(GL_LIGHT0, GL_SPECULAR, (GLfloat *)white);
+  glLightModelfv(GL_LIGHT_MODEL_AMBIENT, (GLfloat *)black);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, (GLfloat *)black);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, (GLfloat *)black);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, (GLfloat *)white);
+  glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, shininess);
+  glNormal3f(1, 0, 0);
+  glBegin(GL_TRIANGLES);
+  glVertex3f(-0.9f, -0.9f, 0);
+  glVertex3f(0.9f, -0.9f, 0);
+  glVertex3f(0.0f, 0.9f, 0);
+  glEnd();
+  return px_swap(cv.px[(SIZE / 2) * SIZE + SIZE / 2]) >> 11; /* red, 0 to 31 */
+}
+
+void test_materiali_sets_the_shininess_tinygl_uses(void) {
+  TEST_ASSERT_TRUE(specular_red_at_centre(1) >= 12);
+  TEST_ASSERT_TRUE(specular_red_at_centre(100) <= 1);
+}
+
 void test_is_enabled_reports_texturing_off(void) {
   TEST_ASSERT_EQUAL_INT(0, glIsEnabled(GL_TEXTURE_2D));
 }
@@ -226,6 +267,7 @@ int main(void) {
   RUN_TEST(test_clear_writes_canvas_byte_order);
   RUN_TEST(test_the_first_list_name_is_not_zero);
   RUN_TEST(test_perspective_and_lookat_put_a_point_where_the_maths_says);
+  RUN_TEST(test_materiali_sets_the_shininess_tinygl_uses);
   RUN_TEST(test_is_enabled_reports_texturing_off);
   RUN_TEST(test_swap_buffers_marks_every_row_dirty);
   RUN_TEST(test_releasing_the_display_frees_the_context);

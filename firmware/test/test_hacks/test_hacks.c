@@ -12,6 +12,7 @@
 #include "xlockmore.h"
 #include "hacks/fast_trig.h"
 #include "hacks/pacman/pacman.h"
+#include "glshim/glshim.h"
 #include "hacks/registry.h"
 #include "runner/hack_runner.h"
 
@@ -359,7 +360,7 @@ static const uint64_t kBaseline[] = {
     0x8ce46510f0e0360cull, /* Mountain: taken after looking at the frames */
     0xa19684045106b327ull, /* Epicycle: taken after looking at the frames */
     0xdeb3899d2483b5b7ull, /* Kaleidescope: taken after looking at the frames */
-    0, /* Gears: pinned after looking at its frames */
+    0x41f708d6203d8140ull, /* Gears: taken after looking at the frames */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -585,6 +586,53 @@ void test_prev_from_first_wraps_to_last_hack(void) {
   runner_destroy(r);
 }
 
+static void start_step_and_stop_gears(int gears) {
+  HackRunner *r = runner_create(&cv);
+  runner_start(r, gears);
+  for (int f = 0; f < 5; f++) runner_step(r);
+  TEST_ASSERT_TRUE_MESSAGE(glshim_is_open(), "Gears did not open a GL context");
+  runner_destroy(r);
+  /* Checked here, not left to the next start: opening a context closes the
+   * old one, which would hide a missing release hook. */
+  TEST_ASSERT_FALSE_MESSAGE(glshim_is_open(), "the GL context outlived the hack");
+}
+
+/* The GL context (a 434 KB z-buffer on the board) is freed by the shim's
+ * release hook when the hack stops, and every display list goes with it:
+ * without the hook each visit to Gears would leave about 1 to 2 MB behind.
+ * Measure while stopped, not while running: a running Gears holds 0.9 to
+ * 2.5 MB depending on its random layout. Upstream's free_gears never frees
+ * its `bp->gears` array, so each start still leaks 40 to 1,500 bytes (13 KB
+ * over these 40 starts, with srandom(1)); 64 KB is well above that and far
+ * below one leaked context. */
+void test_gears_start_and_stop_do_not_leak(void) {
+  const int gears = index_of("Gears");
+  TEST_ASSERT_TRUE(gears >= 0);
+  srandom(1);
+  for (int i = 0; i < 3; i++) start_step_and_stop_gears(gears);
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  for (int i = 0; i < 40; i++) start_step_and_stop_gears(gears);
+  const size_t after = __sanitizer_get_current_allocated_bytes();
+  TEST_ASSERT_TRUE_MESSAGE(after < before + 64 * 1024, "allocated bytes grew");
+}
+
+/* A tripwire, not a proof. On the host this runs unoptimised under
+ * AddressSanitizer, which inflates frames several times over: Gears measures
+ * 21 KB here against a 2.4 KB high-water mark on the board (the loop task has
+ * 16 KB). The bound only catches a sudden recursion or a large local array. The
+ * real check is on the device. Three seeds give different layouts. */
+void test_gears_stack_use_on_the_host_has_not_run_away(void) {
+  const int gears = index_of("Gears");
+  TEST_ASSERT_TRUE(gears >= 0);
+  long worst = 0;
+  for (int seed = 1; seed <= 3; seed++) {
+    const long used = stack_used_by(gears, seed, 300);
+    TEST_ASSERT_TRUE_MESSAGE(used >= 0, "could not run the probe");
+    if (used > worst) worst = used;
+  }
+  TEST_ASSERT_TRUE_MESSAGE(worst < 32 * 1024, "Gears used 32 KB of host stack or more");
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -609,6 +657,8 @@ int main(void) {
   RUN_TEST(test_mountain_restarts_and_stops_do_not_leak);
   RUN_TEST(test_epicycle_stops_do_not_leak);
   RUN_TEST(test_kaleidescope_stops_do_not_leak);
+  RUN_TEST(test_gears_start_and_stop_do_not_leak);
+  RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
   return UNITY_END();
