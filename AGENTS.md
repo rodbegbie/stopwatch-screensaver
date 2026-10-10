@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD041 -->
 <!-- entire-graph:begin -->
 This repo has the entire-graph code graph installed. Before exploring code with
 grep/find/whole-file reads, read .entire/graph-agent.md — resolution-first guidance
