@@ -49,6 +49,10 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
   flag reached the binary with
   `strings -a -n 3 .pio/build/stopwatch/firmware.elf | grep -c '^Rod B\.$'`:
   plain `strings` skips anything under 4 characters.
+  In a worktree session the harness refuses backslash-escaped flag values and
+  `$(cat file)`. Use `PLATFORMIO_BUILD_FLAGS="'-DBADGE_NAME=\"Rod B.\"'
+  '-DSTART_HACK=\"gears\"' -DROTATE_SECONDS=0"` with `.venv/bin/pio run -d
+  firmware -e stopwatch -t upload` from the worktree root.
 - `pio run -e dump`, then `.pio/build/dump/program <index> <frames> out.raw`,
   then `uv run tools/rgb565_to_png.py out.raw 466 466 out.png` to see a frame.
   The index is the hack's 0-based position in `g_hacks[]` in
@@ -187,6 +191,10 @@ ones below apply everywhere.
   disturbed `.venv` while `pio` ran: "../.venv/bin/pio: no such file"), so run
   `uv` and `pio` one at a time. To fast-forward `main` or remove the worktree,
   leave it first with `ExitWorktree keep`.
+  Before `ExitWorktree remove` on a merged branch, check
+  `git merge-base --is-ancestor <tip> origin/main`; the tool's "discarded N
+  commits" count ignores merges. `.platformio`, `.venv` and `vendor` there are
+  symlinks, so removal leaves the real ones alone.
 - zsh does not word-split `$var`: loop over file lists with `bash -c`. It also
   stops on a glob that matches nothing, so quote `--include='*.c'`, and
   `grep` needs `-e` for a pattern that starts with a dash (`-e '->px'`).

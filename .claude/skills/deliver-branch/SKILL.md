@@ -36,6 +36,10 @@ Moved verbatim from AGENTS.md.
   Bot reviews can lag about 20 minutes. `N` is the trail number (PR #12 was
   trail 6), not the PR number. For a false positive or upstream behaviour in a
   byte-identical hack, use `entire trail finding dismiss N <id> -m "<reason>"`.
+- In a worktree session create the trail with a one-line `--body`, then set the
+  real body with `gh pr edit N --body-file` (keep the trail-link block), and
+  check `closingIssuesReferences` with `gh pr view N --json` (it can lag a
+  few seconds).
 - `entire trail update --body` takes no number and acts on the current
   branch (`entire trail update 8` errors).
 - Stacked PR: `entire trail create --base <parent-branch>`. When the parent
