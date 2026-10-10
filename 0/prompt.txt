@@ -1,0 +1,1 @@
+Look and Colours is correct.  6fps is pretty slow.  Can we try with fewer ticks?  Flash the device so I can see that.
