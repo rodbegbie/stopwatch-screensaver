@@ -1,0 +1,15 @@
+I don't think this needs a PR.  You can commit the current change on main and push it, and make sure the issue is closed.
+
+Then take a look at issue #45 which is some earlier thoughts on which GL hack to port next.  I'm curious if you agree with its assessment or if you think one of your current choices is better.
+
+---
+
+Let's build the harness and compare cubicgrid and morph3d.  I think both are good candidates that'll help our understanding.
+
+---
+
+Usable frame rate is the most valuable metric, but a decent, cheaper proxy is fine.
+
+---
+
+That all sounds good.  I think a standalone tool is probably right, but that's not a strong belief.  BTW, you can also use entire to search previous sessions to check things you've investigated before.
