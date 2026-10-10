@@ -102,11 +102,11 @@ Halftone with `XFillArc` returning at once measured 15.4 fps (step 31.8 ms), so
 its dots' ellipse fills are about 80% of its step (issue #57). Forest waits
 500 ms between trees by design.
 
-Rod looked at fourteen of the fifteen registered hacks of the batch on the
-device on 2026-10-10 and found them performant and in line with the same hacks
-on other platforms. Anemotaxis was not in his list, so it is unreviewed. He
-kept all fourteen in the rotation, Forest included. Halftone stays out
-(issue #57) and Truchet is not ported (issue #58).
+Rod looked at all fifteen registered hacks of the batch on the device on
+2026-10-10 and found them performant and in line with the same hacks on other
+platforms (Anemotaxis was missing from his written list; he confirmed after
+that he had looked at it). All fifteen stay in the rotation, Forest included.
+Halftone stays out (issue #57) and Truchet is not ported (issue #58).
 
 Maze's row is 26 five-second readings over 160 seconds, taken on a build that
 includes the overlay stamping. Its steps are cheap, and its frame rate is set
