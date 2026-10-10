@@ -1,0 +1,17 @@
+20-tick looks grand. Maybe even better, on the small display.
+
+---
+
+File the leak capture and morph3d shapes as a follow-up issue.  In an hour or so, I'll be heading to bed, so that's probably a great time for you to watch the device for a couple of hours and really see how it behaves.
+
+---
+
+OK. While we wait, we can probably close issue #45.  Leave a comment on it with your findings and progress.
+
+---
+
+Trail 27 is approved.  Merge it.
+
+---
+
+Run your end session tasks
