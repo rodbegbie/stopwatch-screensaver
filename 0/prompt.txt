@@ -1,0 +1,12 @@
+I'm not sure agents ever did much searching of the graph before anyway.  Do *you* think it's important, given the context you have?
+
+---
+
+No, not now.  We've other things to do.  
+
+OK, a little README maintenance.
+
+1. Do a quick review of README.md and make sure it's still accurate, and sharing the information useful to someone seeing this code repo for the first time.
+2. In the first paragraph, link the word xscreensaver to the xscreensaver website: https://www.jwz.org/xscreensaver/
+3. In the first paragraph, linke "M5Stack StopWatch" to https://shop.m5stack.com/products/m5stack-stopwatch-dev-kit-esp32-s3
+4. I've added a video file: docs/video.avif.  Embed it between the first and second paragraphs of the README
