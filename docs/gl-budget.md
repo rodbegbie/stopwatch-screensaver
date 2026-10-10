@@ -173,6 +173,10 @@ cheap, as the model assumed.
   used one heavy and one light scene, both made of many small triangles (15 to
   30 pixels each). The fill figure of 570 ns a pixel absorbs per-triangle cost,
   so a scene of few large triangles is likely over-predicted.
+- **The constants predate the clip-epsilon fix** (#43). That fix took about
+  0.7 us a vertex off the device (CubicGrid's step fell 5.6 ms at 8,000
+  points), so on a build with it the model's vertex cost is about that high
+  until it is refitted.
 - **Lighting cost is per light.** The model charges one flat figure per lit
   vertex, measured with a single light.
 - **Lines and points have no cost of their own** beyond vertex setup.
