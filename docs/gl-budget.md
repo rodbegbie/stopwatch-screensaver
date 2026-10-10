@@ -28,9 +28,10 @@ every frame. Per frame, it records:
 ## The cost model
 
 A frame costs a fixed 56.6 ms (clear 24.6 ms, display push 32 ms), plus 4 us
-per vertex, 2.8 us more per lit vertex (both from the Pipes probe in #43), plus
-a fill term. The fill term is 570 ns a pixel, fitted so that the heavy Gears
-scene (seed 13, 17,700 vertices) costs the 40 ms of fill that #43 measured.
+per vertex, 2.8 us more for each enabled light on each lit vertex (both from the
+Pipes probe in #43, measured with one light), plus a fill term. The fill term
+is 570 ns a pixel, fitted so that the heavy Gears scene (seed 13, 17,700
+vertices) costs the 40 ms of fill that #43 measured.
 
 Checked against Gears, the only hack with device numbers. The fit and the
 tests use 60 frames; the table below is a 300 frame run, and Gears' pixel
@@ -52,7 +53,7 @@ based, so the fixed 56.6 ms sets a ceiling of about 17.7 fps for anything.
 
 | Hack | Vertices | Triangles | Points | Predicted | fps |
 | --- | --- | --- | --- | --- | --- |
-| morph3d, four shapes (seeds 1 to 8) | 3,864 to 7,200 | 2,300 to 4,000 | 0 | 87 to 114 ms | 8.8 to 11.5 |
+| morph3d, four of its five shapes (seeds 1 to 8) | 3,864 to 7,200 | 2,300 to 4,000 | 0 | 87 to 114 ms | 8.8 to 11.5 |
 | cubicgrid, default `ticks` 30 | 27,000 | 0 | 27,000 | 165 ms | 6.1 |
 
 - **morph3d** is lit and vertex-bound, but treat 9 to 11 fps as optimistic.
@@ -98,35 +99,37 @@ is step plus push, the quantity the model predicts.
 | --- | --- | --- | --- |
 | Gears heavy, seed 13 | 211 ms | about 207 ms (#43) | in-sample, fitted |
 | Gears light, seed 11 | 117 ms | about 111 ms (#43) | +5% (held out) |
-| Morph3D, heavy shape | 114 ms | 111 to 118 ms | -3% to +4% |
-| Morph3D, light shape | 87 ms | 84 ms | -3% |
+| Morph3D, 5,040 or 5,100 vertices (corrected, see below) | 98 to 100 ms | 111 to 118 ms | +11% to +20% |
+| Morph3D, 2,300 vertices (not in the first survey) | none | 84 ms | |
 | CubicGrid, 27,000 points | 165 ms | 170 to 180 ms | +3% to +9% |
 | CubicGrid, 8,000 points | 89 ms | 80 to 88 ms | -10% to -1% |
 
-- **Good to about 10 percent** on these four scenes that were not used in the
-  fit, in both directions. It also ranked them correctly, which is the use it
+- **Good to about 10 percent for Gears and CubicGrid; Morph3D was 11 to 20
+  percent too optimistic** (see the correction below), until the model charged
+  each enabled light. It ranked them correctly throughout, which is the use it
   was built for: choosing which hack to port and what to turn down.
 - **The Gears rows are weaker evidence than the rest.** Their "measured"
   figures are the breakdown quoted in issue #43, not a capture made for this
   comparison, and the fill figure was fitted to the heavy one.
-- **The device shapes of Morph3D are inferred.** The device does not seed
-  `random()`, so a Morph3D start cannot be asked for its shape: the heavy and
-  light rows are matched by step time (78 to 82 ms and 48 ms). The two middle
-  shapes (5,040 and 5,100 vertices, predicted at about 98 to 100 ms) have not
-  appeared in five starts.
-- **The worries raised in review did not show up.** The model charges one
-  light, and Morph3D has two; its triangles are 3 to 4 pixels where Gears'
-  are 15 to 30; CubicGrid's points are drawn 2.5 pixels wide and uncosted. All
-  three would have made the model optimistic, and none did on the board:
-  Morph3D landed within 4 percent, and CubicGrid's two sizes imply about
-  4.7 microseconds a point against the model's 4. They may still bite a hack
-  that leans harder on them, so the caveats under "What this does not tell
-  us" stand.
+- **Correction (from the overnight capture, below).** An earlier version of
+  this table matched Morph3D's measured steps to its shapes by size alone and
+  called them the 7,200 and 3,864 vertex shapes, giving errors of -3 percent to
+  +4 percent. The overnight capture shows the 78 to 82 ms and 48 ms steps were
+  the 5,040 or 5,100 vertex shapes and the 2,300 vertex shape, so the old model
+  under-predicted by 11 to 20 percent. The device does not seed `random()`, so a
+  start cannot be asked for its shape; shapes are matched by the order of their
+  step times, which must follow vertex count.
+- **The review's worry about lights was right.** Morph3D has two lights and the
+  model charged one lit cost per vertex. Charging 2.8 us for each enabled light
+  (the `light_terms` counter) reproduces all five shapes: predicted old steps of
+  48, 66, 80 or 82 and 102 ms against 48 and 78 to 82 measured directly and about
+  45, 65, 81 and 102 inferred. Its tiny triangles and CubicGrid's wide points
+  have not shown up as errors, and CubicGrid's two sizes imply about
+  4.7 microseconds a point against the model's 4.
 - **Use it for ranking and go or no-go, with a margin of 10 percent.** A
   prediction within 10 percent of a frame-rate threshold needs the board to
-  settle it. Add each
-  new GL port's measured step to the table and refit `pixel_ns` if the errors
-  drift in one direction.
+  settle it. Add each new GL port's measured step to the table and refit
+  `pixel_ns` if the errors drift in one direction.
 
 ## Device check: Morph3D
 
@@ -139,12 +142,9 @@ PSRAM was identical on every visit; the free heap on entering Morph3D fell 308,
 36 and 40 bytes on the three laps after the first, which is in line with
 Gears' known upstream leak and cannot be attributed to Morph3D.
 
-Against the prediction (step plus push 87 to 114 ms, so a step of 55 to 82 ms):
-the 48 ms start sits just under the light shape's 55 ms, and the 78 to 82 ms
-starts match the heavy shape's 82 ms. No start landed in the 66 to 68 ms the
-two middle shapes (5,040 and 5,100 vertices) predict, so those shapes have not
-been seen on the board, and the device does not seed `random()`, so a shape
-cannot be asked for. The model held at both ends; its middle is unchecked.
+This section's first reading of those steps (that they were the 3,864 and 7,200
+vertex shapes) was wrong; see the correction under "Accuracy against the
+device" and the overnight capture below.
 
 ## Device check: CubicGrid
 
@@ -250,6 +250,49 @@ frame, out of 466):
 - The cost model's clear and push constants (24.6 and 32 ms) assume a full
   canvas; with this change they scale by the percentages above.
 
+## Overnight capture (issue #50)
+
+On 2026-10-10 from 01:00 to 03:14, from `main` at 4ddb0a5 (dirty rectangle, 10 ms
+pauses for Morph3D and Gears, epsilon fix), rotating every 10 seconds: 795
+rotations, 23 laps of the 35 hacks, no resets or panics.
+
+**Leaks.** PSRAM was identical (7,327,227 bytes) on all 23 visits to Morph3D,
+CubicGrid and Gears. Free internal heap on entering a hack fell by 388 bytes a
+lap on average after lap 2 (range 36 to 1,364). Each lap's fall tracks Gears'
+own per-visit variation exactly (correlation 1.00, standard deviation 403 bytes
+in both), while Morph3D's per-visit variation is 0.0 and CubicGrid's 1.7 bytes.
+So the drift is Gears' known upstream leak (`free_gears` never frees
+`bp->gears`), and Morph3D and CubicGrid leak nothing measurable.
+
+**Morph3D's shapes.** Morph3D has five shapes, with 2,300, 3,864, 5,040, 5,100
+and 7,200 vertices (the eight-seed survey in "The comparison" missed the 2,300
+one; 30 seeds found all five). Its 23 starts fell into four clusters of step
+time. 5,040 and 5,100 cannot be told apart, and step must rise with vertex
+count, so the clusters map onto the sizes in order:
+
+| Shape (vertices) | Starts | Step | fps | Push | Rows sent |
+| --- | --- | --- | --- | --- | --- |
+| 2,300 | 7 | 20 to 24 ms | 28.0 to 31.2 | 6.3 to 7.2 ms | 105 to 125 |
+| 3,864 | 6 | 38 to 41 ms | 19.0 to 20.0 | 7.8 to 8.8 ms | 140 to 155 |
+| 5,040 or 5,100 | 7 | 52 to 59 ms | 14.2 to 15.8 | 8.0 to 9.1 ms | 140 to 162 |
+| 7,200 | 3 | 74 to 75 ms | 11.6 to 11.8 | 8.2 to 8.7 ms | 143 to 151 |
+
+Adding back the clear and epsilon savings (22.6 ms and 0.7 us a vertex) gives
+the steps those shapes would have had before this work: about 45, 65, 81 and
+102 ms. Two were measured directly then: 48 ms (the 2,300 shape) and 78 to
+82 ms (the 5,040 or 5,100 shape), which is how the earlier mismatch shows. With
+a light term for each enabled light the model predicts 48, 66, 80 or 82 and
+102 ms (within 2 percent for four shapes and 7 for the 2,300 one).
+
+The earlier claim here that the middle shapes had never been seen was wrong the
+other way round: the 78 to 82 ms starts were them, and the shapes not yet seen
+were the 3,864 and 7,200 vertex ones, which have now appeared.
+
+**Other hacks, final code.** CubicGrid (37 windows) 11.2 to 14.0 fps, step 38
+to 53 ms (it falls as the grid turns), push 32 to 36 ms, 464 to 466 rows.
+Gears (29 windows, many layouts) 4.0 to 19.8 fps, step 39 to 241 ms, push 6 to
+24 ms, 135 to 352 rows.
+
 ## What this does not tell us
 
 - **Only Gears is calibrated**, although three hacks now agree with it. The fit
@@ -260,8 +303,10 @@ frame, out of 466):
   0.7 us a vertex off the device (CubicGrid's step fell 5.6 ms at 8,000
   points), so on a build with it the model's vertex cost is about that high
   until it is refitted.
-- **Lighting cost is per light.** The model charges one flat figure per lit
-  vertex, measured with a single light.
+- **Lighting cost is per enabled light**, and the model now charges it so
+  (`light_terms`); the 2.8 us a light was measured with a directional light and
+  no specular, so a hack with positional lights or specular is likely to cost
+  more.
 - **Lines and points have no cost of their own** beyond vertex setup.
   cubicgrid is entirely points, so its figure is an optimistic floor.
 - **Wireframe or point polygon modes** still count the full triangle area as

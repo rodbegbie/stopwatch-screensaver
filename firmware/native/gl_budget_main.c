@@ -11,7 +11,7 @@
  * Runs hack 0 of the registry, seeded with srandom(seed), and prints the mean
  * per-frame counts that tools/gl_budget.py reads. The counters live inside a
  * private copy of TinyGL built by that tool. */
-double gl_budget_counts[6];
+double gl_budget_counts[7];
 double gl_budget_bbox[4]; /* xmin, ymin, xmax, ymax of what a frame drew */
 
 /* The boxes come from glshim itself, after its clamping and ordering, so this
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
     runner_step(r);
     prev = take_bbox();
   }
-  for (int i = 0; i < 6; i++) gl_budget_counts[i] = 0;
+  for (int i = 0; i < 7; i++) gl_budget_counts[i] = 0;
   const double screen = (double)cv.w * cv.h;
   double sum_bbox = 0, sum_clear = 0, sum_push = 0;
   const double start = now_ms();
@@ -92,9 +92,9 @@ int main(int argc, char **argv) {
   const double host_ms = (now_ms() - start) / frames;
 
   printf("counts frames=%d", frames);
-  const char *names[6] = {"vertices", "lit_vertices", "triangles",
-                          "lines",    "points",       "pixels"};
-  for (int i = 0; i < 6; i++)
+  const char *names[7] = {"vertices", "lit_vertices", "triangles", "lines",
+                          "points",   "pixels",       "light_terms"};
+  for (int i = 0; i < 7; i++)
     printf(" %s=%.4f", names[i], gl_budget_counts[i] / frames);
   printf(" host_ms=%.4f bbox=%.4f clear=%.4f push=%.4f\n", host_ms,
          sum_bbox / frames, sum_clear / frames, sum_push / frames);
