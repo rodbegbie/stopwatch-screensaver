@@ -15,11 +15,12 @@ static struct XshimPixmap *pixmap_of(Pixmap p) {
 
 static void pixmap_free(struct XshimPixmap *pm) {
   if (!pm) return;
-  free(pm->rgb);
+  canvas_free(&pm->canvas);
   free(pm->bits);
   free(pm);
 }
 
+/* A colour pixmap starts black; a bitmap's bits are left for the caller. */
 static struct XshimPixmap *pixmap_new(int w, int h, int depth) {
   struct XshimPixmap *pm = (struct XshimPixmap *)calloc(1, sizeof(*pm));
   if (!pm) return NULL;
@@ -27,15 +28,20 @@ static struct XshimPixmap *pixmap_new(int w, int h, int depth) {
   pm->h = h;
   pm->depth = depth;
   pm->stride = (w + 7) / 8;
-  if (depth == 1)
-    pm->bits = (uint8_t *)malloc((size_t)pm->stride * (size_t)h);
-  else
-    pm->rgb = (uint16_t *)malloc((size_t)w * (size_t)h * sizeof(uint16_t));
-  if (!pm->bits && !pm->rgb) {
+  const int ok = depth == 1
+                     ? (pm->bits = (uint8_t *)malloc((size_t)pm->stride * (size_t)h)) != NULL
+                     : canvas_init(&pm->canvas, w, h, malloc) == 0;
+  if (!ok) {
     pixmap_free(pm);
     return NULL;
   }
   return pm;
+}
+
+Canvas *xshim_target(Display *dpy, Drawable d) {
+  if (d == WINDOW_ID) return dpy->canvas;
+  struct XshimPixmap *pm = pixmap_of(d);
+  return pm && pm->depth == 16 ? &pm->canvas : NULL;
 }
 
 static void track(Display *dpy, struct XshimPixmap *pm) {
@@ -96,7 +102,8 @@ Pixmap image_data_to_pixmap(Display *dpy, Window win, const unsigned char *data,
     pixmap_free(mask);
     return None;
   }
-  for (unsigned i = 0; i < w * h; i++) colour->rgb[i] = px_swap((uint16_t)le16(data + 8 + 2 * i));
+  for (unsigned i = 0; i < w * h; i++)
+    colour->canvas.px[i] = px_swap((uint16_t)le16(data + 8 + 2 * i));
   memcpy(mask->bits, data + 8 + pixel_bytes, (size_t)mask_bytes);
 
   track(dpy, colour);
@@ -189,10 +196,7 @@ Pixmap XCreatePixmap(Display *dpy, Drawable d, unsigned int w, unsigned int h,
   struct XshimPixmap *pm = pixmap_new((int)w, (int)h, depth == 1 ? 1 : 16);
   if (!pm) return None;
   track(dpy, pm);
-  if (pm->bits)
-    memset(pm->bits, 0, (size_t)pm->stride * (size_t)pm->h);
-  else
-    memset(pm->rgb, 0, (size_t)pm->w * (size_t)pm->h * sizeof(uint16_t));
+  if (pm->bits) memset(pm->bits, 0, (size_t)pm->stride * (size_t)pm->h);
   return (Pixmap)(uintptr_t)pm;
 }
 
@@ -208,17 +212,26 @@ static void set_bit(struct XshimPixmap *pm, int x, int y, int on) {
  * colour destination, or two bitmaps, pixels are copied as they are; a bitmap
  * drawn on the canvas uses the GC's foreground and background. When source and
  * destination are the same pixmap and overlap, rows and columns are walked in
- * the order that reads each pixel before it is overwritten. */
+ * the order that reads each pixel before it is overwritten. Otherwise, with no
+ * clip mask, colour rows are copied whole. */
 static void copy_region(Display *dpy, GC gc, const struct XshimPixmap *src,
                         struct XshimPixmap *dst, int sx, int sy,
                         unsigned int w, unsigned int h, int dx, int dy) {
+  Canvas *const out = dst ? (dst->depth == 16 ? &dst->canvas : NULL) : dpy->canvas;
   const int64_t dw = dst ? dst->w : dpy->canvas->w;
   const int64_t dh = dst ? dst->h : dpy->canvas->h;
   const int64_t i0 = max64(0, max64(-(int64_t)sx, -(int64_t)dx));
   const int64_t i1 = min64(w, min64((int64_t)src->w - sx, dw - dx));
   const int64_t j0 = max64(0, max64(-(int64_t)sy, -(int64_t)dy));
   const int64_t j1 = min64(h, min64((int64_t)src->h - sy, dh - dy));
+  if (i1 <= i0 || j1 <= j0) return;
   const int same = dst == src;
+  if (src->depth == 16 && out && !same && !gc->clip) {
+    for (int64_t j = j0; j < j1; j++)
+      canvas_paste_rect(out, (int)(dx + i0), (int)(dy + j), (int)(i1 - i0), 1,
+                        src->canvas.px + (sy + j) * src->w + sx + i0);
+    return;
+  }
   const int reverse_x = same && dx > sx, reverse_y = same && dy > sy;
   for (int64_t jj = 0; jj < j1 - j0; jj++) {
     const int64_t j = reverse_y ? j1 - 1 - jj : j0 + jj;
@@ -229,17 +242,13 @@ static void copy_region(Display *dpy, GC gc, const struct XshimPixmap *src,
       const int64_t px = sx + i, py = sy + j;
       if (src->depth == 1) {
         const int bit = bit_at(src, (int)px, (int)py);
-        if (!dst)
-          canvas_point(dpy->canvas, (int)x, (int)y,
+        if (out)
+          canvas_point(out, (int)x, (int)y,
                        (uint16_t)(bit ? gc->foreground : gc->background));
         else
           set_bit(dst, (int)x, (int)y, bit);
       } else {
-        const uint16_t colour = src->rgb[py * src->w + px];
-        if (!dst)
-          canvas_point(dpy->canvas, (int)x, (int)y, colour);
-        else
-          dst->rgb[y * dst->w + x] = colour;
+        canvas_point(out, (int)x, (int)y, src->canvas.px[py * src->w + px]);
       }
     }
   }
