@@ -1,0 +1,1 @@
+Actually, instead of disabling the check, move the entire-graph block from the top to the end of the file.
