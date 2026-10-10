@@ -1,0 +1,5 @@
+OK, the trail is approved.  You may merge the PR.
+
+---
+
+Update speed-predictions.md.  File a ticket for Pacman memory.  What is the Window id issue? I'm not sure I know about it.
