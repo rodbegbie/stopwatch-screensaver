@@ -15,6 +15,12 @@
 #include "yarandom.h"
 #include "x11shim/xshim.h"
 
+/* A GL hack sets USE_GL for its own file only: it sees GL, others do not. */
+#ifdef USE_GL
+# include "utils.h"
+# include "glshim/glshim.h"
+#endif
+
 struct xscreensaver_function_table {
   const char *progclass;
   const char *const *defaults;

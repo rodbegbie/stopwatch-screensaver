@@ -39,6 +39,14 @@ def check(src_dir: Path, notices_md: Path) -> list[str]:
             problems.append(f"{rel}: no licence notice in first {HEADER_LINES} lines")
         if path.name not in notices and path.stem not in notices:
             problems.append(f"{rel}: not listed in {notices_md.name}")
+    # TinyGL's sources carry no per-file header, so it is checked as a
+    # directory: its LICENSE beside the sources, and a mention in the notices.
+    tinygl = src_dir / "tinygl"
+    if tinygl.is_dir():
+        if not (tinygl / "LICENSE").is_file():
+            problems.append("tinygl: no LICENSE file")
+        if "TinyGL" not in notices:
+            problems.append(f"tinygl: not mentioned in {notices_md.name}")
     return problems
 
 

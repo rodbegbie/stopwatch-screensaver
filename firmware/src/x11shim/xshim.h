@@ -95,9 +95,28 @@ typedef union {
   int type;
   struct {
     int type;
+  } xany;
+  struct {
+    int type;
     unsigned int button;
+    int x, y;
+    unsigned int state;
   } xbutton;
+  struct {
+    int type;
+    int x, y;
+    unsigned int state;
+  } xmotion;
 } XEvent;
+
+#define ButtonPress 4
+#define ButtonRelease 5
+#define MotionNotify 6
+#define Button1 1
+#define Button2 2
+#define Button3 3
+#define Button4 4
+#define Button5 5
 
 typedef struct {
   char *option;
@@ -158,6 +177,10 @@ void xshim_close_display(Display *dpy);
  * leaks (Pacman keeps neither the unscaled sprites nor some scaled ones) is
  * made whole by calling this when it stops. */
 void xshim_release_pixmaps(Display *dpy);
+/* A subsystem that holds per-hack state (the GL layer) registers a hook and is
+ * told when the hack stops: xshim_release_pixmaps calls it once, with the
+ * display, after freeing the pixmaps, and then clears it. */
+void xshim_set_release_hook(void (*hook)(Display *dpy));
 
 GC XCreateGC(Display *, Drawable, unsigned long mask, XGCValues *);
 int XFreeGC(Display *, GC);

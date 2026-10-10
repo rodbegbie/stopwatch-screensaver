@@ -53,11 +53,20 @@ static void untrack(Display *dpy, struct XshimPixmap *pm) {
   if (pm->next) pm->next->prev = pm->prev;
 }
 
+static void (*g_release_hook)(Display *dpy);
+
+void xshim_set_release_hook(void (*hook)(Display *dpy)) { g_release_hook = hook; }
+
 void xshim_release_pixmaps(Display *dpy) {
   while (dpy->pixmaps) {
     struct XshimPixmap *pm = dpy->pixmaps;
     untrack(dpy, pm);
     pixmap_free(pm);
+  }
+  if (g_release_hook) {
+    void (*hook)(Display *) = g_release_hook;
+    g_release_hook = NULL;
+    hook(dpy);
   }
 }
 

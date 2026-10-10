@@ -66,6 +66,21 @@ implied warranty.
 | `firmware/src/hacks/epicycle/epicycle.c` | Copyright (c) 1998 James Youngman | jwz permission notice (above) |
 | `firmware/src/hacks/kaleidescope/kaleidescope.c` | Copyright (c) 1997, 2006 Ron Tapia | jwz permission notice (above) |
 | `firmware/src/hacks/celtic/celtic.c` | Copyright (c) 2006 Max Froumentin | jwz permission notice (above) |
+| `firmware/src/hacks/gears/gears.c` | Copyright (c) 2007-2019 Jamie Zawinski; originally written by Brian Paul in 1996 or earlier | jwz permission notice (above) |
+| `firmware/src/xs_support/glx/involute.c` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/xs_support/glx/involute.h` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/xs_support/glx/normals.c` | Copyright (c) 2002-2004 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/xs_support/glx/normals.h` | Copyright (c) 2002-2021 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/xs_support/glx/tube.c` | Copyright (c) 2001-2012 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/xs_support/glx/tube.h` | Copyright (c) 2001, 2003, 2007 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/xs_support/glx/rotator.c` | Copyright (c) 1998-2016 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/xs_support/glx/rotator.h` | Copyright (c) 1998-2002 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/xs_support/glx/gltrackball.c` | Copyright © 2002-2026 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/xs_support/glx/gltrackball.h` | Copyright © 2002-2026 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/xs_support/glx/quaternion.c` | Copyright (c) 2026 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/xs_support/glx/quaternion.h` | Copyright (c) 2026 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/xs_support/glx/trackball.c` | Copyright 1993, 1994, Silicon Graphics, Inc. | Silicon Graphics notice (below) |
+| `firmware/src/xs_support/glx/trackball.h` | Copyright 1993, 1994, Silicon Graphics, Inc. | Silicon Graphics notice (below) |
 
 Each copied file keeps its own header unchanged; the notice text above is
 reproduced here to satisfy the "supporting documentation" requirement.
@@ -163,3 +178,80 @@ this repository does not contain it. `firmware/pacman_sprites.py` reads it from
 `vendor/` at build time and converts it to the raw blob described in
 `ximage-loader.h` (3 MB as C text) in the build directory. The sprites are not
 part of the MIT-licensed code in this repository.
+
+### Silicon Graphics notice (trackball)
+
+`trackball.c` and `trackball.h` (the virtual trackball Gears' helper
+`gltrackball.c` uses) are Silicon Graphics' code, not jwz's, and carry this
+notice, reproduced as it appears in the files:
+
+```text
+(c) Copyright 1993, 1994, Silicon Graphics, Inc.
+ALL RIGHTS RESERVED
+Permission to use, copy, modify, and distribute this software for
+any purpose and without fee is hereby granted, provided that the above
+copyright notice appear in all copies and that both the copyright notice
+and this permission notice appear in supporting documentation, and that
+the name of Silicon Graphics, Inc. not be used in advertising
+or publicity pertaining to distribution of the software without specific,
+written prior permission.
+
+THE MATERIAL EMBODIED ON THIS SOFTWARE IS PROVIDED TO YOU "AS-IS"
+AND WITHOUT WARRANTY OF ANY KIND, EXPRESS, IMPLIED OR OTHERWISE,
+INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF MERCHANTABILITY OR
+FITNESS FOR A PARTICULAR PURPOSE.  IN NO EVENT SHALL SILICON
+GRAPHICS, INC.  BE LIABLE TO YOU OR ANYONE ELSE FOR ANY DIRECT,
+SPECIAL, INCIDENTAL, INDIRECT OR CONSEQUENTIAL DAMAGES OF ANY
+KIND, OR ANY DAMAGES WHATSOEVER, INCLUDING WITHOUT LIMITATION,
+LOSS OF PROFIT, LOSS OF USE, SAVINGS OR REVENUE, OR THE CLAIMS OF
+THIRD PARTIES, WHETHER OR NOT SILICON GRAPHICS, INC.  HAS BEEN
+ADVISED OF THE POSSIBILITY OF SUCH LOSS, HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE
+POSSESSION, USE OR PERFORMANCE OF THIS SOFTWARE.
+
+US Government Users Restricted Rights
+Use, duplication, or disclosure by the Government is subject to
+restrictions set forth in FAR 52.227.19(c)(2) or subparagraph
+(c)(1)(ii) of the Rights in Technical Data and Computer Software
+clause at DFARS 252.227-7013 and/or in similar or successor
+clauses in the FAR or the DOD or NASA FAR Supplement.
+Unpublished-- rights reserved under the copyright laws of the
+United States.  Contractor/manufacturer is Silicon Graphics,
+Inc., 2011 N.  Shoreline Blvd., Mountain View, CA 94039-7311.
+
+OpenGL(TM) is a trademark of Silicon Graphics, Inc.
+```
+
+## TinyGL
+
+**This product uses TinyGL**, a small software OpenGL by Fabrice Bellard, in
+the fork maintained by C-Chads (<https://github.com/C-Chads/tinygl>, commit
+`36a7987`). It draws the OpenGL hacks. The licence below requires this
+acknowledgment in the product and its documentation.
+
+The sources in `firmware/src/tinygl/` are committed unchanged, with the
+upstream `LICENSE`. The firmware does not compile them as they are:
+`tools/tinygl_patch.py` writes an altered copy into the build directory (16-bit
+byte-swapped pixels, a PSRAM allocator, display list names from 1, single
+precision maths, and fixes for three upstream bugs), and that altered copy is
+what runs on the board. It is not the original TinyGL.
+
+```text
+ (C) 1997-2021 Fabrice Bellard, Gek (DMHSW), C-Chads
+
+  This software is provided 'as-is', without any express or implied
+  warranty.  In no event will the authors be held liable for any damages
+  arising from the use of this software.
+
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
+
+  1. The origin of this software must not be misrepresented; you must not
+     claim that you wrote the original software. If you use this software
+     in a product, an acknowledgment in the product and its documentation
+     *is* required.
+  2. Altered source versions must be plainly marked as such, and must not be
+     misrepresented as being the original software.
+  3. This notice may not be removed or altered from any source distribution.
+```

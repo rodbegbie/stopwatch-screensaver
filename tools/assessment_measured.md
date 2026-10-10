@@ -1,6 +1,6 @@
 ## Measured on the device
 
-Thirty-three hacks have been run so far (default settings, 466×466 canvas
+Thirty-four hacks have been run so far (default settings, 466×466 canvas
 pushed to the display every frame, canvas held in PSRAM). The firmware times
 each frame in three parts, averaged over 5 seconds: **step** is the hack's own
 draw call, **push** is sending the canvas to the display, and **wait** is what
@@ -43,6 +43,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Mountain | 44.0-45.2 | 0-0.4 ms | 0.1-0.4 ms | 21.9-22.1 ms | about 20 KB |
 | Epicycle | 22.8-44.0 | 0.3-2.1 ms | 0.3-0.8 ms | 22.0-59.5 ms | none measurable |
 | Kaleidescope | 27.8-34.4 | 7.0-9.8 ms | 17.7-25.5 ms | 0-3.7 ms | none measurable |
+| Gears | 2.8-10.0 | 65-330 ms | 32.3-34.5 ms | 0 ms | 0.7-1.4 MB |
 | Celtic | 1.0-20.4 | 29-1025 ms | 0.1-5.5 ms | 7.9-928 ms | none measurable |
 
 Maze's row is 26 five-second readings over 160 seconds, taken on a build that

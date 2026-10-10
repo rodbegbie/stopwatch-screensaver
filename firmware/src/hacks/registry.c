@@ -45,6 +45,10 @@ XLOCKMORE_HACK(mountain, "Mountain");
 extern const HackEntry substrate_hack;
 extern const HackEntry epicycle_hack;
 extern const HackEntry kaleidescope_hack;
+/* The xlockmore framework reads ncolors and cycles; Gears defines neither, and
+ * nothing in Gears uses them. */
+static const char *const kGearsOverrides[] = {"*ncolors: 64", "*cycles: 0", NULL};
+XLOCKMORE_HACK_WITH(gears, "Gears", kGearsOverrides);
 
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
@@ -68,5 +72,6 @@ const HackEntry *const g_hacks[] = {
     &braid_hack,
     &mountain_hack,
     &epicycle_hack,
-    &kaleidescope_hack};
+    &kaleidescope_hack,
+    &gears_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);

@@ -1757,8 +1757,27 @@ void test_copy_area_into_a_pixmap_that_failed_to_allocate_leaves_the_canvas_alon
   XFreePixmap(dpy, mask);
 }
 
+static int hook_calls;
+static Display *hook_arg;
+static void counting_hook(Display *d) {
+  hook_calls++;
+  hook_arg = d;
+}
+
+/* The GL layer registers one so its context is freed when a hack stops. */
+void test_release_hook_runs_once_with_the_display_and_is_then_cleared(void) {
+  hook_calls = 0;
+  hook_arg = NULL;
+  xshim_set_release_hook(counting_hook);
+  xshim_release_pixmaps(dpy);
+  xshim_release_pixmaps(dpy);
+  TEST_ASSERT_EQUAL_INT(1, hook_calls);
+  TEST_ASSERT_EQUAL_PTR(dpy, hook_arg);
+}
+
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_release_hook_runs_once_with_the_display_and_is_then_cleared);
   RUN_TEST(test_image_data_to_pixmap_makes_a_colour_pixmap_and_a_mask);
   RUN_TEST(test_image_data_to_pixmap_rejects_a_blob_that_is_not_ours);
   RUN_TEST(test_get_geometry_of_the_window_is_the_canvas_and_of_nothing_is_failure);

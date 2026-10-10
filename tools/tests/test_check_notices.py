@@ -116,3 +116,34 @@ def test_main_exit_codes(tmp_path, capsys):
 def test_top_level_files_in_hacks_are_ours_and_ignored(tmp_path):
     src, md = setup(tmp_path, {"registry.c": "int x;\n"}, "")
     assert cn.check(src, md) == []
+
+
+def tinygl_setup(tmp_path, licence: bool, notices: str):
+    """TinyGL's sources carry no per-file header, so it is checked as a
+    directory: a LICENSE file beside the sources, and a mention in the notices."""
+    src = tmp_path / "firmware" / "src"
+    tinygl = src / "tinygl"
+    (tinygl / "src").mkdir(parents=True)
+    (tinygl / "src" / "zgl.c").write_text("int x;\n")
+    if licence:
+        (tinygl / "LICENSE").write_text("zlib style licence\n")
+    md = tmp_path / "THIRD_PARTY_NOTICES.md"
+    md.write_text(notices)
+    return src, md
+
+
+def test_tinygl_without_a_licence_file_is_reported(tmp_path):
+    src, md = tinygl_setup(tmp_path, licence=False, notices="## TinyGL")
+    assert cn.check(src, md) == ["tinygl: no LICENSE file"]
+
+
+def test_tinygl_not_named_in_the_notices_is_reported(tmp_path):
+    src, md = tinygl_setup(tmp_path, licence=True, notices="nothing relevant")
+    assert cn.check(src, md) == [
+        "tinygl: not mentioned in THIRD_PARTY_NOTICES.md"
+    ]
+
+
+def test_tinygl_with_licence_and_notices_row_is_clean(tmp_path):
+    src, md = tinygl_setup(tmp_path, licence=True, notices="## TinyGL")
+    assert cn.check(src, md) == []

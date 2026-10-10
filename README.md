@@ -13,6 +13,11 @@ button order, is `g_hacks[]` in `firmware/src/hacks/registry.c`. The
 [porting assessment](docs/porting-assessment.md) rates every xscreensaver hack
 by porting effort and lists the measurements taken on the device.
 
+Gears is the first OpenGL hack. It runs through a small GL layer over
+[TinyGL](https://github.com/C-Chads/tinygl), a software OpenGL by Fabrice
+Bellard (this project uses TinyGL; see `THIRD_PARTY_NOTICES.md`), drawing at
+4 to 9 fps depending on the random arrangement it starts with.
+
 Frame rates run from under 1 to dozens of fps, mostly set by the delay each
 hack asks for: some hold each finished picture for seconds. Only the rows a
 hack drew are sent to the display, so a hack that draws little costs little.
@@ -126,4 +131,7 @@ rm -rf .venv .platformio firmware/.pio vendor backups
 ## Licence
 
 Our code is MIT licensed (see `LICENSE`). Files copied from xscreensaver
-keep their own notices and are listed in `THIRD_PARTY_NOTICES.md`.
+keep their own notices and are listed in `THIRD_PARTY_NOTICES.md`. TinyGL is
+under its own zlib-style licence, which requires crediting it: this product
+uses TinyGL, and the firmware runs an altered copy (see
+`THIRD_PARTY_NOTICES.md`).
