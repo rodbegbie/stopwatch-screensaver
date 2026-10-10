@@ -66,6 +66,7 @@ XLOCKMORE_HACK(forest, "Forest");
 XLOCKMORE_HACK(laser, "Laser");
 XLOCKMORE_HACK(lissie, "Lissie");
 XLOCKMORE_HACK(rotor, "Rotor");
+XLOCKMORE_HACK(scooter, "Scooter");
 
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
@@ -97,5 +98,6 @@ const HackEntry *const g_hacks[] = {
     &forest_hack,
     &laser_hack,
     &lissie_hack,
-    &rotor_hack};
+    &rotor_hack,
+    &scooter_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);

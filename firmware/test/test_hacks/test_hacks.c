@@ -58,7 +58,8 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Forest",
                                          "Laser",
                                          "Lissie",
-                                         "Rotor"};
+                                         "Rotor",
+                                         "Scooter"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -375,6 +376,7 @@ static const uint64_t kBaseline[] = {
     0x3796f88202299960ull, /* Laser: taken after looking at the frames */
     0xe48eab27f8a1f05bull, /* Lissie: taken after looking at the frames */
     0x618997512963b7d9ull, /* Rotor: taken after looking at the frames */
+    0xc76242aaacbe8177ull, /* Scooter: taken after looking at the frames */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -727,6 +729,10 @@ void test_rotor_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("Rotor", 1);
 }
 
+void test_scooter_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Scooter", 1);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -762,6 +768,7 @@ int main(void) {
   RUN_TEST(test_laser_stops_do_not_leak);
   RUN_TEST(test_lissie_stops_do_not_leak);
   RUN_TEST(test_rotor_stops_do_not_leak);
+  RUN_TEST(test_scooter_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);

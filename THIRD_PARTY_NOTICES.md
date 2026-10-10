@@ -70,6 +70,7 @@ implied warranty.
 | `firmware/src/hacks/morph3d/morph3d.c` | Marcelo F. Vianna (1997), later changes by the xlockmore and xscreensaver authors | xlock permission notice (below) |
 | `firmware/src/hacks/cubicgrid/cubicgrid.c` | Vasek Potocek (2007) | xlock permission notice (below) |
 | `firmware/src/hacks/deluxe/deluxe.c` | Copyright (c) 1999-2018 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/scooter/scooter.c` | Copyright (c) 2001 Sven Thoennissen | xlock permission notice (below) |
 | `firmware/src/hacks/rotor/rotor.c` | Copyright (c) 1991 Patrick J. Naughton | xlock permission notice (below) |
 | `firmware/src/hacks/lissie/lissie.c` | Copyright (c) 1996 Alexander Jolk | xlock permission notice (below) |
 | `firmware/src/hacks/laser/laser.c` | Copyright (c) 1995 Pascal Pensa | xlock permission notice (below) |
