@@ -249,6 +249,24 @@ void test_a_display_list_keeps_the_arrays_it_recorded(void) {
   TEST_ASSERT_EQUAL_MEMORY(reference, cv.px, sizeof reference);
 }
 
+/* A new context starts with every client array disabled; the arrays the last
+ * hack left enabled point at memory it has freed. */
+void test_a_new_context_starts_with_no_client_arrays_enabled(void) {
+  open_flat_red_scene();
+  point_at(kTri);
+  glshim_close();
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glViewport(0, 0, SIZE, SIZE);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  glDisable(GL_LIGHTING);
+  glColor3f(1, 0, 0);
+  glDrawArrays(GL_TRIANGLES, 0, 3);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+}
+
 void test_draw_arrays_with_nothing_enabled_or_a_zero_count_draws_nothing(void) {
   open_flat_red_scene();
   glVertexPointer(3, GL_FLOAT, sizeof(Vtx), &kTri[0].v);
@@ -263,6 +281,7 @@ int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_draw_arrays_honours_a_byte_stride);
   RUN_TEST(test_a_display_list_keeps_the_arrays_it_recorded);
+  RUN_TEST(test_a_new_context_starts_with_no_client_arrays_enabled);
   RUN_TEST(test_draw_arrays_with_nothing_enabled_or_a_zero_count_draws_nothing);
   RUN_TEST(test_clear_writes_canvas_byte_order);
   RUN_TEST(test_the_first_list_name_is_not_zero);

@@ -44,6 +44,11 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   `xshim_set_release_hook`, which `xshim_release_pixmaps` (the runner's
   `stop()`) runs. A second `init_GL` replaces the first, which hides a
   missing hook, so test `glshim_is_open()` right after the hack stops.
+- `glshim_open` returns NULL for an empty canvas or a failed z-buffer
+  allocation only. `glInit`'s own allocations (lists, matrix stacks) are
+  unchecked upstream, so running out of PSRAM after the z-buffer crashes there.
+- `glDrawArrays` reads every client array as `GL_FLOAT` and ignores the type
+  argument: check a new hack's `glVertexPointer` calls before trusting it.
 - TinyGL leaves specular lighting off (`zEnableSpecular = 0`) unless the
   application calls `glSetEnableSpecular(1)`, so Gears has no highlights
   and `glMateriali` is invisible without it. Enabling it costs speed (#43).

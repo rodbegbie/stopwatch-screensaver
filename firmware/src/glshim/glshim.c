@@ -10,6 +10,15 @@
 static ZBuffer *g_zb;
 static Canvas *g_canvas;
 
+typedef struct {
+  const char *data;
+  int size;
+  int stride; /* bytes between elements */
+  int on;
+} ClientArray;
+
+static ClientArray g_vertex, g_normal, g_color;
+
 static void release_hook(Display *dpy) {
   (void)dpy;
   glshim_close();
@@ -33,6 +42,7 @@ GLXContext *glshim_open(Canvas *canvas) {
   g_zb = ZB_open(canvas->w, canvas->h, ZB_MODE_5R6G5B, canvas->px);
   if (!g_zb) return NULL;
   glInit(g_zb);
+  g_vertex = g_normal = g_color = (ClientArray){0};
   g_canvas = canvas;
   xshim_set_release_hook(release_hook);
   handle = g_zb;
@@ -51,15 +61,6 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable) {
   (void)drawable;
   if (g_canvas) canvas_mark_dirty(g_canvas, 0, 0, g_canvas->w, g_canvas->h);
 }
-
-typedef struct {
-  const char *data;
-  int size;
-  int stride; /* bytes between elements */
-  int on;
-} ClientArray;
-
-static ClientArray g_vertex, g_normal, g_color;
 
 static int stride_in_bytes(int stride, int size) {
   return stride ? stride : size * (int)sizeof(GLfloat);
