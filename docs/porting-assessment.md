@@ -33,9 +33,9 @@ it with `uv run tools/score_hacks.py`.
 | --- | --- | --- |
 | S | 2D, and the unmodified source compiles against the shim | 18 |
 | M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 13 |
-| L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 80 |
+| L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 79 |
 | XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 137 |
-| Ported | Already running on the device, so no rating | 35 |
+| Ported | Already running on the device, so no rating | 36 |
 
 ## Speed
 
@@ -95,7 +95,7 @@ does not yet provide every GL helper under `xs_support/glx/`.
 
 ## Measured on the device
 
-Thirty-four hacks have been run so far (default settings, 466×466 canvas
+Thirty-five hacks have been run so far (default settings, 466×466 canvas
 pushed to the display every frame, canvas held in PSRAM). The firmware times
 each frame in three parts, averaged over 5 seconds: **step** is the hack's own
 draw call, **push** is sending the canvas to the display, and **wait** is what
@@ -140,7 +140,18 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Kaleidescope | 27.8-34.4 | 7.0-9.8 ms | 17.7-25.5 ms | 0-3.7 ms | none measurable |
 | Gears | 2.8-10.0 | 65-330 ms | 32.3-34.5 ms | 0 ms | 0.7-1.4 MB |
 | Morph3D | 8.0-11.4 | 48-86 ms | 32.6-36.2 ms | 5.2-8.8 ms | 0 (PSRAM identical every visit) |
+| Morph3D (dirty rectangle, `*delay: 10000`) | 14.4-15.2 | 54-58 ms | 2.0-9.2 ms | 2.6-9.4 ms | not re-measured |
+| Gears (dirty rectangle, first layout after boot) | 10.6-13.0 | 44-63 ms | 4.4-12.1 ms | 20-29 ms | not re-measured |
+| Gears (dirty rectangle, `*delay: 10000`, first layout after boot) | 12.6-17.6 | 46-65 ms | 5.5-13.5 ms | 0-5.8 ms | not re-measured |
+| Morph3D, five shapes (final code, overnight, 23 starts) | 11.6-31.2 | 20-75 ms | 6.3-9.1 ms | 2.6-5.2 ms | 0 (PSRAM identical every visit) |
+| CubicGrid (final code, overnight, 37 windows) | 11.2-14.0 | 38-53 ms | 32.1-36.1 ms | 0 ms | 0 (PSRAM identical every visit) |
+| Gears (final code, overnight, 29 windows, many layouts) | 4.0-19.8 | 39-241 ms | 6.1-23.7 ms | 0-5.2 ms | 0 (PSRAM identical; heap falls 388 B a lap, its known leak) |
+| CubicGrid (ticks 30, 27,000 points; not registered) | 5.6-6.0 | 137-148 ms | 32.3-36.0 ms | 0 ms | 1.66 MB more than Morph3D (display list) |
+| CubicGrid (ticks 20, 8,000 points; registered) | 11.2-12.4 | 48-52 ms | 32.2-36.1 ms | 0 ms | 0.49 MB more than Morph3D (display list) |
 | Celtic | 1.0-20.4 | 29-1025 ms | 0.1-5.5 ms | 7.9-928 ms | none measurable |
+| Deluxe (opaque, arcs as polylines; first port) | 2.0-5.4 | 154-510 ms | 32.6 ms | 0 ms | not compared with idle (flat at 7,327,227) |
+| Deluxe (opaque, circles as rings) | 13.2-15.4 | 31.5-42.1 ms | 32.5-35.1 ms | 0 ms | not compared with idle (flat at 7,327,227) |
+| Deluxe | 10.4-12.8 | 44.6-62.6 ms | 32.5-32.6 ms | 0 ms | not compared with idle (flat at 7,327,227) |
 
 Maze's row is 26 five-second readings over 160 seconds, taken on a build that
 includes the overlay stamping. Its steps are cheap, and its frame rate is set
@@ -482,6 +493,36 @@ and each was flashed unmodified, pinned with the rotation off, for 180 seconds
 None showed a stack canary, panic or reboot, and free PSRAM was constant
 within each run (Mountain's 20 KB is its offset from the idle figure).
 
+## Deluxe
+
+Deluxe was rated L (`GCPlaneMask`, `allocate_alpha_colors`, pixmaps) and
+sat in the high Speed band. Its source is unchanged. `deluxe_opaque.c`
+includes it with `*transparent` and `*doubleBuffer` off (plane masks and
+pixmap double buffering cannot work on this canvas) and routes full wide
+circles to `stroke_circle`. Each build was flashed pinned with the rotation
+off and logged for 45 seconds (nine five-second windows, the first read
+high because of the name overlay).
+
+- As first ported (opaque, arcs through the polyline stroker) it ran at
+  2.0-5.4 fps. A host profile put 94% of a frame in the 50 pixel wide
+  circles: 400 frames took 1.14 s, 0.07 s without `XDrawArc`, and 0.81 s with
+  the joins skipped. An arc is about a thousand wide segments, each filled a
+  row at a time, so each pixel was painted about 25 times.
+- `stroke_circle` fills the ring in two spans a row: 400 frames took 0.12 s
+  on the host, and the board ran 13.2-15.4 fps, paced by the 32.5 ms push.
+  The polyline path also leaves gaps in a ring, which the ring does not.
+- Translucency is a per-GC `alpha` (26 of 32, the weight upstream's
+  translucent path uses) that `stroke.c` blends over the canvas. Blending each
+  piece of a polyline separately blended the overlaps twice, so a star's
+  corners showed as bright diamonds (11.2-13.2 fps). Drawing a translucent
+  shape into a one-bit-per-pixel mask and blending it once removed them, and
+  costs 3-5 ms a frame on the board (10.4-12.8 fps) though nothing on the
+  host. That is the registered build.
+- Not measured: PSRAM against an idle build (it was flat at 7,327,227 in every
+  capture, so the 27 KB mask per shape is returned), a restart or lap soak
+  with rotation on, and a long run. Heap held at 322,648-323,056 bytes.
+  Colour was judged by Rod on the screen.
+
 ## Suggested order for shim stage 2
 
 Shim gaps across 2D hacks, ranked so gaps that block hacks
@@ -491,13 +532,13 @@ needing few additions come first.
 | --- | --- | --- |
 | `XSetGraphicsExposures` | 3.51 | 8 |
 | `make_color_loop` | 3.32 | 6 |
-| `XSetWindowBackground` | 2.7 | 14 |
+| `XSetWindowBackground` | 2.75 | 14 |
 | `XImage` | 2.54 | 39 |
 | `XDestroyImage` | 2.21 | 33 |
-| `rgb_to_hsv` | 2.09 | 9 |
+| `rgb_to_hsv` | 2.14 | 9 |
 | `ZPixmap` | 1.98 | 35 |
-| `GXxor` | 1.9 | 8 |
-| `XQueryColor` | 1.82 | 14 |
+| `GXxor` | 1.96 | 8 |
+| `XQueryColor` | 1.87 | 14 |
 | `make_color_ramp` | 1.77 | 8 |
 
 ## All hacks
@@ -517,7 +558,7 @@ needing few additions come first.
 | interaggregate | 2d | S | high (0.66 ms) | - | - | - | 989 |
 | laser | 2d | S | high (0.14 ms) | - | - | - | 356 |
 | lissie | 2d | S | low (0.0042 ms) | - | - | - | 323 |
-| lmorph | 2d | S | high (0.29 ms) | - | - | float-heavy | 580 |
+| lmorph | 2d | S | high (0.28 ms) | - | - | float-heavy | 580 |
 | rotor | 2d | S | low (0.0011 ms) | - | - | - | 394 |
 | scooter | 2d | S | high (0.19 ms) | - | - | - | 975 |
 | truchet | 2d | S | high (3.1 ms) | - | - | pixmaps | 541 |
@@ -551,7 +592,6 @@ needing few additions come first.
 | crystal | 2d | L | - | - | `GXxor`, `XCreateColormap`, `XFreeColormap`, `XInstallColormap`, `XSetFunction`, `XSetWindowColormap`, `free_colors`, `has_writable_cells`, `make_random_colormap`, `make_smooth_colormap`, `make_uniform_colormap`, `rotate_colors` | xor, float-heavy | 1286 |
 | decayscreen | 2d | L | - | - | `async_load_state`, `load_image_async_simple` | pixmaps | 392 |
 | deco | 2d | L | - | - | `DisplayOfScreen`, `XStoreColors`, `allocate_writable_colors`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `has_writable_cells` | - | 345 |
-| deluxe | 2d | L | - | - | `GCPlaneMask`, `XGCValues.plane_mask`, `allocate_alpha_colors`, `alpha.h` | pixmaps, float-heavy | 480 |
 | demon | 2d | L | - | - | `CoordModePrevious`, `GCFillStyle`, `GCStipple`, `NUMSTIPPLES`, `STIPPLESIZE`, `XCreatePixmapFromBitmapData`, `XGCValues.fill_style`, `XGCValues.stipple`, `automata.h`, `hexagonUnit`, `stipples`, `triangleUnit` | - | 953 |
 | distort | 2d | L | - | - | `BlackPixelOfScreen`, `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XPutImage`, `XPutPixel`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `load_image_async_simple`, `put_xshm_image`, `xshm.h` | pixmaps, readback | 894 |
 | droste | 2d | L | - | - | `BlackPixelOfScreen`, `GET_PARENT_OBJ`, `KeyPress`, `KeySym`, `THREAD_DEFAULTS`, `THREAD_OPTIONS`, `XDestroyImage`, `XEvent.xkey`, `XGetImage`, `XGetPixel`, `XImage`, `XK_Down`, `XK_Left`, `XK_Right`, `XK_Up`, `XLookupString`, `XPutPixel`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `double_time`, `doubletime.h`, `error: expected expression`, `error: field has incomplete type 'struct threadpool'`, `error: variable has incomplete type 'const struct threadpool_class'`, `hardware_concurrency`, `i_log2_fast`, `keysym`, `load_image_async_simple`, `pow2.h`, `put_xshm_image`, `thread_util.h`, `threadpool`, `threadpool_create`, `threadpool_destroy`, `threadpool_run`, `threadpool_wait`, `xshm.h` | pixmaps, readback | 686 |
@@ -564,7 +604,7 @@ needing few additions come first.
 | fluidballs | 2d | L | - | - | `FcChar8`, `RootWindow`, `XTranslateCoordinates`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `error: expected expression`, `error: too few arguments to function call, expected 2, have 1`, `load_xft_font_retry`, `screen_number` | pixmaps | 881 |
 | fontglide | 2d | L | - | - | `BlackPixelOfScreen`, `DisplayOfScreen`, `FcChar8`, `XCreateImage`, `XDestroyImage`, `XDrawString`, `XDrawString16`, `XFreeFont`, `XGetAtomName`, `XGetImage`, `XGetPixel`, `XGlyphInfo`, `XImage`, `XLoadQueryFont`, `XLookupString`, `XPutImage`, `XPutPixel`, `XRenderColor`, `XSetFont`, `XTextExtents`, `XTextExtents16`, `XYPixmap`, `XftColor`, `XftColorAllocValue`, `XftColorFree`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `ZPixmap`, `bg`, `error: Xft is required under X11`, `error: expected expression`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `extents`, `fg`, `in`, `load_xft_font_retry`, `out`, `screen_number`, `swap`, `text_data`, `textclient.h`, `textclient_close`, `textclient_getc`, `textclient_open`, `utf8_decode_combining`, `utf8wc.h`, `xftdraw` | pixmaps, readback, text, clipmask | 2474 |
 | glitchpeg | 2d | L | - | - | `BitmapBitOrder`, `ImageByteOrder`, `XCreateImage`, `XDestroyImage`, `XGetPixel`, `XImage`, `XPutImage`, `XPutPixel`, `XtAppAddInput`, `XtDisplayToApplicationContext`, `XtInputExceptMask`, `XtInputId`, `XtInputReadMask`, `XtPointer`, `XtRemoveInput`, `ZPixmap`, `error: operand of type 'XPoint' where arithmetic or pointer type is required`, `image`, `image_data_to_ximage`, `out` | readback | 466 |
-| goop | 2d | L | - | - | `AllPlanes`, `DefaultScreenOfDisplay`, `DisplayOfScreen`, `GXclear`, `GXxor`, `WhitePixelOfScreen`, `XSetFunction`, `XSetPlaneMask`, `allocate_alpha_colors`, `alpha.h`, `compute_closed_spline`, `error: incompatible integer to pointer conversion assigning to 'int *' from 'int' [-Wint-conversion]`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `error: member reference base type 'int' is not a structure or union`, `error: type name does not allow function specifier to be specified`, `error: type specifier missing, defaults to 'int'; ISO C99 and later do not support implicit int [-Wimplicit-int]`, `free_spline`, `has_writable_cells`, `make_spline`, `spline` | pixmaps, xor | 651 |
+| goop | 2d | L | - | - | `AllPlanes`, `DefaultScreenOfDisplay`, `DisplayOfScreen`, `GXclear`, `GXxor`, `WhitePixelOfScreen`, `XSetFunction`, `XSetPlaneMask`, `compute_closed_spline`, `error: incompatible integer to pointer conversion assigning to 'int *' from 'int' [-Wint-conversion]`, `error: incompatible integer to pointer conversion initializing 'Display *' (aka 'struct XshimDisplay *') with an expression of type 'int' [-Wint-conversion]`, `error: member reference base type 'int' is not a structure or union`, `error: type name does not allow function specifier to be specified`, `error: type specifier missing, defaults to 'int'; ISO C99 and later do not support implicit int [-Wimplicit-int]`, `free_spline`, `has_writable_cells`, `make_spline`, `spline` | pixmaps, xor | 651 |
 | greynetic | 2d | L | - | - | `GCFillStyle`, `GCStipple`, `XCreatePixmapFromBitmapData`, `XGCValues.fill_style`, `XGCValues.stipple` | - | 297 |
 | halo | 2d | L | - | - | `GXxor` | pixmaps | 459 |
 | imsmap | 2d | L | - | - | `XCreateImage`, `XDestroyImage`, `XImage`, `XPutImage`, `XPutPixel`, `XYBitmap`, `image` | - | 426 |
@@ -589,7 +629,7 @@ needing few additions come first.
 | polyominoes | 2d | L | - | - | `LSBFirst`, `MSBFirst`, `XCreateImage`, `XDestroyImage`, `XImage`, `XPutImage`, `XYBitmap`, `countof` | - | 2370 |
 | pong | 2d | L | - | - | `ANALOGTV_BLACK_LEVEL`, `ANALOGTV_BOT`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_TOP`, `ANALOGTV_VISLINES`, `ANALOGTV_VIS_END`, `ANALOGTV_VIS_LEN`, `ANALOGTV_VIS_START`, `ButtonPressMask`, `ButtonReleaseMask`, `CurrentTime`, `Cursor`, `FocusChangeMask`, `FocusIn`, `FocusOut`, `GrabModeAsync`, `KeyPress`, `KeyPressMask`, `KeyRelease`, `KeyReleaseMask`, `KeySym`, `X11/keysym.h`, `XCreatePixmapCursor`, `XDefineCursor`, `XDestroyImage`, `XEvent.xkey`, `XGrabPointer`, `XHeightMMOfScreen`, `XHeightOfScreen`, `XK_Down`, `XK_Up`, `XLookupString`, `XUngrabPointer`, `XWarpPointer`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_draw_solid`, `analogtv_draw_string`, `analogtv_font`, `analogtv_font_set_char`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_lcp_to_ntsc`, `analogtv_make_font`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `double_time`, `doubletime.h`, `key` | pixmaps | 1109 |
 | popsquares | 2d | L | - | - | `XQueryColor`, `make_color_ramp`, `rgb_to_hsv` | pixmaps | 310 |
-| qix | 2d | L | - | - | `CellsOfScreen`, `DefaultScreenOfDisplay`, `GCPlaneMask`, `GXxor`, `XGCValues.plane_mask`, `XQueryColor`, `XSetWindowBackground`, `allocate_alpha_colors`, `alpha.h`, `has_writable_cells`, `rgb_to_hsv` | - | 642 |
+| qix | 2d | L | - | - | `CellsOfScreen`, `DefaultScreenOfDisplay`, `GXxor`, `XQueryColor`, `XSetWindowBackground`, `has_writable_cells`, `rgb_to_hsv` | - | 642 |
 | rdbomb | 2d | L | - | - | `DefaultScreenOfDisplay`, `XImage`, `XListPixmapFormats`, `XPixmapFormatValues`, `XSetWindowBackground`, `XShmSegmentInfo`, `ZPixmap`, `create_xshm_image`, `destroy_xshm_image`, `error: expected ')'`, `error: expected function body after function declarator`, `error: expected parameter declarator`, `error: incompatible integer to pointer conversion passing 'int' to parameter of type 'void *' [-Wint-conversion]`, `error: subscripted value is not an array, pointer, or vector`, `has_writable_cells`, `pfv`, `put_xshm_image`, `visual_depth`, `xshm.h` | - | 571 |
 | ripples | 2d | L | - | - | `XDestroyImage`, `XGetImage`, `XGetPixel`, `XImage`, `XPutPixel`, `XQueryColor`, `XShmSegmentInfo`, `ZPixmap`, `async_load_state`, `create_xshm_image`, `destroy_xshm_image`, `load_image_async_simple`, `put_xshm_image`, `visual_rgb_masks`, `xshm.h` | readback | 1127 |
 | rocks | 2d | L | - | - | `XQueryColor`, `XSetGraphicsExposures` | pixmaps | 562 |
@@ -757,6 +797,7 @@ needing few additions come first.
 | cloudlife | 2d | - | 8.8-8.9 ms measured | ✅ | - | - | 440 |
 | coral | 2d | - | 15-25 ms measured | ✅ | - | - | 328 |
 | critical | 2d | - | 0.7 ms measured | ✅ | - | - | 462 |
+| deluxe | 2d | - | 44.6-62.6 ms measured | ✅ | - | pixmaps, float-heavy | 480 |
 | discrete | 2d | - | 149-160 ms measured | ✅ | - | - | 442 |
 | drift | 2d | - | 11-13 ms measured | ✅ | - | - | 674 |
 | epicycle | 2d | - | 0.3-2.1 ms measured | ✅ | - | - | 803 |

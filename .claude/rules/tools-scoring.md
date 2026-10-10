@@ -23,3 +23,8 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   standalone. Measure on the device, and read
   `docs/speed-backtest.md` before trusting a band. A hack with gaps (M and
   above) cannot be built, so it has no Speed.
+- `score_hacks.py --no-probe` also blanks the Speed column of the generated
+  assessment ("high (2 ms)" becomes "-"): commit the output of a full run. The
+  backtest reads a measured row only when its name is the bare hack name
+  (`| Deluxe |`); a row with a note in brackets is skipped, so put the build
+  that is registered in the bare row.
