@@ -3,7 +3,7 @@
   "checkpoint_id": "01M4KWXAEV8KN2DWAD464SV602",
   "strategy": "manual-commit",
   "branch": "feature/58-pixmap-surfaces-truchet",
-  "checkpoints_count": 1,
+  "checkpoints_count": 14,
   "files_touched": [
     "firmware/src/x11shim/pixmap.c",
     "firmware/src/x11shim/pixmap.h",
@@ -17,13 +17,20 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": "/0/prompt.txt"
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 128,
-    "cache_creation_tokens": 192912,
-    "cache_read_tokens": 9295482,
-    "output_tokens": 54902,
-    "api_call_count": 64
+    "input_tokens": 260,
+    "cache_creation_tokens": 311390,
+    "cache_read_tokens": 34627476,
+    "output_tokens": 139620,
+    "api_call_count": 130
   }
 }
