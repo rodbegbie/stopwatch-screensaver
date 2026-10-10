@@ -1,0 +1,13 @@
+Huh. Retry the Comment on 57. I'll approve it if I'm prompted.  And yes, go ahead with the PR.
+
+QUick question: It says we tried 16 of the 17 hacks.  What was the 17th?
+
+---
+
+Ah, there's something that doesn't add up in the first paragraph of the PR body:
+
+Ported and in the rotation: 14
+Ported, not in the rotation: 1 (Halftone)
+Not ported: 1 (Truchet)
+
+Is it the "ported and in the rotation" count that's wrong? Is that really 15?
