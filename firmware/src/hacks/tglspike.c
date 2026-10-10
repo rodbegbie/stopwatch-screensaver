@@ -177,7 +177,11 @@ static void blit(const Spike *s, Canvas *c) {
   for (int y = 0; y < s->res; y++) {
     const uint16_t *src = s->fb + (size_t)y * s->res;
     uint16_t *dst = c->px + (size_t)(y + oy) * c->w + ox;
+#ifdef TGL_SWAP_PIXELS
+    memcpy(dst, src, (size_t)s->res * sizeof *dst);
+#else
     for (int x = 0; x < s->res; x++) dst[x] = (uint16_t)((src[x] >> 8) | (src[x] << 8));
+#endif
   }
   canvas_mark_dirty(c, ox, oy, s->res, s->res);
 }

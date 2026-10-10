@@ -47,6 +47,7 @@ extern const HackEntry epicycle_hack;
 extern const HackEntry kaleidescope_hack;
 #ifdef TGL_SPIKE
 extern const HackEntry tglspike_hack;
+XLOCKMORE_HACK(gears, "Gears");
 #endif
 
 const HackEntry *const g_hacks[] = {
@@ -74,7 +75,8 @@ const HackEntry *const g_hacks[] = {
     &kaleidescope_hack
 #ifdef TGL_SPIKE
     ,
-    &tglspike_hack
+    &tglspike_hack,
+    &gears_hack
 #endif
 };
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);

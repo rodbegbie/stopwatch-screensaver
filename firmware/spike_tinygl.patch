@@ -1,3 +1,24 @@
+diff --git a/include/zbuffer.h b/include/zbuffer.h
+index 886eb72..c0f6121 100644
+--- a/include/zbuffer.h
++++ b/include/zbuffer.h
+@@ -51,9 +51,16 @@
+ #define RGB_TO_PIXEL(r,g,b) \
+   ( COLOR_R_GET32(r) | COLOR_G_GET32(g) | COLOR_B_GET32(b) )
+ #elif TGL_FEATURE_RENDER_BITS == 16
++#ifdef TGL_SWAP_PIXELS
++/* The canvas keeps RGB565 with its bytes swapped (display order). */
++#define TGL_SWAP16(v) ((((v) << 8) | ((v) >> 8)) & 0xFFFF)
++#define RGB_TO_PIXEL(r,g,b) \
++	TGL_SWAP16( COLOR_R_GET16(r) | COLOR_G_GET16(g) | COLOR_B_GET16(b)  )
++#else
+ #define RGB_TO_PIXEL(r,g,b) \
+ 	( COLOR_R_GET16(r) | COLOR_G_GET16(g) | COLOR_B_GET16(b)  )
+ #endif
++#endif
+ /*This is how textures are sampled. if you want to do some sort of fancy texture filtering,*/
+ /*you do it here.*/
+ #define TEXTURE_SAMPLE(texture, s, t)														\
 diff --git a/include/zfeatures.h b/include/zfeatures.h
 index aa7a14c..8d46896 100644
 --- a/include/zfeatures.h
@@ -23,7 +44,7 @@ index aa7a14c..8d46896 100644
  #if TGL_FEATURE_32_BITS == 1
  #define TGL_FEATURE_RENDER_BITS    32
 diff --git a/src/clip.c b/src/clip.c
-index c00429b..2168ec5 100644
+index c00429b..a60f59b 100644
 --- a/src/clip.c
 +++ b/src/clip.c
 @@ -14,7 +14,7 @@ static void gl_transform_to_viewport_clip_c(GLVertex* v) { /* MARK: NOT_INLINED_
@@ -35,7 +56,17 @@ index c00429b..2168ec5 100644
  		v->zp.x = (GLint)(v->pc.X * winv * c->viewport.scale.X + c->viewport.trans.X);
  		v->zp.y = (GLint)(v->pc.Y * winv * c->viewport.scale.Y + c->viewport.trans.Y);
  		v->zp.z = (GLint)(v->pc.Z * winv * c->viewport.scale.Z + c->viewport.trans.Z);
-@@ -249,7 +249,7 @@ void gl_draw_triangle(GLVertex* p0, GLVertex* p1, GLVertex* p2) {
+@@ -231,7 +231,9 @@ static void updateTmp(GLVertex* q, GLVertex* p0, GLVertex* p1, GLfloat t) {
+ 
+ static void gl_draw_triangle_clip(GLVertex* p0, GLVertex* p1, GLVertex* p2, GLint clip_bit); 
+ 
++extern long spike_tris;
+ void gl_draw_triangle(GLVertex* p0, GLVertex* p1, GLVertex* p2) {
++	spike_tris++;
+ 	GLContext* c = gl_get_context();
+ 	GLint co, cc[3], front;
+ 
+@@ -249,7 +251,7 @@ void gl_draw_triangle(GLVertex* p0, GLVertex* p1, GLVertex* p2) {
  		if (norm == 0) 
  			return;
  
@@ -145,6 +176,19 @@ index b1524e1..43dd28d 100644
  				}
  				
  				dot_spec = n.X * s.X + n.Y * s.Y + n.Z * s.Z;
+diff --git a/src/list.c b/src/list.c
+index 2470667..514f2ea 100644
+--- a/src/list.c
++++ b/src/list.c
+@@ -285,7 +285,7 @@ GLuint glGenLists(GLint range) {
+ #include "error_check.h"
+ 	lists = c->shared_state.lists;
+ 	count = 0;
+-	for (i = 0; i < MAX_DISPLAY_LISTS; i++) {
++	for (i = 1; i < MAX_DISPLAY_LISTS; i++) {
+ 		if (lists[i] == NULL) {
+ 			count++;
+ 			if (count == range) {
 diff --git a/src/matrix.c b/src/matrix.c
 index 6234352..58fd3a5 100644
 --- a/src/matrix.c
@@ -175,10 +219,10 @@ index 6234352..58fd3a5 100644
  	r = &m.m[0][0];
  	r[0] = x;
 diff --git a/src/memory.c b/src/memory.c
-index 7cf44c5..5533e21 100644
+index 7cf44c5..328562c 100644
 --- a/src/memory.c
 +++ b/src/memory.c
-@@ -1,20 +1,41 @@
+@@ -1,20 +1,42 @@
  /*
 - * Memory allocator for TinyGL
 + * Spike allocator: allocations of 2 KB or more go to PSRAM on the device.
@@ -200,6 +244,7 @@ index 7cf44c5..5533e21 100644
 +#endif
  
 -/* modify these functions so that they suit your needs */
++long spike_verts = 0, spike_tris = 0;
 +long spike_psram_bytes = 0;
 +long spike_internal_bytes = 0;
  
@@ -244,7 +289,7 @@ index 0000000..9bade55
 +#define floor floorf
 +#endif
 diff --git a/src/vertex.c b/src/vertex.c
-index 616715d..980c94f 100644
+index 616715d..d1b9b1e 100644
 --- a/src/vertex.c
 +++ b/src/vertex.c
 @@ -75,7 +75,7 @@ void glopBegin(GLParam* p) {
@@ -265,10 +310,29 @@ index 616715d..980c94f 100644
  		v->zp.x = (GLint)(v->pc.X * winv * c->viewport.scale.X + c->viewport.trans.X);
  		v->zp.y = (GLint)(v->pc.Y * winv * c->viewport.scale.Y + c->viewport.trans.Y);
  		v->zp.z = (GLint)(v->pc.Z * winv * c->viewport.scale.Z + c->viewport.trans.Z);
+@@ -203,7 +203,9 @@ static void gl_vertex_transform(GLVertex* v) {
+ 	v->clip_code = gl_clipcode(v->pc.X, v->pc.Y, v->pc.Z, v->pc.W);
+ }
+ 
++extern long spike_verts;
+ void glopVertex(GLParam* p) {
++	spike_verts++;
+ 	GLVertex* v;
+ 	GLint n, i, cnt;
+ 	GLContext* c = gl_get_context();
 diff --git a/src/zbuffer.c b/src/zbuffer.c
-index 6321340..659c757 100644
+index 6321340..ea21e8a 100644
 --- a/src/zbuffer.c
 +++ b/src/zbuffer.c
+@@ -19,7 +19,7 @@ ZBuffer* ZB_open(GLint xsize, GLint ysize, GLint mode,
+ 	if (zb == NULL)
+ 		return NULL;
+ 
+-	zb->xsize = xsize & ~3; 
++	zb->xsize = xsize; 
+ 	zb->ysize = ysize;
+ 	
+ 	
 @@ -313,7 +313,7 @@ void ZB_copyFrameBuffer(ZBuffer* zb, void* buf, GLint linesize) {
  /*
   * adr must be aligned on an 'int'

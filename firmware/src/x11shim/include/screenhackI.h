@@ -15,6 +15,11 @@
 #include "yarandom.h"
 #include "x11shim/xshim.h"
 
+#ifdef USE_GL
+# include "utils.h"
+# include "glshim/glshim.h"
+#endif
+
 struct xscreensaver_function_table {
   const char *progclass;
   const char *const *defaults;

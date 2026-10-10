@@ -61,5 +61,51 @@ S3 at 464 by 464, single precision, with Pipes' real strip primitives:
 - Stock TinyGL does software `double` maths in lighting and matrices. The
   single-precision patch took a piece from about 13 ms to 9 ms (with
   independent triangles).
-- Not tested: the real sphere builds its data with `glVertexPointer` and
-  `glDrawArrays` inside a display list, which TinyGL may record differently.
+- Vertex arrays (`glVertexPointer` plus `glDrawArrays`, as `unit_sphere` and
+  `tube.c` use) do not work in TinyGL display lists. It counts stride in
+  floats, not bytes, and reads the array when the list is replayed, by which
+  time the hack has freed it. See the Gears section for the fix.
+
+## Gears on the device
+
+Gears (and its helpers `involute`, `tube`, `normals`, `rotator`,
+`gltrackball`, `trackball` and `quaternion`) runs unmodified on the board.
+Each is built by a small wrapper in `firmware/src/hacks/` that sets `USE_GL`
+for that one file; `HAVE_GL` stays undefined so `ModeInfo` keeps its layout.
+The GL layer is `firmware/src/glshim/`:
+
+- `init_GL` opens TinyGL at 466 by 466 straight over the canvas, with its
+  pixel packer patched (`TGL_SWAP_PIXELS`) to write the canvas's byte-swapped
+  RGB565. There is no copy, and `glXSwapBuffers` only marks the canvas dirty.
+- `gluPerspective`, `gluLookAt`, `glMateriali`, `glIsEnabled` and the
+  framework's GL hooks are small stand-ins.
+- The six vertex-array calls are routed to shim versions that read the arrays
+  at the draw call with a byte stride and expand it into `glNormal3f` and
+  `glVertex3f`, as real GL does.
+
+TinyGL needed three fixes of its own (all in `spike_tinygl.patch`): display
+list names start at 1 (name 0 means "invalid" to hacks), the buffer width is
+no longer rounded down to a multiple of 4, and pixels are written swapped.
+
+Gears picks a different arrangement every start, so its speed varies. With a
+fixed seed (`-DGL_SPIKE_SEED=7`, a planetary set with a big ring) a frame is
+17,706 vertices and 17,620 triangles:
+
+| Part of the frame | Time |
+| --- | --- |
+| Clear (colour and z, PSRAM) | 24.6 ms |
+| Fill (a quarter-size viewport saved 30 to 35 ms of it) | about 40 ms |
+| Vertex and triangle setup | about 100 to 120 ms |
+| Push to the display (existing) | 32 ms |
+
+That is 4 to 5 fps for the heavy scene and about 9 fps for light ones.
+Things that did not help, each tried alone on that scene: `-O2` for TinyGL
+(about 1 percent), and the specular lookup tables in place of `pow` (none).
+Building the whole firmware at `-O2` crashes the compiler in
+`braid_single.c`. The remaining cost is per-vertex and per-triangle setup,
+probably float divides, which the S3's FPU does in software.
+
+For a merge this would need: byte-identical copies of the helpers with
+notices (check `trackball.c`'s SGI licence first), tests for the GL layer
+written first and mutation-checked, and a way to free the TinyGL context when
+a GL hack stops (it is only replaced when the next GL hack starts).
