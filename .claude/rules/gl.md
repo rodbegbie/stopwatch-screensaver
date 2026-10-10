@@ -92,3 +92,29 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   across on the 466 px canvas and its position differs frame to frame. It
   cannot be enlarged without patching the hack. It enables two lights and
   two-sided lighting; `docs/gl-budget.md` predicts 6 to 11 fps.
+- Dirty rectangle: TinyGL reports the box around everything it draws to
+  `glshim_note_box` (hooks in `tinygl_patch.py`: triangles, points, lines,
+  text pixels, and `glDrawPixels` as the whole canvas). `glClear` clears only the
+  box drawn since the last clear and a swap marks only what was drawn and what
+  the clear erased. A new context, and a new clear colour, are full clears. The
+  contract: nothing else may draw on the canvas while a GL hack runs (the overlay
+  restores what it stamps). A line's hook must order its endpoints before adding
+  the margin: `p1.x - 1` to `p2.x + 1` shrinks a right-to-left line's box.
+  `tools/gl_budget.py` gets its boxes from `glshim_box_observer` so it cannot
+  drift from the firmware's rule.
+- `glDrawPixels` keeps its data pointer in a 4-byte `GLParam`, so it cannot draw
+  on a 64-bit host (fine on the 32-bit board); it has a patch-level test only.
+- A hack's own `*delay` is a pause after each frame and the loop credits only the
+  push against it, so it hides speed-ups: Morph3D (40 ms) and Gears (30 ms) were
+  held to 10 and 11 to 13 fps until their registered override cut it to 10 ms.
+  Check `wait=` in the log before judging a speed-up.
+- Measuring on the board: a boot is deterministic (same hack, same layout, same
+  windows), so alternate builds and compare window by window; one earlier
+  outlier read 54.9 ms against 52.3 and was never explained. CubicGrid (fixed
+  8,000 unlit points) and Gears' first layout after boot are the repeatable
+  benchmarks; Morph3D's shape is random per boot. To split a frame, add a
+  temporary `#if GL_PROFILE == n` early return to a TinyGL function through
+  `tinygl_patch.py` and flash with `-DGL_PROFILE=n`; never commit it.
+- Overlapping the push with the next frame (core 0 pushing while core 1
+  renders) is untried; it needs a second 434 KB buffer, a lock around M5GFX, and
+  the PSRAM bandwidth may limit the gain.
