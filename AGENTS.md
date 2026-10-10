@@ -99,6 +99,9 @@ From the repo root:
 - `(cd firmware && pio run -e dump) && uv run tools/speed_backtest.py`
   regenerates `docs/speed-backtest.md`: host time against the step measured on
   the device, for every registered hack.
+- `uv run tools/gl_budget.py cubicgrid morph3d` predicts a GL hack's device
+  frame rate from vertex and fill counts taken on the host (`docs/gl-budget.md`
+  has the model and its limits). It reads unported hacks from `vendor/`.
 - `markdownlint <files>` (config in `.markdownlint.json`). Run it from here:
   from `firmware/` it misses the config and reports line-length errors.
 

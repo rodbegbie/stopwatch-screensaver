@@ -7,6 +7,7 @@ paths:
   - "firmware/src/hacks/gears_gl.c"
   - "firmware/patch_tinygl.py"
   - "tools/tinygl_patch.py"
+  - "tools/gl_budget.py"
 ---
 
 # GL layer and TinyGL gotchas
@@ -70,3 +71,9 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   test is a tripwire and the board is the proof.
 - `dump_main.c` raw frames are already un-swapped; `rgb565_to_png.py` reads
   them as plain RGB565. Swapping them again gives psychedelic stripes.
+- `tools/gl_budget.py` counts vertices, triangles and fill in a private,
+  instrumented copy of TinyGL (`instrument()` adds the counters after
+  `tinygl_patch.patch_tree`, with the same checked anchors). The firmware's
+  TinyGL never has them. Its fill cost is fitted to one Gears scene, so it
+  over-predicts few-large-triangle scenes, and lines and points cost nothing
+  beyond vertex setup. Add a second calibration point after each GL port.
