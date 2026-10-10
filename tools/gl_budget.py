@@ -9,10 +9,14 @@ It predicts, it does not measure: the model knows nothing about PSRAM
 contention, and the figures are only as good as its calibration against Gears.
 """
 
+import re
+import subprocess
+import tempfile
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
+import probe_hacks
 import tinygl_patch
 
 # Milliseconds a frame spends on fixed work (clearing colour and z, then the
@@ -165,3 +169,119 @@ def read_tinygl(root: Path) -> dict[str, str]:
 def load_tinygl(root: Path) -> dict[str, str]:
     """TinyGL as the firmware builds it, plus the harness's counters."""
     return instrument(tinygl_patch.patch_tree(read_tinygl(root)))
+
+
+RUN_TIMEOUT_S = 120
+WARMUP_FRAMES = 10
+COUNTS_LINE = re.compile(r"^counts frames=(\d+) (.*)$", re.MULTILINE)
+
+
+def shim_sources(root: Path) -> list[Path]:
+    """What probe_hacks links, with this tool's driver in place of dump_main,
+    plus the GL layer: glshim's own files and its wrappers for the glx helpers."""
+    files = [f for f in probe_hacks.shim_sources(root) if f.name != "dump_main.c"]
+    files.append(root / "firmware" / "native" / "gl_budget_main.c")
+    files += sorted((root / "firmware" / "src" / "glshim").glob("*.c"))
+    return files
+
+
+def parse_counts(stdout: str) -> tuple[FrameCounts, int, float]:
+    """Reads the driver's one `counts` line: (counts, frames, host_ms)."""
+    match = COUNTS_LINE.search(stdout)
+    if not match:
+        raise probe_hacks.ProbeError(
+            f"no counts in the program's output: {stdout.strip()[:80]!r}"
+        )
+    values = dict(pair.split("=") for pair in match.group(2).split())
+    counts = FrameCounts(**{name: float(values[name]) for name in COUNTER_NAMES})
+    return counts, int(match.group(1)), float(values["host_ms"])
+
+
+def write_tinygl(root: Path, generated: Path) -> None:
+    """The instrumented TinyGL tree and its unity file, where the firmware's
+    build puts the patched one."""
+    tree = load_tinygl(root)
+    for relative, text in tree.items():
+        path = generated / "tinygl" / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(text.encode(errors="surrogateescape"))
+    (generated / "tinygl_unity.c").write_text(tinygl_patch.unity_source(tree))
+
+
+def measure(
+    name: str,
+    source: str,
+    root: Path,
+    frames: int = 300,
+    seed: int = 1,
+    cc: str = "cc",
+) -> dict:
+    """Builds the hack with USE_GL against the shim and the instrumented
+    TinyGL, runs it, and returns {"counts": FrameCounts, "host_ms": float,
+    "frames": int} or {"error": str}."""
+    try:
+        class_name, prefix = probe_hacks.module_entry(source)
+        with tempfile.TemporaryDirectory() as tmp_name:
+            tmp = Path(tmp_name)
+            generated = tmp / "generated"
+            write_tinygl(root, generated)
+            (tmp / f"{name}.c").write_text("#define USE_GL\n" + source)
+            registry = tmp / "probe_registry.c"
+            registry.write_text(
+                probe_hacks.registry_source(
+                    class_name, prefix, bool(probe_hacks.XLOCKMORE.search(source))
+                )
+            )
+            program = tmp / "gl_budget"
+            src = root / "firmware" / "src"
+            cmd = [
+                cc,
+                *probe_hacks.BUILD_FLAGS,
+                "-w",
+                "-DSTANDALONE",
+                "-DHAVE_MOBILE",
+                "-DXSHIM_NATIVE",
+                f"-I{src}",
+                f"-I{src / 'x11shim' / 'include'}",
+                f"-I{src / 'xs_support'}",
+                f"-I{src / 'xs_support' / 'glx'}",
+                f"-I{generated / 'tinygl' / 'include'}",
+                f"-I{generated}",
+                str(tmp / f"{name}.c"),
+                str(registry),
+                *map(str, shim_sources(root)),
+                "-lm",
+                "-lpthread",
+                "-o",
+                str(program),
+            ]
+            build = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            if build.returncode != 0:
+                missing = probe_hacks.undefined_symbols(build.stderr)
+                if missing:
+                    return {"error": "does not link: " + ", ".join(missing[:6])}
+                first = probe_hacks.FIRST_ERROR.search(build.stderr)
+                detail = first.group(0).strip() if first else f"exit {build.returncode}"
+                return {"error": "does not compile: " + detail[:160]}
+            run = subprocess.run(
+                [str(program), str(frames), str(seed)],
+                capture_output=True,
+                text=True,
+                timeout=RUN_TIMEOUT_S,
+                check=False,
+            )
+            if run.returncode != 0:
+                how = (
+                    f"signal {-run.returncode}"
+                    if run.returncode < 0
+                    else f"exit {run.returncode}"
+                )
+                return {"error": f"crashed on the host ({how})"}
+            counts, ran, host_ms = parse_counts(run.stdout)
+            return {"counts": counts, "frames": ran, "host_ms": host_ms}
+    except subprocess.TimeoutExpired:
+        return {"error": f"timed out after {RUN_TIMEOUT_S} s on the host"}
+    except FileNotFoundError:
+        return {"error": f"compiler not found: {cc}"}
+    except probe_hacks.ProbeError as err:
+        return {"error": str(err)}
