@@ -64,7 +64,8 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Euler2D",
                                          "Anemone",
                                          "Anemotaxis",
-                                         "Compass"};
+                                         "Compass",
+                                         "FuzzyFlakes"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -387,6 +388,7 @@ static const uint64_t kBaseline[] = {
     0xd460d86119f7b9c2ull, /* Anemone: taken after looking at the frames */
     0x1ad9e9fe2718ba88ull, /* Anemotaxis: taken after looking at the frames */
     0xb7feaf3a248c76f2ull, /* Compass: taken after looking at the frames */
+    0x513875606ffdd8afull, /* FuzzyFlakes: taken after looking at the frames */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -763,6 +765,10 @@ void test_compass_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("Compass", 0);
 }
 
+void test_fuzzyflakes_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("FuzzyFlakes", 0);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -804,6 +810,7 @@ int main(void) {
   RUN_TEST(test_anemone_stops_do_not_leak);
   RUN_TEST(test_anemotaxis_stops_do_not_leak);
   RUN_TEST(test_compass_stops_do_not_leak);
+  RUN_TEST(test_fuzzyflakes_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);

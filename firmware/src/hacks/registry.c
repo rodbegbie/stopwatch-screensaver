@@ -72,6 +72,7 @@ XLOCKMORE_HACK(euler2d, "Euler2D");
 extern const HackEntry anemone_hack;
 extern const HackEntry anemotaxis_hack;
 extern const HackEntry compass_hack;
+extern const HackEntry fuzzyflakes_hack;
 
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
@@ -109,5 +110,6 @@ const HackEntry *const g_hacks[] = {
     &euler2d_hack,
     &anemone_hack,
     &anemotaxis_hack,
-    &compass_hack};
+    &compass_hack,
+    &fuzzyflakes_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);
