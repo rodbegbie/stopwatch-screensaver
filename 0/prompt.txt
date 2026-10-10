@@ -1,0 +1,9 @@
+Try porting the deluxe hack
+
+---
+
+/claude-md-management:revise-claude-md
+
+---
+
+Yes, apply all four and commit to main. Then do your end session rituals
