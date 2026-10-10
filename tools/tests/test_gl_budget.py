@@ -244,6 +244,22 @@ def test_model_reproduces_heavy_gears():
 
 
 @needs_cc
+def test_heavy_gears_fill_term_is_the_40_ms_measured_on_the_device():
+    """The fit itself. A looser check on the total cannot see a halved
+    pixel_ns: it moves the heavy scene only from 217 ms to 197 ms."""
+    result = gb.measure(
+        "gears",
+        gb.hack_path(ROOT, "gears").read_text(errors="surrogateescape"),
+        ROOT,
+        frames=gb.CALIBRATION_FRAMES,
+        seed=gb.GEARS_SEEDS["heavy"],
+    )
+    fill_ms = result["counts"].pixels * gb.MODEL["pixel_ns"] / 1e6
+    assert fill_ms == pytest.approx(40.0, rel=0.05)
+
+
+@needs_cc
 def test_model_predicts_light_gears():
-    """Held out: nothing was fitted to this scene."""
-    assert gears_prediction("light") == pytest.approx(gb.LIGHT_GEARS_MS, rel=0.20)
+    """Held out: nothing was fitted to this scene. The stop rule for a bad fit
+    is 20 percent; the test holds it to 8."""
+    assert gears_prediction("light") == pytest.approx(gb.LIGHT_GEARS_MS, rel=0.08)
