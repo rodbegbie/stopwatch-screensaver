@@ -49,6 +49,9 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
   flag reached the binary with
   `strings -a -n 3 .pio/build/stopwatch/firmware.elf | grep -c '^Rod B\.$'`:
   plain `strings` skips anything under 4 characters.
+  `-DQR_URL=\"https://example.com\"` sets the QR overlay's target (default the
+  LinkedIn profile). Check it reached the binary with
+  `strings -a .pio/build/stopwatch/firmware.elf | grep -c 'example.com'`.
   In a worktree session the harness refuses backslash-escaped flag values and
   `$(cat file)`. Use `PLATFORMIO_BUILD_FLAGS="'-DBADGE_NAME=\"Rod B.\"'
   '-DSTART_HACK=\"gears\"' -DROTATE_SECONDS=0"` with `.venv/bin/pio run -d

@@ -72,6 +72,11 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   every frame while it shows. The badge stamps 48 outline copies per frame and
   adds about 16 to 20 ms to `push=`. Read `wait=` as well as fps: a hack with
   delay slack (Galaxy) hides it, one running flat out (Squiral) does not.
+- `lgfx_qrcode.h` (M5GFX's QR encoder, included at the top of `main.cpp`)
+  defines `MODE_*`, `ECC_*` and `LOCK_VERSION`, which clash with other code, so
+  `main.cpp` `#undef`s them straight after the include. Its init returns
+  nonzero when the text is too long for a version; `buildQr` tries versions 1
+  to 40 and, if none fits, leaves `qrPixels` null so the tap cycle skips QR.
 - Overlay text (`main.cpp`) is stamped into the canvas, pushed, then the
   pixels under it are restored. Drawing on the display after `pushImage`
   flickered badly, because the next push erases it. The canvas must end each
