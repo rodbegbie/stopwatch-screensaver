@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4KX5CD8NF8K8NC32Q4CJ7CS",
+  "strategy": "manual-commit",
+  "branch": "feature/58-pixmap-surfaces-truchet",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/speed-predictions.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 22,
+    "cache_creation_tokens": 10207,
+    "cache_read_tokens": 2446960,
+    "output_tokens": 4175,
+    "api_call_count": 11
+  }
+}
