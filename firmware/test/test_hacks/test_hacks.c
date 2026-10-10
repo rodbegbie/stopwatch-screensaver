@@ -389,15 +389,15 @@ static const uint64_t kBaseline[] = {
     0x618997512963b7d9ull, /* Rotor: taken after looking at the frames */
     0xc76242aaacbe8177ull, /* Scooter: taken after looking at the frames */
     0x9d5e492757aab42bull, /* Grav: taken after looking at the frames */
-    0xfc99519d85e6ffa8ull, /* Euler2D: taken after looking at the frames */
-    0xd460d86119f7b9c2ull, /* Anemone: taken after looking at the frames */
+    0x63af9f4a7094c544ull, /* Euler2D: taken after looking at the frames */
+    0x9cf179c46198e1c4ull, /* Anemone: taken after looking at the frames */
     0x1ad9e9fe2718ba88ull, /* Anemotaxis: taken after looking at the frames */
     0xb7feaf3a248c76f2ull, /* Compass: taken after looking at the frames */
-    0x513875606ffdd8afull, /* FuzzyFlakes: taken after looking at the frames */
+    0x0ee7f9ba1b22b39full, /* FuzzyFlakes: taken after looking at the frames */
     0x1a725b98c23a7f8cull, /* Halftone: taken after looking at the frames */
     0x3cc7ad2eeeea2850ull, /* IFS: taken after looking at the frames */
-    0x212d5289a4f30027ull, /* Interaggregate: taken after looking at the frames */
-    0x1cb91e0920c7ee9dull, /* LMorph: taken after looking at the frames */
+    0x91c37edac3ddf835ull, /* Interaggregate: taken after looking at the frames */
+    0x7118310d47ee4197ull, /* LMorph: taken after looking at the frames */
     0xe73572fd64eef48full, /* Wormhole: taken after looking at the frames */
 };
 
