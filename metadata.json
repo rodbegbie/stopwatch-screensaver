@@ -3,7 +3,7 @@
   "checkpoint_id": "01M4KXQ49RVRFXH8C9T49ZR7D5",
   "strategy": "manual-commit",
   "branch": "worktree-port-unknownpleasures",
-  "checkpoints_count": 1,
+  "checkpoints_count": 14,
   "files_touched": [
     "firmware/test/test_glshim/test_glshim.c",
     "firmware/test/test_hacks/test_hacks.c",
@@ -17,13 +17,20 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 52,
-    "cache_creation_tokens": 30864,
-    "cache_read_tokens": 6386087,
-    "output_tokens": 13400,
-    "api_call_count": 26
+    "input_tokens": 556,
+    "cache_creation_tokens": 499837,
+    "cache_read_tokens": 80025345,
+    "output_tokens": 253721,
+    "api_call_count": 278
   }
 }
