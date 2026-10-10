@@ -186,6 +186,37 @@
         "label": "Skill: port-hack",
         "default_collapsed": true
       }
+    },
+    {
+      "id": "claude-skill-toolu_01LxurFELhKkk7hFXbga1CAT",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "deliver-branch"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "724d0b43f235",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 1753,
+        "end": 1754,
+        "entry_ids": [
+          "8e6100cc-3d19-413c-bb13-490c0a821e20"
+        ],
+        "tool_use_id": "toolu_01LxurFELhKkk7hFXbga1CAT"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01LxurFELhKkk7hFXbga1CAT"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: deliver-branch",
+        "default_collapsed": true
+      }
     }
   ],
   "session_metrics": {
