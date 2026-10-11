@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4P0RB26HCNPZ5TNTDN48K6B",
+  "strategy": "manual-commit",
+  "branch": "feature/43-banded-renderer",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 6,
+    "cache_creation_tokens": 7264,
+    "cache_read_tokens": 831061,
+    "output_tokens": 2406,
+    "api_call_count": 3,
+    "subagent_tokens": {
+      "input_tokens": 32,
+      "cache_creation_tokens": 60104,
+      "cache_read_tokens": 1143833,
+      "output_tokens": 7943,
+      "api_call_count": 16
+    }
+  }
+}
