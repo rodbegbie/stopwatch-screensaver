@@ -83,3 +83,7 @@ The knots are running edge to edge.  Doesn't seem smaller or emptier.
 <status>completed</status>
 <summary>Background command "Capture 185 s of serial output from the board" completed (exit code 0)</summary>
 </task-notification>
+
+---
+
+Yeah, let's try A and get some numbers on it.
