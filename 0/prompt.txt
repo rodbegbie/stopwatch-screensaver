@@ -1,0 +1,59 @@
+Yes, that order's grand, start with #65.  The device is busy at the moment with another agents' tasks, so lets focus on the things we can do on the host at first.
+
+---
+
+Let's wait for an on-device measurement.  You can leave comments on issues for future reference.
+
+---
+
+Yes, go ahead with #56
+
+---
+
+Good to know.  Celtic optimization is already a topic of some interest to me, and filed as issue 37.  Let's take a stab at it and see how it goes.
+
+---
+
+It should be quickly drawing the celtic knot weave pattern across the display
+
+---
+
+Yes, a sparser knot would be acceptable.
+
+---
+
+yes
+
+---
+
+not yet.  We'll get there!  Remember to come back to this when the board is free.
+
+---
+
+You can now flash the device.
+
+---
+
+The drawing looks correct.  One thing is that now when it finishes, the screen blanks super suddenly. Presumably an effect of removing the fade?
+
+Sometimes it draws quickly, sometimes it's slow.  There's usually a pause on black before it starts.  Colours look right.
+
+---
+
+<task-notification>
+<task-id>bnx60olpg</task-id>
+<tool-use-id>toolu_018BXtahh2LE1BJmg1Lstb3r</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/2e9731bd-8fdb-464e-a0db-d7affa5f2452/tasks/bnx60olpg.output</output-file>
+<status>completed</status>
+<summary>Background command "Capture 185 s of serial output from the board" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+On other devices, XScreenSaver has a variety of fade-out effects (radial wipes, dissolves, etc)  Is that code somewhere you could bring over to the shim?
+
+---
+
+Tell you what, let's add this shim-level eraser as a follow-up issue.
+
+One note:  On another device, Celtic pauses for 5 seconds *with the design on the screen*, not on a black screen.
