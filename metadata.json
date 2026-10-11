@@ -3,8 +3,13 @@
   "checkpoint_id": "01M4P33J04KGHXKY11AJ2MFV06",
   "strategy": "manual-commit",
   "branch": "feature/43-banded-renderer",
-  "checkpoints_count": 2,
-  "files_touched": null,
+  "checkpoints_count": 3,
+  "files_touched": [
+    "docs/porting-assessment.md",
+    "firmware/src/hacks/registry.c",
+    "tools/assessment_measured.md",
+    "tools/failed_ports.txt"
+  ],
   "sessions": [
     {
       "metadata": "/0/metadata.json",
@@ -12,14 +17,21 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 0,
-    "cache_creation_tokens": 0,
-    "cache_read_tokens": 0,
-    "output_tokens": 0,
-    "api_call_count": 0,
+    "input_tokens": 26,
+    "cache_creation_tokens": 17204,
+    "cache_read_tokens": 6250569,
+    "output_tokens": 9647,
+    "api_call_count": 13,
     "subagent_tokens": {
       "input_tokens": 82,
       "cache_creation_tokens": 82930,
