@@ -281,6 +281,7 @@ TGL_HOT static void gl_draw_triangle_fill_plain(GLVertex* p0, GLVertex* p1, GLVe
 LAZY_SHADE_DECLARATIONS = """
 void gl_shade_pending(GLVertex* v);
 void gl_shade_pending_all(void);
+void gl_eye_normal(GLVertex* v, V4* n);
 #ifdef GL_LAZY_SHADE
 #define GL_SHADE_NOW(v) do { if ((v)->shade_pending) gl_shade_pending(v); } while (0)
 #define GL_SHADE_FLUSH() gl_shade_pending_all()
@@ -291,10 +292,53 @@ void gl_shade_pending_all(void);
 #define GL_SHADE_NOW3(a, b, c) do { GL_SHADE_NOW(a); GL_SHADE_NOW(b); GL_SHADE_NOW(c); } while (0)
 """
 
+NORMAL_TRANSFORM = """		m = &c->matrix_model_view_inv.m[0][0];
+		n = &c->current_normal;
+
+		v->normal.X = (n->X * m[0] + n->Y * m[1] + n->Z * m[2]);
+		v->normal.Y = (n->X * m[4] + n->Y * m[5] + n->Z * m[6]);
+		v->normal.Z = (n->X * m[8] + n->Y * m[9] + n->Z * m[10]);
+
+		if (c->normalize_enabled) {
+			gl_V3_Norm_Fast(&v->normal);
+		}
+"""
+
+# Under GL_LAZY_SHADE the eye-space normal is made by gl_shade_pending, if
+# ever: the inverse modelview cannot change inside glBegin/glEnd.
+LAZY_NORMAL_TRANSFORM = (
+    """#ifdef GL_LAZY_SHADE
+		v->normal.X = c->current_normal.X;
+		v->normal.Y = c->current_normal.Y;
+		v->normal.Z = c->current_normal.Z;
+#else
+"""
+    + NORMAL_TRANSFORM
+    + "#endif\n"
+)
+
 LAZY_SHADE_FUNCTIONS = """/* Lazy lighting (GL_LAZY_SHADE): the colour, then the rasteriser's copy of
  * it, as glopVertex and gl_transform_to_viewport_vertex_c would have set them. */
+/* The normal in eye space, as gl_vertex_transform made it. */
+TGL_HOT void gl_eye_normal(GLVertex* v, V4* n) {
+	GLContext* c = gl_get_context();
+	GLfloat* m = &c->matrix_model_view_inv.m[0][0];
+	GLfloat x = n->X, y = n->Y, z = n->Z;
+	v->normal.X = (x * m[0] + y * m[1] + z * m[2]);
+	v->normal.Y = (x * m[4] + y * m[5] + z * m[6]);
+	v->normal.Z = (x * m[8] + y * m[9] + z * m[10]);
+	if (c->normalize_enabled) {
+		gl_V3_Norm_Fast(&v->normal);
+	}
+}
+
 TGL_HOT void gl_shade_pending(GLVertex* v) {
+	V4 n;
 	v->shade_pending = 0;
+	n.X = v->normal.X;
+	n.Y = v->normal.Y;
+	n.Z = v->normal.Z;
+	gl_eye_normal(v, &n);
 	gl_shade_vertex(v);
 #if TGL_OPTIMIZATION_HINT_BRANCH_COST < 2
 	if (v->clip_code == 0)
@@ -496,6 +540,7 @@ REPLACEMENTS: tuple[Replace, ...] = (
         "\tif (c->lighting_enabled) {\n#ifdef GL_LAZY_SHADE\n\t\tv->shade_pending = 1;\n"
         "#else\n\t\tgl_shade_vertex(v);\n#endif\n",
     ),
+    Replace("src/vertex.c", NORMAL_TRANSFORM, LAZY_NORMAL_TRANSFORM),
     Replace(
         "src/vertex.c",
         "\t\tv->color = c->current_color;\n",

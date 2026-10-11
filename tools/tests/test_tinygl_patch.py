@@ -278,3 +278,11 @@ def test_lighting_state_changes_shade_what_is_pending_first(patched, op):
     text = patched["src/misc.c" if op == "glopEnableDisable" else "src/light.c"]
     body = text[text.index(f"void {op}(GLParam* p) {{") :]
     assert "GL_SHADE_FLUSH();" in body[:120]
+
+
+def test_lazy_lighting_defers_the_eye_normal_but_keeps_the_original(patched):
+    """The default build keeps upstream's normal transform word for word."""
+    vertex = patched["src/vertex.c"]
+    assert "#ifdef GL_LAZY_SHADE\n\t\tv->normal.X = c->current_normal.X;" in vertex
+    assert tp.NORMAL_TRANSFORM in vertex
+    assert "gl_eye_normal(v, &n);\n\tgl_shade_vertex(v);" in patched["src/light.c"]
