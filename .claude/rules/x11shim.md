@@ -110,7 +110,9 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   passes no mask, and a NULL mask used to crash it on start); with no mask
   pointer no mask is made.
 - `XClearWindow` clears to the colour `XSetWindowBackground` last set
-  (default 0). No key events ever arrive, so `XLookupString` finds no
+  (default 0), and `xshim_release_pixmaps` resets it when a hack stops: the
+  display outlives the hack, and Hexadrop's colour once turned Pyro's clear
+  into a solid fill. No key events ever arrive, so `XLookupString` finds no
   characters, and an Xt timer (`X11/Intrinsic.h`) is never made.
 - The shim still draws nothing into a depth-1 pixmap and ignores a GC's
   function. Halo handles both inside its own wrapper (`halo_planes.h`).

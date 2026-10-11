@@ -60,6 +60,9 @@ static void (*g_release_hook)(Display *dpy);
 void xshim_set_release_hook(void (*hook)(Display *dpy)) { g_release_hook = hook; }
 
 void xshim_release_pixmaps(Display *dpy) {
+  /* The display outlives a hack: the window background it set must not
+   * become the next hack's XClearWindow colour. */
+  dpy->window_background = 0;
   while (dpy->pixmaps) {
     struct XshimPixmap *pm = dpy->pixmaps;
     untrack(dpy, pm);

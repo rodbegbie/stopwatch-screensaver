@@ -137,6 +137,18 @@ void test_a_hack_starts_on_the_background_colour_it_asks_for(void) {
   runner_destroy(r);
 }
 
+/* The display outlives a hack, so a window background it set must not carry
+ * over: Hexadrop's colour once turned Pyro's XClearWindow into a solid fill. */
+void test_a_window_background_does_not_outlive_the_hack_that_set_it(void) {
+  HackRunner *r = runner_create(&cv);
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("Hexadrop")));
+  for (int f = 0; f < 5; f++) runner_step(r);
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("Pyro")));
+  for (int f = 0; f < 5; f++) runner_step(r);
+  TEST_ASSERT_TRUE(count_pixels(0) > (long)cv.w * cv.h * 9 / 10);
+  runner_destroy(r);
+}
+
 /* True once at least 20 pixels differ from the canvas as the hack started. */
 static int draws_within(HackRunner *r, int frames) {
   const size_t n = (size_t)cv.w * cv.h;
@@ -433,7 +445,7 @@ static const uint64_t kBaseline[] = {
     0x43f9cf84967fee7cull, /* Hexadrop: taken after looking at the frames */
     0x12097254df6ad0a2ull, /* StonerView: taken after looking at the frames */
     0xd20a223bf39a8929ull, /* Halo: taken after looking at the frames */
-    0x11ba60088fabb539ull, /* XMatrix: taken after looking at the frames */
+    0x9b1b0de461b6438bull, /* XMatrix: taken after looking at the frames, trace off */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -897,6 +909,7 @@ int main(void) {
   RUN_TEST(test_every_hack_can_be_stopped_before_its_first_frame);
   RUN_TEST(test_a_hack_starts_on_the_background_colour_it_asks_for);
   RUN_TEST(test_a_hack_that_never_draws_on_white_is_not_drawing);
+  RUN_TEST(test_a_window_background_does_not_outlive_the_hack_that_set_it);
   RUN_TEST(test_the_runner_releases_pixmaps_a_stopped_hack_left_behind);
   RUN_TEST(test_every_hack_draws_something_within_2000_frames);
   RUN_TEST(test_every_hack_runs_3000_frames_cleanly_with_sane_delays);
