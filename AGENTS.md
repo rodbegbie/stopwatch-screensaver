@@ -102,6 +102,14 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
   `-DAD_TOASTERS_SCALE=1|2` (2 is the default, with 6 flyers; 1 is the
   original size, with 10); a number outside those is an `#error`. It logs
   `ad-flyingtoasters: <art>, doneness=<level>` to stderr at start.
+- To see where a GL hack's frame goes, add `-DGL_PROFILE`: a `glprof` line
+  follows each `run` line with time per stage (clear, list, vertex, shade,
+  tri, fill, point, line; nested, so vertex includes tri and fill). Time left
+  over is the hack's own code. To compare builds, `.venv/bin/python -I
+  tools/ab_flash.py --hack Gears --seconds 60 --rounds 2 --out <dir>
+  "a=-DGL_PROFILE" "b=-DGL_PROFILE -DFOO"` builds each variant pinned, flashes
+  them in turn and tabulates the windows. It flashes: run it only with Rod's
+  go-ahead.
 - `cc -O1 -fstack-usage -c src/hacks/<n>/<n>.c` (with `-Isrc
   -Isrc/x11shim/include -Isrc/xs_support -DXSHIM_NATIVE -DSTANDALONE`) lists
   stack frames; keep each well under the 16 KB loop stack.
@@ -265,6 +273,14 @@ ones below apply everywhere.
   is: it was in Unknown Pleasures, slow but moving.
 - A push to GitHub is sometimes rejected once and succeeds on an immediate
   retry; never force-push for this.
+- Another session may be using the board. Before flashing, run `lsof
+  /dev/cu.usbmodem112401`: a "multiple access on port" upload error was
+  another session's serial capture, and esptool's connect resets the board
+  under it. Ask Rod before flashing over someone else's run.
+- PlatformIO cleans the build directory, image and all, when
+  `PLATFORMIO_BUILD_FLAGS` changes: an `-t nobuild -t upload` with other flags
+  finds no `firmware.bin`. To keep several images, give each its own
+  `PLATFORMIO_BUILD_DIR` (the build scripts all use `$BUILD_DIR`).
 - Read `push=` from a hack's second 5 s window on: the name overlay is stamped
   inside the push timing while it shows, so the first window reads high.
 - Report a hack's lowest `fps=` window as well as its mean. HexTrail's step

@@ -268,7 +268,97 @@ void gl_draw_triangle_fill(GLVertex* p0, GLVertex* p1, GLVertex* p2) {
 	c->zb->enable_blend = blend;
 }
 
-static void gl_draw_triangle_fill_plain(GLVertex* p0, GLVertex* p1, GLVertex* p2) {
+TGL_HOT static void gl_draw_triangle_fill_plain(GLVertex* p0, GLVertex* p1, GLVertex* p2) {
+"""
+
+# Lazy lighting (GL_LAZY_SHADE): TinyGL lights every vertex as it arrives,
+# before it knows whether any triangle that uses the vertex survives back-face
+# culling. Gears' heavy layout culls 12,300 of its 17,600 triangles. A lit
+# vertex is marked pending instead, and shaded when a triangle, line or point
+# that uses it is drawn. Lighting reads only the vertex's own eye position
+# and normal, which are kept, and the material and light state, so any
+# change to that state first shades every vertex still pending: the result is
+# what shading at arrival would have given.
+LAZY_SHADE_DECLARATIONS = """
+void gl_shade_pending(GLVertex* v);
+void gl_shade_pending_all(void);
+void gl_eye_normal(GLVertex* v, V4* n);
+#ifdef GL_LAZY_SHADE
+#define GL_SHADE_NOW(v) do { if ((v)->shade_pending) gl_shade_pending(v); } while (0)
+#define GL_SHADE_FLUSH() gl_shade_pending_all()
+#else
+#define GL_SHADE_NOW(v) do { } while (0)
+#define GL_SHADE_FLUSH() do { } while (0)
+#endif
+#define GL_SHADE_NOW3(a, b, c) do { GL_SHADE_NOW(a); GL_SHADE_NOW(b); GL_SHADE_NOW(c); } while (0)
+"""
+
+NORMAL_TRANSFORM = """		m = &c->matrix_model_view_inv.m[0][0];
+		n = &c->current_normal;
+
+		v->normal.X = (n->X * m[0] + n->Y * m[1] + n->Z * m[2]);
+		v->normal.Y = (n->X * m[4] + n->Y * m[5] + n->Z * m[6]);
+		v->normal.Z = (n->X * m[8] + n->Y * m[9] + n->Z * m[10]);
+
+		if (c->normalize_enabled) {
+			gl_V3_Norm_Fast(&v->normal);
+		}
+"""
+
+# Under GL_LAZY_SHADE the eye-space normal is made by gl_shade_pending, if
+# ever: the inverse modelview cannot change inside glBegin/glEnd.
+LAZY_NORMAL_TRANSFORM = (
+    """#ifdef GL_LAZY_SHADE
+		v->normal.X = c->current_normal.X;
+		v->normal.Y = c->current_normal.Y;
+		v->normal.Z = c->current_normal.Z;
+#else
+"""
+    + NORMAL_TRANSFORM
+    + "#endif\n"
+)
+
+LAZY_SHADE_FUNCTIONS = """/* Lazy lighting (GL_LAZY_SHADE): the colour, then the rasteriser's copy of
+ * it, as glopVertex and gl_transform_to_viewport_vertex_c would have set them. */
+/* The normal in eye space, as gl_vertex_transform made it. */
+TGL_HOT void gl_eye_normal(GLVertex* v, V4* n) {
+	GLContext* c = gl_get_context();
+	GLfloat* m = &c->matrix_model_view_inv.m[0][0];
+	GLfloat x = n->X, y = n->Y, z = n->Z;
+	v->normal.X = (x * m[0] + y * m[1] + z * m[2]);
+	v->normal.Y = (x * m[4] + y * m[5] + z * m[6]);
+	v->normal.Z = (x * m[8] + y * m[9] + z * m[10]);
+	if (c->normalize_enabled) {
+		gl_V3_Norm_Fast(&v->normal);
+	}
+}
+
+TGL_HOT void gl_shade_pending(GLVertex* v) {
+	V4 n;
+	v->shade_pending = 0;
+	n.X = v->normal.X;
+	n.Y = v->normal.Y;
+	n.Z = v->normal.Z;
+	gl_eye_normal(v, &n);
+	gl_shade_vertex(v);
+#if TGL_OPTIMIZATION_HINT_BRANCH_COST < 2
+	if (v->clip_code == 0)
+#endif
+	{
+		v->zp.r = (GLint)(v->color.v[0] * COLOR_CORRECTED_MULT_MASK + COLOR_MIN_MULT) & COLOR_MASK;
+		v->zp.g = (GLint)(v->color.v[1] * COLOR_CORRECTED_MULT_MASK + COLOR_MIN_MULT) & COLOR_MASK;
+		v->zp.b = (GLint)(v->color.v[2] * COLOR_CORRECTED_MULT_MASK + COLOR_MIN_MULT) & COLOR_MASK;
+	}
+}
+
+void gl_shade_pending_all(void) {
+	GLContext* c = gl_get_context();
+	GLint i;
+	for (i = 0; i < POLYGON_MAX_VERTEX; i++)
+		GL_SHADE_NOW(&c->vertex[i]);
+}
+
+/* non optimized lightening model */
 """
 
 REPLACEMENTS: tuple[Replace, ...] = (
@@ -429,6 +519,204 @@ REPLACEMENTS: tuple[Replace, ...] = (
         "#include <math.h>\n#include <stdlib.h>",
         '#include <math.h>\n#include "tinygl_single.h"\n#include <stdlib.h>',
     ),
+    Replace(
+        "src/zgl.h",
+        "\tGLint edge_flag;\n} GLVertex;\n",
+        "\tGLint edge_flag;\n\tGLint shade_pending; /* lit, not shaded yet (GL_LAZY_SHADE) */\n"
+        "} GLVertex;\n",
+    ),
+    Replace(
+        "src/zgl.h",
+        "extern GLContext gl_ctx;\n",
+        "extern GLContext gl_ctx;\n" + LAZY_SHADE_DECLARATIONS,
+    ),
+    Replace(
+        "src/vertex.c",
+        "\tif (c->lighting_enabled) {\n\t\tgl_shade_vertex(v);\n",
+        "\tif (c->lighting_enabled) {\n#ifdef GL_LAZY_SHADE\n\t\tv->shade_pending = 1;\n"
+        "#else\n\t\tgl_shade_vertex(v);\n#endif\n",
+    ),
+    Replace("src/vertex.c", NORMAL_TRANSFORM, LAZY_NORMAL_TRANSFORM),
+    Replace(
+        "src/vertex.c",
+        "\t\tv->color = c->current_color;\n",
+        "\t\tv->color = c->current_color;\n#ifdef GL_LAZY_SHADE\n\t\tv->shade_pending = 0;\n#endif\n",
+    ),
+    Replace(
+        "src/light.c", "/* non optimized lightening model */\n", LAZY_SHADE_FUNCTIONS
+    ),
+    Replace(
+        "src/light.c",
+        "void glopMaterial(GLParam* p) {\n\tGLContext* c = gl_get_context();\n",
+        "void glopMaterial(GLParam* p) {\n\tGLContext* c = gl_get_context();\n"
+        "\tGL_SHADE_FLUSH();\n",
+    ),
+    Replace(
+        "src/light.c",
+        "void glopLight(GLParam* p) {\n\tGLContext* c = gl_get_context();\n",
+        "void glopLight(GLParam* p) {\n\tGLContext* c = gl_get_context();\n"
+        "\tGL_SHADE_FLUSH();\n",
+    ),
+    Replace(
+        "src/light.c",
+        "void glopLightModel(GLParam* p) {\n\tGLContext* c = gl_get_context();\n",
+        "void glopLightModel(GLParam* p) {\n\tGLContext* c = gl_get_context();\n"
+        "\tGL_SHADE_FLUSH();\n",
+    ),
+    Replace(
+        "src/light.c",
+        "void glopSetEnableSpecular(GLParam* p) {\n",
+        "void glopSetEnableSpecular(GLParam* p) {\n\tGL_SHADE_FLUSH();\n",
+    ),
+    Replace(
+        "src/clip.c",
+        "static void updateTmp(GLVertex* q, GLVertex* p0, GLVertex* p1, GLfloat t) { \n"
+        "\tGLContext* c = gl_get_context();\n",
+        "static void updateTmp(GLVertex* q, GLVertex* p0, GLVertex* p1, GLfloat t) { \n"
+        "\tGLContext* c = gl_get_context();\n"
+        "#ifdef GL_LAZY_SHADE\n\tq->shade_pending = 0; /* its colour comes from shaded vertices */\n#endif\n",
+    ),
+    Replace(
+        "src/misc.c",
+        "void glopEnableDisable(GLParam* p) {\n\tGLContext* c = gl_get_context();\n",
+        "void glopEnableDisable(GLParam* p) {\n\tGLContext* c = gl_get_context();\n"
+        "\tGL_SHADE_FLUSH();\n",
+    ),
+    # Additive blending (issue #73): a blend that only adds the colours (each
+    # factor ONE or one TinyGL treats as ONE, with GL_FUNC_ADD) takes a
+    # saturating add on the byte-swapped RGB565 pixel. TinyGL's own path
+    # decoded the swapped pixel as unswapped and ran three switches a pixel.
+    Replace(
+        "include/zbuffer.h",
+        "#define TGL_BLEND_VARS GLuint zbblendeq = zb->blendeq; GLuint sfactor = zb->sfactor; "
+        "GLuint dfactor = zb->dfactor;",
+        "static inline PIXEL glshim_add565(PIXEL dst, PIXEL src) {\n"
+        "\tGLuint a = TGL_SWAP16(dst), b = TGL_SWAP16(src);\n"
+        "\tGLuint r = (a & 0xF800) + (b & 0xF800), g = (a & 0x07E0) + (b & 0x07E0), "
+        "bl = (a & 0x001F) + (b & 0x001F);\n"
+        "\tif (r > 0xF800) r = 0xF800;\n\tif (g > 0x07E0) g = 0x07E0;\n"
+        "\tif (bl > 0x001F) bl = 0x001F;\n"
+        "\treturn (PIXEL)TGL_SWAP16(r | g | bl);\n}\n"
+        "#define TGL_BLEND_ADDS(sf, df, eq) ((sf) != GL_ONE_MINUS_SRC_COLOR && (sf) != GL_ZERO && "
+        "(df) != GL_ONE_MINUS_DST_COLOR && (df) != GL_ZERO && (eq) != GL_FUNC_SUBTRACT && "
+        "(eq) != GL_FUNC_REVERSE_SUBTRACT)\n"
+        "#define TGL_BLEND_VARS GLuint zbblendeq = zb->blendeq; GLuint sfactor = zb->sfactor; "
+        "GLuint dfactor = zb->dfactor; GLint tgl_adds = TGL_BLEND_ADDS(sfactor, dfactor, zbblendeq);",
+    ),
+    Replace(
+        "include/zbuffer.h",
+        "#define TGL_BLEND_FUNC(source, dest){\t",
+        "#define TGL_BLEND_FUNC(source, dest){ if (tgl_adds) { (dest) = glshim_add565((dest), (source)); } else\t",
+    ),
+    Replace(
+        "include/zbuffer.h",
+        "#define TGL_BLEND_FUNC_RGB(rr, gg, bb, dest){\t",
+        "#define TGL_BLEND_FUNC_RGB(rr, gg, bb, dest){ if (tgl_adds) { (dest) = glshim_add565((dest), "
+        "RGB_TO_PIXEL((rr), (gg), (bb))); } else\t",
+    ),
+    # Built without GL_POLYGON (which also drops GL_LINE_LOOP), an unhandled
+    # primitive draws nothing but kept counting vertices, and the fifth was
+    # written past c->vertex over the matrices and colours after it.
+    Replace(
+        "src/vertex.c",
+        "#else\n\tdefault:\n\t\tbreak;\n#endif\n\t}\n\n\tc->vertex_n = n;",
+        "#else\n\tdefault:\n\t\tn = 0; /* draws nothing; must not run past c->vertex */\n"
+        "\t\tbreak;\n#endif\n\t}\n\n\tc->vertex_n = n;",
+    ),
+)
+
+# Anchors that earlier patches wrote (the dirty-rectangle hooks and the
+# profile scopes), so applied after REPLACEMENTS and HOT_FUNCTIONS.
+LATE_REPLACEMENTS: tuple[Replace, ...] = (
+    Replace(
+        "src/clip.c",
+        "{ glshim_note_triangle(p0, p1, p2);",
+        "{ GL_SHADE_NOW3(p0, p1, p2); glshim_note_triangle(p0, p1, p2);",
+        count=4,
+    ),
+    Replace(
+        "src/clip.c",
+        "\t\t\tgl_draw_triangle_clip(p0, p1, p2, 0);\n",
+        "\t\t\tGL_SHADE_NOW3(p0, p1, p2);\n\t\t\tgl_draw_triangle_clip(p0, p1, p2, 0);\n",
+    ),
+    Replace(
+        "src/clip.c",
+        "\tGLPROF_SCOPE(GLPROF_POINT);\n",
+        "\tGLPROF_SCOPE(GLPROF_POINT);\n\tGL_SHADE_NOW(p0);\n",
+    ),
+    Replace(
+        "src/clip.c",
+        "\tGLPROF_SCOPE(GLPROF_LINE);\n",
+        "\tGLPROF_SCOPE(GLPROF_LINE);\n\tGL_SHADE_NOW(p1);\n\tGL_SHADE_NOW(p2);\n",
+    ),
+)
+
+
+@dataclass(frozen=True)
+class Hot:
+    """A function on TinyGL's per-vertex or per-triangle path, found by its
+    definition line in the patched tree. It is marked `TGL_HOT` (IRAM when
+    built with GL_IRAM). With a `slot` it is also timed under GL_PROFILE, from
+    its first line to whichever return it leaves by; `reentrant` times only
+    the outermost call (lists call lists)."""
+
+    path: str
+    definition: str
+    slot: str = ""
+    reentrant: bool = False
+
+    @property
+    def anchor(self) -> str:
+        return self.definition + " {\n"
+
+    def replacement(self) -> str:
+        text = "TGL_HOT " + self.anchor
+        if self.slot:
+            scope = "GLPROF_SCOPE_OUTER" if self.reentrant else "GLPROF_SCOPE"
+            text += f"\t{scope}({self.slot});\n"
+        return text
+
+
+_FILL_ARGS = "ZBuffer* zb, ZBufferPoint* p0, ZBufferPoint* p1, ZBufferPoint* p2"
+
+# Applied after REPLACEMENTS, so a definition one of them wrote (the fill) is
+# found too.
+HOT_FUNCTIONS: tuple[Hot, ...] = (
+    Hot("src/list.c", "void glopCallList(GLParam* p)", "GLPROF_LIST", True),
+    Hot("src/vertex.c", "void glopVertex(GLParam* p)", "GLPROF_VERTEX"),
+    Hot("src/light.c", "void gl_shade_vertex(GLVertex* v)", "GLPROF_SHADE"),
+    Hot(
+        "src/clip.c",
+        "void gl_draw_triangle(GLVertex* p0, GLVertex* p1, GLVertex* p2)",
+        "GLPROF_TRIANGLE",
+    ),
+    Hot(
+        "src/clip.c",
+        "void gl_draw_triangle_fill(GLVertex* p0, GLVertex* p1, GLVertex* p2)",
+        "GLPROF_FILL",
+    ),
+    Hot("src/clip.c", "void gl_draw_point(GLVertex* p0)", "GLPROF_POINT"),
+    Hot("src/clip.c", "void gl_draw_line(GLVertex* p1, GLVertex* p2)", "GLPROF_LINE"),
+    Hot(
+        "src/clip.c",
+        "static void gl_draw_triangle_clip(GLVertex* p0, GLVertex* p1, GLVertex* p2, GLint clip_bit)",
+    ),
+    Hot("src/vertex.c", "static void gl_transform_to_viewport_vertex_c(GLVertex* v)"),
+    Hot("src/vertex.c", "static void gl_vertex_transform(GLVertex* v)"),
+    Hot("src/vertex.c", "void glopNormal(GLParam* p)"),
+    Hot("src/vertex.c", "void glopColor(GLParam* p)"),
+    Hot(
+        "src/zgl.h",
+        "static GLint gl_clipcode(GLfloat x, GLfloat y, GLfloat z, GLfloat w1)",
+    ),
+    Hot("src/zgl.h", "static GLfloat clampf(GLfloat a, GLfloat min, GLfloat max)"),
+    Hot("src/zmath.h", "static int gl_V3_Norm_Fast(V3* a)"),
+    Hot("src/zmath.c", "void gl_M4_MulV4(V4* a, M4* b, V4* c)"),
+    Hot("src/ztriangle.c", f"void ZB_fillTriangleFlat({_FILL_ARGS})"),
+    Hot("src/ztriangle.c", f"void ZB_fillTriangleFlatNOBLEND({_FILL_ARGS})"),
+    Hot("src/ztriangle.c", f"void ZB_fillTriangleSmooth({_FILL_ARGS})"),
+    Hot("src/ztriangle.c", f"void ZB_fillTriangleSmoothNOBLEND({_FILL_ARGS})"),
+    Hot("src/zline.c", "void ZB_plot(ZBuffer* zb, ZBufferPoint* p)"),
 )
 
 # Files with unsuffixed decimal literals, which are `double` in C.
@@ -494,6 +782,8 @@ SINGLE_HEADER = """#ifndef TINYGL_SINGLE_H
 #define sin sinf
 #define cos cosf
 #define floor floorf
+/* TGL_HOT, and the GL_PROFILE counters (issue #43). */
+#include "glshim/glshim_prof.h"
 #endif
 """
 
@@ -515,6 +805,24 @@ def patch_tree(sources: Mapping[str, str]) -> dict[str, str]:
             raise ValueError(f"{rf.path} is not the expected file; {UPSTREAM_CHANGED}")
         out[rf.path] = rf.replacement
     for rep in REPLACEMENTS:
+        text = _get(out, rep.path)
+        found = text.count(rep.anchor)
+        if found != rep.count:
+            raise ValueError(
+                f"expected {rep.count} of {rep.anchor!r} in {rep.path}, "
+                f"found {found}; {UPSTREAM_CHANGED}"
+            )
+        out[rep.path] = text.replace(rep.anchor, rep.replacement)
+    for hot in HOT_FUNCTIONS:
+        text = _get(out, hot.path)
+        found = text.count(hot.anchor)
+        if found != 1:
+            raise ValueError(
+                f"expected 1 of {hot.anchor!r} in {hot.path}, found {found}; "
+                f"{UPSTREAM_CHANGED}"
+            )
+        out[hot.path] = text.replace(hot.anchor, hot.replacement())
+    for rep in LATE_REPLACEMENTS:
         text = _get(out, rep.path)
         found = text.count(rep.anchor)
         if found != rep.count:

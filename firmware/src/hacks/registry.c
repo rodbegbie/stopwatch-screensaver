@@ -135,6 +135,17 @@ static const char *const kHexTrailOverrides[] = {
     "*ncolors: 64", "*cycles: 0", "*delay: 10000",
     "*count: " HEXTRAIL_STR(HEXTRAIL_COUNT), NULL};
 XLOCKMORE_HACK_WITH(hextrail, "HexTrail", kHexTrailOverrides);
+#ifdef HYPNOWHEEL_PROBE
+/* Dropped from the rotation (issue #73); built only to measure it on the
+ * board, as the last entry, with the overrides it had when registered. */
+static const char *const kHypnowheelOverrides[] = {"*ncolors: 64", "*cycles: 0",
+                                                   "*delay: 10000", NULL};
+XLOCKMORE_HACK_WITH(hypnowheel, "Hypnowheel", kHypnowheelOverrides);
+/* Outside the array, so tools/score_hacks.py still counts it as not ported. */
+#define HYPNOWHEEL_PROBE_ENTRY &hypnowheel_hack,
+#else
+#define HYPNOWHEEL_PROBE_ENTRY
+#endif
 
 /* Built only when the After Dark disk image is present; kept last so every
  * other hack keeps its index. */
@@ -204,5 +215,6 @@ const HackEntry *const g_hacks[] = {
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif
+    HYPNOWHEEL_PROBE_ENTRY
 };
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);

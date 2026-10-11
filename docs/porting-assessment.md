@@ -201,6 +201,8 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Hypnowheel | 1.4 | 720 ms | 32.6 ms | 0 ms | about 0.64 MB |
 | Hypnowheel (`*layers: 1`, probe) | 4.4 | 200 ms | 32.5 ms | 0 ms | about 0.64 MB |
 | Hypnowheel (`*count: 5`, probe) | 2.0 | 511 ms | 32.6 ms | 0 ms | about 0.64 MB |
+| Hypnowheel (single precision, saturating blend, probe) | 2.2 | 426 ms | 32.6 ms | 0 ms | not measured |
+| Hypnowheel (as above, half resolution, probe) | 4.0 | 227 ms | 32.5 ms | 0 ms | not measured |
 | CWaves (as copied, double) | 7.8 | 95-97 ms | 32.6 ms | 0 ms | about 7 KB |
 | CWaves (single precision) | 10.6 | 61 ms | 32.4 ms | 0 ms | about 7 KB |
 | CWaves | 20.0-20.2 | 16.1-16.2 ms | 32.5 ms | 0 ms | about 7 KB |
@@ -257,9 +259,9 @@ the push and TinyGL, not in the hack's own maths. HexTrail never enables the
 depth test but clears the depth buffer every frame, a second full-canvas clear
 of PSRAM; skipping it while the test is off (done when the test is enabled
 instead) took the mean to 15.3 and the worst step to 59 ms. Both GL hacks were
-below the 15 fps bar in their first registered form (8.3 and 12.7). Rod dropped Boing after seeing it (too
-slow, and plain on a small screen), so its rows are the measured record of a
-hack that is not in the rotation.
+below the 15 fps bar in their first registered form (8.3 and 12.7). Rod dropped
+Boing after seeing it (too slow, and plain on a small screen), so its rows are
+the measured record of a hack that is not in the rotation.
 
 Unknown Pleasures' rows are from pinned builds (2026-10-10). The first flash
 had TinyGL's one-pixel lines and its additive blend, so the black quads that
@@ -723,8 +725,10 @@ builds drew garbage (a layout mismatch in `spline.h`, since fixed) and the
 speeds they were measured at are not recorded; the rows above are from the
 fixed builds. Loop's registered build asks for 50 ms
 between generations (upstream asks for 100). Hypnowheel's probes used
-temporary registry overrides, since reverted; they separate its additively
-blended pixel fill (about 70 percent of the step) from its per-triangle setup.
+temporary registry overrides, since reverted. The later rows are
+`GL_PROFILE` builds with `-DHYPNOWHEEL_PROBE` (2026-10-11, issue #43): about
+275 ms of the 706 ms step was `double` trig, which single precision removed;
+half resolution (`-DHYPNOWHEEL_HALF`) took fill from 334 to 129 ms.
 Qix's internal heap read about 43 KB low while it ran, which was its leaked
 segment arrays (fixed). Colour and pace were not judged.
 
@@ -760,12 +764,12 @@ needing few additions come first.
 
 | Hack | Kind | Effort | Speed | Ported | Shim gaps | Flags | LOC |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| attraction | 2d | S | medium (0.016 ms) | - | - | - | 1115 |
-| bouboule | 2d | S | high (0.065 ms) | - | - | xor | 860 |
+| attraction | 2d | S | low (0.014 ms) | - | - | - | 1115 |
+| bouboule | 2d | S | high (0.066 ms) | - | - | xor | 860 |
 | celtic | 2d | S | high (1.2 ms) | ❌ | - | - | 1141 |
-| greynetic | 2d | S | medium (0.018 ms) | - | - | - | 297 |
-| halftone | 2d | S | high (0.66 ms) | ❌ | - | pixmaps | 413 |
-| nerverot | 2d | S | high (0.37 ms) | - | - | pixmaps, float-heavy | 1367 |
+| greynetic | 2d | S | medium (0.016 ms) | - | - | - | 297 |
+| halftone | 2d | S | high (0.68 ms) | ❌ | - | pixmaps | 413 |
+| nerverot | 2d | S | high (0.38 ms) | - | - | pixmaps, float-heavy | 1367 |
 | popsquares | 2d | S | high (0.13 ms) | - | - | pixmaps | 310 |
 | abstractile | 2d | M | - | - | `make_color_loop` | - | 1625 |
 | ant | 2d | M | - | - | `NUMSTIPPLES`, `automata.h`, `hexagonUnit`, `triangleUnit` | - | 1351 |
@@ -1050,7 +1054,7 @@ needing few additions come first.
 - **celtic**: shelved at 1.2 fps and 300 KB of heap, see issue #37
 - **flurry**: needs GL TinyGL lacks, est. under 1 fps, issue #70
 - **halftone**: 5 fps; the shim's ellipse fill is 80% of it, issue #57
-- **hypnowheel**: 1.4 fps, blended pixel fill; Rod dropped it, issue #73
+- **hypnowheel**: 4.0 fps at half resolution, fill-bound; Rod dropped it, #73
 
 ## Excluded files
 

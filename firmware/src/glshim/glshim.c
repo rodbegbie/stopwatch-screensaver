@@ -18,9 +18,26 @@
 
 #include "core/canvas.h"
 #include "zbuffer.h"
+#include "glshim/glshim_prof.h"
+
+#ifdef GL_PROFILE
+uint64_t glshim_prof_time[GLPROF_SLOTS];
+uint32_t glshim_prof_calls[GLPROF_SLOTS];
+uint32_t glshim_prof_frames;
+int glshim_prof_depth;
+const char *const glshim_prof_names[GLPROF_SLOTS] = {
+    "clear", "list", "vertex", "shade", "tri", "fill", "point", "line"};
+
+void glshim_prof_reset(void) {
+  memset(glshim_prof_time, 0, sizeof glshim_prof_time);
+  memset(glshim_prof_calls, 0, sizeof glshim_prof_calls);
+  glshim_prof_frames = 0;
+}
+#endif
 
 static ZBuffer *g_zb;
 static Canvas *g_canvas;
+static int g_scale = 1, g_next_scale = 1; /* see glshim_set_render_scale */
 
 typedef struct {
   int x0, y0, x1, y1; /* inclusive; empty when x0 > x1 */
@@ -41,7 +58,7 @@ static GLint g_deferred_z;
 
 static bool box_empty(Box b) { return b.x0 > b.x1 || b.y0 > b.y1; }
 
-static void box_add(Box *b, Box o) {
+TGL_HOT static void box_add(Box *b, Box o) {
   if (box_empty(o)) return;
   if (o.x0 < b->x0) b->x0 = o.x0;
   if (o.y0 < b->y0) b->y0 = o.y0;
@@ -49,8 +66,9 @@ static void box_add(Box *b, Box o) {
   if (o.y1 > b->y1) b->y1 = o.y1;
 }
 
+/* TinyGL's buffer: the canvas itself, or half its size at scale 2. */
 static Box whole_canvas(void) {
-  return (Box){0, 0, g_canvas->w - 1, g_canvas->h - 1};
+  return (Box){0, 0, g_zb->xsize - 1, g_zb->ysize - 1};
 }
 
 /* The erased box is the whole canvas on a new context: what is on the display
@@ -67,7 +85,7 @@ static void reset_dirty_rectangle(void) {
  * {x0, y0, x1, y1}; returns 0 if nothing is left. The one rule for what a drawn
  * primitive covers: the dirty rectangle and, through the observer below,
  * tools/gl_budget.py both get its result. */
-static int glshim_clamp_box(GLint x0, GLint y0, GLint x1, GLint y1, int w, int h,
+TGL_HOT static int glshim_clamp_box(GLint x0, GLint y0, GLint x1, GLint y1, int w, int h,
                             int out[4]) {
   if (x0 > x1) {
     const GLint t = x0;
@@ -94,10 +112,10 @@ static int glshim_clamp_box(GLint x0, GLint y0, GLint x1, GLint y1, int w, int h
 void (*glshim_box_observer)(int x0, int y0, int x1, int y1);
 
 /* Called by TinyGL for everything it draws, in canvas pixels. */
-void glshim_note_box(GLint x0, GLint y0, GLint x1, GLint y1) {
+TGL_HOT void glshim_note_box(GLint x0, GLint y0, GLint x1, GLint y1) {
   if (!g_zb) return;
   int c[4];
-  if (!glshim_clamp_box(x0, y0, x1, y1, g_canvas->w, g_canvas->h, c)) return;
+  if (!glshim_clamp_box(x0, y0, x1, y1, g_zb->xsize, g_zb->ysize, c)) return;
   const Box b = {c[0], c[1], c[2], c[3]};
   if (glshim_box_observer) glshim_box_observer(c[0], c[1], c[2], c[3]);
   box_add(&g_color_box, b);
@@ -144,6 +162,9 @@ void glshim_clear(ZBuffer *zb, GLint clear_z, GLint z, GLint clear_color,
     ZB_clear(zb, clear_z, z, clear_color, r, g, b);
     return;
   }
+#ifdef GL_PROFILE
+  const uint32_t prof_start = glshim_prof_now();
+#endif
   const Box all = whole_canvas();
   if (clear_color) {
     const PIXEL color = RGB_TO_PIXEL(r, g, b);
@@ -165,6 +186,9 @@ void glshim_clear(ZBuffer *zb, GLint clear_z, GLint z, GLint clear_color,
       g_deferred_z = z;
     }
   }
+#ifdef GL_PROFILE
+  glshim_prof_add(GLPROF_CLEAR, prof_start);
+#endif
 }
 
 void glshim_depth_test_changed(ZBuffer *zb) {
@@ -188,11 +212,13 @@ static void release_hook(Display *dpy) {
 }
 
 void glshim_close(void) {
+  g_next_scale = 1; /* a request is for one open, even one that never came */
   if (!g_zb) return;
   glClose();
   ZB_close(g_zb);
   g_zb = NULL;
   g_canvas = NULL;
+  g_scale = 1;
   g_color_box = g_z_box = g_swap_drawn = g_swap_erased = kEmptyBox;
   g_color_valid = g_z_valid = false;
 }
@@ -202,10 +228,13 @@ int glshim_is_open(void) { return g_zb != NULL; }
 GLXContext *glshim_open(Canvas *canvas) {
   static GLXContext handle;
 
+  const int scale = g_next_scale; /* read before the close below drops it */
   glshim_close();
   if (!canvas || !canvas->px || canvas->w <= 0 || canvas->h <= 0) return NULL;
-  g_zb = ZB_open(canvas->w, canvas->h, ZB_MODE_5R6G5B, canvas->px);
+  g_zb = scale == 2 ? ZB_open(canvas->w / 2, canvas->h / 2, ZB_MODE_5R6G5B, NULL)
+                    : ZB_open(canvas->w, canvas->h, ZB_MODE_5R6G5B, canvas->px);
   if (!g_zb) return NULL;
+  g_scale = scale;
   glInit(g_zb);
   g_vertex = g_normal = g_color = (ClientArray){0};
   g_canvas = canvas;
@@ -222,10 +251,38 @@ Bool glXMakeCurrent(Display *dpy, GLXDrawable drawable, GLXContext ctx) {
   return 1;
 }
 
+/* Scale 2: every pixel of this frame's erased and drawn boxes becomes a 2 by
+ * 2 block of the canvas, and the doubled box is marked dirty. */
+static void double_into_canvas(void) {
+  Box b = g_swap_erased;
+  box_add(&b, g_swap_drawn);
+  g_swap_drawn = g_swap_erased = kEmptyBox;
+#ifdef GL_PROFILE
+  glshim_prof_frames++;
+#endif
+  if (box_empty(b)) return;
+  for (int y = b.y0; y <= b.y1; y++) {
+    const PIXEL *src = (const PIXEL *)((const GLbyte *)g_zb->pbuf + y * g_zb->linesize);
+    uint16_t *top = g_canvas->px + (size_t)(2 * y) * g_canvas->w;
+    uint16_t *bottom = top + g_canvas->w;
+    for (int x = b.x0; x <= b.x1; x++) {
+      const uint32_t pair = (uint32_t)src[x] * 0x10001u;
+      memcpy(top + 2 * x, &pair, sizeof pair);
+      memcpy(bottom + 2 * x, &pair, sizeof pair);
+    }
+  }
+  canvas_mark_dirty(g_canvas, 2 * b.x0, 2 * b.y0, 2 * (b.x1 - b.x0 + 1),
+                    2 * (b.y1 - b.y0 + 1));
+}
+
 void glXSwapBuffers(Display *dpy, GLXDrawable drawable) {
   (void)dpy;
   (void)drawable;
   if (!g_canvas) return;
+  if (g_scale == 2) {
+    double_into_canvas();
+    return;
+  }
   const Box boxes[2] = {g_swap_erased, g_swap_drawn};
   for (int i = 0; i < 2; i++)
     if (!box_empty(boxes[i]))
@@ -233,6 +290,9 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable) {
                         boxes[i].x1 - boxes[i].x0 + 1,
                         boxes[i].y1 - boxes[i].y0 + 1);
   g_swap_drawn = g_swap_erased = kEmptyBox;
+#ifdef GL_PROFILE
+  glshim_prof_frames++;
+#endif
 }
 
 static int stride_in_bytes(int stride, int size) {
@@ -394,4 +454,11 @@ void gluLookAt(GLdouble eyex, GLdouble eyey, GLdouble eyez, GLdouble cx,
                    s[2], u[2], -f[2], 0, 0,    0,    0,     1};
   glMultMatrixf(m);
   glTranslatef((GLfloat)-eyex, (GLfloat)-eyey, (GLfloat)-eyez);
+}
+
+void glshim_set_render_scale(int scale) { g_next_scale = scale == 2 ? 2 : 1; }
+
+#undef glViewport
+void glshim_Viewport(GLint x, GLint y, GLint w, GLint h) {
+  glViewport(x / g_scale, y / g_scale, w / g_scale, h / g_scale);
 }

@@ -458,7 +458,7 @@ static const uint64_t kBaseline[] = {
     0x7dd7d7130551c261ull, /* Truchet: taken after looking at the frames */
     0x03670369cb12c2deull, /* UnknownPleasures: after looking at the frames, with the fake clock, smooth lines and the offset margin */
     0x43f9cf84967fee7cull, /* Hexadrop: taken after looking at the frames */
-    0x12097254df6ad0a2ull, /* StonerView: taken after looking at the frames */
+    0xb162a291668a076dull, /* StonerView: taken after looking at the frames (saturating additive blend) */
     0x692e426561735c0dull, /* Halo: taken after looking at the frames, with GCBackground honoured */
     0x9b1b0de461b6438bull, /* XMatrix: taken after looking at the frames, trace off */
     0x51a9a94db9bf9128ull, /* Qix: taken after looking at the frames */
