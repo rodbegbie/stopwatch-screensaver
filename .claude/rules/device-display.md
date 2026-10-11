@@ -129,3 +129,6 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   with the sparser build (20 rows of 50 points, a step of about 91 ms against
   165), so it may track how much is lit or how long the copy runs; not yet
   filmed (issue #68).
+- A hack's returned delay is waited after the push, and only the push counts
+  against it, so its own step adds to the frame time: to hold a rate, return
+  the target minus the step (`ad_flyingtoasters.c`: 19.5 fps became 28.9).

@@ -91,6 +91,12 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
   pinned build (`START_HACK` plus `ROTATE_SECONDS=0`), start the capture, then
   tap during it: the early windows are the baseline, the later ones have the
   overlay.
+  Set `dtr` and `rts` to False on an unopened `serial.Serial()` before
+  `open()`: a reopen loop without that once parked the chip in its bootloader
+  (`boot:0x3 ... waiting for download`, screen frozen). Recover, or reset just
+  before a capture to log from boot (a hack's `fprintf(stderr)` reaches the
+  log), with `.venv/bin/python .platformio/packages/tool-esptoolpy/esptool.py
+  --chip esp32s3 --port /dev/cu.usbmodem112401 --after hard_reset read_mac`.
 - Flash with `pio run -e stopwatch -t upload > file 2>&1`, never piped through
   `head`, and check for "Hash of data verified". The button steps backwards
   (Pyro, then Lightning, then Drift...). Work out how long a restart takes
@@ -185,6 +191,9 @@ Set `NO_COLOR=1` on `pio` output you parse.
 ## Adding a hack
 
 Use the `port-hack` skill. Its `adding-a-hack.md` holds the numbered steps.
+A hack of our own (not copied) in `hacks/<dir>/` goes in `OWN_HACK_DIRS`
+(`tools/check_notices.py`) and `OWN_HACKS` (`tools/score_hacks.py`); run
+`check_notices.py` before opening the PR.
 
 ## Delivering a branch
 
