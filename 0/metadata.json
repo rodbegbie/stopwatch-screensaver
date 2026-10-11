@@ -208,6 +208,37 @@
         "label": "Skill: superpowers:systematic-debugging",
         "default_collapsed": true
       }
+    },
+    {
+      "id": "claude-skill-toolu_01FuDhEvJgM1jndfRMJuvpDS",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "deliver-branch"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "c92bac928b35",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 2393,
+        "end": 2394,
+        "entry_ids": [
+          "79241e7f-ef6b-486b-8360-64cc68fce61a"
+        ],
+        "tool_use_id": "toolu_01FuDhEvJgM1jndfRMJuvpDS"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01FuDhEvJgM1jndfRMJuvpDS"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: deliver-branch",
+        "default_collapsed": true
+      }
     }
   ],
   "session_metrics": {
