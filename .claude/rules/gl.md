@@ -220,6 +220,12 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   against 30 ms of direct fill), Hypnowheel 476 to 528 ms. It was reverted
   (`feature/43-banded-renderer` history). Faster fill needs fewer cycles a
   pixel or fewer pixels, not other memory.
+- Resolving a merge conflict in `tools/tinygl_patch.py`: the conflict region
+  can span the ends of `REPLACEMENTS`, `LATE_REPLACEMENTS` and `HOT_FUNCTIONS`,
+  so keeping both sides can put an entry in the wrong tuple (a `Replace` among
+  the `Hot` entries fails collection with "'Replace' object has no attribute
+  'definition'"). Check each kept entry's tuple. `ruff format` on the file also
+  rewraps an `AA_LINE +` line nobody touched; revert that hunk.
 - `glshim_set_render_scale(2)`, read by the next `glshim_open`, renders at half
   the width and height: `glViewport` is a macro for `glshim_Viewport`, which
   divides by the scale, and the swap doubles the dirty box into the canvas.

@@ -28,6 +28,10 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   backtest reads a measured row only when its name is the bare hack name
   (`| Deluxe |`); a row with a note in brackets is skipped, so put the build
   that is registered in the bare row.
+- `score_hacks.py` counts a hack as ported if `&<name>_hack` appears anywhere
+  in the text of `g_hacks[]`, `#ifdef` or not, and then refuses one that
+  `failed_ports.txt` also lists. A probe-only entry (Hypnowheel's
+  `HYPNOWHEEL_PROBE`) goes through a macro defined above the array.
 - `speed_backtest.py` stops with "hypnowheel: does not compile ... 'rotator.h'
   file not found": a dropped GL port counts in the backtest and is probed
   standalone, without the GL helpers' include path. `docs/speed-backtest.md`

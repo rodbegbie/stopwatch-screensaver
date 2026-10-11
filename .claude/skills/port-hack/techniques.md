@@ -52,6 +52,10 @@ The ESP32-S3 has a single-precision FPU only, so double runs in software.
   literals first.
 - Compare double and float frames at several counts. Early frames match; a
   chaotic hack diverges later but should keep its look.
+- GL hacks too: Hypnowheel's spiral called `cos` and `sin` in `double` for
+  every vertex, about 275 ms of a 706 ms step, hidden behind a fill-heavy look.
+  Its wrapper (`hypnowheel_single_gl.c`) adapts `get_position` and
+  `get_rotation` as HexTrail's does.
 - Results: Galaxy 5 to 14 fps. Substrate step 119-121 ms to 37-38 ms, 6.2 to
   12.5 fps.
 - A hack that passes the address of its own `double` local to a shim function
@@ -70,6 +74,15 @@ The ESP32-S3 has a single-precision FPU only, so double runs in software.
 When: a ported hack runs under about 10 fps and the push is not the cause
 (`step` in the serial line is large).
 
+- For a GL hack, flash a `-DGL_PROFILE` build first (AGENTS.md): it splits
+  the frame into stages, and time in none of them is the hack's own code.
+  Issue #73 guessed Hypnowheel was 70 percent blended fill; the profile showed
+  a third of its frame was `double` trig.
+- A worst-case microbenchmark is not the workload. A PSRAM cache miss costs
+  about 220 cycles, which suggested GL fill was memory-bound; a banded renderer
+  in internal RAM, built on that, was exact and slower (neighbouring triangles
+  share cache lines). A/B the first working slice of a speed idea on the board
+  before building the rest, and stop if it does not pay.
 - Do not trust a host profile (`sample` on the dump program) for where the
   time goes. A Mac does `double` at full speed, so software-double code looks
   cheap there: Braid's disc fill was 6% on the host and the largest cost on the
@@ -238,6 +251,11 @@ frames exited 139.
   itself, with a `free` that makes the loop safe (`hacks/blaster_safe.c`).
 - A real press is rarely handled in that window: Rod's presses on the device
   all landed after the first step. Rely on the test, not on pressing buttons.
+- An xlockmore hack cannot be re-registered that way: `xlockmore.h` has no
+  include guard, so the hack's own include redefines `XSCREENSAVER_MODULE`
+  after the wrapper empties it. Swap the callback in the table instead, from a
+  constructor: `<name>_xlockmore_function_table.hack_init = my_init;`
+  (`loop_direct.c`, `hypnowheel_single_gl.c`).
 
 ## Tests that cannot be fooled
 
