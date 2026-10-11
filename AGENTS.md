@@ -185,6 +185,12 @@ ones below apply everywhere.
   `__sanitizer_get_current_allocated_bytes()`
   (`<sanitizer/allocator_interface.h>`) before and after many restarts, as in
   `test_hacks.c`.
+  Take both readings at rest (after `runner_destroy`): a reading while a hack
+  runs counts random-sized live state (Loop swings about 1 MB by mode), so
+  the verdict depends on test order.
+- Another session may be working in the same checkout. Run `git status` and
+  `git log -1` before you edit or quote line numbers, take line numbers from
+  `git show HEAD:<path>`, and leave changes you didn't make alone.
 - `pio test` hides `printf` and stderr from tests. To see two values, assert
   `TEST_ASSERT_EQUAL_UINT64(a, b)` temporarily: the failure line prints both.
 - In a git worktree the ignored `vendor/`, `.venv/` and `.platformio/` are
