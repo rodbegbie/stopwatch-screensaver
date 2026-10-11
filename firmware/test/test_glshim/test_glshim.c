@@ -1452,8 +1452,33 @@ void test_disc_clipped_triangle_matches_the_unclipped_one_inside(void) {
   TEST_ASSERT_TRUE(checked > SIZE * SIZE / 2);
 }
 
+/* At scale 2 the fill reads the half-size spans, a row per half-res line. */
+void test_disc_clipped_triangle_matches_the_unclipped_one_at_scale_two(void) {
+  uint16_t plain[SIZE * SIZE];
+  glshim_set_render_scale(2);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  two_triangles_in_the_corner();
+  glXSwapBuffers(dpy, 0);
+  memcpy(plain, cv.px, sizeof plain);
+  TEST_ASSERT_EQUAL_INT(0, canvas_set_disc(&cv, malloc));
+  canvas_clear(&cv, SENTINEL);
+  glshim_set_render_scale(2);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  two_triangles_in_the_corner();
+  glXSwapBuffers(dpy, 0);
+  for (int y = 0; y < SIZE; y++) {
+    int x0, x1;
+    if (!canvas_visible_span(&cv, y, &x0, &x1)) continue;
+    for (int x = x0; x <= x1; x++)
+      TEST_ASSERT_EQUAL_HEX16(plain[y * SIZE + x], cv.px[y * SIZE + x]);
+  }
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, cv.px[0]);
+  TEST_ASSERT_NOT_EQUAL(0, plain[0]);
+}
+
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_disc_clipped_triangle_matches_the_unclipped_one_at_scale_two);
   RUN_TEST(test_disc_fill_leaves_the_corners_alone);
   RUN_TEST(test_disc_fill_clips_a_triangle_out_only_on_the_right);
   RUN_TEST(test_disc_clipped_triangle_matches_the_unclipped_one_inside);

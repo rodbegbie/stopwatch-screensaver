@@ -48,8 +48,10 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   (w/2, h/2), and a pixel counts if any part of it is inside the circle.
   `push_plan` clips every dirty span to it and drops rows left empty. A hack
   with `sync_to_refresh` (Unknown Pleasures) still pushes whole rows, because
-  its TE offset was swept for that push (#68). `-DPUSH_NO_DISC` turns the
-  clip off for an A/B. On the board: CloudLife's full frame 28.0 to 24.8 ms
+  its TE offset was swept for that push (#68). `-DPUSH_NO_DISC` turns off the
+  push clip only, for an A/B: GL hacks still clear and fill only the disc
+  (`gl.md`). Call `canvas_set_disc` before any `glshim_open`, which keeps a
+  pointer to the spans. On the board: CloudLife's full frame 28.0 to 24.8 ms
   (26.2 to 28.4 fps), HexTrail 30.6 to 27.3 ms, Pyro 1.60 to 1.43 ms.
 - Do not split a push into more batches than `push_plan`'s greedy grouping
   makes. Each extra flush in one push cost about 0.85 ms on the board, not the
