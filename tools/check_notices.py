@@ -10,7 +10,9 @@ from pathlib import Path
 
 # Copied third-party code: one directory per hack under hacks/ (top-level
 # files in hacks/ are our own, e.g. the registry), plus xs_support/.
+# OWN_HACK_DIRS are hack directories that hold our own code (MIT), not copies.
 SUFFIXES = {".c", ".h", ".cpp"}
+OWN_HACK_DIRS = frozenset({"ad_flyingtoasters"})
 HEADER_LINES = 100
 NOTICE_PHRASES = (
     "permission to use, copy, modify, distribute, and sell this software",
@@ -36,6 +38,8 @@ def check(src_dir: Path, notices_md: Path) -> list[str]:
         if path.suffix not in SUFFIXES or not path.is_file():
             continue
         rel = path.relative_to(src_dir)
+        if rel.parts[0] == "hacks" and rel.parts[1] in OWN_HACK_DIRS:
+            continue
         if not has_notice(path.read_text(errors="replace")):
             problems.append(f"{rel}: no licence notice in first {HEADER_LINES} lines")
         if path.name not in notices and path.stem not in notices:

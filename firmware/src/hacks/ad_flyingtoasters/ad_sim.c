@@ -16,7 +16,10 @@ static int intersects(const AdRect *a, const AdRect *b) {
   return a->left < b->right && b->left < a->right && a->top < b->bottom && b->top < a->bottom;
 }
 
-static long rnd_mod(const AdSim *sim, long k) { return labs(sim->rnd() % k); }
+static long rnd_mod(const AdSim *sim, long k) {
+  long r = sim->rnd();
+  return k > 0 ? labs(r % k) : 0;
+}
 
 static AdRect random_inside_rect(const AdSim *sim) {
   int w = sim->bounds.right - sim->bounds.left;

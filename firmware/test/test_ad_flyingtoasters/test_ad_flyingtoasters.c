@@ -239,6 +239,17 @@ void test_initial_scatter_is_inside_bounds(void) {
   }
 }
 
+void test_bounds_no_bigger_than_a_flyer_place_it_at_the_corner(void) {
+  static const long rolls[] = {12345, 6789, 10};
+  const AdRect tight = {20, 30, 20 + AD_RECT, 30 + AD_RECT};
+  AdSim sim;
+  set_script(rolls, 3);
+  ad_sim_init(&sim, tight, 1, scripted);
+  TEST_ASSERT_TRUE(sim.f[0].live);
+  TEST_ASSERT_EQUAL_INT(20, sim.f[0].r.top);
+  TEST_ASSERT_EQUAL_INT(30, sim.f[0].r.left);
+}
+
 void test_n_is_clamped_to_the_slot_array(void) {
   AdSim sim;
   srandom(3);
@@ -407,6 +418,7 @@ int main(void) {
   RUN_TEST(test_collision_reports_nudge_and_skips_self_and_dead_slots);
   RUN_TEST(test_off_screen_flyer_is_removed_and_respawned_at_an_edge);
   RUN_TEST(test_initial_scatter_is_inside_bounds);
+  RUN_TEST(test_bounds_no_bigger_than_a_flyer_place_it_at_the_corner);
   RUN_TEST(test_n_is_clamped_to_the_slot_array);
   RUN_TEST(test_slot_stays_empty_after_four_colliding_tries);
   RUN_TEST(test_trail_is_wiped);
