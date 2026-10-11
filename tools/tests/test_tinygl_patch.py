@@ -173,6 +173,7 @@ def test_filled_triangles_apply_polygon_offset_and_treat_alpha_one_as_opaque(pat
     assert "if (shift > 536870912.0f) shift = 536870912.0f;" in wrapper
     assert "if (shift < -536870912.0f) shift = -536870912.0f;" in wrapper
     assert "snap = (c->offset_factor != 0.0f || c->offset_units != 0.0f)" in wrapper
-    assert "p0->zp.z -= bias;" in wrapper
+    assert "z0 - bias > zmax ? zmax" in wrapper
+    assert "p0->zp.z = z0;" in wrapper
     assert "GL_SRC_ALPHA" in wrapper and "GL_ONE_MINUS_SRC_ALPHA" in wrapper
     assert "c->zb->enable_blend = blend;" in wrapper

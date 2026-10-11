@@ -789,6 +789,31 @@ void test_a_negative_offset_pulls_a_fill_in_front_of_one_just_ahead_of_it(void) 
   TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), second_fill_behind_the_first(1, 0, -1, 0.0f, one_step_back));
 }
 
+/* Depth is 16 bits. An offset that carries a fill past either end of the range
+ * must stop at the end, not wrap round to the other. */
+static uint16_t offset_fill_over_a_fill_at_zero(float second_z, float units) {
+  open_line_scene(0);
+  glEnable(GL_DEPTH_TEST);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  fill_everything_with(0, 1, 0, 0.0f);
+  glPolygonOffset(0, units);
+  glEnable(GL_POLYGON_OFFSET_FILL);
+  fill_everything_with(1, 0, 0, second_z);
+  glDisable(GL_POLYGON_OFFSET_FILL);
+  fill_everything_with(0, 0, 1, 0.0f); /* beats a depth that wrapped round */
+  const uint16_t result = centre_pixel();
+  glshim_close();
+  return result;
+}
+
+void test_an_offset_cannot_wrap_a_fill_past_the_far_plane(void) {
+  TEST_ASSERT_EQUAL_HEX16(rgb565(0, 0, 255), offset_fill_over_a_fill_at_zero(0.999999f, 1));
+}
+
+void test_an_offset_cannot_wrap_a_fill_past_the_near_plane(void) {
+  TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), offset_fill_over_a_fill_at_zero(-0.999999f, -1));
+}
+
 void test_an_enormous_offset_pushes_back_instead_of_overflowing(void) {
   TEST_ASSERT_EQUAL_HEX16(rgb565(0, 255, 0), second_fill_over_the_first(1, 0, 1e9f, 0));
   TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), second_fill_over_the_first(1, 0, -1e9f, 0));
@@ -865,6 +890,8 @@ int main(void) {
   RUN_TEST(test_a_positive_offset_pushes_a_fill_back_behind_its_twin);
   RUN_TEST(test_the_offset_factor_scales_with_the_slope_of_the_fill);
   RUN_TEST(test_a_negative_offset_pulls_a_fill_in_front_of_one_just_ahead_of_it);
+  RUN_TEST(test_an_offset_cannot_wrap_a_fill_past_the_far_plane);
+  RUN_TEST(test_an_offset_cannot_wrap_a_fill_past_the_near_plane);
   RUN_TEST(test_an_enormous_offset_pushes_back_instead_of_overflowing);
   RUN_TEST(test_a_zero_offset_leaves_the_tie_to_the_later_fill);
   RUN_TEST(test_a_smooth_line_is_not_eaten_by_its_own_polygon_as_they_drift);

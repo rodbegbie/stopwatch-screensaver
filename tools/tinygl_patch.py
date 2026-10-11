@@ -253,17 +253,17 @@ void gl_draw_triangle_fill(GLVertex* p0, GLVertex* p1, GLVertex* p2) {
 		if (shift < -536870912.0f) shift = -536870912.0f;
 		bias = (GLint)shift;
 	}
+	GLint z0 = p0->zp.z, z1 = p1->zp.z, z2 = p2->zp.z;
 	if (bias) {
-		p0->zp.z -= bias;
-		p1->zp.z -= bias;
-		p2->zp.z -= bias;
+		const GLint zmax = (1 << (ZB_Z_BITS + ZB_POINT_Z_FRAC_BITS)) - 1;
+		p0->zp.z = z0 - bias < 0 ? 0 : (z0 - bias > zmax ? zmax : z0 - bias);
+		p1->zp.z = z1 - bias < 0 ? 0 : (z1 - bias > zmax ? zmax : z1 - bias);
+		p2->zp.z = z2 - bias < 0 ? 0 : (z2 - bias > zmax ? zmax : z2 - bias);
 	}
 	gl_draw_triangle_fill_plain(p0, p1, p2);
-	if (bias) {
-		p0->zp.z += bias;
-		p1->zp.z += bias;
-		p2->zp.z += bias;
-	}
+	p0->zp.z = z0;
+	p1->zp.z = z1;
+	p2->zp.z = z2;
 	c->zb->enable_blend = blend;
 }
 
