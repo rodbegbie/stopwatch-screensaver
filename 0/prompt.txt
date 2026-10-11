@@ -1,0 +1,8 @@
+Some notes from hands-on testing:
+
+* Qix: Looks great.  NIce and fast.
+* FireworkX: I think it's maybe too aggressive on a small screen -- the screen is largely just white, with occasional fades before another white flash fills the screen.  Can we lower the number of fireworks on it somehow so each one stands out more?
+* Starfish: Lovely!  Looks like there's two modes: One on a black background, and one which keeps a trail and bright coloured background. Both look terrific.
+* Goop: It would be nice if it was a little faster, but the translucent blend looks great.
+* Loop: Wheee! So fun and fast.  I've only seen hexagon mode on the device.
+* Hypnowheel: Yeah, we should remove this from the rotation.  It *creaks* along!
