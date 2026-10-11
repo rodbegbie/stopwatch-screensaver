@@ -139,12 +139,14 @@ static void float_fill_polygon(Canvas *c, const XPoint *pts, int n, uint16_t col
   float_fill_polygon_alpha(c, pts, n, color, 32);
 }
 
-/* XFillPolygon's arguments, for a wrapper to `#define XFillPolygon` onto: the
- * shape and mode are ignored, as the shim's are. A bitmap or None draws
- * nothing. */
+/* XFillPolygon's arguments, for a wrapper to `#define XFillPolygon` onto. The
+ * shape is ignored, as the shim ignores it. Relative coordinates
+ * (CoordModePrevious) are not handled here, so they go to the shim's own fill;
+ * a bitmap or None draws nothing. */
 static int float_x_fill_polygon(Display *dpy, Drawable d, GC gc, XPoint *pts,
                                 int n, int shape, int mode) {
-  (void)shape, (void)mode;
+  if (mode != CoordModeOrigin)
+    return (XFillPolygon)(dpy, d, gc, pts, n, shape, mode);
   Canvas *c = xshim_target(dpy, d);
   if (c) float_fill_polygon(c, pts, n, (uint16_t)gc->foreground);
   return 0;

@@ -192,6 +192,24 @@ void test_a_translucent_fill_marks_what_it_drew_dirty(void) {
   TEST_ASSERT_FALSE(canvas_dirty_row(&cv, 30, &x0, &x1));
 }
 
+void test_the_xfillpolygon_adapter_honours_relative_coordinates(void) {
+  Display *dpy = xshim_open_display(&cv);
+  XGCValues v = {0};
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, XSHIM_WINDOW, GCForeground, &v);
+  XPoint absolute[4] = {{4, 4}, {20, 4}, {20, 20}, {4, 20}};
+  float_x_fill_polygon(dpy, XSHIM_WINDOW, gc, absolute, 4, Convex, CoordModeOrigin);
+  const int want = lit(&cv);
+  TEST_ASSERT_TRUE(want > 200);
+  canvas_clear(&cv, 0);
+  XPoint relative[4] = {{4, 4}, {16, 0}, {0, 16}, {-16, 0}};
+  float_x_fill_polygon(dpy, XSHIM_WINDOW, gc, relative, 4, Convex, CoordModePrevious);
+  TEST_ASSERT_EQUAL_INT(want, lit(&cv));
+  TEST_ASSERT_TRUE(cv.px[12 * 64 + 12] != 0);
+  XFreeGC(dpy, gc);
+  xshim_close_display(dpy);
+}
+
 void test_degenerate_input_draws_nothing(void) {
   const XPoint line[2] = {{1, 1}, {30, 30}};
   float_fill_polygon(&cv, line, 2, 0xFFFF);
@@ -246,6 +264,7 @@ int main(void) {
   RUN_TEST(test_a_translucent_fill_covers_the_pixels_an_opaque_one_does);
   RUN_TEST(test_the_ends_of_the_alpha_range_are_nothing_and_opaque);
   RUN_TEST(test_a_translucent_fill_marks_what_it_drew_dirty);
+  RUN_TEST(test_the_xfillpolygon_adapter_honours_relative_coordinates);
   RUN_TEST(test_degenerate_input_draws_nothing);
   RUN_TEST(test_a_polygon_of_hundreds_of_vertices_fills_like_the_shim);
   RUN_TEST(test_filling_again_and_again_does_not_grow_memory);

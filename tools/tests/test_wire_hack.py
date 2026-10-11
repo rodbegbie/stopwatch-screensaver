@@ -11,6 +11,7 @@ REGISTRY = """\
 extern const HackEntry pyro_hack;
 XLOCKMORE_HACK(sphere, "Sphere");
 extern const HackEntry old_hack;
+extern const HackEntry fireball_hack;
 
 const HackEntry *const g_hacks[] = {
     &pyro_hack,
@@ -115,6 +116,14 @@ def test_it_refuses_a_hack_that_is_already_registered_and_changes_nothing(repo):
     with pytest.raises(ValueError, match="already"):
         wh.wire(repo, "old", "Old", "c")
     assert read(repo, "firmware/src/hacks/registry.c") == before
+
+
+def test_a_name_inside_another_hacks_name_is_not_taken_for_a_duplicate(repo):
+    (repo / "vendor/xscreensaver-6.16/hacks/ball.c").write_text("/* ball */\n")
+    wh.wire(repo, "ball", "Ball", "c")
+    assert "extern const HackEntry ball_hack;" in read(
+        repo, "firmware/src/hacks/registry.c"
+    )
 
 
 def test_it_refuses_a_missing_source_and_a_changed_layout_without_writing(repo):

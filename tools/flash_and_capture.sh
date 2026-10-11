@@ -21,9 +21,17 @@ source "$repo/tools/env.sh"
 cd "$repo/firmware" || exit 1
 PLATFORMIO_BUILD_FLAGS="-DSTART_HACK=\\\"$hack\\\" -DROTATE_SECONDS=0 $extra" \
   NO_COLOR=1 pio run -e stopwatch -t upload > "$out/flash_$hack.txt" 2>&1
-echo "flash verified: $(grep -c 'Hash of data verified' "$out/flash_$hack.txt")" \
-     "$(grep -E 'Flash:' "$out/flash_$hack.txt")"
-grep -E "error:|overflowed" "$out/flash_$hack.txt" | head -3
+pio_status=$?
 unset PLATFORMIO_BUILD_FLAGS
+verified=$(grep -c 'Hash of data verified' "$out/flash_$hack.txt")
+echo "flash verified: $verified" "$(grep -E 'Flash:' "$out/flash_$hack.txt")"
+grep -E "error:|overflowed" "$out/flash_$hack.txt" | head -3
+# A failed flash leaves the old firmware running, and the capture would measure
+# that: stop rather than report numbers for the wrong build.
+if [ "$pio_status" -ne 0 ] || [ "$verified" -eq 0 ]; then
+  echo "flash failed (pio exit $pio_status, $verified verified); see $out/flash_$hack.txt" >&2
+  exit 1
+fi
+echo "note: the board now starts on $hack with rotation off; flash a normal build when done"
 "$repo/.venv/bin/python" -I "$repo/tools/serial_capture.py" "$out/$hack.log" "$seconds"
 grep -a "^run" "$out/$hack.log" | tail -"$lines" | cut -c1-125

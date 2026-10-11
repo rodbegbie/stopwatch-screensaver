@@ -79,6 +79,21 @@ void test_an_image_wider_than_the_window_is_clipped_not_wrapped(void) {
   XDestroyImage(im);
 }
 
+void test_a_source_offset_past_the_image_draws_nothing_and_reads_nothing_past_it(void) {
+  XImage *im = image_16(2, 1);
+  XPutPixel(im, 0, 0, 0xFFFF);
+  XPutPixel(im, 1, 0, 0xFFFF);
+  XGCValues v = {0};
+  GC gc = XCreateGC(dpy, XSHIM_WINDOW, 0, &v);
+  lowrez_put_image(dpy, XSHIM_WINDOW, gc, im, 5, 0, 0, 0, 3, 1);
+  lowrez_put_image(dpy, XSHIM_WINDOW, gc, im, 2, 0, 0, 0, 1, 1);
+  lowrez_put_image(dpy, XSHIM_WINDOW, gc, im, 0, 1, 0, 0, 1, 1);
+  lowrez_put_image(dpy, XSHIM_WINDOW, gc, im, 0, 7, 0, 0, 1, 1);
+  for (int i = 0; i < 20 * 14; i++) TEST_ASSERT_EQUAL_HEX16(0, cv.px[i]);
+  XFreeGC(dpy, gc);
+  XDestroyImage(im);
+}
+
 void test_a_null_image_draws_nothing(void) {
   XGCValues v = {0};
   GC gc = XCreateGC(dpy, XSHIM_WINDOW, 0, &v);
@@ -92,6 +107,7 @@ int main(void) {
   RUN_TEST(test_the_window_is_reported_at_a_third_of_its_size);
   RUN_TEST(test_each_pixel_becomes_a_square_centred_on_the_window);
   RUN_TEST(test_an_image_wider_than_the_window_is_clipped_not_wrapped);
+  RUN_TEST(test_a_source_offset_past_the_image_draws_nothing_and_reads_nothing_past_it);
   RUN_TEST(test_a_null_image_draws_nothing);
   return UNITY_END();
 }

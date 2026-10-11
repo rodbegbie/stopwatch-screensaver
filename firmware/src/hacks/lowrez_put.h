@@ -34,7 +34,7 @@ static int lowrez_put_image(Display *dpy, Drawable d, GC gc, XImage *im,
   Canvas *const c = xshim_target(dpy, d);
   if (!c || !im || !im->data || im->bits_per_pixel != 16) return 0;
   const int64_t S = LOWREZ_SCALE;
-  if (src_x < 0 || src_y < 0) return 0;
+  if (src_x < 0 || src_y < 0 || src_x >= im->width || src_y >= im->height) return 0;
   if ((int64_t)w > im->width - src_x) w = (unsigned int)(im->width - src_x);
   if ((int64_t)h > im->height - src_y) h = (unsigned int)(im->height - src_y);
   const int64_t ox = ((int64_t)c->w - (int64_t)im->width * S) / 2;

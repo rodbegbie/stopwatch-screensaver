@@ -565,6 +565,22 @@ void test_loop_keeps_drawing_squares_when_malloc_of_nothing_returns_null(void) {
   TEST_ASSERT_TRUE_MESSAGE(changed > 0, "Loop stopped drawing squares");
 }
 
+/* Goop blends its blobs at 23/32 only in its default transparent mode; opaque,
+ * outline and xor are drawn as they were asked for. */
+extern int goop_alpha_for_mode(const char *mode);
+
+void test_goop_blends_only_in_its_transparent_mode(void) {
+  const int blend = goop_alpha_for_mode(NULL);
+  TEST_ASSERT_TRUE(blend > 0 && blend < 32);
+  TEST_ASSERT_EQUAL_INT(blend, goop_alpha_for_mode(""));
+  TEST_ASSERT_EQUAL_INT(blend, goop_alpha_for_mode("transparent"));
+  TEST_ASSERT_EQUAL_INT(blend, goop_alpha_for_mode("Transparent"));
+  TEST_ASSERT_EQUAL_INT(32, goop_alpha_for_mode("opaque"));
+  TEST_ASSERT_EQUAL_INT(32, goop_alpha_for_mode("outline"));
+  TEST_ASSERT_EQUAL_INT(32, goop_alpha_for_mode("xor"));
+  TEST_ASSERT_EQUAL_INT(32, goop_alpha_for_mode("nonsense"));
+}
+
 void test_maze_frame_matches_main(void) {
   TEST_ASSERT_EQUAL_UINT64(0x0693082a4399bc39ull, hash_after(index_of("Maze"), 200));
 }
@@ -670,44 +686,67 @@ void test_pacman_start_and_stop_do_not_leak(void) {
   TEST_ASSERT_TRUE_MESSAGE(after < before + 512, "allocated bytes grew");
 }
 
+/* Bytes still allocated once a runner has run `entry` for `frames` frames from
+ * a fresh start and been destroyed. A hack's live state can be any size (Loop's
+ * is 650 KB as squares and 1.7 MB as hexagons, by chance), so reading while it
+ * runs measures that, not a leak; what survives destroy is what was leaked. The
+ * seed is fixed so each reading follows the same path. `cycles: 1` makes an
+ * xlockmore hack restart on every frame. */
+static size_t held_after_running(const HackEntry *entry, int frames, int cycles_one) {
+  const char *merged[2] = {"*cycles: 1", NULL};
+  HackEntry fast = *entry;
+  if (cycles_one) fast.overrides = merged;
+  const HackEntry *const hacks[] = {&fast};
+  srandom(1);
+  HackRunner *r = runner_create_with(&cv, hacks, 1);
+  runner_start(r, 0);
+  for (int f = 0; f < frames; f++) runner_step(r);
+  runner_destroy(r);
+  return __sanitizer_get_current_allocated_bytes();
+}
+
+static size_t held_after_starting(int hack, int starts) {
+  srandom(1);
+  HackRunner *r = runner_create(&cv);
+  for (int i = 0; i < starts; i++) {
+    runner_start(r, hack);
+    runner_step(r);
+  }
+  runner_destroy(r);
+  return __sanitizer_get_current_allocated_bytes();
+}
+
 /* An xlockmore hack starts a new picture every `cycles` frames by calling its
  * init again, and its state belongs to xlockmore's MI_INIT. With `cycles: 1` it
  * restarts on every frame, so this catches a restart that allocates (a plain
  * screenhack has no `cycles`, so it is skipped for those), and start and stop
  * catches state the framework fails to free. */
+#define LEAK_SLACK_BYTES 128
+
 static void check_restarts_and_stops_do_not_leak(const char *name, int xlockmore) {
   const int hack = index_of(name);
   TEST_ASSERT_TRUE_MESSAGE(hack >= 0, name);
 
   if (xlockmore) {
-    const char *merged[2] = {"*cycles: 1", NULL};
-    HackEntry fast = *g_hacks[hack];
-    fast.overrides = merged;
-    const HackEntry *const hacks[] = {&fast};
-    HackRunner *fr = runner_create_with(&cv, hacks, 1);
-    runner_start(fr, 0);
-    for (int f = 0; f < 20; f++) runner_step(fr);
-    const size_t before_restarts = __sanitizer_get_current_allocated_bytes();
-    for (int f = 0; f < 300; f++) runner_step(fr);
-    const size_t after_restarts = __sanitizer_get_current_allocated_bytes();
-    runner_destroy(fr);
-    TEST_ASSERT_TRUE_MESSAGE(after_restarts < before_restarts + 512,
+    const size_t early = held_after_running(g_hacks[hack], 20, 1);
+    const size_t late = held_after_running(g_hacks[hack], 320, 1);
+    TEST_ASSERT_TRUE_MESSAGE(late < early + LEAK_SLACK_BYTES,
                              "allocated bytes grew over in-hack restarts");
   }
 
-  HackRunner *r = runner_create(&cv);
-  for (int i = 0; i < 3; i++) {
-    runner_start(r, hack);
-    runner_step(r);
+  /* What is held at rest should be the same however many times it was started.
+   * Several readings, not one before and one after: state kept at rest but sized
+   * by a random choice (a table for the mode last picked) matches by luck in
+   * a single pair, and shows as a spread across these. */
+  static const int starts[] = {3, 4, 5, 6, 7, 8, 43};
+  size_t lowest = (size_t)-1, highest = 0;
+  for (size_t k = 0; k < sizeof starts / sizeof starts[0]; k++) {
+    const size_t held = held_after_starting(hack, starts[k]);
+    if (held < lowest) lowest = held;
+    if (held > highest) highest = held;
   }
-  const size_t before = __sanitizer_get_current_allocated_bytes();
-  for (int i = 0; i < 40; i++) {
-    runner_start(r, hack);
-    runner_step(r);
-  }
-  const size_t after = __sanitizer_get_current_allocated_bytes();
-  runner_destroy(r);
-  TEST_ASSERT_TRUE_MESSAGE(after < before + 512, "allocated bytes grew over start and stop");
+  TEST_ASSERT_TRUE_MESSAGE(highest < lowest + LEAK_SLACK_BYTES,
+                           "bytes held at rest changed with the number of starts");
 }
 
 void test_braid_restarts_and_stops_do_not_leak(void) {
@@ -1028,7 +1067,7 @@ void test_goop_stops_do_not_leak(void) {
 }
 
 void test_loop_stops_do_not_leak(void) {
-  check_restarts_and_stops_do_not_leak("Loop", 0);
+  check_restarts_and_stops_do_not_leak("Loop", 1);
 }
 
 int main(void) {
@@ -1052,6 +1091,7 @@ int main(void) {
   RUN_TEST(test_loop_picks_squares_or_hexagons_again_at_every_start);
   RUN_TEST(test_write_the_unpinned_hashes_when_asked);
   RUN_TEST(test_loop_keeps_drawing_squares_when_malloc_of_nothing_returns_null);
+  RUN_TEST(test_goop_blends_only_in_its_transparent_mode);
   RUN_TEST(test_maze_frame_matches_main);
   RUN_TEST(test_pacman_levels_do_not_leak);
   RUN_TEST(test_pacman_start_and_stop_do_not_leak);

@@ -51,7 +51,7 @@ def wire(
     notices = root / "THIRD_PARTY_NOTICES.md"
 
     reg = registry.read_text()
-    if f"{name}_hack" in reg:
+    if re.search(rf"\b{re.escape(name)}_hack\b", reg):
         raise ValueError(f"{name} is already in registry.c")
     if xlockmore:
         decl = f'XLOCKMORE_HACK({name}, "{cls}");\n'

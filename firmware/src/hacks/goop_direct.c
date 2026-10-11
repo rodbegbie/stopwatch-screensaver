@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include "screenhack.h"
 
@@ -62,6 +63,14 @@ static int goop_copy_area(Display *dpy, Drawable src, Drawable dst, GC gc,
 #define GOOP_ALPHA 23
 #endif
 
+/* Only the default transparent mode blends: opaque and outline are drawn as
+ * asked, and xor (which needs a one-bit pixmap) is not supported. */
+int goop_alpha_for_mode(const char *mode) {
+  return (!mode || !*mode || strcasecmp(mode, "transparent") == 0) ? GOOP_ALPHA : 32;
+}
+
+static int goop_alpha = GOOP_ALPHA;
+
 /* Each frame clears the window and fills the blobs again, but the blobs cover
  * a fraction of it: erase only where last frame's blobs were (hacks/
  * span_erase.h), for the same picture and 15 ms less of PSRAM writes. */
@@ -72,7 +81,7 @@ static int goop_fill_blob(Display *dpy, Drawable d, GC gc, XPoint *pts, int n,
   (void)shape, (void)mode;
   Canvas *c = xshim_target(dpy, d);
   if (c) span_track_note(&goop_spans, pts, n);
-  if (c) float_fill_polygon_alpha(c, pts, n, (uint16_t)gc->foreground, GOOP_ALPHA);
+  if (c) float_fill_polygon_alpha(c, pts, n, (uint16_t)gc->foreground, goop_alpha);
   return 0;
 }
 
@@ -99,6 +108,9 @@ static int goop_fill_rectangle(Display *dpy, Drawable d, GC gc, int x, int y,
 
 static void *goop_init(Display *dpy, Window window) {
   span_track_reset(&goop_spans);
+  char *mode = get_string_resource(dpy, "mode", "Mode");
+  goop_alpha = goop_alpha_for_mode(mode);
+  free(mode);
   return goop_init_upstream(dpy, window);
 }
 
