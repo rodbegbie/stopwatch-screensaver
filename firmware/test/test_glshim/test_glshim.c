@@ -1288,8 +1288,84 @@ void test_an_unhandled_primitive_never_writes_past_the_vertex_buffer(void) {
   TEST_ASSERT_EQUAL_MEMORY(before, from, n);
 }
 
+/* The round panel (issue #77): with a disc on the canvas, clears skip the
+ * corners nobody sees. */
+#define SENTINEL 0x5A5A
+
+static void assert_disc_is(uint16_t v) {
+  for (int y = 0; y < SIZE; y++) {
+    int x0, x1;
+    if (!canvas_visible_span(&cv, y, &x0, &x1)) continue;
+    for (int x = x0; x <= x1; x++) TEST_ASSERT_EQUAL_HEX16(v, cv.px[y * SIZE + x]);
+  }
+}
+
+void test_no_disc_clear_is_unchanged(void) {
+  canvas_clear(&cv, SENTINEL);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glClearColor(0, 0, 0, 0);
+  glClear(GL_COLOR_BUFFER_BIT);
+  TEST_ASSERT_EQUAL_HEX16(0, cv.px[0]);
+  TEST_ASSERT_EQUAL_HEX16(0, cv.px[SIZE * SIZE - 1]);
+  TEST_ASSERT_NULL(glshim_span_x0);
+}
+
+void test_disc_clear_leaves_the_corners_alone(void) {
+  TEST_ASSERT_EQUAL_INT(0, canvas_set_disc(&cv, malloc));
+  canvas_clear(&cv, SENTINEL);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glClearColor(0, 0, 0, 0);
+  glClear(GL_COLOR_BUFFER_BIT);
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, cv.px[0]);
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, cv.px[SIZE * SIZE - 1]);
+  assert_disc_is(0);
+}
+
+void test_disc_depth_clear_is_clipped_too(void) {
+  TEST_ASSERT_EQUAL_INT(0, canvas_set_disc(&cv, malloc));
+  ZBuffer *zb = *glshim_open(&cv);
+  for (int i = 0; i < SIZE * SIZE; i++) zb->zbuf[i] = SENTINEL;
+  glEnable(GL_DEPTH_TEST);
+  glClear(GL_DEPTH_BUFFER_BIT);
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, zb->zbuf[0]);
+  for (int y = 0; y < SIZE; y++) {
+    int x0, x1;
+    TEST_ASSERT_TRUE(canvas_visible_span(&cv, y, &x0, &x1));
+    TEST_ASSERT_NOT_EQUAL(SENTINEL, zb->zbuf[y * SIZE + x0]);
+    TEST_ASSERT_NOT_EQUAL(SENTINEL, zb->zbuf[y * SIZE + x1]);
+  }
+}
+
+void test_disc_scale_two_clears_every_block_touching_the_disc(void) {
+  TEST_ASSERT_EQUAL_INT(0, canvas_set_disc(&cv, malloc));
+  canvas_clear(&cv, SENTINEL);
+  glshim_set_render_scale(2);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glClearColor(0, 0, 0, 0);
+  glClear(GL_COLOR_BUFFER_BIT);
+  glXSwapBuffers(dpy, 0);
+  assert_disc_is(0);
+  TEST_ASSERT_NOT_NULL(glshim_span_x0);
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, cv.px[0]);
+}
+
+void test_the_disc_spans_go_with_the_context(void) {
+  TEST_ASSERT_EQUAL_INT(0, canvas_set_disc(&cv, malloc));
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  TEST_ASSERT_NOT_NULL(glshim_span_x0);
+  TEST_ASSERT_NOT_NULL(glshim_span_x1);
+  glshim_close();
+  TEST_ASSERT_NULL(glshim_span_x0);
+  TEST_ASSERT_NULL(glshim_span_x1);
+}
+
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_no_disc_clear_is_unchanged);
+  RUN_TEST(test_disc_clear_leaves_the_corners_alone);
+  RUN_TEST(test_disc_depth_clear_is_clipped_too);
+  RUN_TEST(test_disc_scale_two_clears_every_block_touching_the_disc);
+  RUN_TEST(test_the_disc_spans_go_with_the_context);
   RUN_TEST(test_an_unhandled_primitive_never_writes_past_the_vertex_buffer);
 #ifdef GL_PROFILE
   RUN_TEST(test_the_profile_counts_each_stage_once_per_call);

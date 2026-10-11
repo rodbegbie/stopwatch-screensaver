@@ -14,6 +14,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "core/canvas.h"
@@ -38,6 +39,8 @@ void glshim_prof_reset(void) {
 static ZBuffer *g_zb;
 static Canvas *g_canvas;
 static int g_scale = 1, g_next_scale = 1; /* see glshim_set_render_scale */
+const int16_t *glshim_span_x0, *glshim_span_x1;
+static int16_t *g_half_spans; /* owned at scale 2: x0s then x1s */
 
 typedef struct {
   int x0, y0, x1, y1; /* inclusive; empty when x0 > x1 */
@@ -123,6 +126,14 @@ TGL_HOT void glshim_note_box(GLint x0, GLint y0, GLint x1, GLint y1) {
   box_add(&g_swap_drawn, b);
 }
 
+/* Narrows [*x0, *x1] on TinyGL buffer row y to what the panel shows. */
+static bool visible_part(int y, int *x0, int *x1) {
+  if (!glshim_span_x0) return *x0 <= *x1;
+  if (*x0 < glshim_span_x0[y]) *x0 = glshim_span_x0[y];
+  if (*x1 > glshim_span_x1[y]) *x1 = glshim_span_x1[y];
+  return *x0 <= *x1;
+}
+
 /* Two pixels at a time. `p` is 16-bit and not always 4-byte aligned, so one
  * pixel is written first if needed; memcpy then writes each pair without
  * reading the memory through a differently typed pointer (strict aliasing),
@@ -148,9 +159,11 @@ unsigned glshim_depth_clears(void) { return g_depth_clears; }
 static void clear_depth(ZBuffer *zb, GLint z) {
   g_depth_clears++;
   const Box area = g_z_valid && z == g_clear_z ? g_z_box : whole_canvas();
-  for (int y = area.y0; y <= area.y1; y++)
-    fill_pixels((uint16_t *)(zb->zbuf + y * zb->xsize) + area.x0, (uint16_t)z,
-                area.x1 - area.x0 + 1);
+  for (int y = area.y0; y <= area.y1; y++) {
+    int x0 = area.x0, x1 = area.x1;
+    if (visible_part(y, &x0, &x1))
+      fill_pixels((uint16_t *)(zb->zbuf + y * zb->xsize) + x0, (uint16_t)z, x1 - x0 + 1);
+  }
   g_z_box = kEmptyBox;
   g_z_valid = true;
   g_clear_z = z;
@@ -169,9 +182,12 @@ void glshim_clear(ZBuffer *zb, GLint clear_z, GLint z, GLint clear_color,
   if (clear_color) {
     const PIXEL color = RGB_TO_PIXEL(r, g, b);
     const Box area = g_color_valid && color == g_clear_color ? g_color_box : all;
-    for (int y = area.y0; y <= area.y1; y++)
-      fill_pixels((uint16_t *)((GLbyte *)zb->pbuf + y * zb->linesize) + area.x0,
-                  color, area.x1 - area.x0 + 1);
+    for (int y = area.y0; y <= area.y1; y++) {
+      int x0 = area.x0, x1 = area.x1;
+      if (visible_part(y, &x0, &x1))
+        fill_pixels((uint16_t *)((GLbyte *)zb->pbuf + y * zb->linesize) + x0, color,
+                    x1 - x0 + 1);
+    }
     box_add(&g_swap_erased, area);
     g_color_box = kEmptyBox;
     g_color_valid = true;
@@ -219,11 +235,41 @@ void glshim_close(void) {
   g_zb = NULL;
   g_canvas = NULL;
   g_scale = 1;
+  free(g_half_spans);
+  g_half_spans = NULL;
+  glshim_span_x0 = glshim_span_x1 = NULL;
   g_color_box = g_z_box = g_swap_drawn = g_swap_erased = kEmptyBox;
   g_color_valid = g_z_valid = false;
 }
 
 int glshim_is_open(void) { return g_zb != NULL; }
+
+/* The canvas's disc at TinyGL's size. False only if an allocation fails. */
+static bool set_spans(const Canvas *canvas) {
+  if (!canvas->vis_x0) return true;
+  if (g_scale == 1) {
+    glshim_span_x0 = canvas->vis_x0;
+    glshim_span_x1 = canvas->vis_x1;
+    return true;
+  }
+  const int h = g_zb->ysize;
+  g_half_spans = malloc(2 * (size_t)h * sizeof(int16_t));
+  if (!g_half_spans) return false;
+  int16_t *x0s = g_half_spans, *x1s = g_half_spans + h;
+  for (int y = 0; y < h; y++) {
+    int lo = INT16_MAX, hi = -1, a0, a1;
+    for (int r = 2 * y; r <= 2 * y + 1; r++)
+      if (canvas_visible_span(canvas, r, &a0, &a1)) {
+        if (a0 < lo) lo = a0;
+        if (a1 > hi) hi = a1;
+      }
+    x0s[y] = (int16_t)(hi < 0 ? 1 : lo / 2);
+    x1s[y] = (int16_t)(hi < 0 ? 0 : hi / 2);
+  }
+  glshim_span_x0 = x0s;
+  glshim_span_x1 = x1s;
+  return true;
+}
 
 GLXContext *glshim_open(Canvas *canvas) {
   static GLXContext handle;
@@ -235,6 +281,12 @@ GLXContext *glshim_open(Canvas *canvas) {
                     : ZB_open(canvas->w, canvas->h, ZB_MODE_5R6G5B, canvas->px);
   if (!g_zb) return NULL;
   g_scale = scale;
+  if (!set_spans(canvas)) {
+    ZB_close(g_zb);
+    g_zb = NULL;
+    g_scale = 1;
+    return NULL;
+  }
   glInit(g_zb);
   g_vertex = g_normal = g_color = (ClientArray){0};
   g_canvas = canvas;
@@ -265,7 +317,9 @@ static void double_into_canvas(void) {
     const PIXEL *src = (const PIXEL *)((const GLbyte *)g_zb->pbuf + y * g_zb->linesize);
     uint16_t *top = g_canvas->px + (size_t)(2 * y) * g_canvas->w;
     uint16_t *bottom = top + g_canvas->w;
-    for (int x = b.x0; x <= b.x1; x++) {
+    int x0 = b.x0, x1 = b.x1;
+    if (!visible_part(y, &x0, &x1)) continue;
+    for (int x = x0; x <= x1; x++) {
       const uint32_t pair = (uint32_t)src[x] * 0x10001u;
       memcpy(top + 2 * x, &pair, sizeof pair);
       memcpy(bottom + 2 * x, &pair, sizeof pair);
