@@ -3,8 +3,10 @@
   "checkpoint_id": "01M4NYEK35YGXQTA26W8P5FSNG",
   "strategy": "manual-commit",
   "branch": "feature/43-banded-renderer",
-  "checkpoints_count": 1,
-  "files_touched": null,
+  "checkpoints_count": 2,
+  "files_touched": [
+    "firmware/test/test_glshim_band/test_glshim_band.c"
+  ],
   "sessions": [
     {
       "metadata": "/0/metadata.json",
@@ -12,14 +14,21 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 52,
-    "cache_creation_tokens": 73191,
-    "cache_read_tokens": 2632692,
-    "output_tokens": 24808,
-    "api_call_count": 26,
+    "input_tokens": 86,
+    "cache_creation_tokens": 96583,
+    "cache_read_tokens": 8138191,
+    "output_tokens": 37286,
+    "api_call_count": 43,
     "subagent_tokens": {
       "input_tokens": 12,
       "cache_creation_tokens": 78423,
