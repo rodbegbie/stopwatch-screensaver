@@ -147,3 +147,6 @@ Moved verbatim from the Gotchas section of AGENTS.md.
 - `allocate_alpha_colors` still finds no colour planes, so a hack that wants
   transparency (Qix, Goop) falls back to opaque layers and prints "couldn't
   allocate any color planes" on the host.
+- The comment in `xshim.h` saying `XPutImage` byte-swaps a 16-bit image has
+  been stale since commit 272ad6a: an `XImage` holds canvas-order pixels. A
+  hack that builds its own 16-bit image must `px_swap` its pixels first.

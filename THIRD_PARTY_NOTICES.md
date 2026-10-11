@@ -353,3 +353,23 @@ what runs on the board. It is not the original TinyGL.
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 ```
+
+## After Dark's Flying Toasters
+
+`ad-flyingtoasters` recreates Flying Toasters from After Dark 2.0, (c) 1990-91
+Berkeley Systems Inc., by Jack Eastman, Bruce Burkhalter and Patrick Beard,
+with artwork by Tomoya Ikeda. The code in `firmware/src/hacks/ad_flyingtoasters/`
+is our own (MIT): it reproduces the module's behaviour and copies none of its
+code. `tools/check_notices.py` lists the directory as our own.
+
+The artwork (four toaster frames and a slice of toast, in 1-bit and 16-colour
+versions) is Berkeley Systems' and carries no licence to redistribute. This
+repository does not contain it. `firmware/after_dark_sprites.py` runs
+`tools/after_dark_sprites.py` at build time to read it from the user's own
+copy of the After Dark 2.0 disk image (`vendor/after-dark-v2.0v-800k`, or
+`AFTER_DARK_IMAGE`) into a header in the build directory. Without the image
+the hack is left out of the build. A firmware binary built with the image
+contains the artwork, so do not publish one.
+
+The tool reads the disk with `machfs` (MIT, <https://github.com/elliotnunn/machfs>),
+which `uv` fetches when the tool runs; it is not copied into this repository.

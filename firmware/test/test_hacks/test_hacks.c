@@ -111,7 +111,11 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Cynosure",
                                          "Moire",
                                          "Moire2",
-                                         "HexTrail"};
+                                         "HexTrail",
+#ifdef HAVE_AFTER_DARK_TOASTERS
+                                         "ad-flyingtoasters",
+#endif
+  };
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -468,6 +472,9 @@ static const uint64_t kBaseline[] = {
     0xcfa8f679f1a10fddull, /* Moire: taken after looking at the frames (single precision) */
     0x32f706208dc0a079ull, /* Moire2: taken after looking at the frames (bit planes) */
     0x0100bedf6ddf582cull, /* HexTrail: taken after looking at the frames (count 6, single precision) */
+#ifdef HAVE_AFTER_DARK_TOASTERS
+    0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
+#endif
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -1106,6 +1113,46 @@ void test_hextrail_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("HexTrail", 1);
 }
 
+#ifdef HAVE_AFTER_DARK_TOASTERS
+/* The runner waits the returned delay after the push, so the hack subtracts
+ * the time its own step took to keep to 30 steps a second. */
+static double step_cost;
+static int step_reads;
+static double step_clock(void) {
+  return fake_now + (step_reads++ % 2 ? step_cost : 0.0);
+}
+
+static unsigned long toasters_delay_with_step_taking(double seconds) {
+  const HackEntry *e = g_hacks[index_of("ad-flyingtoasters")];
+  Display *dpy = xshim_open_display(&cv);
+  void *st = e->init(dpy, XSHIM_WINDOW);
+  TEST_ASSERT_NOT_NULL(st);
+  step_cost = seconds;
+  step_reads = 0;
+  xshim_set_clock(step_clock);
+  const unsigned long delay = e->draw(dpy, XSHIM_WINDOW, st);
+  xshim_set_clock(NULL);
+  e->free(dpy, XSHIM_WINDOW, st);
+  xshim_close_display(dpy);
+  return delay;
+}
+
+void test_toasters_delay_is_a_thirtieth_of_a_second_less_the_step(void) {
+  TEST_ASSERT_UINT_WITHIN(1, 23333, toasters_delay_with_step_taking(0.010));
+  TEST_ASSERT_EQUAL_UINT(0, toasters_delay_with_step_taking(0.040));
+}
+
+/* Each start builds five sprite images and frees them at stop. */
+void test_restart_does_not_leak(void) {
+  const int hack = index_of("ad-flyingtoasters");
+  TEST_ASSERT_TRUE(hack >= 0);
+  const size_t early = held_after_starting(hack, 3);
+  const size_t late = held_after_starting(hack, 53);
+  TEST_ASSERT_TRUE_MESSAGE(late < early + LEAK_SLACK_BYTES,
+                           "bytes held at rest grew over 50 more starts");
+}
+#endif
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -1177,6 +1224,10 @@ int main(void) {
   RUN_TEST(test_moire_stops_do_not_leak);
   RUN_TEST(test_moire2_stops_do_not_leak);
   RUN_TEST(test_hextrail_stops_do_not_leak);
+#ifdef HAVE_AFTER_DARK_TOASTERS
+  RUN_TEST(test_toasters_delay_is_a_thirtieth_of_a_second_less_the_step);
+  RUN_TEST(test_restart_does_not_leak);
+#endif
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);

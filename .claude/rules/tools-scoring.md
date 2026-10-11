@@ -39,3 +39,8 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   for the CWaves batch either. The scorer also lists calls inside code that is
   never compiled (`XCreateBitmapFromData` in Cynosure's `DO_STIPPLE` block) as
   gaps.
+- `score_hacks.py` skips the names in `OWN_HACKS` (our own hacks with no
+  xscreensaver source, now `ad_flyingtoasters`) and still reports any other
+  registry name it cannot scan as a typo. `speed_backtest.py` runs on the host
+  only the registered hacks that have a device-measured row, so a `dump` build
+  without the After Dark disk (which lacks the toasters) still works.

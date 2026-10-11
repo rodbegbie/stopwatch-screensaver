@@ -389,6 +389,45 @@ def test_main_marks_registered_hacks_as_ported(tmp_path):
     assert "- **other**: would not run" in text
 
 
+def test_main_skips_registered_hacks_with_no_xscreensaver_source(tmp_path):
+    vendor = tmp_path / "ext" / "xscreensaver-9.9"
+    (vendor / "hacks").mkdir(parents=True)
+    (vendor / "hacks" / "demo.c").write_text('XSCREENSAVER_MODULE ("demo", demo)\n')
+    header = tmp_path / "xshim.h"
+    header.write_text("int XDrawLine(int);\n")
+    intro = tmp_path / "intro.md"
+    intro.write_text("# T\n\n{version} {total} {excluded} {n_s} {n_m} {n_l} {n_xl}\n")
+    registry = tmp_path / "registry.c"
+    registry.write_text("const HackEntry *const g_hacks[] = {&demo_hack, &ad_flyingtoasters_hack};\n")
+    out = tmp_path / "out.md"
+    argv = ["--vendor", str(vendor), "--header", str(header), "--intro", str(intro),
+            "--registry", str(registry), "--failed-ports", str(tmp_path / "none.txt"),
+            "--out", str(out), "--no-probe"]
+    for d in SHIM_INCLUDES:
+        argv += ["--shim-include", str(d)]
+    assert sh.main(argv, root=tmp_path) == 0
+    assert "| demo |" in out.read_text()
+
+
+def test_a_misspelt_registry_name_is_still_an_error(tmp_path, capsys):
+    vendor = tmp_path / "ext" / "xscreensaver-9.9"
+    (vendor / "hacks").mkdir(parents=True)
+    (vendor / "hacks" / "demo.c").write_text('XSCREENSAVER_MODULE ("demo", demo)\n')
+    header = tmp_path / "xshim.h"
+    header.write_text("int XDrawLine(int);\n")
+    intro = tmp_path / "intro.md"
+    intro.write_text("# T\n\n{version} {total} {excluded} {n_s} {n_m} {n_l} {n_xl}\n")
+    registry = tmp_path / "registry.c"
+    registry.write_text("const HackEntry *const g_hacks[] = {&demo_hack, &dmeo_hack};\n")
+    argv = ["--vendor", str(vendor), "--header", str(header), "--intro", str(intro),
+            "--registry", str(registry), "--failed-ports", str(tmp_path / "none.txt"),
+            "--out", str(tmp_path / "out.md"), "--no-probe"]
+    for d in SHIM_INCLUDES:
+        argv += ["--shim-include", str(d)]
+    assert sh.main(argv, root=tmp_path) != 0
+    assert "dmeo" in capsys.readouterr().err
+
+
 def test_main_missing_registry_is_an_actionable_error(tmp_path, capsys):
     vendor = tmp_path / "xscreensaver-9.9"
     (vendor / "hacks").mkdir(parents=True)

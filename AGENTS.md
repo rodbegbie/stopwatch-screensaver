@@ -9,6 +9,15 @@ embedded-specific choices as you make them. See `README.md` for setup and
 
 - `firmware/src/hacks/<name>/`: hack sources copied from xscreensaver.
   `hacks/registry.[ch]` (ours) lists them in button order.
+- `firmware/src/hacks/ad_flyingtoasters/` (ours, not xscreensaver) recreates
+  After Dark's Flying Toasters. `firmware/after_dark_sprites.py` is a
+  PlatformIO pre-script: it runs `tools/after_dark_sprites.py` on the disk
+  image (`vendor/after-dark-v2.0v-800k`, or the path in `AFTER_DARK_IMAGE`) to
+  make the sprite header, regenerating it when the header is missing, the
+  image's sha256 differs, or the image or tool is newer. With the image it
+  defines `HAVE_AFTER_DARK_TOASTERS`; without it the hack is left out, with a
+  message. A present but bad image fails the build. The hack stays last in
+  `g_hacks[]`, under `#ifdef HAVE_AFTER_DARK_TOASTERS`.
 - `firmware/src/glshim/` (ours) is the GL layer for OpenGL hacks, over
   `firmware/src/tinygl/` (TinyGL, byte-identical, patched at build by
   `tools/tinygl_patch.py`). `xs_support/glx/` holds the copied GL helpers.
@@ -87,6 +96,12 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
   (Pyro, then Lightning, then Drift...). Work out how long a restart takes
   from the hack's cycle count times its frame time (Substrate: 10,000 cycles
   at about 160 ms is 27 minutes) and capture that long, with rotation off.
+- `ad-flyingtoasters` force flags (add to `PLATFORMIO_BUILD_FLAGS`):
+  `-DAD_TOASTERS_ART=0|1` (0 is 1-bit, 1 is colour) and
+  `-DAD_TOASTERS_DONENESS=0|1|2` (light, medium, dark) and
+  `-DAD_TOASTERS_SCALE=1|2` (2 is the default, with 6 flyers; 1 is the
+  original size, with 10); a number outside those is an `#error`. It logs
+  `ad-flyingtoasters: <art>, doneness=<level>` to stderr at start.
 - To see where a GL hack's frame goes, add `-DGL_PROFILE`: a `glprof` line
   follows each `run` line with time per stage (clear, list, vertex, shade,
   tri, fill, point, line; nested, so vertex includes tri and fill). Time left
@@ -130,6 +145,10 @@ Set `NO_COLOR=1` on `pio` output you parse.
   in `THIRD_PARTY_NOTICES.md`; `tools/check_notices.py` must pass. Read an
   unfamiliar file's licence before copying it (seven xscreensaver hacks do
   not use the standard jwz notice). Our own code is MIT.
+- **No Berkeley Systems bytes in git.** The Flying Toasters art is extracted
+  at build time from Rod's disk image: never commit sprites, PICT data,
+  disassembly or fixtures cut from it. Tests build their own data; only the
+  tool, the pre-script and the optional real-image test may read the image.
 - **Shim code is ours.** Do not copy xscreensaver's `utils/` files; write
   small equivalents in `x11shim/`.
 - **Test first**, on the host. Clip arithmetic must use `int64_t`: the ESP32's

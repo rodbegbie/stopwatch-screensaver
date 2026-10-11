@@ -162,3 +162,21 @@ def test_tinygl_not_named_in_the_notices_is_reported(tmp_path):
 def test_tinygl_with_licence_and_notices_row_is_clean(tmp_path):
     src, md = tinygl_setup(tmp_path, licence=True, notices="## TinyGL")
     assert cn.check(src, md) == []
+
+
+OURS = """/* Our own code (MIT), no third-party notice. */
+int x;
+"""
+
+
+def test_our_own_hack_directory_needs_no_notice_or_listing(tmp_path):
+    src, md = setup(tmp_path, {"ad_flyingtoasters/ad_sim.c": OURS}, "")
+    assert cn.check(src, md) == []
+
+
+def test_another_hack_directory_without_a_notice_is_still_reported(tmp_path):
+    src, md = setup(tmp_path, {"pyro/pyro.c": OURS}, "")
+    assert cn.check(src, md) == [
+        "hacks/pyro/pyro.c: no licence notice in first 100 lines",
+        "hacks/pyro/pyro.c: not listed in THIRD_PARTY_NOTICES.md",
+    ]

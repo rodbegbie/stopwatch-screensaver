@@ -1,6 +1,7 @@
 #include <limits.h>
 #include <math.h>
 #include <sanitizer/allocator_interface.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -2582,6 +2583,48 @@ void test_put_image_on_the_window_clips_and_marks_the_rows_dirty(void) {
   XDestroyImage(im);
 }
 
+/* A sprite enters and leaves past every edge, so a 7x7 image is put where 1,
+ * 3, 4 or all 7 of its columns and rows land on the canvas. The pixels inside
+ * must come from the matching part of the image, and the canvas outside must
+ * keep what it held. */
+void test_put_image_clips_at_every_edge_and_copies_the_matching_source_pixels(void) {
+  enum { S = 7 };
+  static const int pos[] = {-6, -3, 4, 13, 15};
+  GC gc = XCreateGC(dpy, win, 0, NULL);
+  XImage *im = XCreateImage(dpy, NULL, 16, ZPixmap, 0, NULL, S, S, 16, 0);
+  TEST_ASSERT_NOT_NULL(im);
+  uint16_t *pixels = malloc(S * S * sizeof *pixels);
+  TEST_ASSERT_NOT_NULL(pixels);
+  for (int i = 0; i < S * S; i++) pixels[i] = (uint16_t)(0x1000 + i);
+  im->data = (char *)pixels;
+
+  for (size_t a = 0; a < sizeof pos / sizeof pos[0]; a++) {
+    for (size_t b = 0; b < sizeof pos / sizeof pos[0]; b++) {
+      const int x = pos[a], y = pos[b];
+      for (long i = 0; i < (long)cv.w * cv.h; i++)
+        cv.px[i] = (uint16_t)(0x8001 + i % 251);
+      XPutImage(dpy, win, gc, im, 0, 0, x, y, S, S);
+      for (int row = 0; row < cv.h; row++) {
+        for (int col = 0; col < cv.w; col++) {
+          const long i = (long)row * cv.w + col;
+          const int inside = col >= x && col < x + S && row >= y && row < y + S;
+          const uint16_t want = inside
+                                    ? (uint16_t)(0x1000 + (row - y) * S + (col - x))
+                                    : (uint16_t)(0x8001 + i % 251);
+          if (cv.px[i] != want) {
+            char msg[80];
+            snprintf(msg, sizeof msg, "image at (%d, %d): pixel (%d, %d)", x, y,
+                     col, row);
+            TEST_FAIL_MESSAGE(msg);
+          }
+        }
+      }
+    }
+  }
+  XDestroyImage(im);
+  XFreeGC(dpy, gc);
+}
+
 void test_mirroring_each_glyph_column_block_through_get_and_put_image(void) {
   Pixmap p = XCreatePixmap(dpy, win, 4, 1, 16);
   for (int x = 0; x < 4; x++) plot(p, x, 0, 0x10 + x);
@@ -3021,6 +3064,7 @@ int main(void) {
   RUN_TEST(test_query_color_recovers_the_colour_alloc_color_made);
   RUN_TEST(test_the_screen_is_a_colour_display_with_no_writable_cells);
   RUN_TEST(test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits);
+  RUN_TEST(test_put_image_clips_at_every_edge_and_copies_the_matching_source_pixels);
   RUN_TEST(test_put_image_of_a_16_bit_image_copies_canvas_order_pixels_unchanged);
   RUN_TEST(test_an_allocated_colour_keeps_its_pixel_through_a_16_bit_image);
   RUN_TEST(test_the_server_byte_order_is_least_significant_first);
