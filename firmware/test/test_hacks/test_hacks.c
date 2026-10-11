@@ -102,7 +102,8 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Halo",
                                          "XMatrix",
                                          "Qix",
-                                         "Fireworkx"};
+                                         "Fireworkx",
+                                         "Starfish"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -450,6 +451,7 @@ static const uint64_t kBaseline[] = {
     0x9b1b0de461b6438bull, /* XMatrix: taken after looking at the frames, trace off */
     0, /* Qix: not yet pinned */
     0, /* Fireworkx: not yet pinned */
+    0, /* Starfish: not yet pinned */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -914,6 +916,10 @@ void test_fireworkx_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("Fireworkx", 0);
 }
 
+void test_starfish_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Starfish", 0);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -971,6 +977,7 @@ int main(void) {
   RUN_TEST(test_slow_hacks_register_their_lighter_settings);
   RUN_TEST(test_qix_stops_do_not_leak);
   RUN_TEST(test_fireworkx_stops_do_not_leak);
+  RUN_TEST(test_starfish_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);

@@ -59,6 +59,8 @@ typedef struct {
   int line_width;
   int cap_style;
   int join_style;
+  /* Accepted and ignored: a polygon is always filled even-odd. */
+  int fill_rule;
 } XGCValues;
 
 typedef struct {
@@ -151,6 +153,9 @@ enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
 #define GCPlaneMask (1L << 1)
 #define GCForeground (1L << 2)
 #define GCBackground (1L << 3)
+#define GCFillRule (1L << 9)
+#define EvenOddRule 0
+#define WindingRule 1
 #define GCLineWidth (1L << 4)
 #define GCCapStyle (1L << 6)
 #define GCJoinStyle (1L << 7)

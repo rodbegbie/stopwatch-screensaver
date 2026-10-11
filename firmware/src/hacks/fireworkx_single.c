@@ -23,12 +23,7 @@
 #include "hacks/lowrez_put.h"
 
 #include "hacks/single_precision.h"
-
-/* screenhack.h's frand has a `1.0` inside its macro body, which the float
- * literal pass cannot reach: it divided in double twice a particle, and a
- * light map's 54,000 cells call it too. */
-#undef frand
-#define frand(f) (((float)random() / ((float)RAND_MAX + 1.0f)) * (float)(f))
+#include "hacks/single_frand.h"
 
 #define XGetWindowAttributes lowrez_get_attributes
 #define XPutImage lowrez_put_image

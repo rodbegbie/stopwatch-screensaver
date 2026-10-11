@@ -20,6 +20,7 @@
 #include "X11/Intrinsic.h"
 #include "textclient.h"
 #include "hsv.h"
+#include "spline.h"
 #include "x11shim/xshim.h"
 #include "ximage-loader.h"
 
@@ -2553,6 +2554,111 @@ void test_the_server_byte_order_is_least_significant_first(void) {
   TEST_ASSERT_EQUAL_INT(LSBFirst, ImageByteOrder(dpy));
 }
 
+static spline *square_spline(void) {
+  spline *sp = make_spline(4);
+  static const double xs[4] = {0, 10, 10, 0}, ys[4] = {0, 0, 10, 10};
+  for (int i = 0; i < 4; i++) {
+    sp->control_x[i] = xs[i];
+    sp->control_y[i] = ys[i];
+  }
+  return sp;
+}
+
+void test_a_new_spline_has_zeroed_controls_and_no_points(void) {
+  spline *sp = make_spline(5);
+  TEST_ASSERT_NOT_NULL(sp);
+  TEST_ASSERT_EQUAL_UINT(5, sp->n_controls);
+  TEST_ASSERT_EQUAL_UINT(0, sp->n_points);
+  for (int i = 0; i < 5; i++) {
+    TEST_ASSERT_TRUE(sp->control_x[i] == 0);
+    TEST_ASSERT_TRUE(sp->control_y[i] == 0);
+  }
+  free_spline(sp);
+  free_spline(NULL);
+}
+
+void test_a_closed_spline_of_a_square_is_a_smooth_loop_inside_it(void) {
+  spline *sp = square_spline();
+  compute_closed_spline(sp);
+  TEST_ASSERT_TRUE(sp->n_points >= 4 * 4);
+  TEST_ASSERT_EQUAL_UINT(0, sp->n_points % 4);
+  long sx = 0, sy = 0;
+  for (unsigned i = 0; i < sp->n_points; i++) {
+    TEST_ASSERT_TRUE(sp->points[i].x >= 0 && sp->points[i].x <= 10);
+    TEST_ASSERT_TRUE(sp->points[i].y >= 0 && sp->points[i].y <= 10);
+    sx += sp->points[i].x;
+    sy += sp->points[i].y;
+  }
+  TEST_ASSERT_INT_WITHIN(1, 5 * (long)sp->n_points, sx);
+  TEST_ASSERT_INT_WITHIN(1, 5 * (long)sp->n_points, sy);
+  /* A uniform cubic B-spline starts a segment at (p[i-1] + 4 p[i] + p[i+1]) / 6:
+   * for the corner at (0, 0) that is (10/6, 10/6), so the curve cuts the corner. */
+  TEST_ASSERT_EQUAL_INT(2, sp->points[0].x);
+  TEST_ASSERT_EQUAL_INT(2, sp->points[0].y);
+  /* It closes: the last point is a step from the first, not a jump. */
+  const int dx = sp->points[sp->n_points - 1].x - sp->points[0].x;
+  const int dy = sp->points[sp->n_points - 1].y - sp->points[0].y;
+  TEST_ASSERT_TRUE(dx * dx + dy * dy <= 4 * 4);
+  free_spline(sp);
+}
+
+void test_a_closed_spline_reuses_its_points_and_grows_them_for_more_controls(void) {
+  spline *sp = square_spline();
+  compute_closed_spline(sp);
+  XPoint *first = sp->points;
+  const unsigned allocated = sp->allocated_points;
+  TEST_ASSERT_TRUE(allocated >= sp->n_points);
+  compute_closed_spline(sp);
+  TEST_ASSERT_TRUE(first == sp->points);
+  TEST_ASSERT_EQUAL_UINT(allocated, sp->allocated_points);
+  free_spline(sp);
+  spline *big = make_spline(40);
+  for (int i = 0; i < 40; i++) {
+    big->control_x[i] = i;
+    big->control_y[i] = i * 2;
+  }
+  compute_closed_spline(big);
+  TEST_ASSERT_TRUE(big->n_points >= 40 * 4);
+  free_spline(big);
+}
+
+void test_a_closed_spline_of_one_point_is_that_point(void) {
+  spline *sp = make_spline(3);
+  for (int i = 0; i < 3; i++) {
+    sp->control_x[i] = 7;
+    sp->control_y[i] = 9;
+  }
+  compute_closed_spline(sp);
+  for (unsigned i = 0; i < sp->n_points; i++) {
+    TEST_ASSERT_EQUAL_INT(7, sp->points[i].x);
+    TEST_ASSERT_EQUAL_INT(9, sp->points[i].y);
+  }
+  free_spline(sp);
+  spline *none = make_spline(0);
+  compute_closed_spline(none);
+  TEST_ASSERT_EQUAL_UINT(0, none->n_points);
+  free_spline(none);
+}
+
+void test_fill_rule_constants_and_the_even_odd_fill_of_a_pentagram(void) {
+  TEST_ASSERT_EQUAL_INT(0, EvenOddRule);
+  TEST_ASSERT_EQUAL_INT(1, WindingRule);
+  TEST_ASSERT_EQUAL_HEX64(1L << 9, GCFillRule);
+  XGCValues v = {0};
+  v.foreground = 0xFFFF;
+  v.fill_rule = EvenOddRule;
+  GC gc = XCreateGC(dpy, win, GCForeground | GCFillRule, &v);
+  XFreeGC(dpy, gc);
+  /* A five-pointed star drawn as one self-crossing polygon: even-odd leaves
+   * the middle pentagon empty. */
+  GC white = new_gc(0xFFFF, 0);
+  XPoint star[5] = {{8, 0}, {13, 15}, {0, 6}, {15, 6}, {3, 15}};
+  XFillPolygon(dpy, win, white, star, 5, Complex, CoordModeOrigin);
+  TEST_ASSERT_EQUAL_HEX16(0, at(8, 8));
+  TEST_ASSERT_TRUE(at(8, 2) != 0);
+  XFreeGC(dpy, white);
+}
+
 void test_create_image_refuses_depths_and_sizes_it_cannot_hold(void) {
   TEST_ASSERT_NULL(XCreateImage(dpy, NULL, 8, ZPixmap, 0, NULL, 4, 4, 8, 0));
   TEST_ASSERT_NULL(XCreateImage(dpy, NULL, 32, ZPixmap, 0, NULL, 0, 4, 32, 0));
@@ -2637,6 +2743,11 @@ int main(void) {
   RUN_TEST(test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits);
   RUN_TEST(test_put_image_of_a_16_bit_image_writes_ordinary_rgb565_as_the_canvas_holds_it);
   RUN_TEST(test_the_server_byte_order_is_least_significant_first);
+  RUN_TEST(test_a_new_spline_has_zeroed_controls_and_no_points);
+  RUN_TEST(test_a_closed_spline_of_a_square_is_a_smooth_loop_inside_it);
+  RUN_TEST(test_a_closed_spline_reuses_its_points_and_grows_them_for_more_controls);
+  RUN_TEST(test_a_closed_spline_of_one_point_is_that_point);
+  RUN_TEST(test_fill_rule_constants_and_the_even_odd_fill_of_a_pentagram);
   RUN_TEST(test_create_image_refuses_depths_and_sizes_it_cannot_hold);
   RUN_TEST(test_file_to_ximage_has_no_decoder_and_returns_null);
   RUN_TEST(test_ease_in_out_sine_runs_from_0_to_1_through_one_half);
