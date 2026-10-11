@@ -1,0 +1,105 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4MF2NZ7DP3GB2R9NX6DQWBY",
+  "session_id": "f04fec39-e104-4ef0-877f-22bf8e9a22c5",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-11T03:11:10.150872Z",
+  "branch": "feature/port-batch-flurry-halo-hexaddrop-stonerview-xmatrix",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "firmware/matrix_glyphs.py"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "eeba5c0a0d9f",
+  "checkpoint_transcript_start": 2371,
+  "transcript_lines_at_start": 2371,
+  "compact_transcript_start": 243,
+  "token_usage": {
+    "input_tokens": 6,
+    "cache_creation_tokens": 1498,
+    "cache_read_tokens": 1105035,
+    "output_tokens": 979,
+    "api_call_count": 3
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01Av9yScU2Sk8j1hvR1tS21D",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "port-hack"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "e2e209b53d0b",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 35,
+        "end": 36,
+        "entry_ids": [
+          "ef723f66-5b24-4bf8-a5a3-0f98c705806b"
+        ],
+        "tool_use_id": "toolu_01Av9yScU2Sk8j1hvR1tS21D"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01Av9yScU2Sk8j1hvR1tS21D"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: port-hack",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_013sNNCMPbb2rn1DqFknSz4f",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "eeba5c0a0d9f",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 2302,
+        "end": 2303,
+        "entry_ids": [
+          "467bc5b0-952f-480e-8a91-fc9b9310b3b0"
+        ],
+        "tool_use_id": "toolu_013sNNCMPbb2rn1DqFknSz4f"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_013sNNCMPbb2rn1DqFknSz4f"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 12
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-10-11T03:11:10.087802Z",
+    "agent_lines": 10,
+    "agent_removed": 1,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 10,
+    "total_lines_changed": 11,
+    "agent_percentage": 100,
+    "metric_version": 2
+  }
+}
