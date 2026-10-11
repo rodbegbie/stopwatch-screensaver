@@ -1,0 +1,74 @@
+<pasted_content id="e7b6">
+Let's work through a load of remaining hacks in one go.
+
+Let's try Flurry, Halo, Hexaddrop, Stonerview and xmatrix.
+
+Try and do as much as you can uninterrupted. Keep track of things you want my human eyes on, and present them to me at the end. You have permission to flash and re-flash the attached device as often as you like in this session.
+
+If a hack's on-device fps is > 15fps, then it's a success. If it's lower, then consider if there are any quick fixes you can try to improve it. But don't rabbit-hole -- file an issue to come back to things later if there's more investigation needed.
+
+Once you're done with them, I'll review them all together with you, and we can decide which ones we want to keep in the rotation, and which we'll punt on for later. Commit as you go along, but let's keep the work on one branch. Don't open the PR until I say we're good to go.
+
+Remember you can use entire to search for context from previous sessions.
+
+Any questions before you get going?
+</pasted_content id="e7b6">
+
+---
+
+<task-notification>
+<task-id>b37qax3ht</task-id>
+<tool-use-id>toolu_01GQcuox4jLsG3CUL6fFbiqT</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f04fec39-e104-4ef0-877f-22bf8e9a22c5/tasks/b37qax3ht.output</output-file>
+<status>completed</status>
+<summary>Monitor "placeholder" stream ended</summary>
+<event>waiting</event>
+If this event is something the user would act on now, send a PushNotification. Routine or benign output doesn't need one.
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>btom4wwxh</task-id>
+<tool-use-id>toolu_01VsAisWsa9HwCYkzKGTcp39</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f04fec39-e104-4ef0-877f-22bf8e9a22c5/tasks/btom4wwxh.output</output-file>
+<status>completed</status>
+<summary>Background command "python3 - &lt;&lt;'E'
+p='src/hacks/registry.c'; s=open(p).read()
+s=s.replace("extern const HackEntry truchet_hack;\n","extern const HackEntry truchet_hack;\nextern const HackEntry hexadrop_hack;\n",1)
+open(p,'w').write(s)
+p='test/test_hacks/test_hacks.c'; s=open(p).read()
+s=s.replace('"UnknownPleasures"};','"UnknownPleasures",\n                                         "Hexadrop"};',1)
+s=s.replace("with the fake clock, smooth lines and the offset margin */\n","with the fake clock, smooth lines and the offset margin */\n    0x1ull, /* Hexadrop */\n",1)
+s=s.replace("int main(void) {\n  UNITY_BEGIN();","void test_hexadrop_stops_do_not_leak(void) {\n  check_restarts_and_stops_do_not_leak(\"Hexadrop\", 0);\n}\n\nint main(void) {\n  UNITY_BEGIN();",1)
+s=s.replace("  RUN_TEST(test_unknownpleasures_start_and_stop_do_not_leak);\n","  RUN_TEST(test_unknownpleasures_start_and_stop_do_not_leak);\n  RUN_TEST(test_hexadrop_stops_do_not_leak);\n",1)
+open(p,'w').write(s)
+E
+git diff test/test_hacks | grep "^[+-]"; cd .. &amp;&amp; source tools/env.sh &amp;&amp; cd firmware &amp;&amp; NO_COLOR=1 pio test -e native -f test_hacks 2&gt;&amp;1 | grep -E "Hexadrop|FAIL|succeeded|Was|rror" | head" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bvj835iu0</task-id>
+<tool-use-id>toolu_01BCsG4tsU1rtRWYGDeZ4tm8</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f04fec39-e104-4ef0-877f-22bf8e9a22c5/tasks/bvj835iu0.output</output-file>
+<status>completed</status>
+<summary>Monitor "Wait for test_hacks to finish" stream ended</summary>
+<event>+                                         "Hexadrop"};
++    0x1ull, /* Hexadrop */
++  check_restarts_and_stops_do_not_leak("Hexadrop", 0);
+test/test_hacks/test_hacks.c:438: test_frames_of_every_hack_but_maze_match_main: Expected 1 Was 4898174238109724284. Hexadrop	[FAILED]
+============ 53 test cases: 1 failed, 51 succeeded in 00:02:20.996 ============</event>
+If this event is something the user would act on now, send a PushNotification. Routine or benign output doesn't need one.
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bedg7zeu1</task-id>
+<tool-use-id>toolu_01SxTenQWPwQFrSkkjTyA33h</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f04fec39-e104-4ef0-877f-22bf8e9a22c5/tasks/bedg7zeu1.output</output-file>
+<status>failed</status>
+<summary>Background command "Run full native test suite" failed with exit code 127</summary>
+</task-notification>
