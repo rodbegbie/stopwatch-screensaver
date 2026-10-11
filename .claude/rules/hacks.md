@@ -137,15 +137,17 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   the two sides disagree on the layout. `spline.h` did this to Starfish and
   Goop: they drew garbage (flat colours) at 16-20 fps and their first pinned
   hashes were of it. Look at a frame after any change that is not
-  pixel-identical by construction; `test_hacks_that_use_the_spline_draw_a_real_picture`
-  now fails on a flat screen.
+  pixel-identical by construction;
+  `test_hacks_that_use_the_spline_draw_a_real_picture` now fails on a flat
+  screen.
 - Fireworkx renders at 1/`FIREWORKX_SCALE` of the width and height
   (`hacks/lowrez_put.h`: it is told the window is smaller and `XPutImage`
   draws each pixel as a square): 2.4 fps as copied, 11 at a scale of 3, 12.4 at
   4. Its glow, flash pass and 565 conversion are full-frame walks over PSRAM.
   Its header says "(GPL)" but the text is the standard permission notice.
 - Loop asks for 100 ms between generations (8.7 fps with a 3.5-7 ms step); the
-  registry overrides it to 50 ms. Hypnowheel is 1.4 fps and stays under the bar:
-  about 70 percent of its step is additively blended pixel fill (about 1.2 us a
-  pixel) and 30 percent is per-triangle setup (about 35 us), so `*layers` and
-  `*count` cannot reach 15 fps.
+  registry overrides it to 50 ms. Hypnowheel (1.4 fps) was dropped from the
+  rotation after Rod saw it (issue #73; its source, notices row and a
+  `failed_ports.txt` entry stay): about 70 percent of its step is additively
+  blended pixel fill (about 1.2 us a pixel) and 30 percent is per-triangle
+  setup (about 35 us), so `*layers` and `*count` cannot reach 15 fps.

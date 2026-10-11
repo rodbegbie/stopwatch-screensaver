@@ -105,8 +105,7 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Fireworkx",
                                          "Starfish",
                                          "Goop",
-                                         "Loop",
-                                         "Hypnowheel"};
+                                         "Loop"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -457,7 +456,6 @@ static const uint64_t kBaseline[] = {
     0x77bfaaf3faa1cc64ull, /* Starfish: taken after looking at the frames (spline.h before the float rename) */
     0x5694978ccee06fd6ull, /* Goop: taken after looking at the frames (spline.h before the float rename) */
     0xed98a503cd77ba2full, /* Loop: taken after looking at the frames */
-    0x5f47ef604f59cbd4ull, /* Hypnowheel: taken after looking at the frames */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -965,17 +963,6 @@ void test_loop_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("Loop", 0);
 }
 
-void test_hypnowheel_start_and_stop_do_not_leak(void) {
-  const int hw = index_of("Hypnowheel");
-  TEST_ASSERT_TRUE(hw >= 0);
-  srandom(1);
-  for (int i = 0; i < 3; i++) start_step_and_stop_gl_hack(hw, "Hypnowheel");
-  const size_t before = __sanitizer_get_current_allocated_bytes();
-  for (int i = 0; i < 40; i++) start_step_and_stop_gl_hack(hw, "Hypnowheel");
-  const size_t after = __sanitizer_get_current_allocated_bytes();
-  TEST_ASSERT_TRUE_MESSAGE(after < before + 64 * 1024, "Hypnowheel leaks per start");
-}
-
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -1037,7 +1024,6 @@ int main(void) {
   RUN_TEST(test_starfish_stops_do_not_leak);
   RUN_TEST(test_goop_stops_do_not_leak);
   RUN_TEST(test_loop_stops_do_not_leak);
-  RUN_TEST(test_hypnowheel_start_and_stop_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
