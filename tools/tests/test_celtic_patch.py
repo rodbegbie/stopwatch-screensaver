@@ -5,7 +5,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import celtic_patch as cp  # noqa: E402
+import celtic_patch as cp
 
 ROOT = Path(__file__).resolve().parents[2]
 CELTIC = ROOT / "firmware" / "src" / "hacks" / "celtic" / "celtic.c"

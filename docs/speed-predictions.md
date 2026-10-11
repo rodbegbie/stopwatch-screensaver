@@ -75,10 +75,12 @@ Verdicts on the claims:
 
 After the four were measured, Rod looked at them on the display and took Celtic
 out of the rotation: some of its pictures drew quickly and others barely drew
-anything. It is still in the tree, unregistered, and listed in
-`tools/failed_ports.txt`; issue #37 tracks looking for optimisations. Its
-result stays in the backtest, probed standalone, because it is the one slow
-hack in this set.
+anything. Issue #37 then tracked looking for optimisations, and Celtic is
+registered again as `celtic_single.c` (single precision, a graph sized to the
+screen and a larger animation step: a median step of 31.8 ms on the board,
+`tools/assessment_measured.md`). The predictions above are of the hack as
+copied and its 832 ms median stands as the verdict; the as-copied row is kept
+in the measured notes under a bracketed name.
 
 All five claims passed. What that does and does not show:
 

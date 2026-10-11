@@ -31,11 +31,11 @@ it with `uv run tools/score_hacks.py`.
 
 | Rating | Meaning | Count |
 | --- | --- | --- |
-| S | 2D, and the unmodified source compiles against the shim | 7 |
+| S | 2D, and the unmodified source compiles against the shim | 6 |
 | M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 14 |
 | L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 60 |
 | XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 134 |
-| Ported | Already running on the device, so no rating | 68 |
+| Ported | Already running on the device, so no rating | 69 |
 
 ## Speed
 
@@ -148,7 +148,10 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Gears (final code, overnight, 29 windows, many layouts) | 4.0-19.8 | 39-241 ms | 6.1-23.7 ms | 0-5.2 ms | 0 (PSRAM identical; heap falls 388 B a lap, its known leak) |
 | CubicGrid (ticks 30, 27,000 points; not registered) | 5.6-6.0 | 137-148 ms | 32.3-36.0 ms | 0 ms | 1.66 MB more than Morph3D (display list) |
 | CubicGrid (ticks 20, 8,000 points; registered) | 11.2-12.4 | 48-52 ms | 32.2-36.1 ms | 0 ms | 0.49 MB more than Morph3D (display list) |
-| Celtic | 1.0-20.4 | 29-1025 ms | 0.1-5.5 ms | 7.9-928 ms | none measurable |
+| Celtic (as copied; first port) | 1.0-20.4 | 29-1025 ms | 0.1-5.5 ms | 7.9-928 ms | none measurable |
+| Celtic (single precision, upstream graph sizes) | 1.0-20.2 | 5.6-151 ms | 0.8-6.6 ms | 9.4-1110 ms | 16 KB in one window (heap ran out) |
+| Celtic (single precision, graph sized to the screen, step scale 1) | 1.2-20.2 | 13.5-129 ms | 1.1-6.4 ms | 9.2-929 ms | none measurable |
+| Celtic | 5.2 | 12.6-76.8 ms | 3.1-10.6 ms | 215-221 ms | none measurable |
 | Deluxe (opaque, arcs as polylines; first port) | 2.0-5.4 | 154-510 ms | 32.6 ms | 0 ms | not compared with idle (flat at 7,327,227) |
 | Deluxe (opaque, circles as rings) | 13.2-15.4 | 31.5-42.1 ms | 32.5-35.1 ms | 0 ms | not compared with idle (flat at 7,327,227) |
 | Deluxe | 10.4-12.8 | 44.6-62.6 ms | 32.5-32.6 ms | 0 ms | not compared with idle (flat at 7,327,227) |
@@ -658,17 +661,76 @@ and each was flashed unmodified, pinned with the rotation off, for 180 seconds
   27.8-34.4 fps with a 17.7-25.5 ms push. Free heap sat at 219,416-219,556 bytes,
   about 105 KB below an idle build, with PSRAM untouched.
 - **Celtic** (high band, 1.12 ms, 42 `double`s, wide round-capped lines):
-  step median 832 ms, 29-1,025, at about 1.2 fps. Its `assert()` calls
-  `abort()` on a failed allocation, and a picture's memory depends on the
-  pattern: the first held about 300 KB of the 325 KB of free internal heap
-  (free heap read 25,684 bytes), the next two 232,436 and 247,516, and it
-  returned to 328,556 between pictures. Nothing aborted, but the first picture
-  left little margin. Three windows drew nothing (rows=0) yet took 844-1,025 ms
-  a step, so much of the cost is computing, not drawing. Rod took it out of
-  the rotation (issue #37); it is no longer in `g_hacks[]`.
+  step median 832 ms, 29-1,025, at about 1.2 fps. A picture's memory depends
+  on the pattern: the first held about 300 KB of the 325 KB of free internal
+  heap (free heap read 25,684 bytes), the next two 232,436 and 247,516, and it
+  returned to 328,556 between pictures. Nothing aborted (it calls `abort()` on
+  a failed allocation, but the board's `malloc` falls back to PSRAM, see
+  "Celtic after issue #37"). Three windows drew nothing (rows=0) yet took
+  844-1,025 ms a step, so much of the cost is computing, not drawing. Rod took
+  it out of the rotation (issue #37). It was registered again after the work
+  in the next section.
 
 None showed a stack canary, panic or reboot, and free PSRAM was constant
 within each run (Mountain's 20 KB is its offset from the idle figure).
+
+## Celtic after issue #37
+
+Celtic went back into `g_hacks[]` (after HexTrail, so the toasters stay last)
+and was measured on the device three times, each pinned with the rotation off
+for about 180 seconds (26, 26 and 25 five-second windows, the first dropped),
+with one change between captures:
+
+| Build | Step median | Step range | Lowest free heap |
+| --- | --- | --- | --- |
+| Single precision, upstream graph sizes | 64.8 ms | 5.6-151 ms | 1,792 B |
+| And the graph sized to the screen | 56.9 ms | 13.5-129 ms | 164,684 B |
+| And a step scale of 4 (the registered build) | 31.8 ms | 12.6-76.8 ms | not sampled (see below) |
+
+- **Single precision** (`celtic_single.c`, literals made floats at build time;
+  no soft-double helper in the object). Each animation tick walks the shadow
+  look-ahead forward in steps of 0.0001, so a draw call is 25,000 to 58,000
+  cubic Bezier evaluations in the big patterns. The float build exposed two
+  upstream faults: `spline_value_at` aborts when a fused multiply-add makes
+  `t*n - floor(t*n)` slightly negative (`tools/celtic_patch.py` works the
+  product out once and clamps), and `celtic_free` never frees the colour table
+  (384 bytes a start).
+- **Heap.** Upstream picks margins of -600 to 100 (grid, Kennicott) and -900
+  to 0 (triangle), and the graph covers the screen plus twice the margin, so
+  most of a negative margin is never seen. The board's `malloc` does not fail
+  at the end of internal RAM (`CONFIG_SPIRAM_USE_MALLOC`, small blocks
+  internal first, then PSRAM): a big pattern drains internal heap, and the
+  16 KB drop in free PSRAM in the first capture is that overflow. By a model
+  of the board's allocations (a node 12 B, an edge 16 B, a segment 32 B, a 4 B
+  block header), 44 of 300 random starts needed more than the 312 KB free; the
+  patch (minus one edge for grid and Kennicott, half the width plus two edges
+  for the triangle) leaves none, with the worst pattern at about 104 KB. The
+  board's lowest reading was 164,684 bytes free, about 147 KB in use, so the
+  model probably underestimates by about 40%. No window had less than 164 KB
+  free and PSRAM stayed flat.
+- **Step scale.** The graph sizing did not change the work in a step (spline
+  evaluations per draw call on the host: Kennicott about 58,000, triangle
+  about 25,000, grid and polar about 1,000). `CELTIC_STEP_SCALE` multiplies
+  the 0.0001 (default 4, `-DCELTIC_STEP_SCALE=<n>` overrides it). Per draw
+  call on the host, Kennicott evaluations fell from 55,644 to 29,039, 16,626
+  and 9,719 at scales 2, 4 and 8, triangle from 19,875 to 11,280, 7,324 and
+  5,021, while line draws per call did not change (1,600 for Kennicott), so
+  drawing is now the floor. A picture takes 100, 51, 25 and 13 draw calls.
+  Frames at each scale look the same.
+- **Reading the last row.** The `fps` column reads 5.2 in every window: a
+  picture is now about 25 quick draw calls and then the 5 s `*delay2` pause
+  (about 80% of each cycle), so the column measures the pause and `wait` is
+  its average. While a picture is being drawn, `1000 / (step + push + 10 ms)`
+  is 11.0 fps in the worst window, 20.6 at the median and 38.9 at the best.
+  The heap readings in that capture are all idle values (310,208-310,296),
+  because the samples fell in the pause with no pattern held, so it says
+  nothing about the heap: the figure above is the second capture's, and the
+  step scale does not change the graph size.
+- Rod saw the knots run edge to edge, the colours and drawing correct, and the
+  pace and look good at a step scale of 4. The pause between pictures is a
+  little long: the shim's `erase_window` clears at once where upstream draws
+  nothing on the first call, so the 5 s wait is on black and not on the
+  finished picture (issue #86).
 
 ## Deluxe
 
@@ -766,10 +828,9 @@ needing few additions come first.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | attraction | 2d | S | low (0.014 ms) | - | - | - | 1115 |
 | bouboule | 2d | S | high (0.066 ms) | - | - | xor | 860 |
-| celtic | 2d | S | high (1.2 ms) | ❌ | - | - | 1141 |
 | greynetic | 2d | S | medium (0.016 ms) | - | - | - | 297 |
-| halftone | 2d | S | high (0.68 ms) | ❌ | - | pixmaps | 413 |
-| nerverot | 2d | S | high (0.38 ms) | - | - | pixmaps, float-heavy | 1367 |
+| halftone | 2d | S | high (0.67 ms) | ❌ | - | pixmaps | 413 |
+| nerverot | 2d | S | high (0.37 ms) | - | - | pixmaps, float-heavy | 1367 |
 | popsquares | 2d | S | high (0.13 ms) | - | - | pixmaps | 310 |
 | abstractile | 2d | M | - | - | `make_color_loop` | - | 1625 |
 | ant | 2d | M | - | - | `NUMSTIPPLES`, `automata.h`, `hexagonUnit`, `triangleUnit` | - | 1351 |
@@ -983,6 +1044,7 @@ needing few additions come first.
 | anemotaxis | 2d | - | 19.8-22.5 ms measured | ✅ | - | pixmaps | 760 |
 | blaster | 2d | - | 3.6-3.7 ms measured | ✅ | - | - | 1208 |
 | braid | 2d | - | 95-296 ms measured | ✅ | - | - | 444 |
+| celtic | 2d | - | 12.6-76.8 ms measured | ✅ | - | - | 1141 |
 | cloudlife | 2d | - | 8.8-8.9 ms measured | ✅ | - | - | 440 |
 | compass | 2d | - | 30.5-31.5 ms measured | ✅ | - | pixmaps, float-heavy | 999 |
 | coral | 2d | - | 15-25 ms measured | ✅ | - | - | 328 |
@@ -1051,7 +1113,6 @@ needing few additions come first.
 ## Failed ports
 
 - **boing**: 8.3 fps and plain on a small screen; Rod dropped it, scanlines cost 83 ms
-- **celtic**: shelved at 1.2 fps and 300 KB of heap, see issue #37
 - **flurry**: needs GL TinyGL lacks, est. under 1 fps, issue #70
 - **halftone**: 5 fps; the shim's ellipse fill is 80% of it, issue #57
 - **hypnowheel**: 4.0 fps at half resolution, fill-bound; Rod dropped it, #73

@@ -62,18 +62,24 @@ def compute_spline_position_once(source: str) -> str:
 MARGIN_REPLACEMENTS = [
     (
         "      st->params.edge_size=10*(random()%5)+50;\n",
-        "      st->params.edge_size=10*(random()%5)+50;\n"
-        "      st->params.margin=-(long)st->params.edge_size;\n",
+        (
+            "      st->params.edge_size=10*(random()%5)+50;\n"
+            "      st->params.margin=-(long)st->params.edge_size;\n"
+        ),
     ),
     (
         "      st->params.cluster_size=st->params.edge_size/(3.0+random()%10)-1;\n",
-        "      st->params.cluster_size=st->params.edge_size/(3.0+random()%10)-1;\n"
-        "      st->params.margin=-(long)st->params.edge_size;\n",
+        (
+            "      st->params.cluster_size=st->params.edge_size/(3.0+random()%10)-1;\n"
+            "      st->params.margin=-(long)st->params.edge_size;\n"
+        ),
     ),
     (
         "      st->params.margin=(random()%10)*100-900;\n",
-        "      (void)random();\n"
-        "      st->params.margin=-(long)(st->xgwa.width/2+2*st->params.edge_size);\n",
+        (
+            "      (void)random();\n"
+            "      st->params.margin=-(long)(st->xgwa.width/2+2*st->params.edge_size);\n"
+        ),
     ),
 ]
 
