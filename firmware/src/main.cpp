@@ -551,12 +551,13 @@ static uint32_t memWalk(volatile uint16_t *buf, int cols, int rows, int stride) 
 
 static void memBench(uint16_t *psram) {
   uint32_t seq = memWalk(psram, 1, kSize * kSize / 16, 16);
-  uint32_t col = memWalk(psram, 32, kSize, kSize);
+  const int cols = kSize / 16; /* x * 16 stays inside the row */
+  uint32_t col = memWalk(psram, cols, kSize, kSize);
   volatile uint16_t *b = psram;
   uint32_t sum = 0, start = glshim_prof_now();
-  for (int x = 0; x < 32; x++)
+  for (int x = 0; x < cols; x++)
     for (int y = 0; y < kSize; y++) sum += b[(size_t)y * kSize + x * 16];
-  uint32_t colRead = (glshim_prof_now() - start) / (32u * kSize);
+  uint32_t colRead = (glshim_prof_now() - start) / ((uint32_t)cols * kSize);
   (void)sum;
   uint16_t *internal = (uint16_t *)heap_caps_malloc(16384, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
   uint32_t inner = internal ? memWalk(internal, 1, 512, 16) : 0;

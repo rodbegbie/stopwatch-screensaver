@@ -212,12 +212,13 @@ static void release_hook(Display *dpy) {
 }
 
 void glshim_close(void) {
+  g_next_scale = 1; /* a request is for one open, even one that never came */
   if (!g_zb) return;
   glClose();
   ZB_close(g_zb);
   g_zb = NULL;
   g_canvas = NULL;
-  g_scale = g_next_scale = 1;
+  g_scale = 1;
   g_color_box = g_z_box = g_swap_drawn = g_swap_erased = kEmptyBox;
   g_color_valid = g_z_valid = false;
 }
@@ -227,12 +228,13 @@ int glshim_is_open(void) { return g_zb != NULL; }
 GLXContext *glshim_open(Canvas *canvas) {
   static GLXContext handle;
 
+  const int scale = g_next_scale; /* read before the close below drops it */
   glshim_close();
   if (!canvas || !canvas->px || canvas->w <= 0 || canvas->h <= 0) return NULL;
-  g_scale = g_next_scale;
-  g_zb = g_scale == 2 ? ZB_open(canvas->w / 2, canvas->h / 2, ZB_MODE_5R6G5B, NULL)
-                      : ZB_open(canvas->w, canvas->h, ZB_MODE_5R6G5B, canvas->px);
+  g_zb = scale == 2 ? ZB_open(canvas->w / 2, canvas->h / 2, ZB_MODE_5R6G5B, NULL)
+                    : ZB_open(canvas->w, canvas->h, ZB_MODE_5R6G5B, canvas->px);
   if (!g_zb) return NULL;
+  g_scale = scale;
   glInit(g_zb);
   g_vertex = g_normal = g_color = (ClientArray){0};
   g_canvas = canvas;

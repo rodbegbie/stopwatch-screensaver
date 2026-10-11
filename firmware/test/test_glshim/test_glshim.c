@@ -972,6 +972,45 @@ void test_at_scale_two_the_dirty_box_is_scaled(void) {
   TEST_ASSERT_TRUE(rows > 0 && rows % 2 == 0);
 }
 
+static int canvas_is_two_by_two_blocks(void) {
+  for (int y = 0; y < SIZE; y += 2)
+    for (int x = 0; x < SIZE; x += 2) {
+      const uint16_t v = cv.px[y * SIZE + x];
+      if (cv.px[y * SIZE + x + 1] != v || cv.px[(y + 1) * SIZE + x] != v) return 0;
+    }
+  return 1;
+}
+
+/* Opening while a context is open closes it first; that must not lose a
+ * scale asked for since. */
+void test_a_scale_asked_for_while_a_context_is_open_is_kept(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glshim_set_render_scale(2);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  corner_triangle_frame(-1, -1);
+  glXSwapBuffers(dpy, 0);
+  TEST_ASSERT_TRUE(canvas_is_two_by_two_blocks());
+}
+
+/* A hack that asks for scale 2 and then fails to open, or never opens, must
+ * not leave it for the next hack. */
+void test_a_failed_open_does_not_leave_the_scale_behind(void) {
+  Canvas empty = {0};
+  glshim_set_render_scale(2);
+  TEST_ASSERT_NULL(glshim_open(&empty));
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  corner_triangle_frame(-1, -1); /* at scale 1 it lands on the canvas at once */
+  TEST_ASSERT_NOT_EQUAL(0, cv.px[(SIZE - 1) * SIZE]);
+}
+
+void test_a_scale_never_opened_is_dropped_when_the_hack_stops(void) {
+  glshim_set_render_scale(2);
+  glshim_close(); /* the release hook runs even if the hack never opened */
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  corner_triangle_frame(-1, -1);
+  TEST_ASSERT_NOT_EQUAL(0, cv.px[(SIZE - 1) * SIZE]);
+}
+
 void test_closing_resets_the_scale(void) {
   glshim_set_render_scale(2);
   TEST_ASSERT_NOT_NULL(glshim_open(&cv));
@@ -1249,6 +1288,9 @@ int main(void) {
   RUN_TEST(test_at_scale_two_each_pixel_becomes_a_two_by_two_block);
   RUN_TEST(test_at_scale_two_the_dirty_box_is_scaled);
   RUN_TEST(test_closing_resets_the_scale);
+  RUN_TEST(test_a_scale_asked_for_while_a_context_is_open_is_kept);
+  RUN_TEST(test_a_failed_open_does_not_leave_the_scale_behind);
+  RUN_TEST(test_a_scale_never_opened_is_dropped_when_the_hack_stops);
   RUN_TEST(test_additive_blend_adds_each_channel);
   RUN_TEST(test_additive_blend_saturates_each_channel_on_its_own);
   RUN_TEST(test_source_alpha_with_one_adds_too);
