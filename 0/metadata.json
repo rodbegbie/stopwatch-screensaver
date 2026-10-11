@@ -58,6 +58,37 @@
         "label": "Skill: port-hack",
         "default_collapsed": true
       }
+    },
+    {
+      "id": "claude-skill-toolu_013sNNCMPbb2rn1DqFknSz4f",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "eeba5c0a0d9f",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 2302,
+        "end": 2303,
+        "entry_ids": [
+          "467bc5b0-952f-480e-8a91-fc9b9310b3b0"
+        ],
+        "tool_use_id": "toolu_013sNNCMPbb2rn1DqFknSz4f"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_013sNNCMPbb2rn1DqFknSz4f"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
     }
   ],
   "session_metrics": {
