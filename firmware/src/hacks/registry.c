@@ -87,8 +87,8 @@ extern const HackEntry lmorph_hack;
 extern const HackEntry wormhole_hack;
 extern const HackEntry truchet_hack;
 /* The xlockmore framework reads ncolors and cycles, which the hack does not
- * define. Its own 30 ms pause is the gap after each frame, as for Gears. Its
- * one-pixel lines move a few pixels a frame, so a seam between the old and the
+ * define. The override cuts its own 30 ms pause to 10 ms, as for Gears. Its
+ * thin lines move a few pixels a frame, so a seam between the old and the
  * new picture made lines vanish for a frame: it asks for synced pushes. */
 static const char *const kUnknownPleasuresOverrides[] = {
     "*ncolors: 64", "*cycles: 0", "*delay: 10000", NULL};

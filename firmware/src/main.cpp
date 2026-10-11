@@ -99,7 +99,8 @@ static Overlay overlay;
 static Rotation rotation;
 static uint32_t frames;
 static uint32_t statsAt;
-static uint32_t stepUs, pushUs, waitUs, rowsPushed;
+static uint32_t stepUs, pushUs, syncUs, waitUs, rowsPushed;
+static uint32_t lastSyncUs; /* the TE wait of the latest present() */
 static PushRow pushRows[kSize];
 
 /* The panel's tearing-effect line (OLED_TE, GPIO 38) pulses once a refresh, 60
@@ -227,23 +228,25 @@ static void halt(const char *msg) {
 }
 
 static void resetStats() {
-  frames = stepUs = pushUs = waitUs = rowsPushed = 0;
+  frames = stepUs = pushUs = syncUs = waitUs = rowsPushed = 0;
   statsAt = millis();
 }
 
-/* step/push/wait are mean milliseconds per frame spent in the hack, in
- * pushImage, and waiting out what is left of the hack's requested delay after
- * the push (including button polling). rows is the mean number of canvas rows
+/* step/push/sync/wait are mean milliseconds per frame spent in the hack, in
+ * pushImage, waiting for the TE edge before a synced push (not part of push),
+ * and waiting out what is left of the hack's requested delay after the push
+ * (including button polling). rows is the mean number of canvas rows
  * sent to the display per frame (466 is a full push), counting overlay redraws
  * made while waiting. */
 static void printStats(const char *tag) {
   float n = frames ? (float)frames : 1.0f;
   Serial.printf(
-      "%s %s fps=%.1f step=%.1fms push=%.1fms wait=%.1fms rows=%.0f heap=%u "
+      "%s %s fps=%.1f step=%.1fms push=%.1fms sync=%.1fms wait=%.1fms rows=%.0f heap=%u "
       "psram=%u\n",
       tag, g_hacks[runner_index(runner)]->name,
       frames * 1000.0f / kStatsEveryMs, stepUs / n / 1000.0f,
-      pushUs / n / 1000.0f, waitUs / n / 1000.0f, rowsPushed / n,
+      pushUs / n / 1000.0f, syncUs / n / 1000.0f, waitUs / n / 1000.0f,
+      rowsPushed / n,
       (unsigned)ESP.getFreeHeap(),
       (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
 }
@@ -389,11 +392,13 @@ static void present() {
     stampText(&infoPatch, text, kSize / 2, kFpsY, &fonts::DejaVu18);
   }
   overlay_drawn(&overlay, now);
+  lastSyncUs = 0;
   if (g_hacks[runner_index(runner)]->sync_to_refresh) {
     /* After the overlay is stamped, so stamping does not move the start. */
     const uint32_t syncWaitUs =
         te_sync_wait_us(&teSync, (uint32_t)esp_timer_get_time());
     if (syncWaitUs) delayMicroseconds(syncWaitUs);
+    lastSyncUs = syncWaitUs;
   }
 #ifdef TE_DIAG
   uint32_t pushT0 = (uint32_t)esp_timer_get_time();
@@ -525,7 +530,8 @@ void loop() {
   frames++;
   overlay_frame(&overlay, millis());
   stepUs += t1 - t0;
-  pushUs += t2 - t1;
+  pushUs += t2 - t1 - lastSyncUs;
+  syncUs += lastSyncUs;
 
   /* Only the push counts against the delay. A hack's delay is the pause after
    * it draws, so a hack that asks for a one-second hold must still get it

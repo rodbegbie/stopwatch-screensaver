@@ -22,6 +22,7 @@ typedef struct {
   volatile uint32_t last_rise_us;
   volatile uint32_t period_us; /* 0 until two rising edges one period apart */
   volatile uint32_t rises;     /* rising edges accepted, saturating at 2 */
+  volatile uint32_t rejects;   /* edges in a row that fit no whole period */
   uint32_t offset_us;
   uint32_t timeout_us;
 } TeSync;
@@ -31,13 +32,20 @@ typedef struct {
 #define TE_SYNC_MIN_PERIOD_US 8000u
 #define TE_SYNC_MAX_PERIOD_US 33000u
 
+/* This many edges in a row that fit no whole number of periods: forget the
+ * lock and learn the period again. */
+#define TE_SYNC_RELOCK_AFTER 4u
+
 /* offset_us is how long after a rising edge a push should start. When no edge
  * has arrived for timeout_us the panel is taken to have stopped pulsing and
  * waiting is switched off, so a dead line cannot hang the display. */
 void te_sync_init(TeSync *s, uint32_t offset_us, uint32_t timeout_us);
 
 /* One edge of the TE line (level 1 is a rising edge) at now_us. Called from an
- * interrupt, so on the device it lives in IRAM and uses nothing in flash. */
+ * interrupt, so on the device it is placed in IRAM. That does not make the
+ * whole interrupt flash-free: Arduino's pin dispatcher and gpio_get_level are
+ * in flash. It is safe because CONFIG_ARDUINO_ISR_IRAM is unset, which holds
+ * the GPIO interrupt off while the flash cache is disabled. */
 #if defined(ESP_PLATFORM)
 #include "esp_attr.h"
 #define TE_SYNC_ISR IRAM_ATTR

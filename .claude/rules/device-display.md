@@ -96,12 +96,13 @@ Moved verbatim from the Gotchas section of AGENTS.md.
 - The offset (7.4 ms) is the middle of the clean window, found by a sweep:
   eight offsets across one refresh, 3 s each, the step number stamped on the
   screen, filmed at 120 fps. 3.2 to 9.5 ms had no vanished line in 39 updates;
-  1.1 and 15.8 ms did, with the seam at row 495 and row 268: about 107 rows per
-  millisecond, so the bad window is only about 5 ms wide. It is valid for a
-  full-frame push (the 20.6 ms copy). A push of another size moves the flush
-  and the sweep would have to be repeated: the QR overlay's 328-row push is
-  one, so a seam may show while the code is up. `-DTE_DIAG` logs the TE period and
-  where pushes start.
+  1.1 and 15.8 ms did, with the seam at film row 495 and film row 268: about 107
+  film rows per millisecond (the camera frame is taller than the panel; the
+  466-row panel scans about 28 rows per millisecond), so the bad window is only
+  about 5 ms wide. It is valid for a full-frame push (the 20.6 ms copy). A push
+  of another size moves the flush and the sweep would have to be repeated: the
+  QR overlay's 328-row push is one, so a seam may show while the code is up.
+  `-DTE_DIAG` logs the TE period and where pushes start.
 - Reading a film of the display: iPhone slo-mo files store their first and
   last seconds at normal speed, so the label changes every ~100 frames there
   and every 360 in the 120 fps middle. Stabilise against the scenery (four

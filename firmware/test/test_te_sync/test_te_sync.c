@@ -95,6 +95,20 @@ void test_when_the_edges_stop_it_stops_waiting(void) {
   TEST_ASSERT_EQUAL_UINT32(0, te_sync_wait_us(&s, rise + 5000000));
 }
 
+void test_a_long_dead_line_stays_dead_when_the_counter_passes_half_its_range(void) {
+  learn_from(10000);
+  const uint32_t rise = 10000 + PERIOD;
+  TEST_ASSERT_EQUAL_UINT32(0, te_sync_wait_us(&s, rise + 0x80000000u));
+  TEST_ASSERT_EQUAL_UINT32(0, te_sync_wait_us(&s, rise + 0xC0000000u));
+  TEST_ASSERT_EQUAL_UINT32(0, te_sync_wait_us(&s, rise - 2u * PERIOD));
+}
+
+void test_an_edge_that_lands_just_after_now_was_read_still_counts(void) {
+  learn_from(10000);
+  const uint32_t rise = 10000 + PERIOD;
+  TEST_ASSERT_EQUAL_UINT32(1100, te_sync_wait_us(&s, rise - 16u));
+}
+
 void test_a_glitch_edge_is_not_taken_for_a_period(void) {
   learn_from(10000);
   const uint32_t rise = 10000 + PERIOD;
@@ -108,6 +122,31 @@ void test_a_missed_edge_does_not_double_the_period(void) {
   const uint32_t rise = 10000 + PERIOD;
   te_sync_edge(&s, rise + 2 * PERIOD, 1); /* one pulse never reached us */
   TEST_ASSERT_EQUAL_UINT32(PERIOD, te_sync_period_us(&s));
+}
+
+void test_a_spurious_rise_mid_period_does_not_displace_the_true_edge(void) {
+  learn_from(10000);
+  const uint32_t rise = 10000 + PERIOD;
+  te_sync_edge(&s, rise + 9000, 1); /* a glitch that is not near a period */
+  te_sync_edge(&s, rise + PERIOD, 1);
+  TEST_ASSERT_EQUAL_UINT32(PERIOD, te_sync_period_us(&s));
+  TEST_ASSERT_EQUAL_UINT32(600, te_sync_wait_us(&s, rise + PERIOD + 500));
+}
+
+void test_a_missed_edge_with_jitter_leaves_the_period_alone(void) {
+  learn_from(10000);
+  const uint32_t rise = 10000 + PERIOD;
+  te_sync_edge(&s, rise + 2 * PERIOD - 700, 1);
+  TEST_ASSERT_EQUAL_UINT32(PERIOD, te_sync_period_us(&s));
+}
+
+void test_a_half_period_phase_step_is_relocked(void) {
+  learn_from(10000);
+  uint32_t t = 10000 + PERIOD + PERIOD / 2;
+  for (int i = 0; i < 6; i++, t += PERIOD) te_sync_edge(&s, t, 1);
+  const uint32_t last = t - PERIOD;
+  TEST_ASSERT_EQUAL_UINT32(PERIOD, te_sync_period_us(&s));
+  TEST_ASSERT_EQUAL_UINT32(600, te_sync_wait_us(&s, last + 500));
 }
 
 void test_the_period_follows_a_slow_drift(void) {
@@ -135,8 +174,13 @@ int main(void) {
   RUN_TEST(test_an_offset_longer_than_the_period_wraps_into_it);
   RUN_TEST(test_the_microsecond_counter_wrapping_does_not_confuse_it);
   RUN_TEST(test_when_the_edges_stop_it_stops_waiting);
+  RUN_TEST(test_a_long_dead_line_stays_dead_when_the_counter_passes_half_its_range);
+  RUN_TEST(test_an_edge_that_lands_just_after_now_was_read_still_counts);
   RUN_TEST(test_a_glitch_edge_is_not_taken_for_a_period);
   RUN_TEST(test_a_missed_edge_does_not_double_the_period);
+  RUN_TEST(test_a_spurious_rise_mid_period_does_not_displace_the_true_edge);
+  RUN_TEST(test_a_missed_edge_with_jitter_leaves_the_period_alone);
+  RUN_TEST(test_a_half_period_phase_step_is_relocked);
   RUN_TEST(test_the_period_follows_a_slow_drift);
   return UNITY_END();
 }

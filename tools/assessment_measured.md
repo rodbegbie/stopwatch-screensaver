@@ -83,8 +83,10 @@ Unknown Pleasures' rows are from pinned builds (2026-10-10). The first flash
 had TinyGL's one-pixel lines and its additive blend, so the black quads that
 should hide the rows behind a peak hid nothing; the registered row is after
 smooth lines, opaque fills, polygon offset and the refresh-synced push (see the
-GL notes and `.claude/rules/device-display.md`). Its push figure includes the
-wait for the panel's next TE pulse: 32.3 ms of push and about 4 ms of waiting.
+GL notes and `.claude/rules/device-display.md`). The push figures here were
+read before the log had a `sync=` field, so they include the wait for the
+panel's next TE pulse: 32.3 ms of push and about 4 ms of waiting. `push=` now
+leaves that wait out.
 A tap on the overlay adds about 16 ms to the push (48 ms). The registered
 row's 0.93 MB is from before the QR overlay merged; the same code rebased onto
 it was read again at 5.0 fps, a step of 169 ms and a push of 35.7 to 37.6 ms,

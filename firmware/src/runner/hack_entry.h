@@ -24,7 +24,10 @@ typedef struct HackEntry {
   /* Nonzero to start each push at a fixed point in the panel's refresh, so the
    * seam between the old and new picture lands where it does no harm (see
    * main.cpp). It costs up to one refresh of latency a frame, so a hack asks
-   * only if thin lines moving a few pixels a frame show the seam. */
+   * only if thin lines moving a few pixels a frame show the seam. The wait
+   * happens in present(); an overlay redraw made later, while the loop waits
+   * out the hack's delay, is not counted against that delay, so a synced hack
+   * with a long delay could overrun it. Unknown Pleasures never does. */
   int sync_to_refresh;
 } HackEntry;
 

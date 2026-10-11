@@ -247,7 +247,11 @@ void gl_draw_triangle_fill(GLVertex* p0, GLVertex* p1, GLVertex* p2) {
 			slope = dzdx > dzdy ? dzdx : dzdy;
 			snap = (c->offset_factor != 0.0f || c->offset_units != 0.0f) ? dzdx + dzdy : 0.0f;
 		}
-		bias = (GLint)(c->offset_factor * slope + snap + c->offset_units * (GLfloat)(1 << ZB_POINT_Z_FRAC_BITS));
+		GLfloat shift = c->offset_factor * slope + c->offset_units * (GLfloat)(1 << ZB_POINT_Z_FRAC_BITS);
+		shift += shift < 0.0f ? -snap : snap;
+		if (shift > 536870912.0f) shift = 536870912.0f;
+		if (shift < -536870912.0f) shift = -536870912.0f;
+		bias = (GLint)shift;
 	}
 	if (bias) {
 		p0->zp.z -= bias;

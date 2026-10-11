@@ -69,6 +69,10 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   keeps the fractional position (`zp.fx`, `zp.fy`) and draws a line with Wu's
   algorithm when a hack enables `GL_LINE_SMOOTH`. Only lines get it; filled
   triangles are still snapped. A line whose two colours differ is drawn plain.
+- Smooth lines ignore vertex alpha (`ZB_line_aa` reads only r, g, b), so
+  Unknown Pleasures' per-row fade (`glColor4f` with an eased alpha) does not
+  happen and every ridge draws at full intensity. Rod approved that look on the
+  device and closed the review finding as wontfix.
 - TinyGL has no alpha: the blend macro adds colours, ignores the blend
   function's alpha, and decodes pixels as if they were not byte-swapped, so
   it is only right for black and white. A white-on-black frame hides this, and

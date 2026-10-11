@@ -65,8 +65,10 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
 - Serial log: read `/dev/cu.usbmodem112401` at 115200 for N seconds into a file
   (a pyserial script run with `.venv/bin/python -I`). Run it in the background
   with absolute paths, since background shells ignore `cd`. Lines to read:
-  `run <hack> fps= step= push= wait= rows=` (ms per frame in the hack, the
-  push and the wait; mean canvas rows sent per frame, 466 being a full push,
+  `run <hack> fps= step= push= sync= wait= rows=` (ms per frame in the hack,
+  the push, the wait for the panel's TE edge before a synced push (only
+  Unknown Pleasures; not counted in `push=`) and the wait; mean canvas rows
+  sent per frame, 466 being a full push,
   though overlay redraws made while waiting can push it higher)
   and `switch -> <hack> press_waited=`. An empty capture, or "Device not
   configured", means the USB port went away and came back (a flash, a crash):
