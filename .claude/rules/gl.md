@@ -94,6 +94,18 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   offset, about 500 (the floor) with the margin. An earlier depth-fighting
   experiment found no effect only because blending made every quad invisible:
   change one thing at a time, and check that the thing under test can act.
+- The offset's snapping margin takes the sign of the offset (a negative offset
+  pulls toward the viewer, so a positive margin would weaken it), the bias is
+  clamped to about +/-2^29, and each shifted vertex depth is clamped to the
+  16-bit range with the originals restored exactly: an offset that carried a
+  fill past the far plane used to wrap round and beat a nearer fill. Tests use
+  a second fill slightly behind the first, because a twin at equal depth wins
+  a tie either way and cannot tell the signs apart.
+- The clipper keeps lines inside the view volume, and the viewport maps NDC 1 to
+  pixel `xsize - 0.5`, so only a viewport larger than the canvas can carry a
+  line past its right or bottom edge. The smooth-line plot's guards are
+  defensive otherwise; `test_glshim` uses `glViewport(0, 0, 2 * SIZE, 2 * SIZE)`
+  to reach them.
 - Speed is about 6 us per lit vertex plus about 80 ms a frame (clear 25 ms,
   push 32 ms): Gears runs at 4 to 5 fps for its heaviest layout and about 9
   for light ones. `-O2` for TinyGL and specular lookup tables changed

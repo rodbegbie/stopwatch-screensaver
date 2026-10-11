@@ -87,6 +87,38 @@ When: a ported hack runs under about 10 fps and the push is not the cause
   costs its full draw each frame whatever the push does. Check this before
   porting; the scorer does not flag it yet.
 
+## Thin lines in a GL hack
+
+When: a GL hack draws hairlines or fades (Unknown Pleasures) and looks right
+in a host frame but flickers on the board. Work down this list, one layer at a
+time, and look at the screen (or film) after each; each layer hid the next.
+
+- Lines hop. TinyGL snaps every vertex to a whole pixel, so a drifting line
+  jumps. `tinygl_patch.py` keeps the fractional position and draws a Wu line
+  when the hack enables `GL_LINE_SMOOTH`. Triangles are still snapped.
+- Quads that hide the lines behind them hide nothing, or the picture is
+  speckled grey. TinyGL's blend adds colours, ignores alpha and misreads our
+  byte-swapped pixels, so `SRC_ALPHA, ONE_MINUS_SRC_ALPHA` is drawn as an
+  opaque fill. Smooth lines carry no alpha, so a hack's per-line fade is lost.
+- A line drawn on its own polygon's edge is erased in dashes: `glPolygonOffset`
+  was stored and never read. The patch applies it, plus a margin for the
+  vertex snapping. Check the effect on the host by the second difference of a
+  frame's total brightness while the picture drifts a fraction of a pixel; change
+  one thing at a time, because blending once made the experiment unable to
+  show any effect.
+- Pieces of a line vanish for one refresh. The panel scans while the push
+  writes, so a seam crosses the picture. Set `sync_to_refresh` on the hack
+  (`XLOCKMORE_HACK_SYNCED`); see `.claude/rules/device-display.md` for the
+  offset, why it is only valid for a full-frame push, and how to film the
+  result. Cost: up to a refresh of latency a frame, so only a hack that needs
+  it should ask.
+- Budget with `gl_budget.py` but expect it to be off: it has no blend term
+  (Unknown Pleasures was predicted at 251 ms and ran at 267, then 197 once the
+  fills were opaque). Add the measured row as a calibration point.
+- After all that a dimming of about 14% for 25 ms at each push remained (issue
+  #68). Do not promise a hack is flicker-free from a host frame or from the
+  absence of vanishing lines alone.
+
 ## Stack check
 
 When: locals over a few KB. Compile the hack with `-O1 -fstack-usage` (flags in
@@ -197,6 +229,15 @@ keep a stub hack that draws nothing, on the colour that fooled the old check, to
 show the test can fail. When a change alters what every hack starts with (the
 background colour, an initial canvas), re-read the older tests that assume the
 old start.
+
+A bounds guard can be unreachable through the public API. TinyGL's clipper
+keeps a line inside the view volume and its viewport maps that to at most pixel
+63.5, so two of the four guards in the smooth-line plot survived mutation until
+a test used a viewport bigger than the canvas. Mutate each guard on its own
+(a scratchpad script that edits, runs the suite and restores in `finally`),
+and when one survives, find an input that reaches it or say it is defensive.
+Wrapping bugs can also hide in what is stored, not what is drawn: a depth that
+wrapped round only showed when a third fill was drawn afterwards.
 
 ## Background colour
 

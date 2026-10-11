@@ -12,7 +12,10 @@ embedded-specific choices as you make them. See `README.md` for setup and
 - `firmware/src/glshim/` (ours) is the GL layer for OpenGL hacks, over
   `firmware/src/tinygl/` (TinyGL, byte-identical, patched at build by
   `tools/tinygl_patch.py`). `xs_support/glx/` holds the copied GL helpers.
-  Gears is the first GL hack.
+  Gears was the first GL hack; Unknown Pleasures is the fifth.
+- `firmware/src/runner/te_sync.[ch]` (ours, host-tested) times a push to the
+  panel's refresh for a hack with `sync_to_refresh`; see
+  `.claude/rules/device-display.md`.
 - `tools/failed_ports.txt` lists abandoned ports (`name: reason`); the scorer
   marks them ❌, and ✅ comes from `g_hacks[]` in `registry.c`.
 - `.claude/skills/port-hack/`: the order of work for porting a hack, and a
@@ -203,6 +206,12 @@ ones below apply everywhere.
   `git merge-base --is-ancestor <tip> origin/main`; the tool's "discarded N
   commits" count ignores merges. `.platformio`, `.venv` and `vendor` there are
   symlinks, so removal leaves the real ones alone.
+  The shell's directory resets after each command and after `ExitWorktree`, so
+  use absolute paths (`../.venv/bin/pio` failed from the wrong place and the run
+  looked like a test failure). A loop over several mutations is refused as a
+  command: write it as a script in the scratchpad that edits the file, runs
+  `pio test` through `subprocess` and restores the file in `finally`, then run
+  it with `python3 -I`.
 - zsh does not word-split `$var`: loop over file lists with `bash -c`. It also
   stops on a glob that matches nothing, so quote `--include='*.c'`, and
   `grep` needs `-e` for a pattern that starts with a dash (`-e '->px'`).

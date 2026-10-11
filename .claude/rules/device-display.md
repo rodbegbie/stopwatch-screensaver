@@ -103,6 +103,16 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   of another size moves the flush and the sweep would have to be repeated: the
   QR overlay's 328-row push is one, so a seam may show while the code is up.
   `-DTE_DIAG` logs the TE period and where pushes start.
+- `te_sync.c` trusts few edges. Once it knows the period it accepts a rising
+  edge only within period/16 of a whole number of periods since the last, so a
+  missed edge or a stray pulse cannot move the lock; four misfits in a row drop
+  the lock and relearn it. An edge further ahead than one period is stale (the
+  32-bit microsecond counter can pass half its range with the line dead), and
+  waiting stops 100 ms after the last edge. The ISR is placed in IRAM, but
+  Arduino's pin dispatcher and `gpio_get_level` are in flash; that is safe only
+  because `CONFIG_ARDUINO_ISR_IRAM` is unset. The run log's `sync=` is the wait
+  for the edge and is left out of `push=`: compare `push=` across hacks, and add
+  `sync=` to get the frame's latency.
 - Reading a film of the display: iPhone slo-mo files store their first and
   last seconds at normal speed, so the label changes every ~100 frames there
   and every 360 in the 120 fps middle. Stabilise against the scenery (four
@@ -115,4 +125,7 @@ Moved verbatim from the Gotchas section of AGENTS.md.
 - Every push also dims the screen: the dimmest band falls to 0.86 of its
   settled brightness for about 25 ms (three camera frames at 120 fps), at 5 Hz,
   with or without TE sync (0.860 synced, 0.870 unsynced). It is probably the
-  "whole screen redraws" flicker. Its cause is not known.
+  "whole screen redraws" flicker. Its cause is not known. Rod sees no dimming
+  with the sparser build (20 rows of 50 points, a step of about 91 ms against
+  165), so it may track how much is lit or how long the copy runs; not yet
+  filmed (issue #68).

@@ -28,6 +28,15 @@ Moved verbatim from AGENTS.md.
   Gates check to finish. A stacked PR's gate
   can fail "Up to date: 1 commit behind" once its parent merges: if approvals
   and findings pass and the PR is mergeable, merge it, with no rebase.
+- Before merging, `git fetch` and compare the PR's `headRefOid` with your tip:
+  Rod sometimes pushes to the branch (docs commits, a merge of `main`). Read
+  what arrived with `git log --oneline <tip>..origin/<branch>`, and clean up
+  from the merge commit, not your last push. After `ExitWorktree keep` the
+  tool names the branch `worktree-<name>`; the real branch is
+  `git worktree list`'s.
+- A review of fixed code can raise a new finding on the fix itself (a clamp
+  that did not stop a wrap). Reproduce it with a failing test before changing
+  the code, and mutation-check each branch of the new guard.
 - `entire agent-help` says trails are unavailable; `entire trail create` works.
   Write a PR body to a file for `gh pr edit --body-file` (an apostrophe in an
   inline `--body '...'` must be `'"'"'`).
