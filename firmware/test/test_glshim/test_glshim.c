@@ -1389,6 +1389,23 @@ void test_disc_fill_leaves_the_corners_alone(void) {
   assert_disc_is(rgb565(255, 0, 0));
 }
 
+/* Every vertex is right of the disc's left edge; only the top right one is
+ * past its right edge, so that test alone must turn the clip on. */
+void test_disc_fill_clips_a_triangle_out_only_on_the_right(void) {
+  TEST_ASSERT_EQUAL_INT(0, canvas_set_disc(&cv, malloc));
+  canvas_clear(&cv, SENTINEL);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  flat_view();
+  glColor3f(1, 0, 0);
+  glBegin(GL_TRIANGLES);
+  glVertex3f(0, 0, 0);
+  glVertex3f(1, 1, 0);
+  glVertex3f(0, 1, 0);
+  glEnd();
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, cv.px[SIZE - 1]);
+  TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), cv.px[8 * SIZE + 40]);
+}
+
 /* Two smooth, depth-tested triangles over the top left corner, where the disc
  * cuts every scanline short on the left: clipping must start each scanline
  * with the depth and colour it would have had, so inside the disc the frame
@@ -1438,6 +1455,7 @@ void test_disc_clipped_triangle_matches_the_unclipped_one_inside(void) {
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_disc_fill_leaves_the_corners_alone);
+  RUN_TEST(test_disc_fill_clips_a_triangle_out_only_on_the_right);
   RUN_TEST(test_disc_clipped_triangle_matches_the_unclipped_one_inside);
   RUN_TEST(test_no_disc_clear_is_unchanged);
   RUN_TEST(test_disc_clear_leaves_the_corners_alone);

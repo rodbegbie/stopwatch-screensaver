@@ -367,7 +367,7 @@ DISC_SCANLINE = """#ifdef INTERP_STZ
 
 
 #endif
-\t\t\t\tif (glshim_span_x0) {
+\t\t\t\tif (tgl_disc_clip) {
 \t\t\t\t\tconst GLint row = (GLint)((pp1 - (PIXEL*)zb->pbuf) / zb->xsize);
 \t\t\t\t\tconst GLint over = x1 + n - glshim_span_x1[row];
 \t\t\t\t\tconst GLint skip = glshim_span_x0[row] - x1;
@@ -392,6 +392,17 @@ DISC_SCANLINE = """#ifdef INTERP_STZ
 \t\t\t\t\t}
 \t\t\t\t}
 \t\t\t\twhile (n >= 3) {"""
+
+# The disc is convex, so a triangle with every vertex inside it needs no clip,
+# and its scanlines skip the check: on Gears, which never reaches the corners,
+# a check on every scanline cost 3.2 ms a frame.
+DISC_TRIANGLE_ANCHOR = "\tpp1 = (PIXEL*)(zb->pbuf) + zb->xsize * p0->y; \n"
+
+DISC_TRIANGLE = (
+    DISC_TRIANGLE_ANCHOR
+    + "\tconst GLint tgl_disc_clip = glshim_span_x0 && !(TGL_IN_DISC(zb, p0) && "
+    "TGL_IN_DISC(zb, p1) && TGL_IN_DISC(zb, p2));\n"
+)
 
 REPLACEMENTS: tuple[Replace, ...] = (
     Replace(
@@ -623,6 +634,8 @@ REPLACEMENTS: tuple[Replace, ...] = (
         "#define TGL_BLEND_VARS GLuint zbblendeq = zb->blendeq; GLuint sfactor = zb->sfactor; "
         "GLuint dfactor = zb->dfactor;",
         "extern const short *glshim_span_x0, *glshim_span_x1; /* glshim.c, issue #77 */\n"
+        "#define TGL_IN_DISC(zb, p) ((p)->y >= 0 && (p)->y < (zb)->ysize && "
+        "(p)->x >= glshim_span_x0[(p)->y] && (p)->x <= glshim_span_x1[(p)->y])\n"
         "static inline PIXEL glshim_add565(PIXEL dst, PIXEL src) {\n"
         "\tGLuint a = TGL_SWAP16(dst), b = TGL_SWAP16(src);\n"
         "\tGLuint r = (a & 0xF800) + (b & 0xF800), g = (a & 0x07E0) + (b & 0x07E0), "
@@ -660,6 +673,7 @@ REPLACEMENTS: tuple[Replace, ...] = (
     # the span the panel shows, with the depth and colour it would have had at
     # its new first pixel. Only the generic scanline; the textured fills have
     # their own DRAW_LINE.
+    Replace("src/ztriangle.h", DISC_TRIANGLE_ANCHOR, DISC_TRIANGLE),
     Replace("src/ztriangle.h", DISC_SCANLINE_ANCHOR, DISC_SCANLINE),
 )
 
