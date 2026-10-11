@@ -1,0 +1,5 @@
+A very different type of task for you.  In @vendor/after-dark-v2.0v-800k is a disk image of "After Dark 2", the classic Mac OS screensaver.  I'm curious about if we could copy the classic "Flying Toasters" screensaver from it to run in this repo.
+
+So your task is to see if you can extract and disassemble the binary from the disk image, retrieve the display assets, and write a design spec for implementing a fairly faithful recreation inside this repo.
+
+What do you think?
