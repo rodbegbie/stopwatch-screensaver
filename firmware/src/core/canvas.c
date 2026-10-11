@@ -26,6 +26,7 @@ int canvas_init(Canvas *c, int w, int h, void *(*alloc)(size_t)) {
   c->h = h;
   c->px = NULL;
   c->dirty_x0 = c->dirty_x1 = NULL;
+  c->vis_x0 = c->vis_x1 = NULL;
   /* The dirty spans are int16_t. */
   if (w <= 0 || h <= 0 || w > INT16_MAX || h > INT16_MAX) return -1;
   c->px = (uint16_t *)alloc((size_t)w * (size_t)h * sizeof(uint16_t));
@@ -45,8 +46,59 @@ void canvas_free(Canvas *c) {
   free(c->px);
   free(c->dirty_x0);
   free(c->dirty_x1);
+  free(c->vis_x0);
+  free(c->vis_x1);
   c->px = NULL;
   c->dirty_x0 = c->dirty_x1 = NULL;
+  c->vis_x0 = c->vis_x1 = NULL;
+}
+
+/* Distance from the centre to the nearest point of [2i, 2i + 2], all doubled
+ * so an odd size's half-pixel centre stays whole. */
+static wide_t doubled_gap(wide_t i, wide_t centre2) {
+  if (centre2 < 2 * i) return 2 * i - centre2;
+  if (centre2 > 2 * i + 2) return centre2 - 2 * i - 2;
+  return 0;
+}
+
+int canvas_set_disc(Canvas *c, void *(*alloc)(size_t)) {
+  int16_t *x0s = (int16_t *)alloc((size_t)c->h * sizeof(int16_t));
+  int16_t *x1s = (int16_t *)alloc((size_t)c->h * sizeof(int16_t));
+  if (!x0s || !x1s) {
+    free(x0s);
+    free(x1s);
+    return -1;
+  }
+  const wide_t cx2 = c->w, cy2 = c->h, r2 = c->w < c->h ? c->w : c->h;
+  for (int y = 0; y < c->h; y++) {
+    const wide_t dy = doubled_gap(y, cy2);
+    int x0 = 0;
+    while (x0 < c->w) {
+      const wide_t dx = doubled_gap(x0, cx2);
+      if (dx * dx + dy * dy < r2 * r2) break;
+      x0++;
+    }
+    x0s[y] = (int16_t)x0;
+    x1s[y] = (int16_t)(c->w - 1 - x0); /* mirror image; empty if x0 == w */
+  }
+  free(c->vis_x0);
+  free(c->vis_x1);
+  c->vis_x0 = x0s;
+  c->vis_x1 = x1s;
+  return 0;
+}
+
+bool canvas_visible_span(const Canvas *c, int y, int *x0, int *x1) {
+  if (y < 0 || y >= c->h) return false;
+  if (!c->vis_x0) {
+    *x0 = 0;
+    *x1 = c->w - 1;
+    return true;
+  }
+  if (c->vis_x0[y] > c->vis_x1[y]) return false;
+  *x0 = c->vis_x0[y];
+  *x1 = c->vis_x1[y];
+  return true;
 }
 
 uint16_t px_swap(uint16_t v) { return (uint16_t)((v << 8) | (v >> 8)); }

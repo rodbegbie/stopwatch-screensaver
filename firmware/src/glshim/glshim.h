@@ -4,6 +4,8 @@
 #ifndef GLSHIM_H
 #define GLSHIM_H
 
+#include <stdint.h>
+
 #include "GL/gl.h"
 #include "x11shim/xshim.h"
 
@@ -30,6 +32,11 @@ int glshim_is_open(void);
  * doubles every pixel of the dirty box into the canvas. For a hack whose fill
  * is too slow at full size (Hypnowheel). */
 void glshim_set_render_scale(int scale);
+/* Per row of TinyGL's buffer, the span the round panel shows, or NULL when the
+ * canvas has no disc. Set by glshim_open, cleared by glshim_close. At scale 2 a
+ * pixel is in the span if any of its 2 by 2 block of the canvas is. Clears and
+ * fills skip the rest. */
+extern const int16_t *glshim_span_x0, *glshim_span_x1;
 void glshim_Viewport(GLint x, GLint y, GLint w, GLint h);
 #define glViewport glshim_Viewport
 

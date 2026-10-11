@@ -361,6 +361,49 @@ void gl_shade_pending_all(void) {
 /* non optimized lightening model */
 """
 
+DISC_SCANLINE_ANCHOR = "#ifdef INTERP_STZ\n\n\n#endif\n\t\t\t\twhile (n >= 3) {"
+
+DISC_SCANLINE = """#ifdef INTERP_STZ
+
+
+#endif
+\t\t\t\tif (tgl_disc_clip) {
+\t\t\t\t\tconst GLint row = (GLint)((pp1 - (PIXEL*)zb->pbuf) / zb->xsize);
+\t\t\t\t\tconst GLint over = x1 + n - glshim_span_x1[row];
+\t\t\t\t\tconst GLint skip = glshim_span_x0[row] - x1;
+\t\t\t\t\tif (over > 0)
+\t\t\t\t\t\tn -= over;
+\t\t\t\t\tif (skip > 0) {
+\t\t\t\t\t\tn -= skip;
+\t\t\t\t\t\tpp += skip;
+#ifdef INTERP_Z
+\t\t\t\t\t\tpz += skip;
+\t\t\t\t\t\tz += dzdx * skip;
+#endif
+#ifdef INTERP_RGB
+\t\t\t\t\t\tor1 += drdx * skip;
+\t\t\t\t\t\tog1 += dgdx * skip;
+\t\t\t\t\t\tob1 += dbdx * skip;
+#endif
+#ifdef INTERP_ST
+\t\t\t\t\t\ts += dsdx * skip;
+\t\t\t\t\t\tt += dtdx * skip;
+#endif
+\t\t\t\t\t}
+\t\t\t\t}
+\t\t\t\twhile (n >= 3) {"""
+
+# The disc is convex, so a triangle with every vertex inside it needs no clip,
+# and its scanlines skip the check: on Gears, which never reaches the corners,
+# a check on every scanline cost 3.2 ms a frame.
+DISC_TRIANGLE_ANCHOR = "\tpp1 = (PIXEL*)(zb->pbuf) + zb->xsize * p0->y; \n"
+
+DISC_TRIANGLE = (
+    DISC_TRIANGLE_ANCHOR
+    + "\tconst GLint tgl_disc_clip = glshim_span_x0 && !(TGL_IN_DISC(zb, p0) && "
+    "TGL_IN_DISC(zb, p1) && TGL_IN_DISC(zb, p2));\n"
+)
+
 REPLACEMENTS: tuple[Replace, ...] = (
     Replace(
         "src/clip.c",
@@ -590,6 +633,9 @@ REPLACEMENTS: tuple[Replace, ...] = (
         "include/zbuffer.h",
         "#define TGL_BLEND_VARS GLuint zbblendeq = zb->blendeq; GLuint sfactor = zb->sfactor; "
         "GLuint dfactor = zb->dfactor;",
+        "extern const short *glshim_span_x0, *glshim_span_x1; /* glshim.c, issue #77 */\n"
+        "#define TGL_IN_DISC(zb, p) ((p)->y >= 0 && (p)->y < (zb)->ysize && "
+        "(p)->x >= glshim_span_x0[(p)->y] && (p)->x <= glshim_span_x1[(p)->y])\n"
         "static inline PIXEL glshim_add565(PIXEL dst, PIXEL src) {\n"
         "\tGLuint a = TGL_SWAP16(dst), b = TGL_SWAP16(src);\n"
         "\tGLuint r = (a & 0xF800) + (b & 0xF800), g = (a & 0x07E0) + (b & 0x07E0), "
@@ -623,6 +669,12 @@ REPLACEMENTS: tuple[Replace, ...] = (
         "#else\n\tdefault:\n\t\tn = 0; /* draws nothing; must not run past c->vertex */\n"
         "\t\tbreak;\n#endif\n\t}\n\n\tc->vertex_n = n;",
     ),
+    # The round panel (issue #77): each scanline of a filled triangle is cut to
+    # the span the panel shows, with the depth and colour it would have had at
+    # its new first pixel. Only the generic scanline; the textured fills have
+    # their own DRAW_LINE.
+    Replace("src/ztriangle.h", DISC_TRIANGLE_ANCHOR, DISC_TRIANGLE),
+    Replace("src/ztriangle.h", DISC_SCANLINE_ANCHOR, DISC_SCANLINE),
 )
 
 # Anchors that earlier patches wrote (the dirty-rectangle hooks and the

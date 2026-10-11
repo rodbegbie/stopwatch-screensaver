@@ -15,11 +15,19 @@ typedef struct {
   /* Per row, the leftmost and rightmost x written since the last
    * canvas_clear_dirty; a row is clean when dirty_x0[y] > dirty_x1[y]. */
   int16_t *dirty_x0, *dirty_x1;
+  /* Per row, the span the round panel shows; NULL when every pixel shows. */
+  int16_t *vis_x0, *vis_x1;
 } Canvas;
 
 /* Returns 0 on success, -1 if alloc returns NULL. */
 int canvas_init(Canvas *c, int w, int h, void *(*alloc)(size_t));
 void canvas_free(Canvas *c);
+
+/* The disc: centre (w/2, h/2), radius min(w, h)/2. A pixel counts as visible
+ * if any part of it falls inside the circle. Returns 0, or -1 if alloc fails. */
+int canvas_set_disc(Canvas *c, void *(*alloc)(size_t));
+/* Row y's visible span (the whole row without a disc); false if none. */
+bool canvas_visible_span(const Canvas *c, int y, int *x0, int *x1);
 
 /* The display wants each pixel's high byte first, but the ESP32 stores a
  * uint16_t low byte first. Pixels are kept already swapped, so pushing the

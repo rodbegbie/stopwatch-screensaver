@@ -21,13 +21,20 @@ static Group merge(const Group *a, const Group *b) {
   return g;
 }
 
-PushKind push_plan(Canvas *c, PushRow *rows, int *count) {
+PushKind push_plan(Canvas *c, PushRow *rows, int *count, bool use_disc) {
   int n = 0;
   int64_t total_ns = 0;
   Group cur = {0};
   for (int y = 0; y < c->h; y++) {
     int x0, x1;
     if (!canvas_dirty_row(c, y, &x0, &x1)) continue;
+    if (use_disc) {
+      int v0, v1;
+      if (!canvas_visible_span(c, y, &v0, &v1)) continue;
+      if (x0 < v0) x0 = v0;
+      if (x1 > v1) x1 = v1;
+      if (x0 > x1) continue;
+    }
     Group one = {y, y, x0, x1, 1, x1 - x0 + 1};
     if (n == 0) {
       cur = one;
@@ -53,9 +60,9 @@ PushKind push_plan(Canvas *c, PushRow *rows, int *count) {
   return PUSH_ROWS;
 }
 
-int push_present(Canvas *c, PushRow *scratch, const PushSink *sink) {
+int push_present(Canvas *c, PushRow *scratch, const PushSink *sink, bool use_disc) {
   int count;
-  switch (push_plan(c, scratch, &count)) {
+  switch (push_plan(c, scratch, &count, use_disc)) {
     case PUSH_NONE:
       return 0;
     case PUSH_ALL:
