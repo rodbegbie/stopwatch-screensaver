@@ -19,3 +19,7 @@ It should be quickly drawing the celtic knot weave pattern across the display
 ---
 
 Yes, a sparser knot would be acceptable.
+
+---
+
+yes
