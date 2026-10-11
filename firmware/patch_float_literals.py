@@ -22,6 +22,7 @@ for name in ("braid",) + ('euler2d', 'compass', 'fuzzyflakes', 'halftone', 'inte
         source = fireworkx_patch.scale_for_a_small_window(source)
     if name == "celtic":
         source = celtic_patch.compute_spline_position_once(source)
+        source = celtic_patch.fit_the_graph_to_the_screen(source)
     patched = float_literals.float_literals(source)
     target = generated / f"{name}_floatlit.c"
     if not target.exists() or target.read_text() != patched:

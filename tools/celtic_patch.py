@@ -1,4 +1,7 @@
-"""Makes Celtic's spline lookup safe in single precision.
+"""Build-time patches for Celtic: a safe spline lookup in single precision, and
+a graph sized to the screen. The first function's notes come first.
+
+Makes Celtic's spline lookup safe in single precision.
 
 spline_value_at picks a segment with `si = floor(t*n)` and then the position in
 it with `tt = t*n - si`, and aborts unless 0 <= tt < 1. Computed in double
@@ -41,3 +44,47 @@ def compute_spline_position_once(source: str) -> str:
             "has upstream changed?"
         )
     return source.replace(OLD, NEW)
+
+
+# Upstream picks each graph's margin, the border between the screen and the
+# graph, from -600..100 (grid, Kennicott) and -900..0 (triangle). The graph
+# covers the screen plus twice the margin, so most of a negative margin is
+# nodes, edges and spline segments that are never seen, on a heap that is
+# about 150 bytes an edge: up to 5,700 edges, 900 KB, against the board's
+# 312 KB. The grid and Kennicott graphs tile a square of side 466 - 2 * margin
+# centred on the screen, so a margin of minus one edge reaches a cell past the
+# screen at any rotation. The triangle's incircle is half its circumradius
+# (width / 2), so covering the screen's circle takes width / 2 + 2 * edge.
+# Polar graphs are small and are left alone.
+#
+# Each entry is (upstream text, new text). The random() calls stay, so only
+# the margin differs from the unpatched picture sequence.
+MARGIN_REPLACEMENTS = [
+    (
+        "      st->params.edge_size=10*(random()%5)+50;\n",
+        "      st->params.edge_size=10*(random()%5)+50;\n"
+        "      st->params.margin=-(long)st->params.edge_size;\n",
+    ),
+    (
+        "      st->params.cluster_size=st->params.edge_size/(3.0+random()%10)-1;\n",
+        "      st->params.cluster_size=st->params.edge_size/(3.0+random()%10)-1;\n"
+        "      st->params.margin=-(long)st->params.edge_size;\n",
+    ),
+    (
+        "      st->params.margin=(random()%10)*100-900;\n",
+        "      (void)random();\n"
+        "      st->params.margin=-(long)(st->xgwa.width/2+2*st->params.edge_size);\n",
+    ),
+]
+
+
+def fit_the_graph_to_the_screen(source: str) -> str:
+    for old, new in MARGIN_REPLACEMENTS:
+        found = source.count(old)
+        if found != 1:
+            raise ValueError(
+                f"expected 1 of `{old.strip()}` in celtic.c, found {found}; "
+                "has upstream changed?"
+            )
+        source = source.replace(old, new)
+    return source
