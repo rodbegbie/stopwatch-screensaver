@@ -114,3 +114,57 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   textures, none in TinyGL here. With `gl_budget.py`'s per-vertex and
   per-pixel costs that is well under 1 fps (arithmetic, not a measurement:
   the tool cannot read a multi-file hack).
+- Qix and Fireworkx both leaked on every stop, found by the restart leak test.
+  Qix's `qix_free` skips each segment's `lines[i].p` array (about 48 KB per
+  stop); Fireworkx below 24 bits never frees its own 565 image buffer (48 KB).
+  Their wrappers (`qix_direct.c`, `fireworkx_single.c`) free the missing piece
+  before calling upstream's free. LeakSanitizer does not run on macOS, but
+  `MallocStackLogging=1 leaks --atExit -- .pio/build/dump/program <index> 0
+  out.raw` names the allocating line in seconds (rebuild `-e dump` first: a
+  `pio test` deletes the program).
+- Starfish and Goop spent most of a frame in the shim's polygon fill (double
+  maths per edge per row). `hacks/float_polygon.h` fills any even-odd polygon
+  in float, optionally mixed in at an alpha in 32nds (all three colour
+  channels with one multiply), and took Starfish from 8.5 to 19 fps. Goop draws
+  straight onto the window (its `XCreatePixmap` is the window and the
+  `XCopyArea` is skipped) and blends each blob in at the alpha upstream's jwxyz
+  path uses. Its full-frame clear cost 15 ms, so `hacks/span_erase.h` erases
+  only the bounding boxes the blobs filled last frame (pixel-identical frames):
+  14.6-15.2 fps translucent. The shared `canvas_fill_polygon` is still double
+  (Hexadrop has its own convex float fill). Goop is built through
+  `goop_direct.c` with `HAVE_JWXYZ`; the colour-plane path needs planes the
+  canvas lacks.
+- A wrapper that does `#define double float` must include any header with a
+  `double` in a struct the shim's `.c` files also use BEFORE the define: the
+  hack includes it again, the guard keeps the copy seen through the macro, and
+  the two sides disagree on the layout. `spline.h` did this to Starfish and
+  Goop: they drew garbage (flat colours) at 16-20 fps and their first pinned
+  hashes were of it. Look at a frame after any change that is not
+  pixel-identical by construction;
+  `test_hacks_that_use_the_spline_draw_a_real_picture` now fails on a flat
+  screen.
+- Fireworkx renders at 1/`FIREWORKX_SCALE` of the width and height
+  (`hacks/lowrez_put.h`: it is told the window is smaller and `XPutImage`
+  draws each pixel as a square): 2.4 fps as copied, 11 at a scale of 3, 12.4 at
+  4. Its glow, flash pass and 565 conversion are full-frame walks over PSRAM.
+  Its header says "(GPL)" but the text is the standard permission notice.
+  Everything it works in is in pixels, tuned for a window about 1024 wide: at
+  152 pixels a burst filled the picture and the glow blur (energy kept, output
+  doubled) saturated, so the screen was white. `tools/fireworkx_patch.py`
+  (run before the float literal pass; the copy stays byte-identical) scales the
+  spark speed, gravity, flash reach and velocity jitter by the render width
+  over 1024, and the wrapper throws 120 sparks a shell instead of 500 and fires
+  two of its four shells. 12.4-12.6 fps, with a dark background between
+  bursts. The shell count cannot change (it is baked into the SSE layout), so
+  the idle shells are given an endless life and no sparks.
+- Loop asks for 100 ms between generations (8.7 fps with a 3.5-7 ms step); the
+  registry overrides it to 50 ms. It also took `malloc(0)` returning NULL, which
+  the board does and the host does not, for out of memory: square mode asks
+  for a rectangle list for each of eight colour states, most empty, and it
+  freed its cells and drew nothing more (a black screen at 18 fps, half the
+  starts, never seen on the host). `loop_direct.c` asks for one byte, and a test
+  swaps in an allocator that returns NULL for zero. Hypnowheel (1.4 fps) was dropped from the
+  rotation after Rod saw it (issue #73; its source, notices row and a
+  `failed_ports.txt` entry stay): about 70 percent of its step is additively
+  blended pixel fill (about 1.2 us a pixel) and 30 percent is per-triangle
+  setup (about 35 us), so `*layers` and `*count` cannot reach 15 fps.

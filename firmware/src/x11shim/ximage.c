@@ -6,7 +6,7 @@
 #include "x11shim/pixmap.h"
 #include "x11shim/xshim.h"
 
-#define BYTES_PER_PIXEL 4
+#define BYTES_PER_PIXEL 4 /* of a 24 or 32 bit image; a 16 bit one has 2 */
 
 static int64_t min_i64(int64_t a, int64_t b) { return a < b ? a : b; }
 static int64_t max_i64(int64_t a, int64_t b) { return a > b ? a : b; }
@@ -17,13 +17,14 @@ XImage *XCreateImage(Display *dpy, Visual *visual, unsigned int depth,
   (void)dpy;
   (void)visual;
   (void)offset;
-  if (format != ZPixmap || (depth != 24 && depth != 32)) return NULL;
-  if (w == 0 || h == 0 || w > INT32_MAX / BYTES_PER_PIXEL) return NULL;
+  if (format != ZPixmap || (depth != 16 && depth != 24 && depth != 32)) return NULL;
+  const int bpp = depth == 16 ? 2 : BYTES_PER_PIXEL;
+  if (w == 0 || h == 0 || w > INT32_MAX / bpp) return NULL;
 
   int64_t pad = bitmap_pad >= 8 ? bitmap_pad : 32;
-  int64_t tight = ((int64_t)w * BYTES_PER_PIXEL * 8 + pad - 1) / pad * pad / 8;
+  int64_t tight = ((int64_t)w * bpp * 8 + pad - 1) / pad * pad / 8;
   if (bytes_per_line == 0) bytes_per_line = (int)tight;
-  if (bytes_per_line < (int64_t)w * BYTES_PER_PIXEL) return NULL;
+  if (bytes_per_line < (int64_t)w * bpp) return NULL;
   if ((int64_t)bytes_per_line * h > INT32_MAX) return NULL;
 
   XImage *im = (XImage *)calloc(1, sizeof(*im));
@@ -31,7 +32,7 @@ XImage *XCreateImage(Display *dpy, Visual *visual, unsigned int depth,
   im->width = (int)w;
   im->height = (int)h;
   im->depth = (int)depth;
-  im->bits_per_pixel = BYTES_PER_PIXEL * 8;
+  im->bits_per_pixel = bpp * 8;
   im->bytes_per_line = bytes_per_line;
   im->data = data;
   return im;
@@ -41,20 +42,32 @@ static char *pixel_at(const XImage *im, int x, int y) {
   if (!im->data || x < 0 || y < 0 || x >= im->width || y >= im->height)
     return NULL;
   return im->data + (size_t)y * (size_t)im->bytes_per_line +
-         (size_t)x * BYTES_PER_PIXEL;
+         (size_t)x * (size_t)(im->bits_per_pixel / 8);
 }
 
 unsigned long XGetPixel(XImage *im, int x, int y) {
   const char *p = pixel_at(im, x, y);
-  uint32_t v = 0;
-  if (p) memcpy(&v, p, sizeof(v));
+  if (!p) return 0;
+  if (im->bits_per_pixel == 16) {
+    uint16_t v;
+    memcpy(&v, p, sizeof(v));
+    return v;
+  }
+  uint32_t v;
+  memcpy(&v, p, sizeof(v));
   return v;
 }
 
 int XPutPixel(XImage *im, int x, int y, unsigned long pixel) {
   char *p = pixel_at(im, x, y);
-  uint32_t v = (uint32_t)pixel;
-  if (p) memcpy(p, &v, sizeof(v));
+  if (!p) return 1;
+  if (im->bits_per_pixel == 16) {
+    const uint16_t v = (uint16_t)pixel;
+    memcpy(p, &v, sizeof(v));
+  } else {
+    const uint32_t v = (uint32_t)pixel;
+    memcpy(p, &v, sizeof(v));
+  }
   return 1;
 }
 
@@ -96,6 +109,13 @@ XImage *XGetImage(Display *dpy, Drawable d, int x, int y, unsigned int w,
   return im;
 }
 
+/* Every XImage holds canvas-order pixels, whatever its depth: the values
+ * XAllocColor, GC colours and XGetImage hand out. XPutImage copies them as
+ * they are. */
+static uint16_t xshim_image_pixel(XImage *im, int x, int y) {
+  return (uint16_t)XGetPixel(im, x, y);
+}
+
 int XPutImage(Display *dpy, Drawable d, GC gc, XImage *im, int src_x,
               int src_y, int dst_x, int dst_y, unsigned int w,
               unsigned int h) {
@@ -112,7 +132,7 @@ int XPutImage(Display *dpy, Drawable d, GC gc, XImage *im, int src_x,
   for (int64_t j = j0; j < j1; j++)
     for (int64_t i = i0; i < i1; i++)
       dst->px[(dst_y + j) * dst->w + dst_x + i] =
-          (uint16_t)XGetPixel(im, (int)(src_x + i), (int)(src_y + j));
+          xshim_image_pixel(im, (int)(src_x + i), (int)(src_y + j));
   canvas_mark_dirty(dst, (int)(dst_x + i0), (int)(dst_y + j0), (int)(i1 - i0),
                     (int)(j1 - j0));
   return 0;

@@ -27,6 +27,8 @@ typedef struct XshimDisplay {
   struct XshimPixmap *pixmaps;
   /* What XClearWindow paints; XSetWindowBackground sets it. */
   unsigned long window_background;
+  /* The display that was current when this one opened, for xshim_current_display. */
+  struct XshimDisplay *previous;
 } Display;
 
 typedef unsigned long Pixmap;
@@ -59,6 +61,11 @@ typedef struct {
   int line_width;
   int cap_style;
   int join_style;
+  /* Accepted and ignored: a polygon is always filled even-odd, and always
+   * solid (no fill style or stipple). */
+  int fill_rule;
+  int fill_style;
+  Pixmap stipple;
 } XGCValues;
 
 typedef struct {
@@ -151,6 +158,11 @@ enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
 #define GCPlaneMask (1L << 1)
 #define GCForeground (1L << 2)
 #define GCBackground (1L << 3)
+#define GCFillStyle (1L << 8)
+#define GCFillRule (1L << 9)
+#define GCStipple (1L << 11)
+#define EvenOddRule 0
+#define WindingRule 1
 #define GCLineWidth (1L << 4)
 #define GCCapStyle (1L << 6)
 #define GCJoinStyle (1L << 7)
@@ -176,6 +188,7 @@ enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
 #define DoGreen 2
 #define DoBlue 4
 #define CoordModeOrigin 0
+#define CoordModePrevious 1
 #define Complex 0
 
 #define DefaultScreen(dpy) ((void)(dpy), 0)
@@ -184,11 +197,18 @@ enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
  * pixmap pointer, so everything that names the window must use this. */
 #define XSHIM_WINDOW ((Window)1)
 #define RootWindowOfScreen(screen) ((void)(screen), XSHIM_WINDOW)
+/* There is one screen and it is true colour: 65,536 colours, none writable. */
+#define DefaultScreenOfDisplay(dpy) ((void)(dpy), (Screen *)0)
+/* The screen carries no pointer back, so this is the display opened last. */
+#define DisplayOfScreen(screen) ((void)(screen), xshim_current_display())
+#define CellsOfScreen(screen) ((void)(screen), 65536)
 #define PointerMotionMask (1L << 6)
 /* Events never arrive, so selecting them does nothing. */
 int XSelectInput(Display *, Window, long mask);
 #define WhitePixel(dpy, scr) ((void)(dpy), (void)(scr), 0xFFFFUL)
 #define BlackPixel(dpy, scr) ((void)(dpy), (void)(scr), 0x0000UL)
+#define WhitePixelOfScreen(screen) ((void)(screen), 0xFFFFUL)
+#define BlackPixelOfScreen(screen) ((void)(screen), 0x0000UL)
 
 extern Bool mono_p;
 extern const char *progname;
@@ -208,7 +228,13 @@ void xshim_set_release_hook(void (*hook)(Display *dpy));
 
 GC XCreateGC(Display *, Drawable, unsigned long mask, XGCValues *);
 int XFreeGC(Display *, GC);
+/* The display xshim_open_display made most recently and has not closed. */
+Display *xshim_current_display(void);
 int XSetForeground(Display *, GC, unsigned long pixel);
+/* Accepted and ignored: drawing is always GXcopy (see XGCValues). */
+int XSetFunction(Display *, GC, int function);
+/* A GC may draw with alpha under jwxyz; here it is accepted and ignored. */
+int jwxyz_XSetAlphaAllowed(Display *, GC, Bool allowed);
 /* Honours GCForeground, GCBackground, GCLineWidth, GCCapStyle and
  * GCJoinStyle; the rest of the mask is ignored. */
 int XChangeGC(Display *, GC, unsigned long mask, XGCValues *);
@@ -225,7 +251,8 @@ Status XGetWindowAttributes(Display *, Window, XWindowAttributes *);
 int XClearWindow(Display *, Window);
 int XSetWindowBackground(Display *, Window, unsigned long pixel);
 int XDrawPoint(Display *, Drawable, GC, int x, int y);
-/* Only CoordModeOrigin is supported. */
+/* CoordModeOrigin and CoordModePrevious (each point an offset from the one
+ * before) are supported by the point, line and polygon calls. */
 int XDrawPoints(Display *, Drawable, GC, XPoint *pts, int n, int mode);
 int XDrawLine(Display *, Drawable, GC, int x1, int y1, int x2, int y2);
 /* Outlines a (w + 1) by (h + 1) box, as Xlib does. */
@@ -256,6 +283,13 @@ int XFillPolygon(Display *, Drawable, GC, XPoint *pts, int n, int shape,
  * as their drawable still draw on the canvas. */
 Pixmap XCreatePixmap(Display *, Drawable, unsigned int w, unsigned int h,
                      unsigned int depth);
+/* data is X bitmap data: rows padded to whole bytes, the least significant bit
+ * of a byte the leftmost pixel. Set bits take fg and clear bits bg; a depth of
+ * 1 makes a bitmap (fg and bg ignored), any other a colour pixmap. */
+Pixmap XCreatePixmapFromBitmapData(Display *, Drawable, char *data,
+                                   unsigned int w, unsigned int h,
+                                   unsigned long fg, unsigned long bg,
+                                   unsigned int depth);
 int XFreePixmap(Display *, Pixmap);
 /* Reports the canvas for the window and the pixmap's own size otherwise.
  * Returns 0 and writes nothing for a pixmap that does not exist. */
@@ -279,10 +313,15 @@ int XCopyArea(Display *, Drawable src, Drawable dst, GC, int src_x, int src_y,
 int XCopyPlane(Display *, Drawable src, Drawable dst, GC, int src_x,
                int src_y, unsigned int w, unsigned int h, int dst_x,
                int dst_y, unsigned long plane);
-/* An XImage is a block of pixels in the hack's own memory; nothing draws it.
- * Only 32-bit ZPixmap images exist, which is all the hacks that use one (a
- * mask scaled down from a loaded picture) ask for. */
+/* An XImage is a block of pixels in the hack's own memory; XPutImage draws it.
+ * Only ZPixmap images exist: 16-bit ones (what a hack that fills in its own
+ * pixels asks for) and 24 or 32-bit ones (a mask scaled down from a loaded
+ * picture, or XGetImage's copy of the canvas). */
 #define XYPixmap 1
+#define LSBFirst 0
+#define MSBFirst 1
+/* The server is little-endian (the S3 and the hosts the tests run on). */
+#define ImageByteOrder(dpy) ((void)(dpy), LSBFirst)
 #define ZPixmap 2
 typedef struct XImage {
   int width, height;
@@ -292,7 +331,9 @@ typedef struct XImage {
   char *data;
 } XImage;
 
-/* Returns NULL for a depth other than 24 or 32, a zero or oversized image, or
+/* A 16-bit image is two bytes a pixel of ordinary little-endian RGB565, as on
+ * an X server: XPutImage byte-swaps it into the canvas. A 24 or 32-bit image
+ * is four bytes a pixel. Returns NULL for a depth other than 16, 24 or 32, a zero or oversized image, or
  * no memory. A bytes_per_line of 0 means a tight row, padded to bitmap_pad
  * bits. `data` may be NULL: the hack then points it at its own allocation of
  * height * bytes_per_line bytes, and XDestroyImage frees whatever it holds. */
@@ -325,6 +366,10 @@ int XSync(Display *, Bool discard);
 
 Status XParseColor(Display *, Colormap, const char *spec, XColor *);
 Status XAllocColor(Display *, Colormap, XColor *);
+/* Fills in red, green and blue from c->pixel, as XAllocColor made it: the
+ * channels are scaled up from RGB565, so 5 and 6 bit values come back as
+ * multiples of 0x0842 and 0x0410 and not the colour that was asked for. */
+int XQueryColor(Display *, Colormap, XColor *);
 int XFreeColors(Display *, Colormap, unsigned long *pixels, int n,
                 unsigned long planes);
 

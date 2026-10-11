@@ -100,7 +100,12 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Hexadrop",
                                          "StonerView",
                                          "Halo",
-                                         "XMatrix"};
+                                         "XMatrix",
+                                         "Qix",
+                                         "Fireworkx",
+                                         "Starfish",
+                                         "Goop",
+                                         "Loop"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -446,6 +451,11 @@ static const uint64_t kBaseline[] = {
     0x12097254df6ad0a2ull, /* StonerView: taken after looking at the frames */
     0x692e426561735c0dull, /* Halo: taken after looking at the frames, with GCBackground honoured */
     0x9b1b0de461b6438bull, /* XMatrix: taken after looking at the frames, trace off */
+    0x51a9a94db9bf9128ull, /* Qix: taken after looking at the frames */
+    0xa25b9411b50849b8ull, /* Fireworkx: taken after looking at the frames (shells and lengths scaled to the render size) */
+    0x77bfaaf3faa1cc64ull, /* Starfish: taken after looking at the frames (spline.h before the float rename) */
+    0x5694978ccee06fd6ull, /* Goop: taken after looking at the frames (spline.h before the float rename) */
+    0xe79bc5d8b096d29full, /* Loop: taken after looking at the frames (a fresh mode choice per start) */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -455,6 +465,120 @@ void test_frames_of_every_hack_but_maze_match_main(void) {
     TEST_ASSERT_EQUAL_UINT64_MESSAGE(kBaseline[i], hash_after(i, 200),
                                      g_hacks[i]->name);
   }
+}
+
+static int distinct_colours(void) {
+  static uint8_t seen[65536 / 8];
+  memset(seen, 0, sizeof seen);
+  int n = 0;
+  for (long i = 0; i < (long)cv.w * cv.h; i++) {
+    const uint16_t v = cv.px[i];
+    if (!(seen[v / 8] & (1 << (v % 8)))) {
+      seen[v / 8] |= (uint8_t)(1 << (v % 8));
+      n++;
+    }
+  }
+  return n;
+}
+
+/* Starfish and Goop were once pinned drawing one or two flat colours: their
+ * wrappers redefine `double` as `float`, and spline.h, included by the hack
+ * after that, gave the control arrays a float layout that spline.c (built with
+ * doubles) read as doubles. A hash taken from that frame proved nothing. */
+void test_hacks_that_use_the_spline_draw_a_real_picture(void) {
+  static const char *const names[] = {"Starfish", "Goop"};
+  for (int k = 0; k < 2; k++) {
+    srandom(1);
+    HackRunner *r = runner_create(&cv);
+    TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of(names[k])));
+    for (int f = 0; f < 200; f++) runner_step(r);
+    TEST_ASSERT_TRUE_MESSAGE(distinct_colours() >= 8, names[k]);
+    runner_destroy(r);
+  }
+}
+
+/* Loop picks squares or hexagons at random when it starts, but upstream keeps
+ * the choice in a static, so the first start in a process (a boot, on the
+ * device) fixed it for good. */
+extern int loop_neighbors_in_use(void);
+
+void test_loop_picks_squares_or_hexagons_again_at_every_start(void) {
+  int seen4 = 0, seen6 = 0;
+  HackRunner *r = runner_create(&cv);
+  for (int seed = 1; seed <= 40; seed++) {
+    srandom(seed);
+    TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("Loop")));
+    runner_step(r);
+    seen4 += loop_neighbors_in_use() == 4;
+    seen6 += loop_neighbors_in_use() == 6;
+  }
+  runner_destroy(r);
+  TEST_ASSERT_TRUE_MESSAGE(seen4 > 0 && seen6 > 0, "Loop kept the mode of its first start");
+}
+
+/* Not a check: with HACK_PINS_OUT=<file> in the environment it writes the frame
+ * hash of every hack whose baseline is 0 (not pinned yet), one `Name 0x...`
+ * line each, so a batch of new hacks can be pinned in one run. Look at the
+ * frames before pinning them (see "Batches" in the port-hack skill). Maze and
+ * Coral stay at 0 on purpose. */
+void test_write_the_unpinned_hashes_when_asked(void) {
+  const char *out = getenv("HACK_PINS_OUT");
+  if (!out) return;
+  FILE *f = fopen(out, "w");
+  TEST_ASSERT_NOT_NULL(f);
+  for (int i = 0; i < g_hack_count; i++) {
+    if (kBaseline[i] != 0) continue;
+    fprintf(f, "%s 0x%016llx\n", g_hacks[i]->name,
+            (unsigned long long)hash_after(i, 200));
+  }
+  fclose(f);
+}
+
+/* The board's malloc(0) returns NULL where the host's returns a pointer, and
+ * Loop's square mode asks for a list of rectangles for each of its eight colour
+ * states, most of them empty. It took NULL for "out of memory", freed its
+ * cells, and drew nothing more: a black screen at 18 fps. */
+extern void *(*loop_allocator)(size_t);
+static void *malloc_that_fails_for_nothing(size_t n) { return n ? malloc(n) : NULL; }
+
+void test_loop_keeps_drawing_squares_when_malloc_of_nothing_returns_null(void) {
+  int changed = 0, found = 0;
+  HackRunner *r = runner_create(&cv);
+  loop_allocator = malloc_that_fails_for_nothing;
+  for (int seed = 1; seed <= 200 && !found; seed++) {
+    srandom(seed);
+    runner_start(r, index_of("Loop"));
+    runner_step(r);
+    found = loop_neighbors_in_use() == 4;
+  }
+  if (found) {
+    for (int f = 0; f < 60; f++) runner_step(r);
+    uint16_t *before = (uint16_t *)malloc((size_t)cv.w * cv.h * sizeof(*before));
+    memcpy(before, cv.px, (size_t)cv.w * cv.h * sizeof(*before));
+    for (int f = 0; f < 40; f++) runner_step(r);
+    for (long i = 0; i < (long)cv.w * cv.h; i++) changed += cv.px[i] != before[i];
+    free(before);
+  }
+  loop_allocator = malloc;
+  runner_destroy(r);
+  TEST_ASSERT_TRUE_MESSAGE(found, "no seed made Loop pick squares");
+  TEST_ASSERT_TRUE_MESSAGE(changed > 0, "Loop stopped drawing squares");
+}
+
+/* Goop blends its blobs at 23/32 only in its default transparent mode; opaque,
+ * outline and xor are drawn as they were asked for. */
+extern int goop_alpha_for_mode(const char *mode);
+
+void test_goop_blends_only_in_its_transparent_mode(void) {
+  const int blend = goop_alpha_for_mode(NULL);
+  TEST_ASSERT_TRUE(blend > 0 && blend < 32);
+  TEST_ASSERT_EQUAL_INT(blend, goop_alpha_for_mode(""));
+  TEST_ASSERT_EQUAL_INT(blend, goop_alpha_for_mode("transparent"));
+  TEST_ASSERT_EQUAL_INT(blend, goop_alpha_for_mode("Transparent"));
+  TEST_ASSERT_EQUAL_INT(32, goop_alpha_for_mode("opaque"));
+  TEST_ASSERT_EQUAL_INT(32, goop_alpha_for_mode("outline"));
+  TEST_ASSERT_EQUAL_INT(32, goop_alpha_for_mode("xor"));
+  TEST_ASSERT_EQUAL_INT(32, goop_alpha_for_mode("nonsense"));
 }
 
 void test_maze_frame_matches_main(void) {
@@ -562,44 +686,67 @@ void test_pacman_start_and_stop_do_not_leak(void) {
   TEST_ASSERT_TRUE_MESSAGE(after < before + 512, "allocated bytes grew");
 }
 
+/* Bytes still allocated once a runner has run `entry` for `frames` frames from
+ * a fresh start and been destroyed. A hack's live state can be any size (Loop's
+ * is 650 KB as squares and 1.7 MB as hexagons, by chance), so reading while it
+ * runs measures that, not a leak; what survives destroy is what was leaked. The
+ * seed is fixed so each reading follows the same path. `cycles: 1` makes an
+ * xlockmore hack restart on every frame. */
+static size_t held_after_running(const HackEntry *entry, int frames, int cycles_one) {
+  const char *merged[2] = {"*cycles: 1", NULL};
+  HackEntry fast = *entry;
+  if (cycles_one) fast.overrides = merged;
+  const HackEntry *const hacks[] = {&fast};
+  srandom(1);
+  HackRunner *r = runner_create_with(&cv, hacks, 1);
+  runner_start(r, 0);
+  for (int f = 0; f < frames; f++) runner_step(r);
+  runner_destroy(r);
+  return __sanitizer_get_current_allocated_bytes();
+}
+
+static size_t held_after_starting(int hack, int starts) {
+  srandom(1);
+  HackRunner *r = runner_create(&cv);
+  for (int i = 0; i < starts; i++) {
+    runner_start(r, hack);
+    runner_step(r);
+  }
+  runner_destroy(r);
+  return __sanitizer_get_current_allocated_bytes();
+}
+
 /* An xlockmore hack starts a new picture every `cycles` frames by calling its
  * init again, and its state belongs to xlockmore's MI_INIT. With `cycles: 1` it
  * restarts on every frame, so this catches a restart that allocates (a plain
  * screenhack has no `cycles`, so it is skipped for those), and start and stop
  * catches state the framework fails to free. */
+#define LEAK_SLACK_BYTES 128
+
 static void check_restarts_and_stops_do_not_leak(const char *name, int xlockmore) {
   const int hack = index_of(name);
   TEST_ASSERT_TRUE_MESSAGE(hack >= 0, name);
 
   if (xlockmore) {
-    const char *merged[2] = {"*cycles: 1", NULL};
-    HackEntry fast = *g_hacks[hack];
-    fast.overrides = merged;
-    const HackEntry *const hacks[] = {&fast};
-    HackRunner *fr = runner_create_with(&cv, hacks, 1);
-    runner_start(fr, 0);
-    for (int f = 0; f < 20; f++) runner_step(fr);
-    const size_t before_restarts = __sanitizer_get_current_allocated_bytes();
-    for (int f = 0; f < 300; f++) runner_step(fr);
-    const size_t after_restarts = __sanitizer_get_current_allocated_bytes();
-    runner_destroy(fr);
-    TEST_ASSERT_TRUE_MESSAGE(after_restarts < before_restarts + 512,
+    const size_t early = held_after_running(g_hacks[hack], 20, 1);
+    const size_t late = held_after_running(g_hacks[hack], 320, 1);
+    TEST_ASSERT_TRUE_MESSAGE(late < early + LEAK_SLACK_BYTES,
                              "allocated bytes grew over in-hack restarts");
   }
 
-  HackRunner *r = runner_create(&cv);
-  for (int i = 0; i < 3; i++) {
-    runner_start(r, hack);
-    runner_step(r);
+  /* What is held at rest should be the same however many times it was started.
+   * Several readings, not one before and one after: state kept at rest but sized
+   * by a random choice (a table for the mode last picked) matches by luck in
+   * a single pair, and shows as a spread across these. */
+  static const int starts[] = {3, 4, 5, 6, 7, 8, 43};
+  size_t lowest = (size_t)-1, highest = 0;
+  for (size_t k = 0; k < sizeof starts / sizeof starts[0]; k++) {
+    const size_t held = held_after_starting(hack, starts[k]);
+    if (held < lowest) lowest = held;
+    if (held > highest) highest = held;
   }
-  const size_t before = __sanitizer_get_current_allocated_bytes();
-  for (int i = 0; i < 40; i++) {
-    runner_start(r, hack);
-    runner_step(r);
-  }
-  const size_t after = __sanitizer_get_current_allocated_bytes();
-  runner_destroy(r);
-  TEST_ASSERT_TRUE_MESSAGE(after < before + 512, "allocated bytes grew over start and stop");
+  TEST_ASSERT_TRUE_MESSAGE(highest < lowest + LEAK_SLACK_BYTES,
+                           "bytes held at rest changed with the number of starts");
 }
 
 void test_braid_restarts_and_stops_do_not_leak(void) {
@@ -877,6 +1024,7 @@ void test_slow_hacks_register_their_lighter_settings(void) {
   TEST_ASSERT_TRUE_MESSAGE(overrides_contain("FuzzyFlakes", "*density: 3"),
                            "FuzzyFlakes *density");
   TEST_ASSERT_TRUE_MESSAGE(overrides_contain("LMorph", "*delay: 10000"), "LMorph *delay");
+  TEST_ASSERT_TRUE_MESSAGE(overrides_contain("Loop", "*delay: 50000"), "Loop *delay");
 }
 
 void test_hexadrop_stops_do_not_leak(void) {
@@ -902,6 +1050,26 @@ void test_xmatrix_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("XMatrix", 0);
 }
 
+void test_qix_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Qix", 0);
+}
+
+void test_fireworkx_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Fireworkx", 0);
+}
+
+void test_starfish_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Starfish", 0);
+}
+
+void test_goop_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Goop", 0);
+}
+
+void test_loop_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Loop", 1);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -919,6 +1087,11 @@ int main(void) {
   RUN_TEST(test_substrate_restarts_do_not_leak);
   RUN_TEST(test_substrate_draws_what_it_drew_before_pixels_were_swapped);
   RUN_TEST(test_frames_of_every_hack_but_maze_match_main);
+  RUN_TEST(test_hacks_that_use_the_spline_draw_a_real_picture);
+  RUN_TEST(test_loop_picks_squares_or_hexagons_again_at_every_start);
+  RUN_TEST(test_write_the_unpinned_hashes_when_asked);
+  RUN_TEST(test_loop_keeps_drawing_squares_when_malloc_of_nothing_returns_null);
+  RUN_TEST(test_goop_blends_only_in_its_transparent_mode);
   RUN_TEST(test_maze_frame_matches_main);
   RUN_TEST(test_pacman_levels_do_not_leak);
   RUN_TEST(test_pacman_start_and_stop_do_not_leak);
@@ -957,6 +1130,11 @@ int main(void) {
   RUN_TEST(test_wormhole_stops_do_not_leak);
   RUN_TEST(test_truchet_stops_do_not_leak);
   RUN_TEST(test_slow_hacks_register_their_lighter_settings);
+  RUN_TEST(test_qix_stops_do_not_leak);
+  RUN_TEST(test_fireworkx_stops_do_not_leak);
+  RUN_TEST(test_starfish_stops_do_not_leak);
+  RUN_TEST(test_goop_stops_do_not_leak);
+  RUN_TEST(test_loop_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);

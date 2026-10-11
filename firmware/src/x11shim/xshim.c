@@ -13,14 +13,31 @@ Bool mono_p = False;
 const char *progname = "stopwatch-screensaver";
 const char *progclass = "StopwatchScreensaver";
 
+static Display *g_current_display;
+
+Display *xshim_current_display(void) { return g_current_display; }
+
 Display *xshim_open_display(Canvas *canvas) {
   Display *dpy = (Display *)calloc(1, sizeof(*dpy));
-  if (dpy) dpy->canvas = canvas;
+  if (dpy) {
+    dpy->canvas = canvas;
+    dpy->previous = g_current_display;
+    g_current_display = dpy;
+  }
   return dpy;
 }
 
 void xshim_close_display(Display *dpy) {
   if (!dpy) return;
+  if (g_current_display == dpy) {
+    g_current_display = dpy->previous;
+  } else {
+    for (Display *d = g_current_display; d; d = d->previous)
+      if (d->previous == dpy) {
+        d->previous = dpy->previous;
+        break;
+      }
+  }
   xshim_release_pixmaps(dpy);
   free(dpy);
 }
@@ -57,6 +74,16 @@ int XChangeGC(Display *dpy, GC gc, unsigned long mask, XGCValues *v) {
   if (mask & GCLineWidth) gc->line_width = v->line_width;
   if (mask & GCCapStyle) gc->cap_style = v->cap_style;
   if (mask & GCJoinStyle) gc->join_style = v->join_style;
+  return 0;
+}
+
+int XSetFunction(Display *dpy, GC gc, int function) {
+  (void)dpy, (void)gc, (void)function;
+  return 0;
+}
+
+int jwxyz_XSetAlphaAllowed(Display *dpy, GC gc, Bool allowed) {
+  (void)dpy, (void)gc, (void)allowed;
   return 0;
 }
 
@@ -119,10 +146,30 @@ int XDrawPoint(Display *dpy, Drawable d, GC gc, int x, int y) {
   return 0;
 }
 
+/* CoordModePrevious: each point after the first is an offset from the one
+ * before it. Returns pts for CoordModeOrigin, otherwise absolute coordinates
+ * in `stack` (up to stack_n points) or in a heap array, which the caller frees
+ * when it is neither pts nor `stack`. NULL when memory runs out. */
+static XPoint *absolute_points(XPoint *pts, int n, int mode, XPoint *stack,
+                               int stack_n) {
+  if (mode != CoordModePrevious || n <= 0) return pts;
+  XPoint *out = n <= stack_n ? stack : (XPoint *)malloc((size_t)n * sizeof(XPoint));
+  if (!out) return NULL;
+  out[0] = pts[0];
+  for (int i = 1; i < n; i++) {
+    out[i].x = (short)(out[i - 1].x + pts[i].x);
+    out[i].y = (short)(out[i - 1].y + pts[i].y);
+  }
+  return out;
+}
+
 int XDrawPoints(Display *dpy, Drawable d, GC gc, XPoint *pts, int n,
                 int mode) {
-  (void)mode;
-  for (int i = 0; i < n; i++) XDrawPoint(dpy, d, gc, pts[i].x, pts[i].y);
+  XPoint stack[64];
+  XPoint *a = absolute_points(pts, n, mode, stack, 64);
+  if (!a) return 0;
+  for (int i = 0; i < n; i++) XDrawPoint(dpy, d, gc, a[i].x, a[i].y);
+  if (a != pts && a != stack) free(a);
   return 0;
 }
 
@@ -161,8 +208,7 @@ int XDrawRectangle(Display *dpy, Drawable d, GC gc, int x, int y,
   return 0;
 }
 
-int XDrawLines(Display *dpy, Drawable d, GC gc, XPoint *pts, int n, int mode) {
-  (void)mode;
+static int draw_lines(Display *dpy, Drawable d, GC gc, XPoint *pts, int n) {
   if (gc->line_width > 1 && n > 0) {
     Canvas *c = xshim_target(dpy, d);
     if (!c) return 0;
@@ -183,6 +229,15 @@ int XDrawLines(Display *dpy, Drawable d, GC gc, XPoint *pts, int n, int mode) {
   for (int i = 1; i < n; i++)
     XDrawLine(dpy, d, gc, pts[i - 1].x, pts[i - 1].y, pts[i].x, pts[i].y);
   return 0;
+}
+
+int XDrawLines(Display *dpy, Drawable d, GC gc, XPoint *pts, int n, int mode) {
+  XPoint stack[64];
+  XPoint *a = absolute_points(pts, n, mode, stack, 64);
+  if (!a) return 0;
+  const int r = draw_lines(dpy, d, gc, a, n);
+  if (a != pts && a != stack) free(a);
+  return r;
 }
 
 int XDrawSegments(Display *dpy, Drawable d, GC gc, XSegment *segs, int n) {
@@ -284,10 +339,7 @@ int XFillArcs(Display *dpy, Drawable d, GC gc, XArc *arcs, int n) {
   return 0;
 }
 
-int XFillPolygon(Display *dpy, Drawable d, GC gc, XPoint *pts, int n,
-                 int shape, int mode) {
-  (void)shape;
-  (void)mode;
+static int fill_polygon(Display *dpy, Drawable d, GC gc, XPoint *pts, int n) {
   Canvas *c = xshim_target(dpy, d);
   if (!c || n < 3) return 0;
   int stack_xy[2 * 64];
@@ -305,10 +357,32 @@ int XFillPolygon(Display *dpy, Drawable d, GC gc, XPoint *pts, int n,
   return 0;
 }
 
+int XFillPolygon(Display *dpy, Drawable d, GC gc, XPoint *pts, int n,
+                 int shape, int mode) {
+  (void)shape;
+  XPoint stack[64];
+  XPoint *a = absolute_points(pts, n, mode, stack, 64);
+  if (!a) return 0;
+  const int r = fill_polygon(dpy, d, gc, a, n);
+  if (a != pts && a != stack) free(a);
+  return r;
+}
+
 Status XAllocColor(Display *dpy, Colormap cmap, XColor *c) {
   (void)dpy;
   (void)cmap;
   c->pixel = rgb565_from16(c->red, c->green, c->blue);
+  return 1;
+}
+
+int XQueryColor(Display *dpy, Colormap cmap, XColor *c) {
+  (void)dpy;
+  (void)cmap;
+  const uint16_t p = px_swap((uint16_t)c->pixel);
+  c->red = (unsigned short)(((p >> 11) & 0x1F) * 65535 / 31);
+  c->green = (unsigned short)(((p >> 5) & 0x3F) * 65535 / 63);
+  c->blue = (unsigned short)((p & 0x1F) * 65535 / 31);
+  c->flags = DoRed | DoGreen | DoBlue;
   return 1;
 }
 

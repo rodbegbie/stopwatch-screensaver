@@ -1,6 +1,6 @@
 ---
 name: port-hack
-description: Use when adding an xscreensaver hack to the StopWatch firmware, choosing which hack to port next, or when a ported hack crashes, reboots, runs slowly, leaks memory or shows wrong colours on the device.
+description: Use when adding one or several xscreensaver hacks to the StopWatch firmware, choosing which hack to port next, or when a ported hack crashes, reboots, runs slowly, leaks memory or shows wrong colours on the device.
 ---
 
 # Porting an xscreensaver hack
@@ -8,7 +8,8 @@ description: Use when adding an xscreensaver hack to the StopWatch firmware, cho
 The rules live in `AGENTS.md` ("Rules", "Gotchas") and the path-scoped notes in
 `.claude/rules/`. This skill sets the order of work and the points to stop. The
 numbered steps are in `adding-a-hack.md` and the recipes it names are in
-`techniques.md`, both next to this file.
+`techniques.md`, both next to this file. For several hacks in one go, read
+`batches.md` too.
 
 ## 1. Pick, then read the source
 

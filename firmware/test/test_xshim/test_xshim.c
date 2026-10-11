@@ -19,6 +19,8 @@
 #include "x11shim/stroke.h"
 #include "X11/Intrinsic.h"
 #include "textclient.h"
+#include "hsv.h"
+#include "spline.h"
 #include "x11shim/xshim.h"
 #include "ximage-loader.h"
 
@@ -2479,6 +2481,317 @@ void test_the_timer_stand_ins_never_fire_and_can_be_cancelled(void) {
   XtRemoveTimeOut(id);
 }
 
+void test_rgb_to_hsv_inverts_hsv_to_rgb(void) {
+  unsigned short r, g, b;
+  int h = -1;
+  double sat = -1, val = -1;
+  hsv_to_rgb(120, 1.0, 1.0, &r, &g, &b);
+  rgb_to_hsv(r, g, b, &h, &sat, &val);
+  TEST_ASSERT_EQUAL_INT(120, h);
+  TEST_ASSERT_TRUE(sat > 0.99 && val > 0.99);
+  rgb_to_hsv(0x8000, 0x8000, 0x8000, &h, &sat, &val);
+  TEST_ASSERT_TRUE(sat < 0.01);
+}
+
+void test_query_color_recovers_the_colour_alloc_color_made(void) {
+  XColor red = {0};
+  red.red = 0xFFFF;
+  XAllocColor(dpy, 1, &red);
+  XColor q = {0};
+  q.pixel = red.pixel;
+  TEST_ASSERT_TRUE(XQueryColor(dpy, 1, &q) != 0);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, q.red);
+  TEST_ASSERT_EQUAL_HEX16(0, q.green);
+  TEST_ASSERT_EQUAL_HEX16(0, q.blue);
+  XColor odd = {0};
+  odd.red = 0x1234;
+  odd.green = 0x9ABC;
+  odd.blue = 0x5678;
+  XAllocColor(dpy, 1, &odd);
+  XColor again = {0};
+  again.pixel = odd.pixel;
+  XQueryColor(dpy, 1, &again);
+  XAllocColor(dpy, 1, &again);
+  TEST_ASSERT_EQUAL_HEX64(odd.pixel, again.pixel);
+}
+
+void test_the_screen_is_a_colour_display_with_no_writable_cells(void) {
+  TEST_ASSERT_TRUE(CellsOfScreen(DefaultScreenOfDisplay(dpy)) > 2);
+  TEST_ASSERT_FALSE(has_writable_cells(NULL, NULL));
+}
+
+void test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits(void) {
+  XImage *im = XCreateImage(dpy, NULL, 16, ZPixmap, 0, NULL, 5, 3, 8, 0);
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_INT(16, im->bits_per_pixel);
+  TEST_ASSERT_EQUAL_INT(10, im->bytes_per_line);
+  im->data = (char *)calloc(3, (size_t)im->bytes_per_line);
+  XPutPixel(im, 1, 1, 0x1ABCD);
+  XPutPixel(im, 2, 1, 0x1234);
+  TEST_ASSERT_EQUAL_HEX64(0xABCD, XGetPixel(im, 1, 1));
+  TEST_ASSERT_EQUAL_HEX64(0x1234, XGetPixel(im, 2, 1));
+  TEST_ASSERT_EQUAL_HEX64(0, XGetPixel(im, 0, 1));
+  TEST_ASSERT_EQUAL_HEX64(0, XGetPixel(im, 3, 1));
+  XDestroyImage(im);
+}
+
+void test_put_image_of_a_16_bit_image_copies_canvas_order_pixels_unchanged(void) {
+  XImage *im = XCreateImage(dpy, NULL, 16, ZPixmap, 0, NULL, 2, 1, 8, 0);
+  im->data = (char *)calloc(1, (size_t)im->bytes_per_line);
+  XPutPixel(im, 0, 0, px_swap(0xF800));
+  XPutPixel(im, 1, 0, px_swap(0x07E0));
+  XGCValues v = {0};
+  GC gc = XCreateGC(dpy, win, 0, &v);
+  XPutImage(dpy, win, gc, im, 0, 0, 3, 4, 2, 1);
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0xF800), at(3, 4));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x07E0), at(4, 4));
+  XFreeGC(dpy, gc);
+  XDestroyImage(im);
+}
+
+void test_an_allocated_colour_keeps_its_pixel_through_a_16_bit_image(void) {
+  XColor c = {0};
+  c.red = 0xF800;
+  c.green = 0x2000;
+  c.blue = 0x0800;
+  c.flags = DoRed | DoGreen | DoBlue;
+  TEST_ASSERT_TRUE(XAllocColor(dpy, 1, &c));
+  TEST_ASSERT_NOT_EQUAL((uint16_t)c.pixel, px_swap((uint16_t)c.pixel));
+  XImage *im = XCreateImage(dpy, NULL, 16, ZPixmap, 0, NULL, 1, 1, 8, 0);
+  im->data = (char *)calloc(1, (size_t)im->bytes_per_line);
+  XPutPixel(im, 0, 0, c.pixel);
+  XGCValues v = {0};
+  GC gc = XCreateGC(dpy, win, 0, &v);
+  XPutImage(dpy, win, gc, im, 0, 0, 3, 4, 1, 1);
+  TEST_ASSERT_EQUAL_HEX16((uint16_t)c.pixel, at(3, 4));
+  XFreeGC(dpy, gc);
+  XDestroyImage(im);
+}
+
+void test_the_server_byte_order_is_least_significant_first(void) {
+  TEST_ASSERT_NOT_EQUAL(MSBFirst, ImageByteOrder(dpy));
+  TEST_ASSERT_EQUAL_INT(LSBFirst, ImageByteOrder(dpy));
+}
+
+static spline *square_spline(void) {
+  spline *sp = make_spline(4);
+  static const double xs[4] = {0, 10, 10, 0}, ys[4] = {0, 0, 10, 10};
+  for (int i = 0; i < 4; i++) {
+    sp->control_x[i] = xs[i];
+    sp->control_y[i] = ys[i];
+  }
+  return sp;
+}
+
+void test_a_new_spline_has_zeroed_controls_and_no_points(void) {
+  spline *sp = make_spline(5);
+  TEST_ASSERT_NOT_NULL(sp);
+  TEST_ASSERT_EQUAL_UINT(5, sp->n_controls);
+  TEST_ASSERT_EQUAL_UINT(0, sp->n_points);
+  for (int i = 0; i < 5; i++) {
+    TEST_ASSERT_TRUE(sp->control_x[i] == 0);
+    TEST_ASSERT_TRUE(sp->control_y[i] == 0);
+  }
+  free_spline(sp);
+  free_spline(NULL);
+}
+
+void test_a_closed_spline_of_a_square_is_a_smooth_loop_inside_it(void) {
+  spline *sp = square_spline();
+  compute_closed_spline(sp);
+  TEST_ASSERT_TRUE(sp->n_points >= 4 * 4);
+  TEST_ASSERT_EQUAL_UINT(0, sp->n_points % 4);
+  long sx = 0, sy = 0;
+  for (unsigned i = 0; i < sp->n_points; i++) {
+    TEST_ASSERT_TRUE(sp->points[i].x >= 0 && sp->points[i].x <= 10);
+    TEST_ASSERT_TRUE(sp->points[i].y >= 0 && sp->points[i].y <= 10);
+    sx += sp->points[i].x;
+    sy += sp->points[i].y;
+  }
+  TEST_ASSERT_INT_WITHIN(1, 5 * (long)sp->n_points, sx);
+  TEST_ASSERT_INT_WITHIN(1, 5 * (long)sp->n_points, sy);
+  /* A uniform cubic B-spline starts a segment at (p[i-1] + 4 p[i] + p[i+1]) / 6:
+   * for the corner at (0, 0) that is (10/6, 10/6), so the curve cuts the corner. */
+  TEST_ASSERT_EQUAL_INT(2, sp->points[0].x);
+  TEST_ASSERT_EQUAL_INT(2, sp->points[0].y);
+  /* It closes: the last point is a step from the first, not a jump. */
+  const int dx = sp->points[sp->n_points - 1].x - sp->points[0].x;
+  const int dy = sp->points[sp->n_points - 1].y - sp->points[0].y;
+  TEST_ASSERT_TRUE(dx * dx + dy * dy <= 4 * 4);
+  free_spline(sp);
+}
+
+void test_a_closed_spline_reuses_its_points_and_grows_them_for_more_controls(void) {
+  spline *sp = square_spline();
+  compute_closed_spline(sp);
+  XPoint *first = sp->points;
+  const unsigned allocated = sp->allocated_points;
+  TEST_ASSERT_TRUE(allocated >= sp->n_points);
+  compute_closed_spline(sp);
+  TEST_ASSERT_TRUE(first == sp->points);
+  TEST_ASSERT_EQUAL_UINT(allocated, sp->allocated_points);
+  free_spline(sp);
+  spline *big = make_spline(40);
+  for (int i = 0; i < 40; i++) {
+    big->control_x[i] = i;
+    big->control_y[i] = i * 2;
+  }
+  compute_closed_spline(big);
+  TEST_ASSERT_TRUE(big->n_points >= 40 * 4);
+  free_spline(big);
+}
+
+void test_a_closed_spline_of_one_point_is_that_point(void) {
+  spline *sp = make_spline(3);
+  for (int i = 0; i < 3; i++) {
+    sp->control_x[i] = 7;
+    sp->control_y[i] = 9;
+  }
+  compute_closed_spline(sp);
+  for (unsigned i = 0; i < sp->n_points; i++) {
+    TEST_ASSERT_EQUAL_INT(7, sp->points[i].x);
+    TEST_ASSERT_EQUAL_INT(9, sp->points[i].y);
+  }
+  free_spline(sp);
+  spline *none = make_spline(0);
+  compute_closed_spline(none);
+  TEST_ASSERT_EQUAL_UINT(0, none->n_points);
+  free_spline(none);
+}
+
+void test_fill_rule_constants_and_the_even_odd_fill_of_a_pentagram(void) {
+  TEST_ASSERT_EQUAL_INT(0, EvenOddRule);
+  TEST_ASSERT_EQUAL_INT(1, WindingRule);
+  TEST_ASSERT_EQUAL_HEX64(1L << 9, GCFillRule);
+  XGCValues v = {0};
+  v.foreground = 0xFFFF;
+  v.fill_rule = EvenOddRule;
+  GC gc = XCreateGC(dpy, win, GCForeground | GCFillRule, &v);
+  XFreeGC(dpy, gc);
+  /* A five-pointed star drawn as one self-crossing polygon: even-odd leaves
+   * the middle pentagon empty. */
+  GC white = new_gc(0xFFFF, 0);
+  XPoint star[5] = {{8, 0}, {13, 15}, {0, 6}, {15, 6}, {3, 15}};
+  XFillPolygon(dpy, win, white, star, 5, Complex, CoordModeOrigin);
+  TEST_ASSERT_EQUAL_HEX16(0, at(8, 8));
+  TEST_ASSERT_TRUE(at(8, 2) != 0);
+  XFreeGC(dpy, white);
+}
+
+void test_the_screen_stand_in_leads_back_to_the_display_and_its_black_and_white(void) {
+  Screen *screen = DefaultScreenOfDisplay(dpy);
+  TEST_ASSERT_TRUE(DisplayOfScreen(screen) == dpy);
+  TEST_ASSERT_EQUAL_HEX64(BlackPixel(dpy, DefaultScreen(dpy)), BlackPixelOfScreen(screen));
+  TEST_ASSERT_EQUAL_HEX64(WhitePixel(dpy, DefaultScreen(dpy)), WhitePixelOfScreen(screen));
+}
+
+void test_the_display_a_screen_leads_to_is_the_one_most_recently_opened(void) {
+  Canvas other;
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&other, 4, 4, malloc));
+  Display *second = xshim_open_display(&other);
+  TEST_ASSERT_TRUE(DisplayOfScreen(DefaultScreenOfDisplay(second)) == second);
+  xshim_close_display(second);
+  canvas_free(&other);
+  TEST_ASSERT_TRUE(DisplayOfScreen(DefaultScreenOfDisplay(dpy)) == dpy);
+}
+
+void test_closing_displays_out_of_order_never_leaves_a_dangling_current_display(void) {
+  Canvas a, b;
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&a, 4, 4, malloc));
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&b, 4, 4, malloc));
+  Display *da = xshim_open_display(&a);
+  Display *db = xshim_open_display(&b);
+  TEST_ASSERT_TRUE(xshim_current_display() == db);
+  xshim_close_display(da);
+  TEST_ASSERT_TRUE(xshim_current_display() == db);
+  xshim_close_display(db);
+  TEST_ASSERT_TRUE(xshim_current_display() == dpy);
+  canvas_free(&a);
+  canvas_free(&b);
+}
+
+void test_the_gc_function_and_alpha_calls_are_accepted_and_change_nothing(void) {
+  GC gc = new_gc(0xF800, 0);
+  XSetFunction(dpy, gc, GXxor);
+  jwxyz_XSetAlphaAllowed(dpy, gc, True);
+  XFillRectangle(dpy, win, gc, 0, 0, 4, 4);
+  XFillRectangle(dpy, win, gc, 0, 0, 4, 4);
+  TEST_ASSERT_EQUAL_HEX16(0xF800, at(1, 1));
+  XFreeGC(dpy, gc);
+}
+
+void test_relative_coordinates_fill_the_same_polygon_as_absolute_ones(void) {
+  GC gc = new_gc(0xFFFF, 0);
+  XPoint absolute[4] = {{4, 4}, {12, 4}, {12, 12}, {4, 12}};
+  XFillPolygon(dpy, win, gc, absolute, 4, Convex, CoordModeOrigin);
+  const int want = count_set();
+  TEST_ASSERT_TRUE(want > 40);
+  XClearWindow(dpy, win);
+  XPoint relative[4] = {{4, 4}, {8, 0}, {0, 8}, {-8, 0}};
+  XFillPolygon(dpy, win, gc, relative, 4, Convex, CoordModePrevious);
+  TEST_ASSERT_EQUAL_INT(want, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(8, 8));
+  TEST_ASSERT_EQUAL_HEX16(0, at(2, 2));
+  XFreeGC(dpy, gc);
+}
+
+void test_relative_coordinates_draw_the_same_lines_and_points_as_absolute_ones(void) {
+  GC gc = new_gc(0xFFFF, 0);
+  XPoint abs_line[3] = {{2, 2}, {9, 2}, {9, 9}};
+  XDrawLines(dpy, win, gc, abs_line, 3, CoordModeOrigin);
+  const int want = count_set();
+  XClearWindow(dpy, win);
+  XPoint rel_line[3] = {{2, 2}, {7, 0}, {0, 7}};
+  XDrawLines(dpy, win, gc, rel_line, 3, CoordModePrevious);
+  TEST_ASSERT_EQUAL_INT(want, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(9, 5));
+  XClearWindow(dpy, win);
+  XPoint rel_pts[3] = {{3, 3}, {2, 1}, {1, 1}};
+  XDrawPoints(dpy, win, gc, rel_pts, 3, CoordModePrevious);
+  TEST_ASSERT_EQUAL_INT(3, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(3, 3));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(5, 4));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(6, 5));
+  XFreeGC(dpy, gc);
+}
+
+void test_a_pixmap_made_from_bitmap_data_reads_least_significant_bit_first(void) {
+  static const char data[2] = {0x01, (char)0x80};
+  Pixmap bits = XCreatePixmapFromBitmapData(dpy, win, (char *)data, 8, 2, 1, 0, 1);
+  TEST_ASSERT_NOT_EQUAL(None, bits);
+  GC gc = new_gc(0xFFFF, 0x0001);
+  XCopyPlane(dpy, bits, win, gc, 0, 0, 8, 2, 0, 0, 1);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(0, 0));
+  TEST_ASSERT_EQUAL_HEX16(0x0001, at(1, 0));
+  TEST_ASSERT_EQUAL_HEX16(0x0001, at(7, 0));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(7, 1));
+  TEST_ASSERT_EQUAL_HEX16(0x0001, at(0, 1));
+  XFreePixmap(dpy, bits);
+  Pixmap colour = XCreatePixmapFromBitmapData(dpy, win, (char *)data, 8, 2, 0xF800, 0x001F, 16);
+  TEST_ASSERT_NOT_EQUAL(None, colour);
+  XCopyArea(dpy, colour, win, gc, 0, 0, 8, 2, 0, 4);
+  TEST_ASSERT_EQUAL_HEX16(0xF800, at(0, 4));
+  TEST_ASSERT_EQUAL_HEX16(0x001F, at(1, 4));
+  TEST_ASSERT_EQUAL_HEX16(0xF800, at(7, 5));
+  XFreePixmap(dpy, colour);
+  XFreeGC(dpy, gc);
+  TEST_ASSERT_EQUAL_UINT64(None, XCreatePixmapFromBitmapData(dpy, win, (char *)data, 0, 2, 1, 0, 1));
+}
+
+void test_stipple_constants_and_fields_are_accepted_and_fills_stay_solid(void) {
+  TEST_ASSERT_EQUAL_INT(1, CoordModePrevious);
+  TEST_ASSERT_EQUAL_HEX64(1L << 8, GCFillStyle);
+  TEST_ASSERT_EQUAL_HEX64(1L << 11, GCStipple);
+  XGCValues v = {0};
+  v.foreground = 0xFFFF;
+  v.fill_style = FillOpaqueStippled;
+  v.stipple = None;
+  GC gc = XCreateGC(dpy, win, GCForeground | GCFillStyle | GCStipple, &v);
+  XFillRectangle(dpy, win, gc, 0, 0, 4, 4);
+  TEST_ASSERT_EQUAL_INT(16, count_set());
+  XFreeGC(dpy, gc);
+}
+
 void test_create_image_refuses_depths_and_sizes_it_cannot_hold(void) {
   TEST_ASSERT_NULL(XCreateImage(dpy, NULL, 8, ZPixmap, 0, NULL, 4, 4, 8, 0));
   TEST_ASSERT_NULL(XCreateImage(dpy, NULL, 32, ZPixmap, 0, NULL, 0, 4, 32, 0));
@@ -2557,6 +2870,26 @@ int main(void) {
   RUN_TEST(test_the_device_has_no_keyboard_so_lookup_string_finds_nothing);
   RUN_TEST(test_the_timer_stand_ins_never_fire_and_can_be_cancelled);
   RUN_TEST(test_there_is_never_a_text_source);
+  RUN_TEST(test_rgb_to_hsv_inverts_hsv_to_rgb);
+  RUN_TEST(test_query_color_recovers_the_colour_alloc_color_made);
+  RUN_TEST(test_the_screen_is_a_colour_display_with_no_writable_cells);
+  RUN_TEST(test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits);
+  RUN_TEST(test_put_image_of_a_16_bit_image_copies_canvas_order_pixels_unchanged);
+  RUN_TEST(test_an_allocated_colour_keeps_its_pixel_through_a_16_bit_image);
+  RUN_TEST(test_the_server_byte_order_is_least_significant_first);
+  RUN_TEST(test_a_new_spline_has_zeroed_controls_and_no_points);
+  RUN_TEST(test_a_closed_spline_of_a_square_is_a_smooth_loop_inside_it);
+  RUN_TEST(test_a_closed_spline_reuses_its_points_and_grows_them_for_more_controls);
+  RUN_TEST(test_a_closed_spline_of_one_point_is_that_point);
+  RUN_TEST(test_fill_rule_constants_and_the_even_odd_fill_of_a_pentagram);
+  RUN_TEST(test_the_screen_stand_in_leads_back_to_the_display_and_its_black_and_white);
+  RUN_TEST(test_the_display_a_screen_leads_to_is_the_one_most_recently_opened);
+  RUN_TEST(test_closing_displays_out_of_order_never_leaves_a_dangling_current_display);
+  RUN_TEST(test_the_gc_function_and_alpha_calls_are_accepted_and_change_nothing);
+  RUN_TEST(test_relative_coordinates_fill_the_same_polygon_as_absolute_ones);
+  RUN_TEST(test_relative_coordinates_draw_the_same_lines_and_points_as_absolute_ones);
+  RUN_TEST(test_a_pixmap_made_from_bitmap_data_reads_least_significant_bit_first);
+  RUN_TEST(test_stipple_constants_and_fields_are_accepted_and_fills_stay_solid);
   RUN_TEST(test_create_image_refuses_depths_and_sizes_it_cannot_hold);
   RUN_TEST(test_file_to_ximage_has_no_decoder_and_returns_null);
   RUN_TEST(test_ease_in_out_sine_runs_from_0_to_1_through_one_half);

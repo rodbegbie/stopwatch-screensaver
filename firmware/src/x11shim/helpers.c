@@ -21,6 +21,11 @@ eraser_state *erase_window(Display *dpy, Window w, eraser_state *st) {
 
 void eraser_free(eraser_state *st) { (void)st; }
 
+Bool has_writable_cells(Screen *screen, Visual *visual) {
+  (void)screen, (void)visual;
+  return False;
+}
+
 void make_random_colormap(Screen *screen, Visual *visual, Colormap cmap,
                           XColor *colors, int *ncolorsP, Bool bright_p,
                           Bool allocate_p, Bool *writable_pP, Bool verbose_p) {

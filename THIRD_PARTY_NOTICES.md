@@ -98,6 +98,13 @@ implied warranty.
 | `firmware/src/hacks/lissie/lissie.c` | Copyright (c) 1996 Alexander Jolk | xlock permission notice (below) |
 | `firmware/src/hacks/laser/laser.c` | Copyright (c) 1995 Pascal Pensa | xlock permission notice (below) |
 | `firmware/src/hacks/forest/forest.c` | Copyright (c) 1999 Peter Baumung; based on xscreensaver, Copyright (c) 1992, 1995, 1997 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/qix/qix.c` | Copyright (c) 1992-2008 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/fireworkx/fireworkx.c` | Copyright (GPL) 1999-2013 Rony B Chandran, with additions by Jean-Pierre Demailly, Nicholas Miell and others named in the header | jwz permission notice (above); the header's "(GPL)" is a label, and the text it carries is the permission notice |
+| `firmware/src/hacks/starfish/starfish.c` | Copyright (c) 1997-2015 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/goop/goop.c` | Copyright (c) 1997-2008 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/loop/loop.c` | Copyright (c) 1996 by David Bagley | xlock permission notice (below) |
+| `firmware/src/hacks/loop/automata.h` | Copyright (c) 1995 by David Bagley | xlock permission notice (below) |
+| `firmware/src/hacks/hypnowheel/hypnowheel.c` | Copyright (c) 2008 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.c` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.h` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/normals.c` | Copyright (c) 2002-2004 Jamie Zawinski | jwz permission notice (above) |

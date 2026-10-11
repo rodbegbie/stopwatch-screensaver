@@ -34,6 +34,10 @@ extern const HackEntry whirlwindwarp_hack;
 extern const HackEntry flame_hack;
 extern const HackEntry maze_hack;
 XLOCKMORE_HACK(hopalong, "Hopalong");
+/* Loop asks for 100 ms between generations, which held it to 8.7 fps with a
+ * step of 3.5-7 ms; 50 ms evolves the colony about twice as fast. */
+static const char *const kLoopOverrides[] = {"*delay: 50000", NULL};
+XLOCKMORE_HACK_WITH(loop, "Loop", kLoopOverrides);
 XLOCKMORE_HACK(vines, "Vines");
 XLOCKMORE_HACK(sierpinski, "Sierpinski");
 XLOCKMORE_HACK(fadeplot, "FadePlot");
@@ -93,6 +97,10 @@ extern const HackEntry truchet_hack;
 extern const HackEntry hexadrop_hack;
 extern const HackEntry halo_hack;
 extern const HackEntry xmatrix_hack;
+extern const HackEntry qix_hack;
+extern const HackEntry fireworkx_hack;
+extern const HackEntry starfish_hack;
+extern const HackEntry goop_hack;
 /* The xlockmore framework reads ncolors and cycles, which the hack does not
  * define. The override cuts its own 30 ms pause to 10 ms, as for Gears. Its
  * thin lines move a few pixels a frame, so a seam between the old and the
@@ -149,5 +157,10 @@ const HackEntry *const g_hacks[] = {
     &hexadrop_hack,
     &stonerview_hack,
     &halo_hack,
-    &xmatrix_hack};
+    &xmatrix_hack,
+    &qix_hack,
+    &fireworkx_hack,
+    &starfish_hack,
+    &goop_hack,
+    &loop_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);
