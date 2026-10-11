@@ -3,7 +3,7 @@
   "checkpoint_id": "01M4PAG0VSS4S9CEWPVT4PSPEF",
   "strategy": "manual-commit",
   "branch": "feature/77-round-screen-corners",
-  "checkpoints_count": 1,
+  "checkpoints_count": 6,
   "files_touched": null,
   "sessions": [
     {
@@ -12,14 +12,21 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": "/0/prompt.txt"
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 44,
-    "cache_creation_tokens": 25870,
-    "cache_read_tokens": 10615538,
-    "output_tokens": 11670,
-    "api_call_count": 22,
+    "input_tokens": 104,
+    "cache_creation_tokens": 93516,
+    "cache_read_tokens": 18238398,
+    "output_tokens": 36896,
+    "api_call_count": 52,
     "subagent_tokens": {
       "input_tokens": 0,
       "cache_creation_tokens": 0,
