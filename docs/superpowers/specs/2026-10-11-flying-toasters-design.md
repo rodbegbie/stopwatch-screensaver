@@ -12,13 +12,17 @@ The art and code are Berkeley Systems' copyright and carry no licence to
 redistribute. The repo is public and MIT. So the design follows the
 ScummVM model: **our code reproduces the behaviour; the art is read at build
 time from the user's own disk image, which is never committed.** Anyone
-without the image gets a build with no toasters in it.
+without the image gets a build with no toasters in it. The Internet Archive
+holds a copy of the disk, [After Dark 2.0v (800K)][ia-disk], and our docs
+link there rather than shipping it.
+
+[ia-disk]: https://archive.org/details/after-dark-2.0v-800k
 
 ## Goals
 
-- A new hack, `FlyingToasters`, that reproduces Flying Toasters' motion, spawning,
-  wing-flap animation, collision nudging and toast doneness, worked out from
-  the original 68000 code (see "Behaviour" below).
+- A new hack, `ad-flyingtoasters`, that reproduces Flying Toasters' motion,
+  spawning, wing-flap animation, collision nudging and toast doneness,
+  worked out from the original 68000 code (see "Behaviour" below).
 - The original sprites, extracted at build time from
   `vendor/after-dark-v2.0v-800k`.
 - Each time the hack starts it picks, at random:
@@ -32,9 +36,10 @@ without the image gets a build with no toasters in it.
 
 ## Non-goals
 
-- Sound. The original plays its flap sounds through After Dark's sound
-  extension; the board has no speaker, and sound is a non-goal for the whole
-  project. The rule is recorded below for completeness only.
+- Sound, for now. The board has a speaker, and the original's flap
+  soundtrack is a possible future enhancement, but nothing in the project
+  plays sound yet. The rule is recorded below so that work can start from
+  it; the extraction tool need not pull the `snd` resources yet.
 - User settings at run time (count, colour, doneness sliders). Count stays at
   the original's default; colour and doneness are random per start.
 - Other After Dark modules. The disk holds 30-odd; they may follow later, and
@@ -226,12 +231,12 @@ else           { if (frame == 3) { frame = 2; flap_down = 1; } else frame++; }
 - In 1-bit mode doneness has no effect, as in the original. The random pick
   is still made, so the log can show it, but the toast looks the same.
 
-### Sound (not implemented)
+### Sound (future enhancement)
 
-For the record: with After Dark's sound extension present, Flap 1, Flap 2
-and Mix 1 play back to back, each next one picked at random but never the
-same twice running, starting with Flap 1. It is a soundtrack, not tied to
-any toaster.
+Not built in this design. With After Dark's sound extension present,
+Flap 1, Flap 2 and Mix 1 play back to back, each next one picked at random
+but never the same twice running, starting with Flap 1. It is a soundtrack,
+not tied to any toaster.
 
 ## How it gets built
 
@@ -262,11 +267,11 @@ any toaster.
 
 ### The hack
 
-- `firmware/src/hacks/toasters/` holds our own code (MIT), not a copy of an
-  xscreensaver hack, so the byte-identical rule does not apply and it needs
-  no `THIRD_PARTY_NOTICES.md` row: nothing in the repo is copied. Its header
-  comment credits the original authors and says the art comes from the
-  user's own disk at build time.
+- `firmware/src/hacks/ad_flyingtoasters/` holds our own code (MIT), not a
+  copy of an xscreensaver hack, so the byte-identical rule does not apply
+  and it needs no `THIRD_PARTY_NOTICES.md` row: nothing in the repo is
+  copied. Its header comment credits the original authors and says the art
+  comes from the user's own disk at build time.
 - Split the simulation (slots, spawning, motion, collision, flap state,
   doneness maths) from the drawing and from the sprite data. Then host tests
   can drive the simulation with stand-in sprites, whether or not the disk is
@@ -274,14 +279,15 @@ any toaster.
 - It is a `HackEntry` like the others (init, draw, free), registered in
   `g_hacks[]` under `#ifdef HAVE_AFTER_DARK_TOASTERS`, **at the end of the
   list**, so every other hack keeps its index for `dump` and the scorer.
-- Naming (decided by Claude): the entry's symbol is `toasters_hack`, its
-  `name` is `"FlyingToasters"`. The name follows the CamelCase of the
-  others (`UnknownPleasures`, `HexTrail`); it is what the overlay shows, the
-  serial lines print and `START_HACK` matches, case-insensitively, so pin it
-  with `START_HACK="flyingtoasters"`. The symbol is not `flyingtoasters_hack`
-  because the scorer reads registered hacks from the `&<name>_hack` symbols
-  in `g_hacks[]` (`score_hacks.py`), and xscreensaver's own unported
-  `flyingtoasters` would wrongly show as done.
+- Naming (Rod's): the hack is `ad-flyingtoasters`, which acknowledges its
+  After Dark origin and keeps it apart from xscreensaver's `flyingtoasters`.
+  That string is the entry's `name`: what the overlay shows, the serial lines
+  print and `START_HACK` matches, case-insensitively, so pin it with
+  `START_HACK="ad-flyingtoasters"`. C identifiers cannot hold a hyphen, so
+  the symbol is `ad_flyingtoasters_hack` and the directory
+  `ad_flyingtoasters/`. The scorer reads registered hacks from the
+  `&<name>_hack` symbols in `g_hacks[]` (`score_hacks.py`), so it sees
+  `ad_flyingtoasters`, which matches no xscreensaver hack.
 - **The two picks need real entropy** (decided by Claude). Nothing seeds
   `random()` from entropy on the device, so `random()` replays the same
   sequence after every boot, and a pinned build would make the same picks
@@ -297,7 +303,7 @@ any toaster.
 - At init: pick 1-bit or colour, pick a doneness, build the five 70×70
   sprites (art plus black strips) in RGB565, scatter the 10 flyers, fill the
   screen black and draw them all once. Log the picks on one line (for
-  example `toasters: colour, doneness=dark`) so a serial capture says what
+  example `ad-flyingtoasters: colour, doneness=dark`) so a serial capture says what
   the screen should show.
 - Background resource black.
 
@@ -341,10 +347,10 @@ bytes.
     some flyer's current rect.
 - Mutation-check the new tests, as `AGENTS.md` asks.
 - When the image is present, the suite's every-hack run (3000 frames under
-  ASan, leak check across restarts) covers `FlyingToasters` too.
+  ASan, leak check across restarts) covers `ad-flyingtoasters` too.
 - Under `#ifdef HAVE_AFTER_DARK_TOASTERS`, add the hack to
   `test_hacks.c`'s expected names and its baselines.
-- On the device: flash a build pinned with `START_HACK="flyingtoasters"`
+- On the device: flash a build pinned with `START_HACK="ad-flyingtoasters"`
   and rotation off (ask Rod first), capture `fps=` and `rows=` over a few
   minutes, and report the mean and the worst window. Restarts make random
   picks, but to show Rod each combination on purpose, flash with the force
@@ -357,10 +363,10 @@ bytes.
 - Nothing extracted from the disk is committed. The generated header lives
   in the git-ignored build directory, and `vendor/` is already ignored.
 - The README gets a short note: Flying Toasters needs your own copy of the
-  After Dark 2.0 disk at `vendor/after-dark-v2.0v-800k`, and is left out
-  without it.
+  After Dark 2.0 disk at `vendor/after-dark-v2.0v-800k`, links to the
+  [Internet Archive copy][ia-disk], and says it is left out without it.
 - `AGENTS.md` gets the new pre-script, the `HAVE_AFTER_DARK_TOASTERS` define,
-  and the rule that `toasters_hack` sits at the end of `g_hacks[]`.
+  and the rule that `ad_flyingtoasters_hack` sits at the end of `g_hacks[]`.
 - Check that `tools/score_hacks.py` and `tools/speed_backtest.py` cope with
   a registered name that is not an xscreensaver hack. The backtest probes
   every registered hack standalone, from xscreensaver's sources.
