@@ -38,7 +38,16 @@ for name in ("matrix1", "matrix1b", "matrix2", "matrix2b"):
     partial = header.with_name(header.name + ".partial")
     partial.unlink(missing_ok=True)
     subprocess.run(
-        [uv, "run", str(converter), str(image), "--name", f"{name}_png", "-o", str(partial)],
+        [
+            uv,
+            "run",
+            str(converter),
+            str(image),
+            "--name",
+            f"{name}_png",
+            "-o",
+            str(partial),
+        ],
         check=True,
     )
     os.replace(partial, header)
