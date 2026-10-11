@@ -96,7 +96,11 @@ void test_registry_lists_hacks_in_order(void) {
                                          "LMorph",
                                          "Wormhole",
                                          "Truchet",
-                                         "UnknownPleasures"};
+                                         "UnknownPleasures",
+                                         "Hexadrop",
+                                         "StonerView",
+                                         "Halo",
+                                         "XMatrix"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -130,6 +134,18 @@ void test_a_hack_starts_on_the_background_colour_it_asks_for(void) {
   HackRunner *r = runner_create(&cv);
   TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("Substrate")));
   TEST_ASSERT_TRUE(count_pixels(0xFFFF) > (long)cv.w * cv.h * 99 / 100);
+  runner_destroy(r);
+}
+
+/* The display outlives a hack, so a window background it set must not carry
+ * over: Hexadrop's colour once turned Pyro's XClearWindow into a solid fill. */
+void test_a_window_background_does_not_outlive_the_hack_that_set_it(void) {
+  HackRunner *r = runner_create(&cv);
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("Hexadrop")));
+  for (int f = 0; f < 5; f++) runner_step(r);
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("Pyro")));
+  for (int f = 0; f < 5; f++) runner_step(r);
+  TEST_ASSERT_TRUE(count_pixels(0) > (long)cv.w * cv.h * 9 / 10);
   runner_destroy(r);
 }
 
@@ -426,6 +442,10 @@ static const uint64_t kBaseline[] = {
     0xe73572fd64eef48full, /* Wormhole: taken after looking at the frames */
     0x7dd7d7130551c261ull, /* Truchet: taken after looking at the frames */
     0x03670369cb12c2deull, /* UnknownPleasures: after looking at the frames, with the fake clock, smooth lines and the offset margin */
+    0x43f9cf84967fee7cull, /* Hexadrop: taken after looking at the frames */
+    0x12097254df6ad0a2ull, /* StonerView: taken after looking at the frames */
+    0x692e426561735c0dull, /* Halo: taken after looking at the frames, with GCBackground honoured */
+    0x9b1b0de461b6438bull, /* XMatrix: taken after looking at the frames, trace off */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -859,6 +879,29 @@ void test_slow_hacks_register_their_lighter_settings(void) {
   TEST_ASSERT_TRUE_MESSAGE(overrides_contain("LMorph", "*delay: 10000"), "LMorph *delay");
 }
 
+void test_hexadrop_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Hexadrop", 0);
+}
+
+void test_stonerview_start_and_stop_do_not_leak(void) {
+  const int sv = index_of("StonerView");
+  TEST_ASSERT_TRUE(sv >= 0);
+  srandom(1);
+  for (int i = 0; i < 3; i++) start_step_and_stop_gl_hack(sv, "StonerView");
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  for (int i = 0; i < 40; i++) start_step_and_stop_gl_hack(sv, "StonerView");
+  const size_t after = __sanitizer_get_current_allocated_bytes();
+  TEST_ASSERT_TRUE_MESSAGE(after <= before + 4096, "StonerView leaks per start");
+}
+
+void test_halo_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Halo", 0);
+}
+
+void test_xmatrix_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("XMatrix", 0);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -866,6 +909,7 @@ int main(void) {
   RUN_TEST(test_every_hack_can_be_stopped_before_its_first_frame);
   RUN_TEST(test_a_hack_starts_on_the_background_colour_it_asks_for);
   RUN_TEST(test_a_hack_that_never_draws_on_white_is_not_drawing);
+  RUN_TEST(test_a_window_background_does_not_outlive_the_hack_that_set_it);
   RUN_TEST(test_the_runner_releases_pixmaps_a_stopped_hack_left_behind);
   RUN_TEST(test_every_hack_draws_something_within_2000_frames);
   RUN_TEST(test_every_hack_runs_3000_frames_cleanly_with_sane_delays);
@@ -891,6 +935,10 @@ int main(void) {
   RUN_TEST(test_morph3d_registers_a_shorter_pause);
   RUN_TEST(test_cubicgrid_start_and_stop_do_not_leak);
   RUN_TEST(test_unknownpleasures_start_and_stop_do_not_leak);
+  RUN_TEST(test_hexadrop_stops_do_not_leak);
+  RUN_TEST(test_stonerview_start_and_stop_do_not_leak);
+  RUN_TEST(test_halo_stops_do_not_leak);
+  RUN_TEST(test_xmatrix_stops_do_not_leak);
   RUN_TEST(test_cubicgrid_registers_a_smaller_grid);
   RUN_TEST(test_forest_stops_do_not_leak);
   RUN_TEST(test_laser_stops_do_not_leak);

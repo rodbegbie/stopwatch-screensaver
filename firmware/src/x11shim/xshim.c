@@ -53,6 +53,7 @@ int XSetForeground(Display *dpy, GC gc, unsigned long pixel) {
 int XChangeGC(Display *dpy, GC gc, unsigned long mask, XGCValues *v) {
   (void)dpy;
   if (mask & GCForeground) gc->foreground = v->foreground;
+  if (mask & GCBackground) gc->background = v->background;
   if (mask & GCLineWidth) gc->line_width = v->line_width;
   if (mask & GCCapStyle) gc->cap_style = v->cap_style;
   if (mask & GCJoinStyle) gc->join_style = v->join_style;
@@ -102,7 +103,13 @@ Status XGetWindowAttributes(Display *dpy, Window w, XWindowAttributes *a) {
 
 int XClearWindow(Display *dpy, Window w) {
   (void)w;
-  canvas_clear(dpy->canvas, 0);
+  canvas_clear(dpy->canvas, (uint16_t)dpy->window_background);
+  return 0;
+}
+
+int XSetWindowBackground(Display *dpy, Window w, unsigned long pixel) {
+  (void)w;
+  dpy->window_background = pixel;
   return 0;
 }
 
