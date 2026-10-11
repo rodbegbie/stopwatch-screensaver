@@ -34,8 +34,8 @@ it with `uv run tools/score_hacks.py`.
 | S | 2D, and the unmodified source compiles against the shim | 7 |
 | M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 14 |
 | L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 60 |
-| XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 133 |
-| Ported | Already running on the device, so no rating | 69 |
+| XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 134 |
+| Ported | Already running on the device, so no rating | 68 |
 
 ## Speed
 
@@ -203,22 +203,22 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Hypnowheel (`*count: 5`, probe) | 2.0 | 511 ms | 32.6 ms | 0 ms | about 0.64 MB |
 | CWaves (as copied, double) | 7.8 | 95-97 ms | 32.6 ms | 0 ms | about 7 KB |
 | CWaves (single precision) | 10.6 | 61 ms | 32.4 ms | 0 ms | about 7 KB |
-| CWaves (single precision, one row copied down, registered) | 20.0-20.2 | 16.1-16.2 ms | 32.5 ms | 0 ms | about 7 KB |
+| CWaves | 20.0-20.2 | 16.1-16.2 ms | 32.5 ms | 0 ms | about 7 KB |
 | Vermiculate | 74-79 | 1.3-2.2 ms | 1.8-2.9 ms | 8.4-9.5 ms | about 0.46 MB |
 | Cynosure | 1.8 | 17.0-17.8 ms | 27.5-28.5 ms | 523-524 ms | none measurable |
 | Moire (as copied, double) | 4.8 | 40.6-44.4 ms | 1.3 ms | 283.6 ms | none measurable |
-| Moire (single precision, registered) | 4.8 | 9.5-9.7 ms | 1.3 ms | 283.7 ms | none measurable |
+| Moire | 4.8 | 9.5-9.7 ms | 1.3 ms | 283.7 ms | none measurable |
 | Moire2 (first plane code) | 9.6 | 53.7-54.0 ms | 32.5 ms | 19.6 ms | about 0.25 MB |
 | Moire2 (plane copy and expansion in 32 bits) | 12.6 | 28.0-28.3 ms | 32.4 ms | 19.8 ms | about 0.25 MB |
-| Moire2 (plus a 10 ms delay, registered) | 16.2 | 28.1-28.3 ms | 32.5 ms | 0 ms | about 0.25 MB |
+| Moire2 | 16.2 | 28.1-28.3 ms | 32.5 ms | 0 ms | about 0.25 MB |
 | Moire2 (no expansion, probe) | 12.2 | 26.9 ms | 0.1 ms | 55.4 ms | about 0.25 MB |
 | Moire2 (no expansion or plane copy, probe) | 18.0 | 0.5 ms | 0.1 ms | 55.5 ms | about 0.25 MB |
 | Boing (with scanlines) | 5.0 | 169-172 ms | 32.4 ms | 0 ms | about 0.64 MB |
-| Boing (no scanlines, registered) | 8.2-8.4 | 87.1-89.0 ms | 32.4 ms | 0 ms | about 0.64 MB |
+| Boing | 8.2-8.4 | 87.1-89.0 ms | 32.4 ms | 0 ms | about 0.64 MB |
 | Boing (no scanlines, `*ballSize: 0.3`, probe) | 9.2-9.4 | 73.9-75.2 ms | 32.6 ms | 0 ms | about 0.64 MB |
 | HexTrail (`*count: 20`, upstream's) | 3.2-15.0, mean 5.7 | 34-293 ms | 5.0-32.2 ms | 0-28 ms | about 0.86 MB |
 | HexTrail (`*count: 10`) | 6.4-31.2, mean 9.1 | 19-122 ms | 10.1-32.4 ms | 0-3 ms | about 0.70 MB |
-| HexTrail (`*count: 6`, registered) | 9.2-36.8, mean 12.7 | 13-76 ms | 11.1-32.5 ms | 0-3 ms | about 0.66 MB |
+| HexTrail | 9.2-36.8, mean 12.7 | 13-76 ms | 11.1-32.5 ms | 0-3 ms | about 0.66 MB |
 
 The seven rows from CWaves to HexTrail are the CWaves, Vermiculate, Cynosure,
 Moire, Moire2, Boing and HexTrail batch (2026-10-11), each from a pinned build
@@ -249,8 +249,10 @@ Boing's scanlines, 208 blended full-width lines, cost about 83 ms of the 171 ms
 step; a smaller ball (0.3 for 0.5) saves 13 ms more, so the rest is fixed
 (the clear, the wall and the shadow). HexTrail draws every hexagon built so
 far, so its step climbs to a ceiling and it restarts; the means above are over
-150 s, which covers several cycles. The two GL hacks are below the 15 fps bar
-in their registered form (8.3 and 12.7), and Boing is below it by a lot.
+150 s, which covers several cycles. Both GL hacks were below the 15 fps bar in
+their registered form (8.3 and 12.7). Rod dropped Boing after seeing it (too
+slow, and plain on a small screen), so its rows are the measured record of a
+hack that is not in the rotation.
 
 Unknown Pleasures' rows are from pinned builds (2026-10-10). The first flash
 had TinyGL's one-pixel lines and its additive blend, so the black quads that
@@ -751,11 +753,11 @@ needing few additions come first.
 
 | Hack | Kind | Effort | Speed | Ported | Shim gaps | Flags | LOC |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| attraction | 2d | S | low (0.014 ms) | - | - | - | 1115 |
+| attraction | 2d | S | medium (0.015 ms) | - | - | - | 1115 |
 | bouboule | 2d | S | high (0.066 ms) | - | - | xor | 860 |
 | celtic | 2d | S | high (1.2 ms) | ❌ | - | - | 1141 |
-| greynetic | 2d | S | medium (0.016 ms) | - | - | - | 297 |
-| halftone | 2d | S | high (0.67 ms) | ❌ | - | pixmaps | 413 |
+| greynetic | 2d | S | medium (0.018 ms) | - | - | - | 297 |
+| halftone | 2d | S | high (0.66 ms) | ❌ | - | pixmaps | 413 |
 | nerverot | 2d | S | high (0.37 ms) | - | - | pixmaps, float-heavy | 1367 |
 | popsquares | 2d | S | high (0.13 ms) | - | - | pixmaps | 310 |
 | abstractile | 2d | M | - | - | `make_color_loop` | - | 1625 |
@@ -841,6 +843,7 @@ needing few additions come first.
 | beats | gl | XL | - | - | - | - | 439 |
 | blinkbox | gl | XL | - | - | - | - | 615 |
 | blocktube | gl | XL | - | - | - | - | 454 |
+| boing | gl | XL | - | ❌ | - | float-heavy | 666 |
 | bouncingcow | gl | XL | - | - | - | - | 649 |
 | boxed | gl | XL | - | - | - | - | 1361 |
 | cage | gl | XL | - | - | - | - | 498 |
@@ -973,7 +976,7 @@ needing few additions come first.
 | compass | 2d | - | 30.5-31.5 ms measured | ✅ | - | pixmaps, float-heavy | 999 |
 | coral | 2d | - | 15-25 ms measured | ✅ | - | - | 328 |
 | critical | 2d | - | 0.7 ms measured | ✅ | - | - | 462 |
-| cwaves | 2d | - | - | ✅ | - | - | 219 |
+| cwaves | 2d | - | 16.1-16.2 ms measured | ✅ | - | - | 219 |
 | deluxe | 2d | - | 44.6-62.6 ms measured | ✅ | - | pixmaps, float-heavy | 480 |
 | discrete | 2d | - | 149-160 ms measured | ✅ | - | - | 442 |
 | drift | 2d | - | 11-13 ms measured | ✅ | - | - | 674 |
@@ -999,8 +1002,8 @@ needing few additions come first.
 | lissie | 2d | - | 0.3-0.4 ms measured | ✅ | - | - | 323 |
 | lmorph | 2d | - | 24.7-34.3 ms measured | ✅ | - | float-heavy | 580 |
 | maze | 2d | - | 0.1-1.3 ms measured | ✅ | - | pixmaps, clipmask | 1681 |
-| moire | 2d | - | - | ✅ | - | - | 253 |
-| moire2 | 2d | - | - | ✅ | - | pixmaps, xor | 363 |
+| moire | 2d | - | 9.5-9.7 ms measured | ✅ | - | - | 253 |
+| moire2 | 2d | - | 28.1-28.3 ms measured | ✅ | - | pixmaps, xor | 363 |
 | mountain | 2d | - | 0-0.4 ms measured | ✅ | - | - | 283 |
 | pedal | 2d | - | 126-519 ms measured | ✅ | - | - | 339 |
 | petri | 2d | - | 0.3-2.5 ms measured | ✅ | - | - | 780 |
@@ -1027,7 +1030,6 @@ needing few additions come first.
 | loop | 2d | - | - | ✅ | `STIPPLESIZE`, `automata.h`, `hexagonUnit`, `stipples`, `triangleUnit` | - | 1700 |
 | pacman | 2d | - | 1.3-1.9 ms measured | ✅ | `BLUE`, `GHOSTS`, `GHOST_DANGER`, `JAILHEIGHT`, `LEVHEIGHT`, `LEVWIDTH`, `MAXGDIR`, `MAXGFLASH`, `MAXGWAG`, `MAXMOUTH`, `MINGRIDSIZE`, `MINSIZE`, `NOWHERE`, `NUM_BONUS_DOTS`, `PAC_DEATH_FRAMES`, `START`, `XDrawString`, `XLoadQueryFont`, `chasing`, `error: expected expression`, `error: invalid application of 'sizeof' to an incomplete type 'argtype[]'`, `ghoststruct`, `goingin`, `goingout`, `hiding`, `images/gen/pacman_png.h`, `inbox`, `pacman.h`, `pacman_ai.h`, `pacman_bonus_dot_eaten`, `pacman_bonus_dot_pos`, `pacman_createnewlevel`, `pacman_eat_bonus_dot`, `pacman_ghost_update`, `pacman_is_bonus_dot`, `pacman_level.h`, `pacman_png`, `pacman_trackmouse`, `pacman_update`, `pacmangamestruct`, `pp`, `ps_chasing`, `ps_dieing`, `ps_eating` | pixmaps, text, clipmask | 1479 |
 | xmatrix | 2d | - | - | ✅ | `images/gen/matrix1_png.h`, `images/gen/matrix1b_png.h`, `images/gen/matrix2_png.h`, `images/gen/matrix2b_png.h`, `matrix1_png`, `matrix1b_png`, `matrix2_png`, `matrix2b_png` | pixmaps, readback | 1915 |
-| boing | gl | - | - | ✅ | - | float-heavy | 666 |
 | cubicgrid | gl | - | - | ✅ | - | - | 322 |
 | gears | gl | - | 65-330 ms measured | ✅ | - | - | 953 |
 | hextrail | gl | - | - | ✅ | - | - | 782 |
@@ -1037,6 +1039,7 @@ needing few additions come first.
 
 ## Failed ports
 
+- **boing**: 8.3 fps and plain on a small screen; Rod dropped it, scanlines cost 83 ms
 - **celtic**: shelved at 1.2 fps and 300 KB of heap, see issue #37
 - **flurry**: needs GL TinyGL lacks, est. under 1 fps, issue #70
 - **halftone**: 5 fps; the shim's ellipse fill is 80% of it, issue #57

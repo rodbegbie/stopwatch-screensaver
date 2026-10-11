@@ -200,10 +200,11 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   every pixel. After clipping everything fits an int; a byte table of eight
   pixels written four bytes at a time did the rest (28 ms). The 50 ms delay is
   overridden to 10 ms: 12.6 fps became 16.2.
-- Boing and HexTrail are GL (`boing_gl.c`, `hextrail_gl.c`). Boing's 208
-  scanlines are blended full-width lines and cost half its step: 5.0 fps with
-  them, 8.3 without, so the registry turns them off (`-DBOING_SCANLINES` puts
-  them back); the ball size barely matters (0.3 saves 13 ms). HexTrail draws
+- Boing was dropped after Rod saw it (too slow, and plain on a small screen);
+  its source, notices row and `boing_gl.c` stay, the wrapper out of the build
+  filter. Its 208 scanlines are blended full-width lines and cost half its
+  step: 5.0 fps with them, 8.3 without; the ball size barely matters (0.3
+  saves 13 ms). HexTrail (`hextrail_gl.c`) draws
   every hexagon it has built, so its step climbs from about 19 ms to a ceiling
   and it restarts: use a mean over a cycle (150 s). The grid is `count * 2`
   squared, and a smaller count makes fewer, larger hexagons over the same area:

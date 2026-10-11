@@ -111,7 +111,6 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Cynosure",
                                          "Moire",
                                          "Moire2",
-                                         "Boing",
                                          "HexTrail"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
@@ -468,7 +467,6 @@ static const uint64_t kBaseline[] = {
     0x91be49ba88096f62ull, /* Cynosure: taken after looking at the frames */
     0xcfa8f679f1a10fddull, /* Moire: taken after looking at the frames (single precision) */
     0x32f706208dc0a079ull, /* Moire2: taken after looking at the frames (bit planes) */
-    0x8a2752813904c3f3ull, /* Boing: taken after looking at the frames (scanlines off) */
     0x7a0560ac01c7e6e0ull, /* HexTrail: taken after looking at the frames (count 6) */
 };
 
@@ -1104,10 +1102,6 @@ void test_moire2_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("Moire2", 0);
 }
 
-void test_boing_stops_do_not_leak(void) {
-  check_restarts_and_stops_do_not_leak("Boing", 1);
-}
-
 void test_hextrail_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("HexTrail", 1);
 }
@@ -1182,7 +1176,6 @@ int main(void) {
   RUN_TEST(test_cynosure_stops_do_not_leak);
   RUN_TEST(test_moire_stops_do_not_leak);
   RUN_TEST(test_moire2_stops_do_not_leak);
-  RUN_TEST(test_boing_stops_do_not_leak);
   RUN_TEST(test_hextrail_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);

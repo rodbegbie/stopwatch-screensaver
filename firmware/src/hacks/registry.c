@@ -120,18 +120,6 @@ extern const HackEntry moire_hack;
 
 extern const HackEntry moire2_hack;
 
-/* The scanlines are 208 blended lines across the whole picture: with them
- * Boing ran at 5.0 fps (171 ms a step), without 8.3 (88 ms). The framework
- * reads ncolors and cycles, which Boing does not define. A build with
- * -DBOING_SCANLINES keeps them. */
-static const char *const kBoingOverrides[] = {"*ncolors: 64", "*cycles: 0",
-                                              "*delay: 10000",
-#ifndef BOING_SCANLINES
-                                              "*scanlines: False",
-#endif
-                                              NULL};
-XLOCKMORE_HACK_WITH(boing, "Boing", kBoingOverrides);
-
 /* Hextrail draws every hexagon it has built, so its step grows from 19 ms to
  * a ceiling and it restarts. The grid is count * 2 hexagons square, and a
  * smaller count means fewer, larger ones over the same area. Mean fps over a
@@ -205,6 +193,5 @@ const HackEntry *const g_hacks[] = {
     &cynosure_hack,
     &moire_hack,
     &moire2_hack,
-    &boing_hack,
     &hextrail_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);

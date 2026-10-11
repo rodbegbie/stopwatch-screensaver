@@ -154,8 +154,10 @@ Boing's scanlines, 208 blended full-width lines, cost about 83 ms of the 171 ms
 step; a smaller ball (0.3 for 0.5) saves 13 ms more, so the rest is fixed
 (the clear, the wall and the shadow). HexTrail draws every hexagon built so
 far, so its step climbs to a ceiling and it restarts; the means above are over
-150 s, which covers several cycles. The two GL hacks are below the 15 fps bar
-in their registered form (8.3 and 12.7), and Boing is below it by a lot.
+150 s, which covers several cycles. Both GL hacks were below the 15 fps bar in
+their registered form (8.3 and 12.7). Rod dropped Boing after seeing it (too
+slow, and plain on a small screen), so its rows are the measured record of a
+hack that is not in the rotation.
 
 Unknown Pleasures' rows are from pinned builds (2026-10-10). The first flash
 had TinyGL's one-pixel lines and its additive blend, so the black quads that
