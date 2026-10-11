@@ -220,6 +220,20 @@ void test_a_copy_past_the_right_edge_does_not_wrap_onto_the_next_row(void) {
   halo_free_pixmap(dpy, p);
 }
 
+/* Halo makes its window GCs with the colours in the creation mask, as here,
+ * not with XSetBackground. */
+void test_clear_bits_take_the_background_a_gc_was_created_with(void) {
+  Pixmap p = halo_create_pixmap(dpy, XSHIM_WINDOW, 8, 1, 1);
+  XGCValues v = {0};
+  v.foreground = 0x1234;
+  v.background = 0x5678;
+  GC gc = XCreateGC(dpy, XSHIM_WINDOW, GCForeground | GCBackground, &v);
+  halo_copy_plane(dpy, p, XSHIM_WINDOW, gc, 0, 0, 8, 1, 0, 0, 1);
+  TEST_ASSERT_EQUAL_HEX(0x5678, cv.px[0]);
+  XFreeGC(dpy, gc);
+  halo_free_pixmap(dpy, p);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_a_new_plane_is_clear_and_a_zero_size_is_refused);
@@ -231,5 +245,6 @@ int main(void) {
   RUN_TEST(test_a_long_run_of_bytes_expands_to_the_window_in_both_colours);
   RUN_TEST(test_a_copy_hanging_off_every_edge_stays_inside_both_buffers);
   RUN_TEST(test_a_copy_past_the_right_edge_does_not_wrap_onto_the_next_row);
+  RUN_TEST(test_clear_bits_take_the_background_a_gc_was_created_with);
   return UNITY_END();
 }

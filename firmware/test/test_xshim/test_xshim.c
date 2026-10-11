@@ -812,6 +812,26 @@ void test_copy_plane_draws_set_bits_in_foreground_and_clear_bits_in_background(v
   XFreePixmap(dpy, mask);
 }
 
+void test_a_gc_made_or_changed_with_a_background_in_its_mask_keeps_it(void) {
+  Pixmap bits = XCreatePixmap(dpy, win, 2, 1, 1);
+  XGCValues v = {0};
+  v.foreground = 0xF800;
+  v.background = 0x5678;
+  GC gc = XCreateGC(dpy, win, GCForeground | GCBackground, &v);
+  XCopyPlane(dpy, bits, win, gc, 0, 0, 2, 1, 0, 0, 1);
+  TEST_ASSERT_EQUAL_HEX16(0x5678, at(0, 0));
+  v.background = 0x0123;
+  XChangeGC(dpy, gc, GCBackground, &v);
+  XCopyPlane(dpy, bits, win, gc, 0, 0, 2, 1, 0, 0, 1);
+  TEST_ASSERT_EQUAL_HEX16(0x0123, at(1, 0));
+  v.background = 0x7777;
+  XChangeGC(dpy, gc, GCForeground, &v);
+  XCopyPlane(dpy, bits, win, gc, 0, 0, 2, 1, 0, 0, 1);
+  TEST_ASSERT_EQUAL_HEX16(0x0123, at(0, 0));
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, bits);
+}
+
 void test_copy_plane_honours_the_clip_mask(void) {
   Pixmap mask = None;
   Pixmap p = load_image(&mask);
@@ -2559,6 +2579,7 @@ int main(void) {
   RUN_TEST(test_clip_mask_outlives_the_pixmap_it_was_set_from);
   RUN_TEST(test_clip_mask_none_removes_the_clip);
   RUN_TEST(test_copy_plane_draws_set_bits_in_foreground_and_clear_bits_in_background);
+  RUN_TEST(test_a_gc_made_or_changed_with_a_background_in_its_mask_keeps_it);
   RUN_TEST(test_copy_plane_honours_the_clip_mask);
   RUN_TEST(test_copy_with_the_wrong_kind_of_source_draws_nothing);
   RUN_TEST(test_pixmaps_and_clip_masks_leave_no_memory_behind);

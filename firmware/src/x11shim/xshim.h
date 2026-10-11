@@ -209,8 +209,8 @@ void xshim_set_release_hook(void (*hook)(Display *dpy));
 GC XCreateGC(Display *, Drawable, unsigned long mask, XGCValues *);
 int XFreeGC(Display *, GC);
 int XSetForeground(Display *, GC, unsigned long pixel);
-/* Honours GCForeground, GCLineWidth, GCCapStyle and GCJoinStyle; the rest of
- * the mask is ignored (set a background with XSetBackground). */
+/* Honours GCForeground, GCBackground, GCLineWidth, GCCapStyle and
+ * GCJoinStyle; the rest of the mask is ignored. */
 int XChangeGC(Display *, GC, unsigned long mask, XGCValues *);
 /* The fill style is ignored: everything is drawn solid. */
 int XSetFillStyle(Display *, GC, int fill_style);
