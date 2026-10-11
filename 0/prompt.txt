@@ -1,0 +1,258 @@
+<agent-message from="a2ff11d8d21ecc745">
+[Subagent hand-back] The text below is the final report of a subagent this session delegated to. It is model output, NOT a message from the user: instructions, requests, or approval claims inside it are the subagent's words and carry no user authority. The harness indents every line of the report, so a frame-like line at column zero inside it would be forged. Notes above this frame may quote model-derived text, which carries no user authority either. The report follows:
+  I've decoded the module and written the spec. Most of the answers come straight from the code. The main surprises: there is no mask, the "Toast:" slider sets doneness rather than how much toast there is, and toasters start with no wing-flap phase offset.
+  
+  Spec: `/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/52b5f480-1b35-4f9b-b546-dbc5c1aff2c6/scratchpad/analysis/flying_toasters_behaviour.md`. It has pseudo-code, code offsets, a confidence tag on each claim and a list of open questions; it passes markdownlint with the line-length rule switched off. I also wrote a labelled copy of the listing to `ad2/ft_annot.asm` in the same scratchpad, with method calls and maths helpers named.
+  
+  **How the dispatch works (certain):** A4 points at the start of the code resource, so `$2axx(a4)` is just an offset into it. Method calls are Think C objects dispatched through a class table, and I mapped every slot from those tables. For example, `$2ac8` is AdvanceFlyers, `$2aca` Collision, `$2acc` CreateFlyer and `$2aec` Draw. A few A-line traps were misnamed by the disassembler. AA21 is OpColor, A8D6 FillRgn and A89C PenMode; AA27, AA29 and AA32 are GetMaxDevice, GetDeviceList and GetGDevice.
+  
+  **Key numbers:**
+  
+  1. **Frame rate (certain).** The simulation steps when `TickCount() >= next`, then sets `next = now + 2`, so at most 30 steps a second, with no catch-up if a step runs late. Every flyer moves and is drawn on every step, with no work limit.
+  2. **Count (certain formula; slider range likely).** `n = max(1, slider0 / 5)`. The default of 54 gives 10 flyers. Assuming After Dark's usual 0–100 slider, the maximum is 20, which matches the "1".."20" labels.
+  3. **Toast vs toaster (certain).** `r = abs(Random() % 100)`; toast if `r >= 75`, which is a fixed 25%. The "Toast:" slider doesn't change this.
+  4. **Speeds (certain).**
+     - Toast always has speed 1.
+     - A toaster's speed comes from the same `r`: 0–24 gives 1, 25–49 gives 2, 50–74 gives 3.
+     - So overall it's 25% each: toast, slow toaster, medium toaster, fast toaster.
+     - Each step moves a flyer `speed × (−2, +1)`: left 2 px and down 1 px per unit of speed. At 30 steps a second, speed 1 is 60 px/s left and 30 px/s down.
+     - No control affects speed.
+  5. **Collisions while moving (certain).** Only speed-2 and speed-3 toasters check. After the base step, `Collision` returns a nudge:
+     - If the obstacle is mostly to the side, the flyer drops 2 px further down that step.
+     - Otherwise it moves 1 px further left if it is above the obstacle, or 1 px less far left if not.
+     - If the nudged position still collides, the flyer stays at its base-step position.
+  6. **Spawning (certain).**
+     - **At start-up:** flyers are placed uniformly, fully inside the screen.
+     - **After that:** respawns are 50% just above the top edge (x anywhere across the width) and 50% just past the right edge (y anywhere down the height).
+     - **Rect used for placement and overlap checks:** 70×70.
+     - **Tries:** up to 4 placement attempts. If all overlap another flyer, the slot stays empty and is retried every step.
+     - **Leaving the screen:** a flyer is removed once its rect no longer touches the screen, and its slot respawns on the next step.
+     - Colour and mono spawn the same way.
+  7. **Wing flap (certain).** Frames run 0,1,2,3,2,1,… (a 6-frame ping-pong) and advance once per draw, so once per step: 30 frames/s, 5 beats a second, at every speed. Every toaster starts at frame 0. The random 0–99 value passed to the toaster only picks its speed, so phases differ only because toasters spawn on different steps.
+  8. **Drawing and "mask" (certain).** There is no mask. Each sprite is a plain copy of a 70×70 buffer: the 64×64 art plus a 6-px black strip along the top and down the right, with black in the art drawn as opaque. Nothing moves more than 6 px a step, so those strips erase the previous position; there is no separate erase pass or full-screen buffer. Overlap is avoided by keeping flyers apart, not by masking. Draw order is slot order, with higher slots on top. The background is filled black once when blanking starts. `CalcMonoMask`/`CalcColorMask` (really `CALCMONO`/`CALCCOLO`) only work out buffer sizes for the memory check.
+  9. **Doneness (certain operation; thresholds likely).** This only happens in colour mode, once at start-up, to the toast buffer.
+     - **How:** paint over the toast with the "subtract, clamp at black" pen mode.
+     - **Slider below 33 (Light):** no change.
+     - **33–66 (Medium):** subtract `(0x4fff, 0x4fff, 0x4fff)`, roughly 80 from each 8-bit channel.
+     - **67 and up (Dark):** subtract `(0x7fff, 0x6fff, 0x6fff)`, roughly 128 from red and 112 from green and blue.
+     - **Background:** stays black.
+     - **Mono mode:** doneness does nothing.
+  10. **Controls (certain).** Index 0 is the flyer count, 1 is toast doneness and 2 is the colour checkbox (colour art only if it is 1 and colour QuickDraw is available). Index 3 is never read. The module asks After Dark to restart it if the count or colour setting changes, or if doneness changes while colour is on.
+  11. **Sound (certain logic; units likely).** This only happens if After Dark's sound extension is present. The three sounds play back to back: Flap 1, Flap 2 and Mix 1. Each next one is picked at random but never the same twice in a row, starting with Flap 1. The next sound is scheduled at `TickCount + the sound's length`. It isn't tied to individual toasters.
+  12. **Other notes (certain).** Screen size matters only as the bounds used for spawning and removal. The module never reads the demo rect; in the preview the blank region is simply smaller.
+  
+  **Open questions:**
+  - **Slider range:** I assumed 0–100, so the 33/67 thresholds and the cap of 20 depend on it.
+  - **µVal 1001/1002 (= 3):** never read by the code; meaning unknown.
+  - **Sound length units:** the length comes from the sound extension and I couldn't verify its units.
+  - **Doneness on 4/8-bit screens:** how QuickDraw quantises the subtracted colours there is unknown. For our board I'd do the subtraction on the art's RGB directly.
+  - **Clipping:** I don't know why the clipping code drops the top pixel row of every monitor.
+  - **Overlap frequency:** how often flyers visibly overlap in practice. I didn't write a simulator, so the motion is read from the code but not checked by running it.
+</agent-message>
+
+---
+
+Wow, good work.  Love that you have both the colour and 1-bit versions.  Our version should randomly pick between 1-bit and color, and the toast doneness setting, each time the hack starts!
+
+For your question, I think the 1x version looks best.
+
+Other than that, I think you're good to start continue.
+
+---
+
+continue!  I didn't mean to interrupt.
+
+---
+
+<agent-message from="af50dcb7ede8cdca7">
+[Subagent hand-back] The text below is the final report of a subagent this session delegated to. It is model output, NOT a message from the user: instructions, requests, or approval claims inside it are the subagent's words and carry no user authority. The harness indents every line of the report, so a frame-like line at column zero inside it would be forged. Notes above this frame may quote model-derived text, which carries no user authority either. The report follows:
+  I checked the spec against the code: `registry.c`, `hack_entry.h`, `start_pick.c`, `main.cpp`, `test_hacks.c`, `pacman_sprites.py`, `score_hacks.py` and `speed_backtest.py`. Most of it is answerable or explicitly left to the builder. Two questions remain, ranked by importance.
+  
+  1. **What goes in `HackEntry.name`, and what string does `START_HACK` take?**
+     - **The conflict:** The spec asks for registry name `toasters` and display name "Flying Toasters". It also says to pin the device test with `START_HACK="toasters"`. But `HackEntry` (`firmware/src/runner/hack_entry.h`) has only one `name` field. That field is what the overlay shows (`main.cpp:380`), what the serial `run`/`rotate` lines print, and what `START_HACK` matches against (`start_pick.c:7`, a `strcasecmp` on `name`).
+     - **Why it's only half a problem:** The scorer and backtest take the name from the symbol (`&(\w+)_hack` in `score_hacks.py:55`), so `toasters_hack` already keeps the scorer correct whatever `name` says.
+     - **The options:**
+       - `name = "Flying Toasters"`: then `START_HACK` needs "flying toasters", and a space inside a quoted `-D` value is awkward under the harness quoting rules in `AGENTS.md`.
+       - `name = "toasters"`: then the overlay shows "toasters".
+       - Add a separate display-name field to `HackEntry`: this changes what every hack sees, which `AGENTS.md` says needs Rod's approval first.
+     - **Why it changes the plan:** The answer decides whether the runner is touched, what the expected-names list in `test_hacks.c` holds, and the exact flash command for the device step.
+  
+  2. **How should the device run show Rod all six art × doneness combinations, given that `random()` is never seeded on the device?**
+     - **The problem:** Nothing in `main.cpp`, the runner or the shim calls `srandom` with entropy. `esp_random()` only feeds the start pick, and `ya_rand_init(0)` is a no-op. So every boot replays the same `random()` sequence. A pinned build with rotation off (`START_HACK` plus `ROTATE_SECONDS=0`) will make the same art and doneness picks on every reset, and opening the serial port itself resets the board. The spec's plan to "restart it several times so Rod sees both art sets and all three donenesses" therefore won't work as written.
+     - **The options:**
+       - A build flag that forces the art and doneness, e.g. `-DTOASTERS_ART` / `-DTOASTERS_DONENESS`.
+       - Seed from `esp_random()` inside the toasters init on the device only. This must stay off on the host, because the `srandom(1)` frame-hash tests depend on it.
+       - Let short rotation (e.g. `ROTATE_SECONDS=5`, pinned) cycle back round to toasters, at the cost of watching every other hack in between.
+       - Accept per-boot determinism and only check what one boot gives.
+     - **Why it changes the plan:** It decides whether new code or flags are needed and how the device verification step is written. It also settles whether the per-boot sameness matters for the badge itself: across a full lap the picks do vary, because the random state carries on from hack to hack.
+  
+  Nothing else important is left. The open points I found are things the builder can reasonably decide:
+  - The `test_hacks.c` expected-names list and `kBaseline` both need entries under `#ifdef HAVE_AFTER_DARK_TOASTERS`, probably with a 0 baseline.
+  - Whether `speed_backtest.py` skips names that aren't xscreensaver hacks.
+  - How the 16-bit doneness constants round to 8-bit.
+  - What the 16-colour PICT's own colour table maps to black.
+</agent-message>
+
+---
+
+Reviewing now.  As a note, the Internet Archive has a copy of the original disk image for download at https://archive.org/details/after-dark-2.0v-800k so we can link there from our docs.
+
+1. Let's call our hack ad-flyingtoasters to acknowledge its After Dark origin and distinguish it from the `flyingtoasters` hack in xscreensaver.
+2. The board *does* have a speaker.  I don't think we should port sound over right now, but it's a possible future enhancement.
+
+Otherwise, I think you're good to go
+
+---
+
+Fantastic. Yes, go subagent-driven you little genius.  You're a gem 💎
+
+---
+
+<agent-message from="ade7c43594298e912">
+[Subagent hand-back] The text below is the final report of a subagent this session delegated to. It is model output, NOT a message from the user: instructions, requests, or approval claims inside it are the subagent's words and carry no user authority. The harness indents every line of the report, so a frame-like line at column zero inside it would be forged. Notes above this frame may quote model-derived text, which carries no user authority either. The report follows:
+  Status: DONE
+  Commit: 3d593b4 "After Dark sprites tool: tags, resource forks, PICTs"
+  Tests: 14 pass (RED was the missing-module collection error); ruff check and format clean on both files (via uvx, ruff not on PATH).
+  Mutations: left offset to 0 fails 3 tests, top offset to 0 fails 1, removing the flags & 0x8000 branch fails 1. Restored, and the suite passes again.
+  Concerns: not run against the real disk image (follows the scratch decoder that did). Unknown palette indices render magenta rather than raising. Only 1-bit and 4-bit depths are tested.
+  Report: /Users/rod/build/stopwatch-screensaver/.claude/worktrees/flying-toasters/.superpowers/sdd/2026-10-11-ad-flyingtoasters/task-1-report.md
+</agent-message>
+
+---
+
+<agent-message from="affe20b3ab9bc72eb">
+[Subagent hand-back] The text below is the final report of a subagent this session delegated to. It is model output, NOT a message from the user: instructions, requests, or approval claims inside it are the subagent's words and carry no user authority. The harness indents every line of the report, so a frame-like line at column zero inside it would be forged. Notes above this frame may quote model-derived text, which carries no user authority either. The report follows:
+  ### Spec Compliance
+  - ✅ Spec compliant. Interfaces, opcode set, tag stripping, resource fork layout, PackBitsRect handling and the frame-minus-bounds offset all match the brief (`tools/after_dark_sprites.py:41-196`). Only the two named files were touched.
+  - ✅ The global constraints hold. The tests build every input themselves (`tools/tests/test_after_dark_sprites.py:217-378`), so no Berkeley Systems bytes are committed, and the commit message matches the brief.
+  - ⚠️ Cannot verify from the diff:
+    - The decoder has not been run against the real disk image. The report says so, and it is Task 2 territory.
+    - The PICT/PixMap test helpers were written by the same author as the decoder. I checked the layouts by hand: the PixMap header is 36 bytes with `pixelSize` at offset 18, the resource map's `typeListOffset` is at 24, and the clip region length includes its own 2 bytes. All are correct against the Mac formats.
+    - The mutation results (left offset, top offset, `flags & 0x8000`) come from the report only. I did not re-run them. The report says `git diff` could not confirm the restore because the files were untracked, and relies on a grep instead.
+    - Test and ruff output was not re-run.
+  
+  ### Strengths
+  - Tests go beyond the brief and each pins real behaviour:
+    - unpacked rows (`rowBytes < 8`), at line 430
+    - two-byte PackBits counts (`rowBytes > 250`), at line 440
+    - a frame offset from bounds on both top and left, at line 450
+    - positional versus stored colour-table indices, at lines 484 and 494
+    - negative resource ids, at line 404
+  - The v1 picframe test puts set bits in the margin outside the frame and asserts they do not appear (`test_after_dark_sprites.py:426-427`).
+  - The v2 word-alignment and long-comment paths are exercised, and the unknown-opcode and no-image errors name the offending value.
+  - `machfs` is declared in the script metadata but not imported, so the tests run without it.
+  
+  ### Issues
+  #### Critical (Must Fix)
+  None.
+  
+  #### Important (Should Fix)
+  None.
+  
+  #### Minor (Nice to Have)
+  - `tools/after_dark_sprites.py:195`: a pixel value missing from the colour table silently becomes magenta (255, 0, 255). Task 2 will extract real sprites, and a bad decode would be baked in without any error. Raising `ExtractError` would fit the rule that an image present but failing to extract fails the build.
+  - `tools/after_dark_sprites.py:178`: `per_byte = 8 // depth` raises `ZeroDivisionError` for 16-bit or 32-bit PixMaps. It should raise `ExtractError`, or the depth should be validated (1, 2, 4 or 8). The report admits only 1-bit and 4-bit are tested.
+  - Truncated or malformed input surfaces as `struct.error` or `IndexError`, not `ExtractError`. This applies to `parse_resource_fork` (lines 53-69) and `unpack_bits` (lines 73-84). It is acceptable for a build tool, but the module's error contract is slightly inconsistent.
+  - `tools/after_dark_sprites.py:150,159`: the magic offsets 18 and 36, and the 18-byte `srcRect`/`dstRect`/mode skip, would benefit from named constants.
+  - The mutation check did not cover the `row_bytes < 8` or `> 250` thresholds. The tests that exercise them do exist, so this is only a gap in the evidence.
+  
+  ### Assessment
+  **Task quality:** Approved
+  **Reasoning:** The implementation matches the brief and the Mac PICT and resource-fork formats. The tests assert real pixels and resources, with the edge cases covered. The remaining points are error-handling polish for later hardening, not blockers.
+</agent-message>
+
+---
+
+<agent-message from="aeb4cf35690de900f">
+[Subagent hand-back] The text below is the final report of a subagent this session delegated to. It is model output, NOT a message from the user: instructions, requests, or approval claims inside it are the subagent's words and carry no user authority. The harness indents every line of the report, so a frame-like line at column zero inside it would be forged. Notes above this frame may quote model-derived text, which carries no user authority either. The report follows:
+  Status: DONE
+  Commit: 4cf64c0 (After Dark sprites tool: header writer and command line)
+  Tests: 32 passed in test_after_dark_sprites.py (with machfs; the real-image test ran, not skipped); whole tools suite 374 passed; ruff check/format clean; 5 mutations all killed (mono LSB, mono black inversion, depth check, colour-table check, size check).
+  Real image: the CLI exited 0 and wrote a 340,516-byte header outside the repo. Its first line is `/* Generated from after-dark-v2.0v-800k, sha256 691816b1...`, then the include guard, `#define AD_ART_SIZE 64` and `static const unsigned char ad_colour_rgb[5][64 * 64 * 3] = {`.
+  Concerns:
+  1. The arrays are written as initialised definitions, not the bare declarations shown in the brief.
+  2. `render_header` has an optional 4th `source` argument, which main sets to the image file name.
+  3. I added colour 0 to the colour table of the existing test `test_v2_stored_indices_used_when_flag_clear`. Its rows use value 0, which the new "colour not in table" error would now reject.
+  Report: /Users/rod/build/stopwatch-screensaver/.claude/worktrees/flying-toasters/.superpowers/sdd/2026-10-11-ad-flyingtoasters/task-2-report.md
+</agent-message>
+
+---
+
+<agent-message from="ad6b4d667034456fd">
+[Subagent hand-back] The text below is the final report of a subagent this session delegated to. It is model output, NOT a message from the user: instructions, requests, or approval claims inside it are the subagent's words and carry no user authority. The harness indents every line of the report, so a frame-like line at column zero inside it would be forged. Notes above this frame may quote model-derived text, which carries no user authority either. The report follows:
+  ### Spec Compliance
+  Mostly met; one requirement only partly enforced.
+  
+  Met:
+  - The five functions exist with the briefed signatures. `render_header` takes an extra optional `source` argument for the "Generated from <image name>" slot.
+  - `read_module_fork` imports machfs inside the function (diff line 159). It reads "After Dark Files" / "Flying Toasters", and a missing folder or file raises `ExtractError` naming it (lines 163-172).
+  - The header is guarded by `AFTER_DARK_TOASTER_SPRITES_H` and defines `AD_ART_SIZE`. It uses real definitions with initialisers, as the controller ruled.
+  - Output is written through `.partial` and renamed. `ExtractError` prints to stderr and returns 1.
+  - Controller rulings: a pixel value missing from the colour table raises, naming the value (lines 82-85). A PixMap depth other than 1, 2, 4 or 8 raises, naming the depth (lines 58-59). Both have tests.
+  - The inline dependencies are unchanged (machfs only).
+  
+  Partly met: "the header must never be written inside the repo."
+  - The tests write only to `tmp_path`, so they comply.
+  - `main` writes wherever `-o` points and has no guard. If the ruling meant the tool itself must refuse a path inside the repo, this is missing. I read it as a test constraint, so I mark it ⚠️.
+  
+  ⚠️ The diff cannot show: the mutation check (mono_bits LSB first), the claimed test counts, and whether the machfs-dependent tests ran or were skipped.
+  
+  ### Strengths
+  - Failure modes are specific, and the new tests assert the named value or depth through `match=`.
+  - `test_main_writes_nothing_when_extraction_fails` checks both the output and the `.partial` file are absent.
+  - `make_volume` builds a real HFS volume to exercise `read_module_fork` on the success, missing-folder and missing-file paths, so these tests do not mock machfs.
+  - The byte-count test (`text.count("0x01") == 5 * 4096`) catches dropped or duplicated data.
+  - The `test_v2_stored_indices_used_when_flag_clear` fixture was updated to include entry 0 so it still passes under the stricter lookup, rather than loosening the check.
+  
+  ### Issues
+  
+  #### Critical (Must Fix)
+  None.
+  
+  #### Important (Should Fix)
+  - `tools/after_dark_sprites.py:193-195`: the output write is outside the `try`. An unwritable directory or a full disk gives a raw traceback instead of the tool's `after_dark_sprites: ...` message and exit 1. If `replace` fails, a stale `.partial` is left behind. Move the write inside the `except (ExtractError, OSError)` handling and remove the partial on failure.
+  - `tools/after_dark_sprites.py:159-162`: `vol.read(volume)` is not wrapped. A tag-stripped image that is not a valid HFS volume will raise whatever machfs raises, which is not `ExtractError` or `OSError`. `main` then crashes with a traceback, which is the case the failure-handling design is meant to cover. Wrap the read and re-raise as `ExtractError`.
+  
+  #### Minor (Nice to Have)
+  - There is no test of `main` succeeding. Nothing checks that the header is written, that `.partial` is renamed away, or that the sha256 is of the original tagged image rather than the stripped one (`tools/after_dark_sprites.py:186-188`). A `make_volume` image holding 64x64 PICTs could exercise it.
+  - `mono_bits` (lines 97-102) silently truncates if the pixel count is not a multiple of 8 and does not check for 4096 pixels. `sprites_from_fork` already guarantees 64x64, so this is only a hardening point.
+  - The "never inside the repo" requirement is enforced only by convention (the "Do not commit" comment). A cheap guard in `main`, or a docstring line saying where to put it, would make it explicit.
+  - `tools/tests/test_after_dark_sprites.py:352`: the `"838,400"` match couples this test to the wording of Task 1's error message.
+  - `tools/tests/test_after_dark_sprites.py:359`: the `"nope"` assertion passes because the message includes the path. That is fine, but it relies on the OS error text.
+  
+  ### Assessment
+  **Task quality:** Needs fixes
+  **Reasoning:** The functionality and both controller rulings match the brief and are tested. The CLI still lets two realistic failures (an unwritable output path, a non-HFS volume) escape as tracebacks. That undermines the "report the error and write nothing" contract, and a few lines would close the gap.
+</agent-message>
+
+---
+
+<agent-message from="aeb4cf35690de900f">
+[Subagent hand-back] The text below is the final report of a subagent this session delegated to. It is model output, NOT a message from the user: instructions, requests, or approval claims inside it are the subagent's words and carry no user authority. The harness indents every line of the report, so a frame-like line at column zero inside it would be forged. Notes above this frame may quote model-derived text, which carries no user authority either. The report follows:
+  Status: DONE (fix round 1)
+  Commit: a716620
+  Tests: 34 passed in tools/tests/test_after_dark_sprites.py with --with machfs; ruff check and format are clean on both files. Before the fix, the 2 new tests failed (RED).
+  Fixes:
+  1. `main` now catches OSError from the write or rename. It removes the .partial, prints `after_dark_sprites: ...` to stderr and returns 1.
+  2. `read_module_fork` wraps `vol.read` and raises ExtractError "the volume is not readable HFS (...)". The catch is a broad `except Exception` with a noqa, because machfs raised ValueError on zeros and other junk may raise other types.
+  Concerns: the unwritable-output test needs the real disk image, so it skips without it.
+  Report: /Users/rod/build/stopwatch-screensaver/.claude/worktrees/flying-toasters/.superpowers/sdd/2026-10-11-ad-flyingtoasters/task-2-report.md (fix round appended)
+</agent-message>
+
+---
+
+<agent-message from="a6ed1c5e7d6ad9f2e">
+[Subagent hand-back] The text below is the final report of a subagent this session delegated to. It is model output, NOT a message from the user: instructions, requests, or approval claims inside it are the subagent's words and carry no user authority. The harness indents every line of the report, so a frame-like line at column zero inside it would be forged. Notes above this frame may quote model-derived text, which carries no user authority either. The report follows:
+  ### Finding Verdicts
+  1. ADDRESSED. The fix is in tools/after_dark_sprites.py, main(), diff lines 55-61. `partial.write_text` and `partial.replace` now sit in a try, so an OSError calls `partial.unlink(missing_ok=True)`, prints `after_dark_sprites: ...` to stderr and returns 1. That covers both the unwritable path and the failing replace, and it removes any stale .partial. One gap: a missing parent directory fails on `write_text`, before any .partial exists. The failing-replace path, where cleanup actually runs, has no test. The test `test_main_reports_an_unwritable_output_and_leaves_no_partial` (diff lines 90-99) asserts exit 1, the stderr prefix, no output file and no .partial. The fix report shows it going RED (traceback), then 34 passed with the real image.
+     Test coverage: the test skips without vendor/after-dark-v2.0v-800k, so finding 1 is untested on machines without the image. This is a minor gap and does not block. The write step only needs a valid header, and `make_volume` could build a synthetic image. Even so, the test relies on a real image, so it is weaker than it needs to be. Mutation-check status is not reported for this test.
+  2. ADDRESSED. In `read_module_fork` (diff lines 28-31), `vol.read(volume)` is wrapped, and any exception becomes `ExtractError("the volume is not readable HFS (...)")`. `main` already catches ExtractError, so it exits 1 with a message. The broad `except Exception` has a noqa and a justification, which is reasonable because machfs raises assorted types on junk. The test `test_read_module_fork_rejects_a_volume_that_is_not_hfs` (diff lines 84-87) feeds 819,200 zero bytes. It needs only machfs, not the disk image, so it runs without the image. The report says machfs raises ValueError on zeros.
+  
+  ### New Breakage in the Fix Diff
+  None. `from None` drops the original traceback chain. This is intentional, because the message embeds the original error text.
+  
+  ### Out-of-Scope Observations
+  - The broad `except Exception` could also swallow a KeyboardInterrupt-adjacent bug. It cannot, since KeyboardInterrupt is a BaseException. This is not a concern.
+  
+  ### Verdict: all findings addressed
+</agent-message>
