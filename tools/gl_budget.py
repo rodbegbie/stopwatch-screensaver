@@ -121,6 +121,7 @@ static void gl_budget_triangle(GLContext* c, GLVertex* p0, GLVertex* p1,
 
 VERTEX_ENTRY = (
     "void glopVertex(GLParam* p) {\n"
+    "\tGLPROF_SCOPE(GLPROF_VERTEX);\n"
     "\tGLVertex* v;\n"
     "\tGLint n, i, cnt;\n"
     "\tGLContext* c = gl_get_context();\n"
@@ -148,10 +149,10 @@ INSTRUMENTATION = (
     ),
     (
         "src/clip.c",
-        "void gl_draw_point(GLVertex* p0) {\n",
+        "TGL_HOT void gl_draw_point(GLVertex* p0) {\n",
         1,
         TRIANGLE_HELPER
-        + "void gl_draw_point(GLVertex* p0) {\n\tgl_budget_counts[4]++;\n",
+        + "TGL_HOT void gl_draw_point(GLVertex* p0) {\n\tgl_budget_counts[4]++;\n",
     ),
     (
         "src/clip.c",

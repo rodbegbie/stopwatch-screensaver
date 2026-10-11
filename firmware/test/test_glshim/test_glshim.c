@@ -9,6 +9,7 @@
 #include "core/canvas.h"
 #include "fps.h"
 #include "glshim/glshim.h"
+#include "glshim/glshim_prof.h"
 #include "tinygl/src/zgl.h"
 #include "x11shim/xshim.h"
 #include "zbuffer.h"
@@ -853,6 +854,172 @@ void test_blending_set_up_in_the_other_order_is_opaque_too(void) {
   TEST_ASSERT_EQUAL_HEX16(rgb565(0, 255, 0), centre_pixel());
 }
 
+/* Additive blending (GL_ONE, GL_ONE; and GL_SRC_ALPHA, GL_ONE, since TinyGL
+ * has no alpha) adds each channel of the canvas's byte-swapped RGB565 and
+ * saturates it on its own (issue #73). TinyGL's own blend decoded the swapped
+ * pixel as unswapped, which was right only for black and white. */
+static uint16_t unswap(uint16_t v) { return (uint16_t)((v << 8) | (v >> 8)); }
+
+static uint16_t saturating_sum(uint16_t a, uint16_t b) {
+  const unsigned x = unswap(a), y = unswap(b);
+  unsigned r = (x >> 11) + (y >> 11), g = ((x >> 5) & 63) + ((y >> 5) & 63),
+           bl = (x & 31) + (y & 31);
+  if (r > 31) r = 31;
+  if (g > 63) g = 63;
+  if (bl > 31) bl = 31;
+  return unswap((uint16_t)((r << 11) | (g << 5) | bl));
+}
+
+static uint16_t alone(float r, float g, float b, int flat) {
+  open_line_scene(0);
+  glShadeModel(flat ? GL_FLAT : GL_SMOOTH);
+  fill_everything_with(r, g, b, 0);
+  return centre_pixel();
+}
+
+static uint16_t added(float r1, float g1, float b1, float r2, float g2, float b2,
+                      GLenum sfactor, int flat) {
+  open_line_scene(0);
+  glShadeModel(flat ? GL_FLAT : GL_SMOOTH);
+  fill_everything_with(r1, g1, b1, 0);
+  glEnable(GL_BLEND);
+  glBlendFunc(sfactor, GL_ONE);
+  fill_everything_with(r2, g2, b2, 0);
+  return centre_pixel();
+}
+
+void test_additive_blend_adds_each_channel(void) {
+  for (int flat = 0; flat < 2; flat++) {
+    const uint16_t red = alone(0.25f, 0, 0, flat), blue = alone(0, 0, 0.25f, flat);
+    TEST_ASSERT_EQUAL_HEX16(saturating_sum(red, blue),
+                            added(0.25f, 0, 0, 0, 0, 0.25f, GL_ONE, flat));
+  }
+}
+
+void test_additive_blend_saturates_each_channel_on_its_own(void) {
+  for (int flat = 0; flat < 2; flat++) {
+    const uint16_t a = alone(0.8f, 0.15f, 0, flat);
+    const uint16_t sum = added(0.8f, 0.15f, 0, 0.8f, 0.15f, 0, GL_ONE, flat);
+    TEST_ASSERT_EQUAL_HEX16(saturating_sum(a, a), sum);
+    TEST_ASSERT_EQUAL_UINT(31, unswap(sum) >> 11);                         /* red saturates */
+    TEST_ASSERT_EQUAL_UINT(2 * ((unswap(a) >> 5) & 63), (unswap(sum) >> 5) & 63); /* green does not */
+  }
+}
+
+void test_source_alpha_with_one_adds_too(void) {
+  const uint16_t red = alone(0.25f, 0, 0, 0), green = alone(0, 0.25f, 0, 0);
+  TEST_ASSERT_EQUAL_HEX16(saturating_sum(red, green),
+                          added(0.25f, 0, 0, 0, 0.25f, 0, GL_SRC_ALPHA, 0));
+}
+
+/* Half resolution (issue #43, for Hypnowheel): at scale 2 TinyGL draws into a
+ * half-size buffer, glViewport is halved to match, and the swap doubles each
+ * pixel into the canvas. A smooth three-colour triangle comes out in 2 by 2
+ * blocks only if pixels really are doubled. */
+static void corner_triangle_frame(float x0, float y0) {
+  glViewport(0, 0, SIZE, SIZE);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  glClearColor(0, 0, 0, 0);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glBegin(GL_TRIANGLES);
+  glColor3f(1, 0, 0);
+  glVertex3f(x0, y0, 0);
+  glColor3f(0, 1, 0);
+  glVertex3f(1, y0, 0);
+  glColor3f(0, 0, 1);
+  glVertex3f(x0, 1, 0);
+  glEnd();
+}
+
+void test_at_scale_two_each_pixel_becomes_a_two_by_two_block(void) {
+  glshim_set_render_scale(2);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  corner_triangle_frame(-1, -1);
+  glXSwapBuffers(dpy, 0);
+  int lit = 0;
+  for (int y = 0; y < SIZE; y += 2)
+    for (int x = 0; x < SIZE; x += 2) {
+      const uint16_t v = cv.px[y * SIZE + x];
+      TEST_ASSERT_EQUAL_HEX16(v, cv.px[y * SIZE + x + 1]);
+      TEST_ASSERT_EQUAL_HEX16(v, cv.px[(y + 1) * SIZE + x]);
+      TEST_ASSERT_EQUAL_HEX16(v, cv.px[(y + 1) * SIZE + x + 1]);
+      if (v) lit++;
+    }
+  TEST_ASSERT_TRUE(lit > SIZE * SIZE / 16);
+  TEST_ASSERT_NOT_EQUAL(0, cv.px[(SIZE - 1) * SIZE]); /* bottom left */
+  TEST_ASSERT_EQUAL_HEX16(0, cv.px[SIZE - 1]);        /* top right */
+}
+
+void test_at_scale_two_the_dirty_box_is_scaled(void) {
+  glshim_set_render_scale(2);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  corner_triangle_frame(0.5f, 0.5f); /* the first frame is a full clear */
+  glXSwapBuffers(dpy, 0);
+  canvas_clear_dirty(&cv);
+  corner_triangle_frame(0.5f, 0.5f); /* top right only */
+  glXSwapBuffers(dpy, 0);
+  int x0, x1, rows = 0;
+  for (int y = 0; y < SIZE; y++) {
+    if (!canvas_dirty_row(&cv, y, &x0, &x1)) continue;
+    rows++;
+    TEST_ASSERT_TRUE(y < SIZE / 2);
+    TEST_ASSERT_EQUAL_INT(SIZE - 1, x1); /* the doubled right edge */
+    TEST_ASSERT_TRUE(x0 >= SIZE / 2 && x0 % 2 == 0);
+  }
+  TEST_ASSERT_TRUE(rows > 0 && rows % 2 == 0);
+}
+
+static int canvas_is_two_by_two_blocks(void) {
+  for (int y = 0; y < SIZE; y += 2)
+    for (int x = 0; x < SIZE; x += 2) {
+      const uint16_t v = cv.px[y * SIZE + x];
+      if (cv.px[y * SIZE + x + 1] != v || cv.px[(y + 1) * SIZE + x] != v) return 0;
+    }
+  return 1;
+}
+
+/* Opening while a context is open closes it first; that must not lose a
+ * scale asked for since. */
+void test_a_scale_asked_for_while_a_context_is_open_is_kept(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glshim_set_render_scale(2);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  corner_triangle_frame(-1, -1);
+  glXSwapBuffers(dpy, 0);
+  TEST_ASSERT_TRUE(canvas_is_two_by_two_blocks());
+}
+
+/* A hack that asks for scale 2 and then fails to open, or never opens, must
+ * not leave it for the next hack. */
+void test_a_failed_open_does_not_leave_the_scale_behind(void) {
+  Canvas empty = {0};
+  glshim_set_render_scale(2);
+  TEST_ASSERT_NULL(glshim_open(&empty));
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  corner_triangle_frame(-1, -1); /* at scale 1 it lands on the canvas at once */
+  TEST_ASSERT_NOT_EQUAL(0, cv.px[(SIZE - 1) * SIZE]);
+}
+
+void test_a_scale_never_opened_is_dropped_when_the_hack_stops(void) {
+  glshim_set_render_scale(2);
+  glshim_close(); /* the release hook runs even if the hack never opened */
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  corner_triangle_frame(-1, -1);
+  TEST_ASSERT_NOT_EQUAL(0, cv.px[(SIZE - 1) * SIZE]);
+}
+
+void test_closing_resets_the_scale(void) {
+  glshim_set_render_scale(2);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glshim_close();
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  corner_triangle_frame(-1, -1); /* at scale 1 it lands on the canvas at once */
+  TEST_ASSERT_NOT_EQUAL(0, cv.px[(SIZE - 1) * SIZE]);
+}
+
 /* Polygon offset. A second fill at exactly the same depth wins a tie, since
  * TinyGL's test is >=. With the offset enabled it is pushed back and loses. */
 static uint16_t second_fill_behind_the_first(int enable, float factor, float units,
@@ -989,6 +1156,112 @@ void test_the_device_is_never_turned(void) {
   TEST_ASSERT_TRUE(current_device_rotation() == 0.0);
 }
 
+/* Lighting reads the material when a vertex is shaded. With lazy lighting a
+ * vertex is shaded when its triangle is drawn, so a material change between
+ * two vertices of one triangle must first shade the vertices before it: the
+ * first two stay red and the third is green, as GL orders it. Built and run
+ * with and without the flag. */
+void test_a_material_change_mid_triangle_lights_earlier_vertices_with_the_old_one(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  const GLfloat red[4] = {1, 0, 0, 1}, green[4] = {0, 1, 0, 1};
+  glEnable(GL_LIGHTING);
+  glEnable(GL_LIGHT0);
+  glNormal3f(0, 0, 1);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, red);
+  glBegin(GL_TRIANGLES);
+  glVertex3f(-0.5f, -0.5f, 0);
+  glVertex3f(0.5f, -0.5f, 0);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, green);
+  glVertex3f(0, 0.5f, 0);
+  glEnd();
+  const GLVertex *v = gl_get_context()->vertex;
+  for (int i = 0; i < 2; i++) {
+    TEST_ASSERT_TRUE_MESSAGE(v[i].color.v[0] > 0.9f, "vertex before the change");
+    TEST_ASSERT_TRUE_MESSAGE(v[i].color.v[1] < 0.1f, "vertex before the change");
+  }
+  TEST_ASSERT_TRUE(v[2].color.v[0] < 0.1f);
+  TEST_ASSERT_TRUE(v[2].color.v[1] > 0.9f);
+}
+
+#ifndef GL_EAGER_SHADE
+/* Lazy lighting is the default (issue #43): a culled triangle's vertices are
+ * left waiting to be lit, and GL_EAGER_SHADE goes back to lighting each
+ * vertex as it arrives. */
+void test_lazy_lighting_is_the_default(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glEnable(GL_LIGHTING);
+  glEnable(GL_LIGHT0);
+  glEnable(GL_CULL_FACE);
+  glBegin(GL_TRIANGLES);
+  glVertex3f(-0.5f, -0.5f, 0); /* clockwise: a back face */
+  glVertex3f(0, 0.5f, 0);
+  glVertex3f(0.5f, -0.5f, 0);
+  glEnd();
+  const GLVertex *v = gl_get_context()->vertex;
+  for (int i = 0; i < 3; i++) TEST_ASSERT_EQUAL_INT(1, v[i].shade_pending);
+}
+#endif
+
+#if defined(GL_PROFILE) && !defined(GL_EAGER_SHADE)
+/* A culled triangle's vertices are never lit; a drawn one's are, once each. */
+void test_lazy_lighting_skips_the_vertices_of_culled_triangles(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glEnable(GL_LIGHTING);
+  glEnable(GL_LIGHT0);
+  glEnable(GL_CULL_FACE);
+  glshim_prof_reset();
+  glBegin(GL_TRIANGLES);
+  glVertex3f(-0.5f, -0.5f, 0); /* clockwise: a back face */
+  glVertex3f(0, 0.5f, 0);
+  glVertex3f(0.5f, -0.5f, 0);
+  glEnd();
+  TEST_ASSERT_EQUAL_UINT32(0, glshim_prof_calls[GLPROF_SHADE]);
+  glBegin(GL_TRIANGLE_STRIP);
+  glVertex3f(-0.5f, -0.5f, 0);
+  glVertex3f(0.5f, -0.5f, 0);
+  glVertex3f(-0.5f, 0.5f, 0);
+  glVertex3f(0.5f, 0.5f, 0);
+  glEnd();
+  TEST_ASSERT_EQUAL_UINT32(2, glshim_prof_calls[GLPROF_FILL]);
+  TEST_ASSERT_EQUAL_UINT32(4, glshim_prof_calls[GLPROF_SHADE]);
+}
+#endif
+
+#ifdef GL_PROFILE
+/* The profile counts each stage once per call, and a list called from a list
+ * counts once: a nested list must not add its time to its caller's twice. */
+void test_the_profile_counts_each_stage_once_per_call(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  const GLuint inner = glGenLists(2), outer = inner + 1;
+  glNewList(inner, GL_COMPILE);
+  glBegin(GL_TRIANGLES);
+  glVertex3f(-0.5f, -0.5f, 0);
+  glVertex3f(0.5f, -0.5f, 0);
+  glVertex3f(0, 0.5f, 0);
+  glEnd();
+  glEndList();
+  glNewList(outer, GL_COMPILE);
+  glCallList(inner);
+  glEndList();
+  glEnable(GL_LIGHTING);
+  glEnable(GL_LIGHT0);
+  glshim_prof_reset();
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glCallList(outer);
+  glXSwapBuffers(dpy, 0);
+  TEST_ASSERT_EQUAL_UINT32(1, glshim_prof_frames);
+  TEST_ASSERT_EQUAL_UINT32(1, glshim_prof_calls[GLPROF_CLEAR]);
+  TEST_ASSERT_EQUAL_UINT32(1, glshim_prof_calls[GLPROF_LIST]);
+  TEST_ASSERT_EQUAL_UINT32(3, glshim_prof_calls[GLPROF_VERTEX]);
+  TEST_ASSERT_EQUAL_UINT32(3, glshim_prof_calls[GLPROF_SHADE]);
+  TEST_ASSERT_EQUAL_UINT32(1, glshim_prof_calls[GLPROF_TRIANGLE]);
+  TEST_ASSERT_EQUAL_UINT32(1, glshim_prof_calls[GLPROF_FILL]);
+  TEST_ASSERT_EQUAL_INT(0, glshim_prof_depth);
+  TEST_ASSERT_TRUE(glshim_prof_time[GLPROF_LIST] >= glshim_prof_time[GLPROF_VERTEX]);
+  TEST_ASSERT_TRUE(glshim_prof_time[GLPROF_TRIANGLE] >= glshim_prof_time[GLPROF_FILL]);
+}
+#endif
+
 /* TinyGL is built without GL_POLYGON, which also drops GL_LINE_LOOP, and an
  * unhandled primitive kept counting vertices: the fifth was written past
  * c->vertex, over the matrices and colours that follow it (Pipes' buildlwo.c
@@ -1018,6 +1291,16 @@ void test_an_unhandled_primitive_never_writes_past_the_vertex_buffer(void) {
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_an_unhandled_primitive_never_writes_past_the_vertex_buffer);
+#ifdef GL_PROFILE
+  RUN_TEST(test_the_profile_counts_each_stage_once_per_call);
+#endif
+  RUN_TEST(test_a_material_change_mid_triangle_lights_earlier_vertices_with_the_old_one);
+#ifndef GL_EAGER_SHADE
+  RUN_TEST(test_lazy_lighting_is_the_default);
+#endif
+#if defined(GL_PROFILE) && !defined(GL_EAGER_SHADE)
+  RUN_TEST(test_lazy_lighting_skips_the_vertices_of_culled_triangles);
+#endif
   RUN_TEST(test_the_device_is_never_turned);
   RUN_TEST(test_a_smooth_horizontal_line_moves_a_quarter_pixel_at_a_time);
   RUN_TEST(test_a_smooth_vertical_line_moves_a_quarter_pixel_at_a_time);
@@ -1029,6 +1312,15 @@ int main(void) {
   RUN_TEST(test_line_width_changes_neither_a_smooth_nor_a_plain_line);
   RUN_TEST(test_smoothing_can_be_switched_off_again);
   RUN_TEST(test_a_fill_blended_with_source_alpha_is_opaque);
+  RUN_TEST(test_at_scale_two_each_pixel_becomes_a_two_by_two_block);
+  RUN_TEST(test_at_scale_two_the_dirty_box_is_scaled);
+  RUN_TEST(test_closing_resets_the_scale);
+  RUN_TEST(test_a_scale_asked_for_while_a_context_is_open_is_kept);
+  RUN_TEST(test_a_failed_open_does_not_leave_the_scale_behind);
+  RUN_TEST(test_a_scale_never_opened_is_dropped_when_the_hack_stops);
+  RUN_TEST(test_additive_blend_adds_each_channel);
+  RUN_TEST(test_additive_blend_saturates_each_channel_on_its_own);
+  RUN_TEST(test_source_alpha_with_one_adds_too);
   RUN_TEST(test_blending_set_up_in_the_other_order_is_opaque_too);
   RUN_TEST(test_a_coplanar_fill_wins_the_depth_tie_without_an_offset);
   RUN_TEST(test_a_positive_offset_pushes_a_fill_back_behind_its_twin);

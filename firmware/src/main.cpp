@@ -5,6 +5,7 @@
 extern "C" {
 #include "core/canvas.h"
 #include "core/push_plan.h"
+#include "glshim/glshim_prof.h"
 #include "hacks/registry.h"
 #include "runner/button_latch.h"
 #include "runner/hack_runner.h"
@@ -230,6 +231,9 @@ static void halt(const char *msg) {
 static void resetStats() {
   frames = stepUs = pushUs = syncUs = waitUs = rowsPushed = 0;
   statsAt = millis();
+#ifdef GL_PROFILE
+  glshim_prof_reset();
+#endif
 }
 
 /* step/push/sync/wait are mean milliseconds per frame spent in the hack, in
@@ -249,6 +253,21 @@ static void printStats(const char *tag) {
       rowsPushed / n,
       (unsigned)ESP.getFreeHeap(),
       (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+#ifdef GL_PROFILE
+  /* Mean microseconds per GL frame in each stage, then calls per frame. */
+  if (glshim_prof_frames) {
+    const float perFrame = (float)glshim_prof_frames * ESP.getCpuFreqMHz();
+    Serial.printf("glprof %s frames=%u", g_hacks[runner_index(runner)]->name,
+                  (unsigned)glshim_prof_frames);
+    for (int i = 0; i < GLPROF_SLOTS; i++)
+      Serial.printf(" %s=%.2fms", glshim_prof_names[i],
+                    glshim_prof_time[i] / perFrame / 1000.0f);
+    for (int i = 0; i < GLPROF_SLOTS; i++)
+      Serial.printf(" n%s=%.0f", glshim_prof_names[i],
+                    (float)glshim_prof_calls[i] / glshim_prof_frames);
+    Serial.printf("\n");
+  }
+#endif
 }
 
 /* Overlay text is stamped into the canvas just for the push, then the pixels
@@ -481,6 +500,37 @@ static void pollBattery() {
   overlay_set_battery(&overlay, M5.Power.getBatteryLevel());
 }
 
+#ifdef GL_PROFILE
+/* Issue #43: cycles per access to a new 32-byte cache line in PSRAM, taking
+ * the lines in address order (line_rmw) and down columns, a row apart, as a
+ * small triangle's rows are (col_rmw, col_read); internal RAM for scale.
+ * Each walk runs twice, so the XOR leaves the buffer as it was. */
+static uint32_t memWalk(volatile uint16_t *buf, int cols, int rows, int stride) {
+  uint32_t start = glshim_prof_now();
+  for (int pass = 0; pass < 2; pass++)
+    for (int x = 0; x < cols; x++)
+      for (int y = 0; y < rows; y++) buf[(size_t)y * stride + x * 16] ^= 1;
+  return (glshim_prof_now() - start) / (2u * cols * rows);
+}
+
+static void memBench(uint16_t *psram) {
+  uint32_t seq = memWalk(psram, 1, kSize * kSize / 16, 16);
+  const int cols = kSize / 16; /* x * 16 stays inside the row */
+  uint32_t col = memWalk(psram, cols, kSize, kSize);
+  volatile uint16_t *b = psram;
+  uint32_t sum = 0, start = glshim_prof_now();
+  for (int x = 0; x < cols; x++)
+    for (int y = 0; y < kSize; y++) sum += b[(size_t)y * kSize + x * 16];
+  uint32_t colRead = (glshim_prof_now() - start) / ((uint32_t)cols * kSize);
+  (void)sum;
+  uint16_t *internal = (uint16_t *)heap_caps_malloc(16384, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+  uint32_t inner = internal ? memWalk(internal, 1, 512, 16) : 0;
+  free(internal);
+  Serial.printf("membench psram_line_rmw=%u psram_col_rmw=%u psram_col_read=%u internal=%u cycles\n",
+                (unsigned)seq, (unsigned)col, (unsigned)colRead, (unsigned)inner);
+}
+#endif
+
 void setup() {
   auto cfg = M5.config();
   M5.begin(cfg);
@@ -494,6 +544,9 @@ void setup() {
 
   if (canvas_init(&canvas, kSize, kSize, ps_malloc) != 0)
     halt("PSRAM alloc failed");
+#ifdef GL_PROFILE
+  memBench(canvas.px);
+#endif
   stamp.setBuffer(canvas.px, kSize, kSize, 16);
   namePatch.saved = (uint16_t *)ps_malloc(kSize * kPatchMaxH * sizeof(uint16_t));
   size_t infoPixels = kQrSide * kQrSide > kSize * kPatchMaxH

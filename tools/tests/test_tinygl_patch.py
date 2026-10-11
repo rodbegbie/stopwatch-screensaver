@@ -177,3 +177,120 @@ def test_filled_triangles_apply_polygon_offset_and_treat_alpha_one_as_opaque(pat
     assert "p0->zp.z = z0;" in wrapper
     assert "GL_SRC_ALPHA" in wrapper and "GL_ONE_MINUS_SRC_ALPHA" in wrapper
     assert "c->zb->enable_blend = blend;" in wrapper
+
+
+def hot_id(hot: "tp.Hot") -> str:
+    return f"{hot.path}:{hot.definition.split('(')[0].split()[-1]}"
+
+
+@pytest.mark.parametrize("hot", tp.HOT_FUNCTIONS, ids=hot_id)
+def test_every_hot_function_is_marked_and_timed_if_it_has_a_slot(patched, hot):
+    """GL_IRAM moves exactly these functions; GL_PROFILE times the ones with
+    a slot from their first line."""
+    text = patched[hot.path]
+    assert text.count("TGL_HOT " + hot.anchor) == 1
+    if hot.slot:
+        scope = "GLPROF_SCOPE_OUTER" if hot.reentrant else "GLPROF_SCOPE"
+        assert f"TGL_HOT {hot.anchor}\t{scope}({hot.slot});\n" in text
+
+
+@pytest.mark.parametrize("hot", tp.HOT_FUNCTIONS, ids=hot_id)
+def test_a_missing_hot_function_names_upstream_as_the_problem(hot):
+    sources = load_sources()
+    patched_once = tp.patch_tree(sources)
+    assert hot.anchor not in patched_once[hot.path].replace("TGL_HOT " + hot.anchor, "")
+    broken = dict(sources)
+    upstream_anchor = hot.anchor if hot.anchor in sources[hot.path] else None
+    if upstream_anchor is None:  # written by an earlier patch: break that one
+        pytest.skip("anchor is written by FILL_TRIANGLE")
+    broken[hot.path] = sources[hot.path].replace(
+        hot.anchor, hot.anchor.replace("(", " (")
+    )
+    with pytest.raises(ValueError, match="has upstream changed"):
+        tp.patch_tree(broken)
+
+
+def test_only_the_list_call_is_timed_as_reentrant():
+    """Display lists call lists; timing every level would count time twice."""
+    assert [h.definition for h in tp.HOT_FUNCTIONS if h.reentrant] == [
+        "void glopCallList(GLParam* p)"
+    ]
+
+
+def test_the_single_header_brings_in_the_switches(patched):
+    assert '#include "glshim/glshim_prof.h"' in patched["src/tinygl_single.h"]
+
+
+def late_id(rep: "tp.Replace") -> str:
+    return f"{rep.path}:{rep.anchor[:28]!r}"
+
+
+@pytest.mark.parametrize("rep", tp.LATE_REPLACEMENTS, ids=late_id)
+def test_a_late_anchor_that_moved_is_refused(rep, monkeypatch):
+    """Late anchors are written by earlier patches, so break them there."""
+    monkeypatch.setattr(
+        tp,
+        "LATE_REPLACEMENTS",
+        tuple(
+            tp.Replace(r.path, r.anchor + "\x00", r.replacement, r.count)
+            if r is rep
+            else r
+            for r in tp.LATE_REPLACEMENTS
+        ),
+    )
+    with pytest.raises(ValueError, match="has upstream changed"):
+        tp.patch_tree(load_sources())
+
+
+def test_lazy_lighting_shades_before_every_draw(patched):
+    """Every place a lit vertex reaches the rasteriser shades it first."""
+    clip = patched["src/clip.c"]
+    assert clip.count("GL_SHADE_NOW3(p0, p1, p2); glshim_note_triangle") == 4
+    assert (
+        "GL_SHADE_NOW3(p0, p1, p2);\n\t\t\tgl_draw_triangle_clip(p0, p1, p2, 0);"
+        in clip
+    )
+    assert "GL_SHADE_NOW(p0);" in clip
+    assert "GL_SHADE_NOW(p1);\n\tGL_SHADE_NOW(p2);" in clip
+
+
+def test_clip_temporaries_are_never_shaded_again(patched):
+    """The clipper's stack vertices are interpolated from shaded ones and go
+    back through gl_draw_triangle; an uninitialised flag shaded them with the
+    material (a host test caught it as half-bright fills, depending on what
+    the stack held)."""
+    clip = patched["src/clip.c"]
+    tmp = clip[clip.index("static void updateTmp") :]
+    assert "q->shade_pending = 0;" in tmp[: tmp.index("q->color.v[0]")]
+
+
+@pytest.mark.parametrize(
+    "op",
+    [
+        "glopMaterial",
+        "glopLight",
+        "glopLightModel",
+        "glopSetEnableSpecular",
+        "glopEnableDisable",
+    ],
+)
+def test_lighting_state_changes_shade_what_is_pending_first(patched, op):
+    text = patched["src/misc.c" if op == "glopEnableDisable" else "src/light.c"]
+    body = text[text.index(f"void {op}(GLParam* p) {{") :]
+    assert "GL_SHADE_FLUSH();" in body[:120]
+
+
+def test_lazy_lighting_defers_the_eye_normal_but_keeps_the_original(patched):
+    """The default build keeps upstream's normal transform word for word."""
+    vertex = patched["src/vertex.c"]
+    assert "#ifdef GL_LAZY_SHADE\n\t\tv->normal.X = c->current_normal.X;" in vertex
+    assert tp.NORMAL_TRANSFORM in vertex
+    assert "gl_eye_normal(v, &n);\n\tgl_shade_vertex(v);" in patched["src/light.c"]
+
+
+def test_additive_blending_saturates_each_channel(patched):
+    zbuffer = patched["include/zbuffer.h"]
+    assert "static inline PIXEL glshim_add565(PIXEL dst, PIXEL src)" in zbuffer
+    assert "GLint tgl_adds = TGL_BLEND_ADDS(sfactor, dfactor, zbblendeq);" in zbuffer
+    assert "if (tgl_adds) { (dest) = glshim_add565((dest), (source)); } else" in zbuffer
+    assert "if (tgl_adds) { (dest) = glshim_add565((dest), RGB_TO_PIXEL(" in zbuffer
