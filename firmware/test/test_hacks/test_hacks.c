@@ -467,7 +467,7 @@ static const uint64_t kBaseline[] = {
     0x91be49ba88096f62ull, /* Cynosure: taken after looking at the frames */
     0xcfa8f679f1a10fddull, /* Moire: taken after looking at the frames (single precision) */
     0x32f706208dc0a079ull, /* Moire2: taken after looking at the frames (bit planes) */
-    0x7a0560ac01c7e6e0ull, /* HexTrail: taken after looking at the frames (count 6) */
+    0x0100bedf6ddf582cull, /* HexTrail: taken after looking at the frames (count 6, single precision) */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
