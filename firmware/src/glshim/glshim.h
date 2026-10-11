@@ -25,10 +25,6 @@ void glshim_close(void);
 /* True while a context is open. The tests use it to check that stopping a hack
  * closed its context. */
 int glshim_is_open(void);
-/* Held, banded frames (glshim_band.h) are on for each new context. A hack
- * that draws against the depth of earlier frames, with no depth clear, turns
- * them off for its context: a held frame never writes the PSRAM z-buffer. */
-void glshim_set_banding(int on);
 
 /* How many depth clears have actually run (a clear made while the depth test
  * is off is deferred until it is switched on). For the tests. */

@@ -299,14 +299,3 @@ def test_rasterisers_stay_inside_a_band(patched):
     assert "if (ZB_IN_BAND(zb, pp) && ZCMP(zz, *pz))" in line
     assert "if (ZB_IN_BAND(zb, pp)) { RGBPIXEL; }" in line
     assert "if (p->y < 0 || p->y >= zb->ysize)" in patched["src/zline.c"]
-
-
-def test_fills_go_through_held_frames(patched):
-    clip = patched["src/clip.c"]
-    for fn in ("Smooth", "Flat"):
-        assert f"GLSHIM_FILL(ZB_fillTriangle{fn}, c->zb," in clip
-        assert f"GLSHIM_FILL(ZB_fillTriangle{fn}NOBLEND, c->zb," in clip
-    assert "glshim_band_spill(c->zb);\n\t\tZB_setTexture" in clip
-    assert "#define GLSHIM_FILL(fn, zb, a, b, c)" in patched["src/zgl.h"]
-    assert "glshim_band_spill(c->zb);" in patched["src/ztext.c"]
-    assert "glshim_band_spill(gl_get_context()->zb);" in patched["src/zraster.c"]

@@ -20,15 +20,6 @@ static Canvas cv;
 static Display *dpy;
 static size_t live_before;
 
-/* These tests read the canvas before any swap, so they draw directly: a held
- * frame reaches the canvas only at the swap. test_glshim_band compares the
- * held path with this one. */
-static GLXContext *open_direct(void) {
-  GLXContext *ctx = glshim_open(&cv);
-  glshim_set_banding(0);
-  return ctx;
-}
-
 void setUp(void) {
   live_before = __sanitizer_get_current_allocated_bytes();
   TEST_ASSERT_EQUAL_INT(0, canvas_init(&cv, SIZE, SIZE, malloc));
@@ -71,7 +62,7 @@ void test_clear_writes_canvas_byte_order(void) {
 
 /* Real GL reserves list name 0 as invalid, and hacks abort on it. */
 void test_the_first_list_name_is_not_zero(void) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   TEST_ASSERT_TRUE(glGenLists(1) >= 1);
 }
 
@@ -83,7 +74,7 @@ void test_the_first_list_name_is_not_zero(void) {
  * covers row 32 from about column 36 to 39.7. Red, not white, so a byte swap
  * would show. */
 void test_perspective_and_lookat_put_a_point_where_the_maths_says(void) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glViewport(0, 0, SIZE, SIZE);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -108,7 +99,7 @@ void test_perspective_and_lookat_put_a_point_where_the_maths_says(void) {
  * else. By hand: x = 2.5 of 10 is a quarter of the way across, column 16 of
  * 64; y = 15 of 20 is a quarter of the way down from the top, row 16. */
 void test_ortho_puts_a_point_where_the_maths_says(void) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glViewport(0, 0, SIZE, SIZE);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -131,7 +122,7 @@ void test_ortho_puts_a_point_where_the_maths_says(void) {
 /* Depth is mapped too: the near plane is z = -near, so two overlapping
  * triangles show the nearer one whatever order they are drawn in. */
 void test_ortho_maps_depth_so_the_nearer_triangle_wins(void) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glViewport(0, 0, SIZE, SIZE);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -171,7 +162,7 @@ static int ortho_triangle_shows_at(float z) {
 }
 
 void test_ortho_clips_at_the_near_and_far_planes(void) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glViewport(0, 0, SIZE, SIZE);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -193,7 +184,7 @@ void test_ortho_clips_at_the_near_and_far_planes(void) {
  * shininess 1, black at 100. If glMateriali did not reach TinyGL the
  * shininess would stay 0, and 0.6 ^ 0 is 1: bright in both. */
 static int specular_red_at_centre(int shininess) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glViewport(0, 0, SIZE, SIZE);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -232,7 +223,7 @@ void test_materiali_sets_the_shininess_tinygl_uses(void) {
  * reports as a global-buffer-overflow. */
 void test_a_one_value_light_model_is_not_over_read(void) {
   static const GLfloat two_side[1] = {GL_TRUE};
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glLightModelfv(GL_LIGHT_MODEL_TWO_SIDE, (GLfloat *)two_side);
 }
 
@@ -241,7 +232,7 @@ void test_is_enabled_reports_texturing_off(void) {
 }
 
 void test_swap_buffers_marks_every_row_dirty(void) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   canvas_clear_dirty(&cv);
   glXSwapBuffers(dpy, 1);
   for (int y = 0; y < SIZE; y++) {
@@ -254,7 +245,7 @@ void test_swap_buffers_marks_every_row_dirty(void) {
 
 void test_releasing_the_display_frees_the_context(void) {
   const size_t before = __sanitizer_get_current_allocated_bytes();
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   TEST_ASSERT_TRUE(__sanitizer_get_current_allocated_bytes() > before);
   xshim_release_pixmaps(dpy);
   TEST_ASSERT_EQUAL_UINT64(before, __sanitizer_get_current_allocated_bytes());
@@ -262,9 +253,9 @@ void test_releasing_the_display_frees_the_context(void) {
 
 /* A hack that restarts itself calls init_GL again without stopping. */
 void test_opening_twice_replaces_the_context_without_leaking(void) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   const size_t once = __sanitizer_get_current_allocated_bytes();
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   TEST_ASSERT_EQUAL_UINT64(once, __sanitizer_get_current_allocated_bytes());
 }
 
@@ -290,7 +281,7 @@ static const Vtx kTri[3] = {{{0, 0, 1}, {-0.8f, -0.8f, 0}, {0, 0}},
 static uint16_t reference[SIZE * SIZE];
 
 static void open_flat_red_scene(void) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glViewport(0, 0, SIZE, SIZE);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -361,7 +352,7 @@ void test_a_new_context_starts_with_no_client_arrays_enabled(void) {
   open_flat_red_scene();
   point_at(kTri);
   glshim_close();
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glViewport(0, 0, SIZE, SIZE);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -405,7 +396,7 @@ static void assert_canvas_is(uint16_t colour, const char *why) {
 }
 
 void test_a_region_clear_still_leaves_the_whole_canvas_clear(void) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glClearColor(1, 0, 0, 0);
   clear_all();
   /* Two disjoint primitives a frame, so a box that failed to grow to cover
@@ -427,7 +418,7 @@ void test_a_line_drawn_in_any_direction_is_cleared_again(void) {
                             {0.8f, 0.6f, -0.8f, -0.6f},
                             {-0.8f, 0.6f, 0.8f, -0.6f},
                             {0.8f, -0.6f, -0.8f, 0.6f}};
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glClearColor(1, 0, 0, 0);
   clear_all();
   for (int i = 0; i < 4; i++) {
@@ -453,7 +444,7 @@ static int pixels_not(uint16_t colour) {
  * which only holds a pointer on the 32-bit board). Both must be inside the box
  * a clear erases. */
 void test_text_is_cleared_again(void) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glClearColor(1, 0, 0, 0);
   clear_all();
   glXSwapBuffers(dpy, 0);
@@ -466,14 +457,14 @@ void test_text_is_cleared_again(void) {
 
 void test_the_first_clear_after_opening_clears_over_whatever_was_there(void) {
   for (int i = 0; i < SIZE * SIZE; i++) cv.px[i] = 0x1234;
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glClearColor(1, 0, 0, 0);
   clear_all();
   assert_canvas_is(rgb565(255, 0, 0), "the first clear was not a full clear");
 }
 
 void test_a_new_clear_colour_clears_everything(void) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glClearColor(1, 0, 0, 0);
   clear_all();
   triangle(-0.2f, -0.2f, 0.2f, -0.2f, 0.0f, 0.2f, 0, 0, 0, 1);
@@ -484,7 +475,7 @@ void test_a_new_clear_colour_clears_everything(void) {
 }
 
 void test_stale_depth_does_not_hide_the_next_frame(void) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glEnable(GL_DEPTH_TEST);
   glClearColor(1, 0, 0, 0);
   clear_all();
@@ -500,7 +491,7 @@ void test_stale_depth_does_not_hide_the_next_frame(void) {
  * asks for it does no work until the test is switched on. HexTrail asks every
  * frame and never enables the test: a second full-canvas clear of PSRAM. */
 void test_a_depth_clear_does_nothing_while_the_depth_test_is_off(void) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glDisable(GL_DEPTH_TEST);
   const unsigned before = glshim_depth_clears();
   for (int i = 0; i < 3; i++) {
@@ -516,7 +507,7 @@ void test_a_depth_clear_does_nothing_while_the_depth_test_is_off(void) {
 /* The skipped clear is only deferred: a hack that clears with the test off and
  * then enables it sees a cleared depth buffer, as with the stock clear. */
 void test_a_depth_clear_made_with_the_test_off_applies_once_it_is_on(void) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glDisable(GL_DEPTH_TEST);
   glClearColor(1, 0, 0, 0);
   clear_all();
@@ -531,7 +522,7 @@ void test_a_depth_clear_made_with_the_test_off_applies_once_it_is_on(void) {
 /* Contract: pixels outside what was drawn are not rewritten by a clear, so
  * nothing else may draw on the canvas while a GL hack runs. */
 void test_a_clear_rewrites_only_the_region_that_was_drawn(void) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glClearColor(1, 0, 0, 0);
   clear_all();
   triangle(-0.9f, -0.9f, -0.5f, -0.9f, -0.9f, -0.5f, 0, 0, 0, 1);
@@ -544,7 +535,7 @@ void test_a_clear_rewrites_only_the_region_that_was_drawn(void) {
 }
 
 void test_the_swap_marks_only_the_old_and_new_boxes_dirty(void) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glClearColor(1, 0, 0, 0);
   clear_all();
   triangle(-0.9f, 0.5f, -0.5f, 0.5f, -0.9f, 0.9f, 0, 0, 0, 1);
@@ -609,7 +600,7 @@ void test_recompiling_a_list_under_the_same_name_does_not_grow_memory(void) {
 #define PIXEL_NDC (2.0f / SIZE)
 
 static void open_line_scene(int smooth) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glViewport(0, 0, SIZE, SIZE);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -1005,7 +996,7 @@ void test_the_device_is_never_turned(void) {
  * first two stay red and the third is green, as GL orders it. Built and run
  * with and without the flag. */
 void test_a_material_change_mid_triangle_lights_earlier_vertices_with_the_old_one(void) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   const GLfloat red[4] = {1, 0, 0, 1}, green[4] = {0, 1, 0, 1};
   glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);
@@ -1031,7 +1022,7 @@ void test_a_material_change_mid_triangle_lights_earlier_vertices_with_the_old_on
  * left waiting to be lit, and GL_EAGER_SHADE goes back to lighting each
  * vertex as it arrives. */
 void test_lazy_lighting_is_the_default(void) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);
   glEnable(GL_CULL_FACE);
@@ -1048,7 +1039,7 @@ void test_lazy_lighting_is_the_default(void) {
 #if defined(GL_PROFILE) && !defined(GL_EAGER_SHADE)
 /* A culled triangle's vertices are never lit; a drawn one's are, once each. */
 void test_lazy_lighting_skips_the_vertices_of_culled_triangles(void) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glEnable(GL_LIGHTING);
   glEnable(GL_LIGHT0);
   glEnable(GL_CULL_FACE);
@@ -1074,7 +1065,7 @@ void test_lazy_lighting_skips_the_vertices_of_culled_triangles(void) {
 /* The profile counts each stage once per call, and a list called from a list
  * counts once: a nested list must not add its time to its caller's twice. */
 void test_the_profile_counts_each_stage_once_per_call(void) {
-  TEST_ASSERT_NOT_NULL(open_direct());
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   const GLuint inner = glGenLists(2), outer = inner + 1;
   glNewList(inner, GL_COMPILE);
   glBegin(GL_TRIANGLES);
