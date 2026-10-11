@@ -86,6 +86,37 @@
         "label": "Skill: markdown",
         "default_collapsed": true
       }
+    },
+    {
+      "id": "claude-skill-toolu_01CRtci7fCUbUEKsa1MgDPdY",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:writing-plans"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "b21cb8f7f7e8",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 893,
+        "end": 894,
+        "entry_ids": [
+          "9ba948ae-7f21-4460-b535-ffd00aa32413"
+        ],
+        "tool_use_id": "toolu_01CRtci7fCUbUEKsa1MgDPdY"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01CRtci7fCUbUEKsa1MgDPdY"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:writing-plans",
+        "default_collapsed": true
+      }
     }
   ],
   "session_metrics": {
