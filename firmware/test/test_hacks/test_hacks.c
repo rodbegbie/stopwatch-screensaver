@@ -463,13 +463,13 @@ static const uint64_t kBaseline[] = {
     0x77bfaaf3faa1cc64ull, /* Starfish: taken after looking at the frames (spline.h before the float rename) */
     0x5694978ccee06fd6ull, /* Goop: taken after looking at the frames (spline.h before the float rename) */
     0xe79bc5d8b096d29full, /* Loop: taken after looking at the frames (a fresh mode choice per start) */
-    0, /* CWaves: not yet pinned */
-    0, /* Vermiculate: not yet pinned */
-    0, /* Cynosure: not yet pinned */
-    0, /* Moire: not yet pinned */
-    0, /* Moire2: not yet pinned */
-    0, /* Boing: not yet pinned */
-    0, /* HexTrail: not yet pinned */
+    0xf21a07f42e0c50b9ull, /* CWaves: taken after looking at the frames (single precision, one row copied down) */
+    0x06dba6c7177716ebull, /* Vermiculate: taken after looking at the frames */
+    0x91be49ba88096f62ull, /* Cynosure: taken after looking at the frames */
+    0xcfa8f679f1a10fddull, /* Moire: taken after looking at the frames (single precision) */
+    0x32f706208dc0a079ull, /* Moire2: taken after looking at the frames (bit planes) */
+    0x8a2752813904c3f3ull, /* Boing: taken after looking at the frames (scanlines off) */
+    0x7a0560ac01c7e6e0ull, /* HexTrail: taken after looking at the frames (count 6) */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
