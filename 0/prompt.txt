@@ -1,0 +1,22 @@
+<task-notification>
+<task-id>b1b9b6ut0</task-id>
+<tool-use-id>toolu_01AQs6KgscToTcRXnaxc7njP</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f04fec39-e104-4ef0-877f-22bf8e9a22c5/tasks/b1b9b6ut0.output</output-file>
+<status>completed</status>
+<summary>Background command "test_hacks to get StonerView hash" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>b03hzryif</task-id>
+<tool-use-id>toolu_017ZnahQuzYPtH8H8kXnT5QS</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f04fec39-e104-4ef0-877f-22bf8e9a22c5/tasks/b03hzryif.output</output-file>
+<status>completed</status>
+<summary>Monitor "StonerView test_hacks result" stream ended</summary>
+<event>test/test_hacks/test_hacks.c:440: test_frames_of_every_hack_but_maze_match_main: Expected 1 Was 1299695676324237474. StonerView	[FAILED]
+test/test_hacks/test_hacks.c:878: test_stonerview_start_and_stop_do_not_leak: StonerView leaks per start	[FAILED]
+============ 54 test cases: 2 failed, 51 succeeded in 00:02:25.332 ============
+[exited with code 0]</event>
+If this event is something the user would act on now, send a PushNotification. Routine or benign output doesn't need one.
+</task-notification>
