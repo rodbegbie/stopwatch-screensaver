@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4PPAHTN2XX040R8GQ02QKW9",
+  "strategy": "manual-commit",
+  "branch": "worktree-issue-86-eraser",
+  "checkpoints_count": 5,
+  "files_touched": [
+    "docs/superpowers/specs/2026-10-11-shim-eraser-design.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 12,
+    "cache_creation_tokens": 22605,
+    "cache_read_tokens": 711713,
+    "output_tokens": 11765,
+    "api_call_count": 6
+  }
+}
