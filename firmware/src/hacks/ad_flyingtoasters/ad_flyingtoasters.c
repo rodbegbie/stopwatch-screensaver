@@ -31,7 +31,15 @@
 #endif
 
 #define AD_SPRITES 5
-#define AD_COUNT 10
+#ifndef AD_TOASTERS_SCALE
+#define AD_TOASTERS_SCALE 2
+#endif
+#if AD_TOASTERS_SCALE != 1 && AD_TOASTERS_SCALE != 2
+#error "AD_TOASTERS_SCALE must be 1 (original size) or 2 (chunky pixels)"
+#endif
+#define AD_S AD_TOASTERS_SCALE
+#define AD_SIDE (AD_RECT * AD_S)
+#define AD_COUNT (AD_S == 1 ? 10 : 6)
 
 typedef struct {
   Display *dpy;
@@ -57,25 +65,30 @@ static uint32_t ad_entropy(void) {
 static void ad_flyingtoasters_free(Display *dpy, Window window, void *closure);
 
 static XImage *make_sprite(Display *dpy, const unsigned char *rgb) {
-  XImage *im = XCreateImage(dpy, NULL, 16, ZPixmap, 0, NULL, AD_RECT, AD_RECT, 16, 0);
+  XImage *im = XCreateImage(dpy, NULL, 16, ZPixmap, 0, NULL, AD_SIDE, AD_SIDE, 16, 0);
   if (!im) return NULL;
-  uint16_t *px = malloc(AD_RECT * AD_RECT * sizeof *px);
-  if (!px) {
+  uint16_t *px = malloc(AD_SIDE * AD_SIDE * sizeof *px);
+  uint16_t *one = malloc(AD_RECT * AD_RECT * sizeof *one);
+  if (!px || !one) {
+    free(one);
+    free(px);
     XDestroyImage(im);
     return NULL;
   }
-  ad_build_sprite(rgb, px);
+  ad_build_sprite(rgb, one);
   /* XPutImage copies image pixels as they are, and the canvas keeps RGB565
    * with its bytes swapped (xshim.h's comment saying it swaps is stale). */
-  for (int i = 0; i < AD_RECT * AD_RECT; i++) px[i] = px_swap(px[i]);
+  ad_scale_sprite(one, AD_RECT, AD_S, px);
+  free(one);
+  for (int i = 0; i < AD_SIDE * AD_SIDE; i++) px[i] = px_swap(px[i]);
   im->data = (char *)px;
   return im;
 }
 
 static void blit(void *ctx, const AdRect *r, int sprite) {
   State *st = ctx;
-  XPutImage(st->dpy, st->window, st->gc, st->sprite[sprite], 0, 0, r->left, r->top,
-            AD_RECT, AD_RECT);
+  XPutImage(st->dpy, st->window, st->gc, st->sprite[sprite], 0, 0, r->left * AD_S,
+            r->top * AD_S, AD_SIDE, AD_SIDE);
 }
 
 static void *ad_flyingtoasters_init(Display *dpy, Window window) {
@@ -120,7 +133,7 @@ static void *ad_flyingtoasters_init(Display *dpy, Window window) {
 
   XWindowAttributes xgwa;
   XGetWindowAttributes(dpy, window, &xgwa);
-  AdRect bounds = {0, 0, xgwa.height, xgwa.width};
+  AdRect bounds = {0, 0, xgwa.height / AD_S, xgwa.width / AD_S};
   ad_sim_init(&st->sim, bounds, AD_COUNT, random);
   ad_sim_draw_all(&st->sim, blit, st);
   return st;

@@ -98,8 +98,9 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
   at about 160 ms is 27 minutes) and capture that long, with rotation off.
 - `ad-flyingtoasters` force flags (add to `PLATFORMIO_BUILD_FLAGS`):
   `-DAD_TOASTERS_ART=0|1` (0 is 1-bit, 1 is colour) and
-  `-DAD_TOASTERS_DONENESS=0|1|2` (light, medium, dark); a number outside
-  those (0/1 for the art, 0/1/2 for the doneness) is an `#error`. It logs
+  `-DAD_TOASTERS_DONENESS=0|1|2` (light, medium, dark) and
+  `-DAD_TOASTERS_SCALE=1|2` (2 is the default, with 6 flyers; 1 is the
+  original size, with 10); a number outside those is an `#error`. It logs
   `ad-flyingtoasters: <art>, doneness=<level>` to stderr at start.
 - `cc -O1 -fstack-usage -c src/hacks/<n>/<n>.c` (with `-Isrc
   -Isrc/x11shim/include -Isrc/xs_support -DXSHIM_NATIVE -DSTANDALONE`) lists

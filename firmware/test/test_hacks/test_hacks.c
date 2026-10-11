@@ -473,7 +473,7 @@ static const uint64_t kBaseline[] = {
     0x32f706208dc0a079ull, /* Moire2: taken after looking at the frames (bit planes) */
     0x0100bedf6ddf582cull, /* HexTrail: taken after looking at the frames (count 6, single precision) */
 #ifdef HAVE_AFTER_DARK_TOASTERS
-    0x159797e670660d18ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames */
+    0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
 };
 

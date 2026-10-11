@@ -16,5 +16,8 @@ void ad_expand_mono(const unsigned char bits[512], unsigned char rgb[64 * 64 * 3
 /* 70x70 RGB565 (what a 16-bit XImage holds): art at x 0..63, y 6..69; rows
  * 0..5 and columns 64..69 are black. */
 void ad_build_sprite(const unsigned char rgb[64 * 64 * 3], uint16_t out[70 * 70]);
+/* Replicates each pixel of a side x side image into a scale x scale block;
+ * out is (side * scale) square. */
+void ad_scale_sprite(const uint16_t *in, int side, int scale, uint16_t *out);
 
 #endif

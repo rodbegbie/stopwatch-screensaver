@@ -364,6 +364,20 @@ static void test_sprite_packs_rgb565_at_offset(void) {
   TEST_ASSERT_EQUAL_HEX16((0x1F << 11) | (0x21 << 5) | 0x01, out[(3 + 6) * 70 + 2]);
 }
 
+static void test_scale_sprite_replicates_each_pixel(void) {
+  enum { SIDE = 5 };
+  uint16_t in[SIDE * SIDE];
+  for (int i = 0; i < SIDE * SIDE; i++) in[i] = (uint16_t)(0x100 + i * 7);
+  for (int scale = 1; scale <= 3; scale++) {
+    uint16_t out[SIDE * 3 * SIDE * 3];
+    memset(out, 0xEE, sizeof out);
+    ad_scale_sprite(in, SIDE, scale, out);
+    for (int y = 0; y < SIDE * scale; y++)
+      for (int x = 0; x < SIDE * scale; x++)
+        TEST_ASSERT_EQUAL_HEX16(in[(y / scale) * SIDE + x / scale], out[y * SIDE * scale + x]);
+  }
+}
+
 static void test_choose_covers_all_six(void) {
   int seen[2][3] = {{0}};
   for (uint32_t r = 0; r < 6; r++) {
@@ -400,6 +414,7 @@ int main(void) {
   RUN_TEST(test_mono_set_bit_is_black_clear_is_white);
   RUN_TEST(test_sprite_has_black_strip_top_and_right);
   RUN_TEST(test_sprite_packs_rgb565_at_offset);
+  RUN_TEST(test_scale_sprite_replicates_each_pixel);
   RUN_TEST(test_choose_covers_all_six);
   return UNITY_END();
 }

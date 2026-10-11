@@ -38,3 +38,9 @@ void ad_build_sprite(const unsigned char rgb[64 * 64 * 3], uint16_t out[70 * 70]
     }
   }
 }
+
+void ad_scale_sprite(const uint16_t *in, int side, int scale, uint16_t *out) {
+  int big = side * scale;
+  for (int y = 0; y < big; y++)
+    for (int x = 0; x < big; x++) out[y * big + x] = in[(y / scale) * side + x / scale];
+}

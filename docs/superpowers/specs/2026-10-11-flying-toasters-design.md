@@ -30,8 +30,11 @@ link there rather than shipping it.
   - the toast **doneness**: Light, Medium or Dark (even odds).
 
   This is Rod's request: the original made these user settings.
-- Sprites at their original size, 64×64 (1×). Rod chose this over 2× from
-  mockups of the round panel.
+- Chunky pixels by default: each sprite pixel is drawn as a 2×2 block (128×128
+  on screen), with 6 flyers in a 233×233 logical world that runs the original
+  rules unchanged. Rod chose this after seeing both sizes on the device (2× at
+  about 21 fps, 1× at about 29). The original size, 64×64 with 10 flyers, is
+  behind `-DAD_TOASTERS_SCALE=1`.
 - Builds without the disk image still succeed, and simply leave the hack out.
 
 ## Non-goals
@@ -304,7 +307,8 @@ not tied to any toaster.
   device: `-DTOASTERS_ART=mono|colour` and `-DTOASTERS_DONENESS=light|medium|dark`
   (exact spelling is the builder's). Without them the picks are random.
 - At init: pick 1-bit or colour, pick a doneness, build the five 70×70
-  sprites (art plus black strips) in RGB565, scatter the 10 flyers, fill the
+  sprites (art plus black strips) in RGB565, scatter the flyers (6 at 2×,
+  10 at 1×), fill the
   screen black and draw them all once. Log the picks on one line (for
   example `ad-flyingtoasters: colour, doneness=dark`) so a serial capture says what
   the screen should show.
