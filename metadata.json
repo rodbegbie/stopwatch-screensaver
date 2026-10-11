@@ -3,7 +3,7 @@
   "checkpoint_id": "01M4MY8GACZS0103VQQTPXF20F",
   "strategy": "manual-commit",
   "branch": "feature/port-batch-vermiculate-moire-boing-cwaves-cynosure-hextrail",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "firmware/patch_float_literals.py",
     "firmware/platformio.ini",
@@ -16,13 +16,20 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 82,
-    "cache_creation_tokens": 138238,
-    "cache_read_tokens": 4790636,
-    "output_tokens": 34702,
-    "api_call_count": 41
+    "input_tokens": 208,
+    "cache_creation_tokens": 277655,
+    "cache_read_tokens": 11585216,
+    "output_tokens": 67606,
+    "api_call_count": 104
   }
 }
