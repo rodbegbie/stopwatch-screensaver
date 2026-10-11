@@ -67,6 +67,10 @@ XLOCKMORE_HACK_WITH(morph3d, "Morph3D", kMorph3dOverrides);
 static const char *const kCubicGridOverrides[] = {"*ncolors: 64", "*cycles: 0",
                                                   "*ticks: 20", NULL};
 XLOCKMORE_HACK_WITH(cubicgrid, "CubicGrid", kCubicGridOverrides);
+static const char *const kStonerViewOverrides[] = {"*ncolors: 64", "*cycles: 0",
+                                                   "*count: 1", "*delay: 10000",
+                                                   NULL};
+XLOCKMORE_HACK_WITH(stonerview, "StonerView", kStonerViewOverrides);
 XLOCKMORE_HACK(forest, "Forest");
 XLOCKMORE_HACK(laser, "Laser");
 XLOCKMORE_HACK(lissie, "Lissie");
@@ -140,5 +144,6 @@ const HackEntry *const g_hacks[] = {
     &wormhole_hack,
     &truchet_hack,
     &unknownpleasures_hack,
-    &hexadrop_hack};
+    &hexadrop_hack,
+    &stonerview_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);
