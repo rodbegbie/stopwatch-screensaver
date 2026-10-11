@@ -110,6 +110,15 @@ rebuild without them afterwards, since the define sticks to the build):
 A press made during a long draw step takes effect when the step ends. Extra
 presses in that wait count as one, and holding a button does not repeat.
 
+## Flying Toasters (optional)
+
+`ad-flyingtoasters` is our own recreation of the After Dark 2.0 screensaver.
+Its art is Berkeley Systems' and is never committed. The build extracts it
+from your own copy of the After Dark 2.0 disk image, which is available from
+the [Internet Archive](https://archive.org/details/after-dark-2.0v-800k).
+Save the image as `vendor/after-dark-v2.0v-800k`, or point `AFTER_DARK_IMAGE`
+at it. Without the disk the hack is left out and the build says so.
+
 ## Porting a hack
 
 To add another hack, pick an easy one from the
