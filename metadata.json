@@ -3,9 +3,15 @@
   "checkpoint_id": "01M4MW6QQRDZJAWF132KAW6QK9",
   "strategy": "manual-commit",
   "branch": "feature/port-batch-goop-loop-starfish-qix-hypnowheel-fireworkx",
-  "checkpoints_count": 1,
+  "checkpoints_count": 8,
   "files_touched": [
+    "firmware/src/hacks/float_polygon.h",
+    "firmware/src/hacks/goop_direct.c",
+    "firmware/src/hacks/lowrez_put.h",
+    "firmware/test/test_float_polygon/test_float_polygon.c",
     "firmware/test/test_hacks/test_hacks.c",
+    "firmware/test/test_lowrez_put/test_lowrez_put.c",
+    "tools/flash_and_capture.sh",
     "tools/mutate.py",
     "tools/tests/test_mutate.py",
     "tools/tests/test_wire_hack.py",
@@ -18,14 +24,21 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": "/0/prompt.txt"
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 6,
-    "cache_creation_tokens": 1704,
-    "cache_read_tokens": 389788,
-    "output_tokens": 651,
-    "api_call_count": 3,
+    "input_tokens": 86,
+    "cache_creation_tokens": 104157,
+    "cache_read_tokens": 35612871,
+    "output_tokens": 26827,
+    "api_call_count": 43,
     "subagent_tokens": {
       "input_tokens": 20,
       "cache_creation_tokens": 17232,
