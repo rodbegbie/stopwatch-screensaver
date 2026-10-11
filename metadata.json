@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4M9WHMQ4F1YV4J20SNQJ7CM",
+  "strategy": "manual-commit",
+  "branch": "feature/port-batch-flurry-halo-hexaddrop-stonerview-xmatrix",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/patch_float_literals.py",
+    "firmware/platformio.ini",
+    "firmware/src/hacks/hexadrop_single.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 38,
+    "cache_creation_tokens": 19913,
+    "cache_read_tokens": 2534869,
+    "output_tokens": 11131,
+    "api_call_count": 19
+  }
+}

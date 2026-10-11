@@ -1,0 +1,20 @@
+<task-notification>
+<task-id>b4wjq9h1c</task-id>
+<tool-use-id>toolu_01MyWrCZxhfkjXz3xTxgEHtj</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f04fec39-e104-4ef0-877f-22bf8e9a22c5/tasks/b4wjq9h1c.output</output-file>
+<status>completed</status>
+<summary>Background command "Run test_hacks for Hexadrop single" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bgkwl0kop</task-id>
+<tool-use-id>toolu_01VGKScXsRTVg6h6tG5XFoLC</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f04fec39-e104-4ef0-877f-22bf8e9a22c5/tasks/bgkwl0kop.output</output-file>
+<status>completed</status>
+<summary>Monitor "test_hacks result" stream ended</summary>
+<event>================= 52 test cases: 52 succeeded in 00:02:20.246 =================
+[exited with code 0]</event>
+If this event is something the user would act on now, send a PushNotification. Routine or benign output doesn't need one.
+</task-notification>
