@@ -485,6 +485,38 @@ void test_stale_depth_does_not_hide_the_next_frame(void) {
   TEST_ASSERT_EQUAL_HEX16(rgb565(0, 255, 0), cv.px[(SIZE / 2) * SIZE + SIZE / 2]);
 }
 
+/* With the depth test off nothing reads the depth buffer, so a glClear that
+ * asks for it does no work until the test is switched on. HexTrail asks every
+ * frame and never enables the test: a second full-canvas clear of PSRAM. */
+void test_a_depth_clear_does_nothing_while_the_depth_test_is_off(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glDisable(GL_DEPTH_TEST);
+  const unsigned before = glshim_depth_clears();
+  for (int i = 0; i < 3; i++) {
+    clear_all();
+    triangle(-0.5f, -0.5f, 0.5f, -0.5f, 0.0f, 0.5f, 0.0f, 0, 0, 1);
+    glXSwapBuffers(dpy, 0);
+  }
+  TEST_ASSERT_EQUAL_UINT(before, glshim_depth_clears());
+  glEnable(GL_DEPTH_TEST);
+  TEST_ASSERT_EQUAL_UINT(before + 1, glshim_depth_clears());
+}
+
+/* The skipped clear is only deferred: a hack that clears with the test off and
+ * then enables it sees a cleared depth buffer, as with the stock clear. */
+void test_a_depth_clear_made_with_the_test_off_applies_once_it_is_on(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glDisable(GL_DEPTH_TEST);
+  glClearColor(1, 0, 0, 0);
+  clear_all();
+  triangle(-0.5f, -0.5f, 0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0, 0, 1);
+  clear_all();
+  glEnable(GL_DEPTH_TEST);
+  triangle(-0.5f, -0.5f, 0.5f, -0.5f, 0.0f, 0.5f, 0.5f, 0, 1, 0);
+  glXSwapBuffers(dpy, 0);
+  TEST_ASSERT_EQUAL_HEX16(rgb565(0, 255, 0), cv.px[(SIZE / 2) * SIZE + SIZE / 2]);
+}
+
 /* Contract: pixels outside what was drawn are not rewritten by a clear, so
  * nothing else may draw on the canvas while a GL hack runs. */
 void test_a_clear_rewrites_only_the_region_that_was_drawn(void) {
@@ -998,6 +1030,8 @@ int main(void) {
   RUN_TEST(test_the_first_clear_after_opening_clears_over_whatever_was_there);
   RUN_TEST(test_a_new_clear_colour_clears_everything);
   RUN_TEST(test_stale_depth_does_not_hide_the_next_frame);
+  RUN_TEST(test_a_depth_clear_does_nothing_while_the_depth_test_is_off);
+  RUN_TEST(test_a_depth_clear_made_with_the_test_off_applies_once_it_is_on);
   RUN_TEST(test_a_clear_rewrites_only_the_region_that_was_drawn);
   RUN_TEST(test_the_swap_marks_only_the_old_and_new_boxes_dirty);
   RUN_TEST(test_a_one_value_light_model_is_not_over_read);

@@ -163,6 +163,12 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   benchmarks; Morph3D's shape is random per boot. To split a frame, add a
   temporary `#if GL_PROFILE == n` early return to a TinyGL function through
   `tinygl_patch.py` and flash with `-DGL_PROFILE=n`; never commit it.
+- A `glClear` of the depth buffer while the depth test is off does nothing
+  until the test is enabled (`glshim_depth_test_changed`, patched into
+  `misc.c`): nothing reads depth with the test off, and the clear is a second
+  full-canvas fill of PSRAM. HexTrail clears it every frame and never enables
+  the test; skipping it took 13.0 fps to 15.3. `glshim_depth_clears()` counts
+  the clears that ran, for the tests.
 - TinyGL has `glOrtho` commented out of its header (Boing needs it). `glshim.c`
   builds the usual matrix and calls `glMultMatrixf`; `test_glshim` checks it
   with an off-centre, non-square box and with the near and far planes, since

@@ -26,6 +26,10 @@ void glshim_close(void);
  * closed its context. */
 int glshim_is_open(void);
 
+/* How many depth clears have actually run (a clear made while the depth test
+ * is off is deferred until it is switched on). For the tests. */
+unsigned glshim_depth_clears(void);
+
 Bool glXMakeCurrent(Display *dpy, GLXDrawable drawable, GLXContext ctx);
 /* Called with every box (clamped, non-empty) that TinyGL reports it has drawn
  * in, in canvas pixels. NULL in the firmware; tools/gl_budget.py sets it so

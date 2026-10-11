@@ -124,7 +124,8 @@ extern const HackEntry moire2_hack;
  * a ceiling and it restarts. The grid is count * 2 hexagons square, and a
  * smaller count means fewer, larger ones over the same area. Mean fps over a
  * 150 s capture: 5.7 at upstream's 20 (step up to 293 ms), 9.1 at 10 and 12.7
- * at 6 (9.2 at the worst). -DHEXTRAIL_COUNT=<n> changes it. */
+ * at 6; in single precision with the depth clear skipped, 15.3 at 6 (10.8 at
+ * the worst). -DHEXTRAIL_COUNT=<n> changes it. */
 #ifndef HEXTRAIL_COUNT
 #define HEXTRAIL_COUNT 6
 #endif

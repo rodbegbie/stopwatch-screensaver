@@ -218,7 +218,9 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Boing (no scanlines, `*ballSize: 0.3`, probe) | 9.2-9.4 | 73.9-75.2 ms | 32.6 ms | 0 ms | about 0.64 MB |
 | HexTrail (`*count: 20`, upstream's) | 3.2-15.0, mean 5.7 | 34-293 ms | 5.0-32.2 ms | 0-28 ms | about 0.86 MB |
 | HexTrail (`*count: 10`) | 6.4-31.2, mean 9.1 | 19-122 ms | 10.1-32.4 ms | 0-3 ms | about 0.70 MB |
-| HexTrail | 9.2-36.8, mean 12.7 | 13-76 ms | 11.1-32.5 ms | 0-3 ms | about 0.66 MB |
+| HexTrail (count 6, double) | 9.2-36.8, mean 12.7 | 13-76 ms | 11.1-32.5 ms | 0-3 ms | about 0.66 MB |
+| HexTrail (count 6, single precision) | 9.6-38.2, mean 13.0 | 12-71 ms | 11.5-32.5 ms | 0-2 ms | about 0.66 MB |
+| HexTrail | 10.8-50.6, mean 15.3 | 8-59 ms | 6.9-32.5 ms | 0-5 ms | about 0.66 MB |
 
 The seven rows from CWaves to HexTrail are the CWaves, Vermiculate, Cynosure,
 Moire, Moire2, Boing and HexTrail batch (2026-10-11), each from a pinned build
@@ -249,8 +251,13 @@ Boing's scanlines, 208 blended full-width lines, cost about 83 ms of the 171 ms
 step; a smaller ball (0.3 for 0.5) saves 13 ms more, so the rest is fixed
 (the clear, the wall and the shadow). HexTrail draws every hexagon built so
 far, so its step climbs to a ceiling and it restarts; the means above are over
-150 s, which covers several cycles. Both GL hacks were below the 15 fps bar in
-their registered form (8.3 and 12.7). Rod dropped Boing after seeing it (too
+150 s, which covers several cycles. Single precision alone moved HexTrail from
+12.7 to 13.0 mean (the worst step from 76 to 71 ms): its time is in the clears,
+the push and TinyGL, not in the hack's own maths. HexTrail never enables the
+depth test but clears the depth buffer every frame, a second full-canvas clear
+of PSRAM; skipping it while the test is off (done when the test is enabled
+instead) took the mean to 15.3 and the worst step to 59 ms. Both GL hacks were
+below the 15 fps bar in their first registered form (8.3 and 12.7). Rod dropped Boing after seeing it (too
 slow, and plain on a small screen), so its rows are the measured record of a
 hack that is not in the rotation.
 
@@ -753,8 +760,8 @@ needing few additions come first.
 
 | Hack | Kind | Effort | Speed | Ported | Shim gaps | Flags | LOC |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| attraction | 2d | S | medium (0.015 ms) | - | - | - | 1115 |
-| bouboule | 2d | S | high (0.066 ms) | - | - | xor | 860 |
+| attraction | 2d | S | medium (0.016 ms) | - | - | - | 1115 |
+| bouboule | 2d | S | high (0.065 ms) | - | - | xor | 860 |
 | celtic | 2d | S | high (1.2 ms) | ❌ | - | - | 1141 |
 | greynetic | 2d | S | medium (0.018 ms) | - | - | - | 297 |
 | halftone | 2d | S | high (0.66 ms) | ❌ | - | pixmaps | 413 |

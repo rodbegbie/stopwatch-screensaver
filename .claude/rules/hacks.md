@@ -204,11 +204,13 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   its source, notices row and `boing_gl.c` stay, the wrapper out of the build
   filter. Its 208 scanlines are blended full-width lines and cost half its
   step: 5.0 fps with them, 8.3 without; the ball size barely matters (0.3
-  saves 13 ms). HexTrail (`hextrail_gl.c`) draws
+  saves 13 ms). HexTrail (`hextrail_single_gl.c`) draws
   every hexagon it has built, so its step climbs from about 19 ms to a ceiling
   and it restarts: use a mean over a cycle (150 s). The grid is `count * 2`
   squared, and a smaller count makes fewer, larger hexagons over the same area:
   mean 5.7 fps at upstream's 20, 9.1 at 10, 12.7 at 6 (registered,
-  `-DHEXTRAIL_COUNT=<n>`). Neither reaches 15 fps (8.3 and 12.7 mean), so
-  keeping or dropping them, and how the look trades against speed, is Rod's
-  call.
+  `-DHEXTRAIL_COUNT=<n>`). Rod found 12.7 too slow once the picture filled
+  (under 10 fps). Single precision gave 13.0; skipping the depth clear it
+  never needs (see `gl.md`) gave 15.3, worst window 10.8. The single-precision
+  wrapper adapts `get_position` and `get_rotation`: the hack passes `double`
+  locals' addresses, which a float rename would write eight bytes (as Moire).
