@@ -85,7 +85,11 @@ should hide the rows behind a peak hid nothing; the registered row is after
 smooth lines, opaque fills, polygon offset and the refresh-synced push (see the
 GL notes and `.claude/rules/device-display.md`). Its push figure includes the
 wait for the panel's next TE pulse: 32.3 ms of push and about 4 ms of waiting.
-A tap on the overlay adds about 16 ms to the push (48 ms). The 20 by 50
+A tap on the overlay adds about 16 ms to the push (48 ms). The registered
+row's 0.93 MB is from before the QR overlay merged; the same code rebased onto
+it was read again at 5.0 fps, a step of 169 ms and a push of 35.7 to 37.6 ms,
+with 6,058,235 bytes of PSRAM free (the QR buffers included, so not comparable
+with the idle figure). The 20 by 50
 variant (`*count: 40`, `*resolution: 50`) is the final code on a later main,
 which holds a QR buffer, so its free PSRAM is not comparable with the others.
 Its step is 45 percent below the registered build's (91 ms against 165); on
