@@ -2535,16 +2535,35 @@ void test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits(void) {
   XDestroyImage(im);
 }
 
-void test_put_image_of_a_16_bit_image_writes_ordinary_rgb565_as_the_canvas_holds_it(void) {
+void test_put_image_of_a_16_bit_image_copies_canvas_order_pixels_unchanged(void) {
   XImage *im = XCreateImage(dpy, NULL, 16, ZPixmap, 0, NULL, 2, 1, 8, 0);
   im->data = (char *)calloc(1, (size_t)im->bytes_per_line);
-  XPutPixel(im, 0, 0, 0xF800);
-  XPutPixel(im, 1, 0, 0x07E0);
+  XPutPixel(im, 0, 0, px_swap(0xF800));
+  XPutPixel(im, 1, 0, px_swap(0x07E0));
   XGCValues v = {0};
   GC gc = XCreateGC(dpy, win, 0, &v);
   XPutImage(dpy, win, gc, im, 0, 0, 3, 4, 2, 1);
   TEST_ASSERT_EQUAL_HEX16(px_swap(0xF800), at(3, 4));
   TEST_ASSERT_EQUAL_HEX16(px_swap(0x07E0), at(4, 4));
+  XFreeGC(dpy, gc);
+  XDestroyImage(im);
+}
+
+void test_an_allocated_colour_keeps_its_pixel_through_a_16_bit_image(void) {
+  XColor c = {0};
+  c.red = 0xF800;
+  c.green = 0x2000;
+  c.blue = 0x0800;
+  c.flags = DoRed | DoGreen | DoBlue;
+  TEST_ASSERT_TRUE(XAllocColor(dpy, 1, &c));
+  TEST_ASSERT_NOT_EQUAL((uint16_t)c.pixel, px_swap((uint16_t)c.pixel));
+  XImage *im = XCreateImage(dpy, NULL, 16, ZPixmap, 0, NULL, 1, 1, 8, 0);
+  im->data = (char *)calloc(1, (size_t)im->bytes_per_line);
+  XPutPixel(im, 0, 0, c.pixel);
+  XGCValues v = {0};
+  GC gc = XCreateGC(dpy, win, 0, &v);
+  XPutImage(dpy, win, gc, im, 0, 0, 3, 4, 1, 1);
+  TEST_ASSERT_EQUAL_HEX16((uint16_t)c.pixel, at(3, 4));
   XFreeGC(dpy, gc);
   XDestroyImage(im);
 }
@@ -2855,7 +2874,8 @@ int main(void) {
   RUN_TEST(test_query_color_recovers_the_colour_alloc_color_made);
   RUN_TEST(test_the_screen_is_a_colour_display_with_no_writable_cells);
   RUN_TEST(test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits);
-  RUN_TEST(test_put_image_of_a_16_bit_image_writes_ordinary_rgb565_as_the_canvas_holds_it);
+  RUN_TEST(test_put_image_of_a_16_bit_image_copies_canvas_order_pixels_unchanged);
+  RUN_TEST(test_an_allocated_colour_keeps_its_pixel_through_a_16_bit_image);
   RUN_TEST(test_the_server_byte_order_is_least_significant_first);
   RUN_TEST(test_a_new_spline_has_zeroed_controls_and_no_points);
   RUN_TEST(test_a_closed_spline_of_a_square_is_a_smooth_loop_inside_it);

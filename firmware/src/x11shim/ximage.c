@@ -109,11 +109,11 @@ XImage *XGetImage(Display *dpy, Drawable d, int x, int y, unsigned int w,
   return im;
 }
 
-/* A 16-bit image holds ordinary RGB565, as on an X server; the canvas holds
- * it byte-swapped. A 32-bit one (XGetImage's) already holds the canvas value. */
+/* Every XImage holds canvas-order pixels, whatever its depth: the values
+ * XAllocColor, GC colours and XGetImage hand out. XPutImage copies them as
+ * they are. */
 static uint16_t xshim_image_pixel(XImage *im, int x, int y) {
-  const uint16_t v = (uint16_t)XGetPixel(im, x, y);
-  return im->bits_per_pixel == 16 ? px_swap(v) : v;
+  return (uint16_t)XGetPixel(im, x, y);
 }
 
 int XPutImage(Display *dpy, Drawable d, GC gc, XImage *im, int src_x,

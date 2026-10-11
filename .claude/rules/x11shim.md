@@ -122,7 +122,10 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   redefines it in float; it is opt-in, because the older wrappers' frame hashes
   are pinned with the original.
 - Added for the second batch, each test-first: 16-bit ZPixmap `XImage`s
-  (ordinary little-endian RGB565, byte-swapped by `XPutImage`) and
+  (canvas-order pixels, like every other value the shim hands out: `XAllocColor`
+  -> `XPutPixel` -> `XPutImage` keeps the pixel; `XPutImage` does not swap.
+  Only `lowrez_put_image` swaps, because Fireworkx writes ordinary RGB565
+  bytes straight into the image data) and
   `ImageByteOrder`; `CoordModePrevious` in `XFillPolygon`, `XDrawLines` and
   `XDrawPoints`; `XCreatePixmapFromBitmapData` (X bitmap data is least
   significant bit first); a spline of our own (`spline.c`, not xscreensaver's);
