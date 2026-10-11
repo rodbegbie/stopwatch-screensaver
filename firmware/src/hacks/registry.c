@@ -116,6 +116,8 @@ extern const HackEntry vermiculate_hack;
 
 extern const HackEntry cynosure_hack;
 
+extern const HackEntry moire_hack;
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -171,5 +173,6 @@ const HackEntry *const g_hacks[] = {
     &loop_hack,
     &cwaves_hack,
     &vermiculate_hack,
-    &cynosure_hack};
+    &cynosure_hack,
+    &moire_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);
