@@ -96,6 +96,20 @@ When: a ported hack runs under about 10 fps and the push is not the cause
 - A hack that redraws its whole picture every frame to animate colour (Braid)
   costs its full draw each frame whatever the push does. Check this before
   porting; the scorer does not flag it yet.
+- A fix that moves the frame rate by under 5% shows the maths was not the
+  cost. HexTrail in single precision went from 12.7 to 13.0 fps; the 2.3 fps
+  that mattered came from reading what the GL layer does each frame
+  (`glshim_clear`) and finding a depth clear that nothing read, because the hack
+  never enables the depth test. Run `nm` on the object, then read the shared
+  code the hack calls before trying a third idea in the hack.
+- A step that grows over the hack's cycle (HexTrail: 19 ms to a ceiling, then it
+  restarts) needs the worst window, not the mean. Capture at least one full
+  cycle (150 s covered HexTrail's 65 s), read the lowest `fps=`, and compare the
+  time spent below 10 fps with the rotation interval: Rod saw it fall under 10
+  before the 25 s change. If a resource such as `count` scales the cost, give it
+  an `#ifndef` default in `registry.c` (`HEXTRAIL_COUNT`) so one flash tests
+  another value, and measure two or three values: count 6 gave a mean of 12.7,
+  10 gave 9.1 and 20 gave 5.7, in double precision.
 
 ## Thin lines in a GL hack
 
