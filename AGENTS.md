@@ -98,9 +98,9 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
   at about 160 ms is 27 minutes) and capture that long, with rotation off.
 - `ad-flyingtoasters` force flags (add to `PLATFORMIO_BUILD_FLAGS`):
   `-DAD_TOASTERS_ART=0|1` (0 is 1-bit, 1 is colour) and
-  `-DAD_TOASTERS_DONENESS=0|1|2` (light, medium, dark); any other value is an
-  `#error`. It logs `ad-flyingtoasters: <art>, doneness=<level>` to stderr at
-  start.
+  `-DAD_TOASTERS_DONENESS=0|1|2` (light, medium, dark); a number outside
+  those (0/1 for the art, 0/1/2 for the doneness) is an `#error`. It logs
+  `ad-flyingtoasters: <art>, doneness=<level>` to stderr at start.
 - `cc -O1 -fstack-usage -c src/hacks/<n>/<n>.c` (with `-Isrc
   -Isrc/x11shim/include -Isrc/xs_support -DXSHIM_NATIVE -DSTANDALONE`) lists
   stack frames; keep each well under the 16 KB loop stack.
@@ -308,13 +308,6 @@ ones below apply everywhere.
   from the current build and from `git stash` of the wrapper, and look at both
   side by side. Interaggregate's blend bug showed as rainbow confetti against
   green and brown strokes, though every test had passed.
-- The comment in `xshim.h` saying `XPutImage` byte-swaps a 16-bit image has
-  been stale since commit 272ad6a: an `XImage` holds canvas-order pixels. A
-  hack that builds its own 16-bit image must `px_swap` its pixels first.
-- `tools/score_hacks.py` ignores registered names with no xscreensaver source
-  (`ad_flyingtoasters`). `tools/speed_backtest.py` skips them (no
-  device measurement) but currently fails probing shelved hypnowheel
-  (`rotator.h` not found): not from the toasters.
 - Board details (pins, power, recovery) are in
   `.claude/skills/m5stack-stopwatch/`.
 
