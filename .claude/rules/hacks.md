@@ -158,7 +158,12 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   bursts. The shell count cannot change (it is baked into the SSE layout), so
   the idle shells are given an endless life and no sparks.
 - Loop asks for 100 ms between generations (8.7 fps with a 3.5-7 ms step); the
-  registry overrides it to 50 ms. Hypnowheel (1.4 fps) was dropped from the
+  registry overrides it to 50 ms. It also took `malloc(0)` returning NULL, which
+  the board does and the host does not, for out of memory: square mode asks
+  for a rectangle list for each of eight colour states, most empty, and it
+  freed its cells and drew nothing more (a black screen at 18 fps, half the
+  starts, never seen on the host). `loop_direct.c` asks for one byte, and a test
+  swaps in an allocator that returns NULL for zero. Hypnowheel (1.4 fps) was dropped from the
   rotation after Rod saw it (issue #73; its source, notices row and a
   `failed_ports.txt` entry stay): about 70 percent of its step is additively
   blended pixel fill (about 1.2 us a pixel) and 30 percent is per-triangle

@@ -34,6 +34,7 @@ live in `.claude/rules/hacks.md`, not here.
 | A hack that keeps state in statics across starts | Its pin depends on earlier tests; reset the static in a wrapper, and test both outcomes |
 | A mode picked with `random()` | A boot is deterministic, so measure the other mode by forcing it |
 | Constants in pixels or frames, tuned for another window size or frame rate | Scale them at build time (`tools/fireworkx_patch.py`), not by editing the copy |
+| A hack that treats `malloc(0) == NULL` as out of memory | The board returns NULL for zero bytes, the host a pointer: it stops drawing on the board only. Reproduce with an allocator hook that fails for zero |
 | A stop that leaks | `MallocStackLogging=1 leaks --atExit -- .pio/build/dump/program <index> 0 out.raw` names the line (rebuild `-e dump` first) |
 
 ## Finding the cost

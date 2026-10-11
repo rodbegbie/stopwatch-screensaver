@@ -11,7 +11,25 @@
  *
  * The static function table is rewritten before main, so the framework starts
  * and stops the hack through these wrappers. */
+#include <stdlib.h>
+
+#include "screenhack.h"
+#include "xlockmore.h"
+
+/* malloc(0) returns NULL on the board (and a pointer on the host). Square mode
+ * asks for a list of rectangles for each of its eight colour states, most of
+ * them empty at any moment, and takes NULL for "out of memory": it freed its
+ * cells and drew nothing more, a black screen. Ask for a byte instead.
+ *
+ * The allocator is a pointer so a test can swap in one that behaves like the
+ * board's. */
+void *(*loop_allocator)(size_t) = malloc;
+
+static void *loop_malloc(size_t n) { return loop_allocator(n ? n : 1); }
+
+#define malloc loop_malloc
 #include "loop/loop.c"
+#undef malloc
 
 static void forget_the_table(void) {
   free(table);

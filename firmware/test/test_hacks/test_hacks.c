@@ -534,6 +534,37 @@ void test_write_the_unpinned_hashes_when_asked(void) {
   fclose(f);
 }
 
+/* The board's malloc(0) returns NULL where the host's returns a pointer, and
+ * Loop's square mode asks for a list of rectangles for each of its eight colour
+ * states, most of them empty. It took NULL for "out of memory", freed its
+ * cells, and drew nothing more: a black screen at 18 fps. */
+extern void *(*loop_allocator)(size_t);
+static void *malloc_that_fails_for_nothing(size_t n) { return n ? malloc(n) : NULL; }
+
+void test_loop_keeps_drawing_squares_when_malloc_of_nothing_returns_null(void) {
+  int changed = 0, found = 0;
+  HackRunner *r = runner_create(&cv);
+  loop_allocator = malloc_that_fails_for_nothing;
+  for (int seed = 1; seed <= 200 && !found; seed++) {
+    srandom(seed);
+    runner_start(r, index_of("Loop"));
+    runner_step(r);
+    found = loop_neighbors_in_use() == 4;
+  }
+  if (found) {
+    for (int f = 0; f < 60; f++) runner_step(r);
+    uint16_t *before = (uint16_t *)malloc((size_t)cv.w * cv.h * sizeof(*before));
+    memcpy(before, cv.px, (size_t)cv.w * cv.h * sizeof(*before));
+    for (int f = 0; f < 40; f++) runner_step(r);
+    for (long i = 0; i < (long)cv.w * cv.h; i++) changed += cv.px[i] != before[i];
+    free(before);
+  }
+  loop_allocator = malloc;
+  runner_destroy(r);
+  TEST_ASSERT_TRUE_MESSAGE(found, "no seed made Loop pick squares");
+  TEST_ASSERT_TRUE_MESSAGE(changed > 0, "Loop stopped drawing squares");
+}
+
 void test_maze_frame_matches_main(void) {
   TEST_ASSERT_EQUAL_UINT64(0x0693082a4399bc39ull, hash_after(index_of("Maze"), 200));
 }
@@ -1020,6 +1051,7 @@ int main(void) {
   RUN_TEST(test_hacks_that_use_the_spline_draw_a_real_picture);
   RUN_TEST(test_loop_picks_squares_or_hexagons_again_at_every_start);
   RUN_TEST(test_write_the_unpinned_hashes_when_asked);
+  RUN_TEST(test_loop_keeps_drawing_squares_when_malloc_of_nothing_returns_null);
   RUN_TEST(test_maze_frame_matches_main);
   RUN_TEST(test_pacman_levels_do_not_leak);
   RUN_TEST(test_pacman_start_and_stop_do_not_leak);
