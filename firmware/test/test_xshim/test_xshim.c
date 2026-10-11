@@ -2519,6 +2519,40 @@ void test_the_screen_is_a_colour_display_with_no_writable_cells(void) {
   TEST_ASSERT_FALSE(has_writable_cells(NULL, NULL));
 }
 
+void test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits(void) {
+  XImage *im = XCreateImage(dpy, NULL, 16, ZPixmap, 0, NULL, 5, 3, 8, 0);
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_INT(16, im->bits_per_pixel);
+  TEST_ASSERT_EQUAL_INT(10, im->bytes_per_line);
+  im->data = (char *)calloc(3, (size_t)im->bytes_per_line);
+  XPutPixel(im, 1, 1, 0x1ABCD);
+  XPutPixel(im, 2, 1, 0x1234);
+  TEST_ASSERT_EQUAL_HEX64(0xABCD, XGetPixel(im, 1, 1));
+  TEST_ASSERT_EQUAL_HEX64(0x1234, XGetPixel(im, 2, 1));
+  TEST_ASSERT_EQUAL_HEX64(0, XGetPixel(im, 0, 1));
+  TEST_ASSERT_EQUAL_HEX64(0, XGetPixel(im, 3, 1));
+  XDestroyImage(im);
+}
+
+void test_put_image_of_a_16_bit_image_writes_ordinary_rgb565_as_the_canvas_holds_it(void) {
+  XImage *im = XCreateImage(dpy, NULL, 16, ZPixmap, 0, NULL, 2, 1, 8, 0);
+  im->data = (char *)calloc(1, (size_t)im->bytes_per_line);
+  XPutPixel(im, 0, 0, 0xF800);
+  XPutPixel(im, 1, 0, 0x07E0);
+  XGCValues v = {0};
+  GC gc = XCreateGC(dpy, win, 0, &v);
+  XPutImage(dpy, win, gc, im, 0, 0, 3, 4, 2, 1);
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0xF800), at(3, 4));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x07E0), at(4, 4));
+  XFreeGC(dpy, gc);
+  XDestroyImage(im);
+}
+
+void test_the_server_byte_order_is_least_significant_first(void) {
+  TEST_ASSERT_NOT_EQUAL(MSBFirst, ImageByteOrder(dpy));
+  TEST_ASSERT_EQUAL_INT(LSBFirst, ImageByteOrder(dpy));
+}
+
 void test_create_image_refuses_depths_and_sizes_it_cannot_hold(void) {
   TEST_ASSERT_NULL(XCreateImage(dpy, NULL, 8, ZPixmap, 0, NULL, 4, 4, 8, 0));
   TEST_ASSERT_NULL(XCreateImage(dpy, NULL, 32, ZPixmap, 0, NULL, 0, 4, 32, 0));
@@ -2600,6 +2634,9 @@ int main(void) {
   RUN_TEST(test_rgb_to_hsv_inverts_hsv_to_rgb);
   RUN_TEST(test_query_color_recovers_the_colour_alloc_color_made);
   RUN_TEST(test_the_screen_is_a_colour_display_with_no_writable_cells);
+  RUN_TEST(test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits);
+  RUN_TEST(test_put_image_of_a_16_bit_image_writes_ordinary_rgb565_as_the_canvas_holds_it);
+  RUN_TEST(test_the_server_byte_order_is_least_significant_first);
   RUN_TEST(test_create_image_refuses_depths_and_sizes_it_cannot_hold);
   RUN_TEST(test_file_to_ximage_has_no_decoder_and_returns_null);
   RUN_TEST(test_ease_in_out_sine_runs_from_0_to_1_through_one_half);

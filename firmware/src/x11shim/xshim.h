@@ -282,10 +282,15 @@ int XCopyArea(Display *, Drawable src, Drawable dst, GC, int src_x, int src_y,
 int XCopyPlane(Display *, Drawable src, Drawable dst, GC, int src_x,
                int src_y, unsigned int w, unsigned int h, int dst_x,
                int dst_y, unsigned long plane);
-/* An XImage is a block of pixels in the hack's own memory; nothing draws it.
- * Only 32-bit ZPixmap images exist, which is all the hacks that use one (a
- * mask scaled down from a loaded picture) ask for. */
+/* An XImage is a block of pixels in the hack's own memory; XPutImage draws it.
+ * Only ZPixmap images exist: 16-bit ones (what a hack that fills in its own
+ * pixels asks for) and 24 or 32-bit ones (a mask scaled down from a loaded
+ * picture, or XGetImage's copy of the canvas). */
 #define XYPixmap 1
+#define LSBFirst 0
+#define MSBFirst 1
+/* The server is little-endian (the S3 and the hosts the tests run on). */
+#define ImageByteOrder(dpy) ((void)(dpy), LSBFirst)
 #define ZPixmap 2
 typedef struct XImage {
   int width, height;
@@ -295,7 +300,9 @@ typedef struct XImage {
   char *data;
 } XImage;
 
-/* Returns NULL for a depth other than 24 or 32, a zero or oversized image, or
+/* A 16-bit image is two bytes a pixel of ordinary little-endian RGB565, as on
+ * an X server: XPutImage byte-swaps it into the canvas. A 24 or 32-bit image
+ * is four bytes a pixel. Returns NULL for a depth other than 16, 24 or 32, a zero or oversized image, or
  * no memory. A bytes_per_line of 0 means a tight row, padded to bitmap_pad
  * bits. `data` may be NULL: the hack then points it at its own allocation of
  * height * bytes_per_line bytes, and XDestroyImage frees whatever it holds. */

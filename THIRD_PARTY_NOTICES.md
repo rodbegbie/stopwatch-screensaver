@@ -99,6 +99,7 @@ implied warranty.
 | `firmware/src/hacks/laser/laser.c` | Copyright (c) 1995 Pascal Pensa | xlock permission notice (below) |
 | `firmware/src/hacks/forest/forest.c` | Copyright (c) 1999 Peter Baumung; based on xscreensaver, Copyright (c) 1992, 1995, 1997 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/qix/qix.c` | Copyright (c) 1992-2008 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/fireworkx/fireworkx.c` | Copyright (GPL) 1999-2013 Rony B Chandran, with additions by Jean-Pierre Demailly, Nicholas Miell and others named in the header | jwz permission notice (above); the header's "(GPL)" is a label, and the text it carries is the permission notice |
 | `firmware/src/xs_support/glx/involute.c` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.h` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/normals.c` | Copyright (c) 2002-2004 Jamie Zawinski | jwz permission notice (above) |
