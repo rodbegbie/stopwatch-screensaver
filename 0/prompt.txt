@@ -1,0 +1,9 @@
+The trail is approved so you can now merge the pr. yay.
+
+---
+
+/claude-md-management:revise-claude-md
+
+---
+
+Yes, apply them straight to main
