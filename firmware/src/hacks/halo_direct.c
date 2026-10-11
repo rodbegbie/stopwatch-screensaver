@@ -1,7 +1,7 @@
-/* Builds the unmodified halo.c with its depth-1 pixmaps backed by colour
- * pixmaps and XCopyPlane replaced by hacks/halo_planes.h: the shim cannot draw
- * into a bitmap or XOR. A colour pixmap costs 434 KB, and Halo makes one or
- * two. */
+/* Builds the unmodified halo.c with its depth-1 pixmaps as packed bit planes
+ * and the calls that draw on them replaced by hacks/halo_planes.h: the shim
+ * cannot draw into a bitmap or XOR, and Halo fills a dozen window-sized circles
+ * a frame, which as 16-bit pixmaps cost several million PSRAM writes. */
 #include "screenhack.h"
 
 #include "hacks/halo_planes.h"
@@ -9,7 +9,10 @@
 #undef XSCREENSAVER_MODULE
 #define XSCREENSAVER_MODULE(CLASS, PREFIX)
 
-#define XCreatePixmap(dpy, d, w, h, depth) (XCreatePixmap)(dpy, d, w, h, 16)
+#define XCreatePixmap halo_create_pixmap
+#define XFreePixmap halo_free_pixmap
+#define XFillRectangle halo_fill_rectangle
+#define XFillArc halo_fill_arc
 #define XCopyPlane halo_copy_plane
 
 #include "halo/halo.c"
