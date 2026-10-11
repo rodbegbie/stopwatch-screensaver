@@ -25,6 +25,8 @@ typedef struct XshimDisplay {
   Canvas *canvas;
   /* Every pixmap a hack has made and not freed, newest first. */
   struct XshimPixmap *pixmaps;
+  /* What XClearWindow paints; XSetWindowBackground sets it. */
+  unsigned long window_background;
 } Display;
 
 typedef unsigned long Pixmap;
@@ -208,6 +210,7 @@ int XSetLineAttributes(Display *, GC, unsigned int width, int line_style,
                        int cap_style, int join_style);
 Status XGetWindowAttributes(Display *, Window, XWindowAttributes *);
 int XClearWindow(Display *, Window);
+int XSetWindowBackground(Display *, Window, unsigned long pixel);
 int XDrawPoint(Display *, Drawable, GC, int x, int y);
 /* Only CoordModeOrigin is supported. */
 int XDrawPoints(Display *, Drawable, GC, XPoint *pts, int n, int mode);

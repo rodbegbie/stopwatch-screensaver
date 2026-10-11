@@ -96,7 +96,8 @@ void test_registry_lists_hacks_in_order(void) {
                                          "LMorph",
                                          "Wormhole",
                                          "Truchet",
-                                         "UnknownPleasures"};
+                                         "UnknownPleasures",
+                                         "Hexadrop"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -426,6 +427,7 @@ static const uint64_t kBaseline[] = {
     0xe73572fd64eef48full, /* Wormhole: taken after looking at the frames */
     0x7dd7d7130551c261ull, /* Truchet: taken after looking at the frames */
     0x03670369cb12c2deull, /* UnknownPleasures: after looking at the frames, with the fake clock, smooth lines and the offset margin */
+    0x43f9cf84967fee7cull, /* Hexadrop: taken after looking at the frames */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -859,6 +861,10 @@ void test_slow_hacks_register_their_lighter_settings(void) {
   TEST_ASSERT_TRUE_MESSAGE(overrides_contain("LMorph", "*delay: 10000"), "LMorph *delay");
 }
 
+void test_hexadrop_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Hexadrop", 0);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -891,6 +897,7 @@ int main(void) {
   RUN_TEST(test_morph3d_registers_a_shorter_pause);
   RUN_TEST(test_cubicgrid_start_and_stop_do_not_leak);
   RUN_TEST(test_unknownpleasures_start_and_stop_do_not_leak);
+  RUN_TEST(test_hexadrop_stops_do_not_leak);
   RUN_TEST(test_cubicgrid_registers_a_smaller_grid);
   RUN_TEST(test_forest_stops_do_not_leak);
   RUN_TEST(test_laser_stops_do_not_leak);
