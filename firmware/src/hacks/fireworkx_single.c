@@ -33,7 +33,22 @@
 #undef M_PI
 #define M_PI 3.14159265358979323846f
 
+/* Below 24 bits a pixel, resize() gives the image a buffer of its own, and
+ * upstream's free sets `data` to NULL before XDestroyImage (it assumes the
+ * image shares the render buffer, as it does at 24 bits): 48 KB lost each
+ * time Fireworkx stops. */
+#define fireworkx_free fireworkx_free_upstream
 #include "fireworkx_floatlit.c"
+#undef fireworkx_free
+
+static void fireworkx_free(Display *dpy, Window window, void *closure) {
+  struct state *st = (struct state *)closure;
+  if (st->xim && st->xim->data != (char *)st->palaka2) {
+    free(st->xim->data);
+    st->xim->data = NULL;
+  }
+  fireworkx_free_upstream(dpy, window, closure);
+}
 
 const HackEntry fireworkx_hack = {"Fireworkx", fireworkx_defaults, fireworkx_init,
                                   fireworkx_draw, fireworkx_free, NULL, NULL};
