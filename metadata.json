@@ -3,7 +3,7 @@
   "checkpoint_id": "01M4N19K6H23AEYBY9Y95MC1AF",
   "strategy": "manual-commit",
   "branch": "feature/port-batch-vermiculate-moire-boing-cwaves-cynosure-hextrail",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "docs/porting-assessment.md",
     "tools/assessment_measured.md"
@@ -15,13 +15,20 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 14,
-    "cache_creation_tokens": 6833,
-    "cache_read_tokens": 2811365,
-    "output_tokens": 5277,
-    "api_call_count": 7
+    "input_tokens": 36,
+    "cache_creation_tokens": 28628,
+    "cache_read_tokens": 7062906,
+    "output_tokens": 18706,
+    "api_call_count": 18
   }
 }
