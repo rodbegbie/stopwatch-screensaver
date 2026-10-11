@@ -263,7 +263,10 @@ def read_module_fork(volume: bytes) -> bytes:
     import machfs
 
     vol = machfs.Volume()
-    vol.read(volume)
+    try:
+        vol.read(volume)
+    except Exception as error:  # noqa: BLE001 - machfs raises assorted types on junk
+        raise ExtractError(f"the volume is not readable HFS ({error})") from None
     try:
         folder = vol[MODULE_FOLDER]
     except KeyError:
@@ -295,8 +298,13 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     partial = args.output.with_name(args.output.name + ".partial")
-    partial.write_text(text)
-    partial.replace(args.output)
+    try:
+        partial.write_text(text)
+        partial.replace(args.output)
+    except OSError as error:
+        partial.unlink(missing_ok=True)
+        print(f"after_dark_sprites: {error}", file=sys.stderr)
+        return 1
     return 0
 
 

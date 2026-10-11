@@ -462,3 +462,21 @@ def test_real_image_gives_ten_sprites():
     )
     assert [len(c) for c in colour] == [4096] * 5
     assert [len(m) for m in mono] == [512] * 5
+
+
+def test_read_module_fork_rejects_a_volume_that_is_not_hfs():
+    pytest.importorskip("machfs")
+    with pytest.raises(ads.ExtractError, match="HFS"):
+        ads.read_module_fork(bytes(819_200))
+
+
+def test_main_reports_an_unwritable_output_and_leaves_no_partial(tmp_path, capsys):
+    pytest.importorskip("machfs")
+    image = REPO / "vendor" / "after-dark-v2.0v-800k"
+    if not image.is_file():
+        pytest.skip("no After Dark disk image")
+    out = tmp_path / "missing_dir" / "h.h"
+    assert ads.main([str(image), "-o", str(out)]) == 1
+    assert "after_dark_sprites:" in capsys.readouterr().err
+    assert not out.exists()
+    assert list(tmp_path.rglob("*.partial")) == []
