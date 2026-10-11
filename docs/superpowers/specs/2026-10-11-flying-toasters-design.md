@@ -115,7 +115,8 @@ right).
 ### Flyers
 
 - Slot count `n = max(1, countSlider / 5)` (0x3e2). The default slider of
-  54 gives **10**, which we use.
+  54 gives **10**, which is the original's count. We use 10 at 1× and 6 at
+  2× (the default), where each sprite covers four times the screen area.
 - Each flyer owns a **70×70 rect**: the 64×64 art plus a 6 px black strip
   along its top and a 6 px strip down its right. In sprite-local terms the
   rect is (top −6, left 0, bottom 64, right 70) and the art sits at
@@ -182,8 +183,9 @@ for (i = 0; i < n; i++) {                       /* pass 2 */
     if it is above `o`, 1 px less far left if below.
 - A flyer is removed once its rect no longer touches the bounds. Its slot
   respawns on the next step's pass 1.
-- `bounds` is the whole screen: for us the 466×466 square. Spawning and
-  dying in the circle's hidden corners is faithful and harmless.
+- `bounds` is the whole screen. For us it is the 233×233 logical world at
+  2× (the default) and the 466×466 square at 1×. Spawning and dying in the
+  circle's hidden corners is faithful and harmless.
 
 ### Animation
 
@@ -318,12 +320,15 @@ not tied to any toaster.
 
 - How sprites reach the canvas: `XPutImage` through the shim, or a small
   blit straight into the canvas with `canvas_mark_dirty`. Either is fine if
-  it stays opaque and marks only the touched rows dirty. Ten 70×70 blits a
-  step is about 49,000 pixels; dirty rows keep the push to roughly the rows
-  the flyers cover.
+  it stays opaque and marks only the touched rows dirty. At 2× (the
+  default) it is six 140×140 blits a step, about 118,000 pixels; at 1× it is
+  ten 70×70 blits, about 49,000. Dirty rows keep the push to roughly the
+  rows the flyers cover.
 - Pacing: the runner waits the returned delay *after* the push, and step
   time is not counted against it (see `main.cpp`). Aim for 30 steps a
-  second, and report what the device actually achieves.
+  second, and report what the device actually achieves. Measured: the 2×
+  default runs at about 21.5 fps (worst window 19.8) because `XPutImage`
+  copies pixel by pixel (issue #82); 1× holds about 29.
 - The HFS reader: the `machfs` package worked in the investigation. Check
   its licence before relying on it (it is a tool dependency fetched by uv,
   not copied into the repo); a small reader of our own is the fallback.
@@ -382,6 +387,6 @@ bytes.
 
 - The count slider's range is assumed to be 0-100 (After Dark's usual).
   It only matters if we ever expose the count; with the default 54 the
-  answer is 10 either way.
+  original's answer is 10 either way (we draw 6 at 2×, 10 at 1×).
 - How often flyers overlap in practice was not simulated. The host tests
   and the device run will show it; it is faithful either way.
