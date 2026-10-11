@@ -4,6 +4,7 @@
 #include <unity.h>
 
 #include "hacks/ad_flyingtoasters/ad_sim.h"
+#include "hacks/ad_flyingtoasters/ad_sprites.h"
 
 #define W 466
 #define H 466
@@ -301,6 +302,83 @@ void test_trail_is_wiped(void) {
   TEST_ASSERT_EQUAL_INT(0, stray);
 }
 
+static void test_doneness_medium_and_dark_subtract_and_clamp(void) {
+  unsigned char px[3] = {200, 150, 100};
+  ad_apply_doneness(px, 1, AD_DONE_LIGHT);
+  TEST_ASSERT_EQUAL_UINT8(200, px[0]);
+  TEST_ASSERT_EQUAL_UINT8(150, px[1]);
+  TEST_ASSERT_EQUAL_UINT8(100, px[2]);
+  ad_apply_doneness(px, 1, AD_DONE_MEDIUM);
+  TEST_ASSERT_EQUAL_UINT8(121, px[0]);
+  TEST_ASSERT_EQUAL_UINT8(71, px[1]);
+  TEST_ASSERT_EQUAL_UINT8(21, px[2]);
+  unsigned char q[3] = {200, 150, 100};
+  ad_apply_doneness(q, 1, AD_DONE_DARK);
+  TEST_ASSERT_EQUAL_UINT8(73, q[0]);
+  TEST_ASSERT_EQUAL_UINT8(39, q[1]);
+  TEST_ASSERT_EQUAL_UINT8(0, q[2]);
+  unsigned char black[6] = {0, 0, 0, 0, 0, 0};
+  ad_apply_doneness(black, 2, AD_DONE_DARK);
+  for (int i = 0; i < 6; i++) TEST_ASSERT_EQUAL_UINT8(0, black[i]);
+}
+
+static void test_mono_set_bit_is_black_clear_is_white(void) {
+  unsigned char bits[512];
+  static unsigned char rgb[64 * 64 * 3];
+  memset(bits, 0, sizeof bits);
+  bits[0] = 0x80;
+  bits[8 * 5 + 7] = 0x01;
+  memset(rgb, 7, sizeof rgb);
+  ad_expand_mono(bits, rgb);
+  for (int y = 0; y < 64; y++) {
+    for (int x = 0; x < 64; x++) {
+      int black = (x == 0 && y == 0) || (x == 63 && y == 5);
+      for (int c = 0; c < 3; c++)
+        TEST_ASSERT_EQUAL_UINT8(black ? 0 : 255, rgb[(y * 64 + x) * 3 + c]);
+    }
+  }
+}
+
+static void test_sprite_has_black_strip_top_and_right(void) {
+  static unsigned char rgb[64 * 64 * 3];
+  static uint16_t out[70 * 70];
+  memset(rgb, 255, sizeof rgb);
+  memset(out, 0x55, sizeof out);
+  ad_build_sprite(rgb, out);
+  for (int y = 0; y < 70; y++) {
+    for (int x = 0; x < 70; x++) {
+      uint16_t want = (y < 6 || x >= 64) ? 0 : 0xFFFF;
+      TEST_ASSERT_EQUAL_HEX16(want, out[y * 70 + x]);
+    }
+  }
+}
+
+static void test_sprite_packs_rgb565_at_offset(void) {
+  static unsigned char rgb[64 * 64 * 3];
+  static uint16_t out[70 * 70];
+  memset(rgb, 0, sizeof rgb);
+  rgb[(3 * 64 + 2) * 3 + 0] = 0xF8;
+  rgb[(3 * 64 + 2) * 3 + 1] = 0x84;
+  rgb[(3 * 64 + 2) * 3 + 2] = 0x08;
+  ad_build_sprite(rgb, out);
+  TEST_ASSERT_EQUAL_HEX16((0x1F << 11) | (0x21 << 5) | 0x01, out[(3 + 6) * 70 + 2]);
+}
+
+static void test_choose_covers_all_six(void) {
+  int seen[2][3] = {{0}};
+  for (uint32_t r = 0; r < 6; r++) {
+    AdChoice c = ad_choose(r);
+    TEST_ASSERT_TRUE(c.colour == 0 || c.colour == 1);
+    seen[c.colour][c.doneness]++;
+  }
+  for (int i = 0; i < 2; i++)
+    for (int j = 0; j < 3; j++) TEST_ASSERT_EQUAL_INT(1, seen[i][j]);
+  TEST_ASSERT_EQUAL_INT(AD_DONE_LIGHT, ad_choose(0).doneness);
+  TEST_ASSERT_EQUAL_INT(AD_DONE_MEDIUM, ad_choose(2).doneness);
+  TEST_ASSERT_EQUAL_INT(AD_DONE_DARK, ad_choose(4).doneness);
+  TEST_ASSERT_EQUAL_INT(1, ad_choose(1).colour);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_flap_runs_0_1_2_3_2_1_0);
@@ -318,5 +396,10 @@ int main(void) {
   RUN_TEST(test_n_is_clamped_to_the_slot_array);
   RUN_TEST(test_slot_stays_empty_after_four_colliding_tries);
   RUN_TEST(test_trail_is_wiped);
+  RUN_TEST(test_doneness_medium_and_dark_subtract_and_clamp);
+  RUN_TEST(test_mono_set_bit_is_black_clear_is_white);
+  RUN_TEST(test_sprite_has_black_strip_top_and_right);
+  RUN_TEST(test_sprite_packs_rgb565_at_offset);
+  RUN_TEST(test_choose_covers_all_six);
   return UNITY_END();
 }
