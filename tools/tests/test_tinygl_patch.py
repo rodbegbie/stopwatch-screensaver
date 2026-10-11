@@ -177,3 +177,45 @@ def test_filled_triangles_apply_polygon_offset_and_treat_alpha_one_as_opaque(pat
     assert "p0->zp.z = z0;" in wrapper
     assert "GL_SRC_ALPHA" in wrapper and "GL_ONE_MINUS_SRC_ALPHA" in wrapper
     assert "c->zb->enable_blend = blend;" in wrapper
+
+
+def hot_id(hot: "tp.Hot") -> str:
+    return f"{hot.path}:{hot.definition.split('(')[0].split()[-1]}"
+
+
+@pytest.mark.parametrize("hot", tp.HOT_FUNCTIONS, ids=hot_id)
+def test_every_hot_function_is_marked_and_timed_if_it_has_a_slot(patched, hot):
+    """GL_IRAM moves exactly these functions; GL_PROFILE times the ones with
+    a slot from their first line."""
+    text = patched[hot.path]
+    assert text.count("TGL_HOT " + hot.anchor) == 1
+    if hot.slot:
+        scope = "GLPROF_SCOPE_OUTER" if hot.reentrant else "GLPROF_SCOPE"
+        assert f"TGL_HOT {hot.anchor}\t{scope}({hot.slot});\n" in text
+
+
+@pytest.mark.parametrize("hot", tp.HOT_FUNCTIONS, ids=hot_id)
+def test_a_missing_hot_function_names_upstream_as_the_problem(hot):
+    sources = load_sources()
+    patched_once = tp.patch_tree(sources)
+    assert hot.anchor not in patched_once[hot.path].replace("TGL_HOT " + hot.anchor, "")
+    broken = dict(sources)
+    upstream_anchor = hot.anchor if hot.anchor in sources[hot.path] else None
+    if upstream_anchor is None:  # written by an earlier patch: break that one
+        pytest.skip("anchor is written by FILL_TRIANGLE")
+    broken[hot.path] = sources[hot.path].replace(
+        hot.anchor, hot.anchor.replace("(", " (")
+    )
+    with pytest.raises(ValueError, match="has upstream changed"):
+        tp.patch_tree(broken)
+
+
+def test_only_the_list_call_is_timed_as_reentrant():
+    """Display lists call lists; timing every level would count time twice."""
+    assert [h.definition for h in tp.HOT_FUNCTIONS if h.reentrant] == [
+        "void glopCallList(GLParam* p)"
+    ]
+
+
+def test_the_single_header_brings_in_the_switches(patched):
+    assert '#include "glshim/glshim_prof.h"' in patched["src/tinygl_single.h"]

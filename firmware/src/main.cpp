@@ -5,6 +5,7 @@
 extern "C" {
 #include "core/canvas.h"
 #include "core/push_plan.h"
+#include "glshim/glshim_prof.h"
 #include "hacks/registry.h"
 #include "runner/button_latch.h"
 #include "runner/hack_runner.h"
@@ -230,6 +231,9 @@ static void halt(const char *msg) {
 static void resetStats() {
   frames = stepUs = pushUs = syncUs = waitUs = rowsPushed = 0;
   statsAt = millis();
+#ifdef GL_PROFILE
+  glshim_prof_reset();
+#endif
 }
 
 /* step/push/sync/wait are mean milliseconds per frame spent in the hack, in
@@ -249,6 +253,21 @@ static void printStats(const char *tag) {
       rowsPushed / n,
       (unsigned)ESP.getFreeHeap(),
       (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+#ifdef GL_PROFILE
+  /* Mean microseconds per GL frame in each stage, then calls per frame. */
+  if (glshim_prof_frames) {
+    const float perFrame = (float)glshim_prof_frames * ESP.getCpuFreqMHz();
+    Serial.printf("glprof %s frames=%u", g_hacks[runner_index(runner)]->name,
+                  (unsigned)glshim_prof_frames);
+    for (int i = 0; i < GLPROF_SLOTS; i++)
+      Serial.printf(" %s=%.2fms", glshim_prof_names[i],
+                    glshim_prof_time[i] / perFrame / 1000.0f);
+    for (int i = 0; i < GLPROF_SLOTS; i++)
+      Serial.printf(" n%s=%.0f", glshim_prof_names[i],
+                    (float)glshim_prof_calls[i] / glshim_prof_frames);
+    Serial.printf("\n");
+  }
+#endif
 }
 
 /* Overlay text is stamped into the canvas just for the push, then the pixels

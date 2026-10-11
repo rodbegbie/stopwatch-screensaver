@@ -9,6 +9,7 @@
 #include "core/canvas.h"
 #include "fps.h"
 #include "glshim/glshim.h"
+#include "glshim/glshim_prof.h"
 #include "x11shim/xshim.h"
 #include "zbuffer.h"
 
@@ -872,8 +873,46 @@ void test_the_device_is_never_turned(void) {
   TEST_ASSERT_TRUE(current_device_rotation() == 0.0);
 }
 
+#ifdef GL_PROFILE
+/* The profile counts each stage once per call, and a list called from a list
+ * counts once: a nested list must not add its time to its caller's twice. */
+void test_the_profile_counts_each_stage_once_per_call(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  const GLuint inner = glGenLists(2), outer = inner + 1;
+  glNewList(inner, GL_COMPILE);
+  glBegin(GL_TRIANGLES);
+  glVertex3f(-0.5f, -0.5f, 0);
+  glVertex3f(0.5f, -0.5f, 0);
+  glVertex3f(0, 0.5f, 0);
+  glEnd();
+  glEndList();
+  glNewList(outer, GL_COMPILE);
+  glCallList(inner);
+  glEndList();
+  glEnable(GL_LIGHTING);
+  glEnable(GL_LIGHT0);
+  glshim_prof_reset();
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glCallList(outer);
+  glXSwapBuffers(dpy, 0);
+  TEST_ASSERT_EQUAL_UINT32(1, glshim_prof_frames);
+  TEST_ASSERT_EQUAL_UINT32(1, glshim_prof_calls[GLPROF_CLEAR]);
+  TEST_ASSERT_EQUAL_UINT32(1, glshim_prof_calls[GLPROF_LIST]);
+  TEST_ASSERT_EQUAL_UINT32(3, glshim_prof_calls[GLPROF_VERTEX]);
+  TEST_ASSERT_EQUAL_UINT32(3, glshim_prof_calls[GLPROF_SHADE]);
+  TEST_ASSERT_EQUAL_UINT32(1, glshim_prof_calls[GLPROF_TRIANGLE]);
+  TEST_ASSERT_EQUAL_UINT32(1, glshim_prof_calls[GLPROF_FILL]);
+  TEST_ASSERT_EQUAL_INT(0, glshim_prof_depth);
+  TEST_ASSERT_TRUE(glshim_prof_time[GLPROF_LIST] >= glshim_prof_time[GLPROF_VERTEX]);
+  TEST_ASSERT_TRUE(glshim_prof_time[GLPROF_TRIANGLE] >= glshim_prof_time[GLPROF_FILL]);
+}
+#endif
+
 int main(void) {
   UNITY_BEGIN();
+#ifdef GL_PROFILE
+  RUN_TEST(test_the_profile_counts_each_stage_once_per_call);
+#endif
   RUN_TEST(test_the_device_is_never_turned);
   RUN_TEST(test_a_smooth_horizontal_line_moves_a_quarter_pixel_at_a_time);
   RUN_TEST(test_a_smooth_vertical_line_moves_a_quarter_pixel_at_a_time);

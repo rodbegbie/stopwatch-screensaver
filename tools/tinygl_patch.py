@@ -267,7 +267,7 @@ void gl_draw_triangle_fill(GLVertex* p0, GLVertex* p1, GLVertex* p2) {
 	c->zb->enable_blend = blend;
 }
 
-static void gl_draw_triangle_fill_plain(GLVertex* p0, GLVertex* p1, GLVertex* p2) {
+TGL_HOT static void gl_draw_triangle_fill_plain(GLVertex* p0, GLVertex* p1, GLVertex* p2) {
 """
 
 REPLACEMENTS: tuple[Replace, ...] = (
@@ -425,6 +425,74 @@ REPLACEMENTS: tuple[Replace, ...] = (
     ),
 )
 
+
+@dataclass(frozen=True)
+class Hot:
+    """A function on TinyGL's per-vertex or per-triangle path, found by its
+    definition line in the patched tree. It is marked `TGL_HOT` (IRAM when
+    built with GL_IRAM). With a `slot` it is also timed under GL_PROFILE, from
+    its first line to whichever return it leaves by; `reentrant` times only
+    the outermost call (lists call lists)."""
+
+    path: str
+    definition: str
+    slot: str = ""
+    reentrant: bool = False
+
+    @property
+    def anchor(self) -> str:
+        return self.definition + " {\n"
+
+    def replacement(self) -> str:
+        text = "TGL_HOT " + self.anchor
+        if self.slot:
+            scope = "GLPROF_SCOPE_OUTER" if self.reentrant else "GLPROF_SCOPE"
+            text += f"\t{scope}({self.slot});\n"
+        return text
+
+
+_FILL_ARGS = "ZBuffer* zb, ZBufferPoint* p0, ZBufferPoint* p1, ZBufferPoint* p2"
+
+# Applied after REPLACEMENTS, so a definition one of them wrote (the fill) is
+# found too.
+HOT_FUNCTIONS: tuple[Hot, ...] = (
+    Hot("src/list.c", "void glopCallList(GLParam* p)", "GLPROF_LIST", True),
+    Hot("src/vertex.c", "void glopVertex(GLParam* p)", "GLPROF_VERTEX"),
+    Hot("src/light.c", "void gl_shade_vertex(GLVertex* v)", "GLPROF_SHADE"),
+    Hot(
+        "src/clip.c",
+        "void gl_draw_triangle(GLVertex* p0, GLVertex* p1, GLVertex* p2)",
+        "GLPROF_TRIANGLE",
+    ),
+    Hot(
+        "src/clip.c",
+        "void gl_draw_triangle_fill(GLVertex* p0, GLVertex* p1, GLVertex* p2)",
+        "GLPROF_FILL",
+    ),
+    Hot("src/clip.c", "void gl_draw_point(GLVertex* p0)", "GLPROF_POINT"),
+    Hot("src/clip.c", "void gl_draw_line(GLVertex* p1, GLVertex* p2)", "GLPROF_LINE"),
+    Hot(
+        "src/clip.c",
+        "static void gl_draw_triangle_clip(GLVertex* p0, GLVertex* p1, GLVertex* p2, GLint clip_bit)",
+    ),
+    Hot("src/vertex.c", "static void gl_transform_to_viewport_vertex_c(GLVertex* v)"),
+    Hot("src/vertex.c", "static void gl_vertex_transform(GLVertex* v)"),
+    Hot("src/vertex.c", "void glopNormal(GLParam* p)"),
+    Hot("src/vertex.c", "void glopColor(GLParam* p)"),
+    Hot(
+        "src/zgl.h",
+        "static GLint gl_clipcode(GLfloat x, GLfloat y, GLfloat z, GLfloat w1)",
+    ),
+    Hot("src/zgl.h", "static GLfloat clampf(GLfloat a, GLfloat min, GLfloat max)"),
+    Hot("src/zmath.h", "static int gl_V3_Norm_Fast(V3* a)"),
+    Hot("src/zmath.c", "void gl_M4_MulV4(V4* a, M4* b, V4* c)"),
+    Hot("src/ztriangle.c", f"void ZB_fillTriangleFlat({_FILL_ARGS})"),
+    Hot("src/ztriangle.c", f"void ZB_fillTriangleFlatNOBLEND({_FILL_ARGS})"),
+    Hot("src/ztriangle.c", f"void ZB_fillTriangleSmooth({_FILL_ARGS})"),
+    Hot("src/ztriangle.c", f"void ZB_fillTriangleSmoothNOBLEND({_FILL_ARGS})"),
+    Hot("src/zline.c", "void ZB_plot(ZBuffer* zb, ZBufferPoint* p)"),
+)
+
 # Files with unsuffixed decimal literals, which are `double` in C.
 FLOAT_LITERAL_FILES: tuple[str, ...] = (
     "src/clip.c",
@@ -488,6 +556,8 @@ SINGLE_HEADER = """#ifndef TINYGL_SINGLE_H
 #define sin sinf
 #define cos cosf
 #define floor floorf
+/* TGL_HOT, and the GL_PROFILE counters (issue #43). */
+#include "glshim/glshim_prof.h"
 #endif
 """
 
@@ -517,6 +587,15 @@ def patch_tree(sources: Mapping[str, str]) -> dict[str, str]:
                 f"found {found}; {UPSTREAM_CHANGED}"
             )
         out[rep.path] = text.replace(rep.anchor, rep.replacement)
+    for hot in HOT_FUNCTIONS:
+        text = _get(out, hot.path)
+        found = text.count(hot.anchor)
+        if found != 1:
+            raise ValueError(
+                f"expected 1 of {hot.anchor!r} in {hot.path}, found {found}; "
+                f"{UPSTREAM_CHANGED}"
+            )
+        out[hot.path] = text.replace(hot.anchor, hot.replacement())
     for path in FLOAT_LITERAL_FILES:
         try:
             out[path] = float_literals.float_literals(_get(out, path))

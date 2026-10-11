@@ -18,6 +18,22 @@
 
 #include "core/canvas.h"
 #include "zbuffer.h"
+#include "glshim/glshim_prof.h"
+
+#ifdef GL_PROFILE
+uint64_t glshim_prof_time[GLPROF_SLOTS];
+uint32_t glshim_prof_calls[GLPROF_SLOTS];
+uint32_t glshim_prof_frames;
+int glshim_prof_depth;
+const char *const glshim_prof_names[GLPROF_SLOTS] = {
+    "clear", "list", "vertex", "shade", "tri", "fill", "point", "line"};
+
+void glshim_prof_reset(void) {
+  memset(glshim_prof_time, 0, sizeof glshim_prof_time);
+  memset(glshim_prof_calls, 0, sizeof glshim_prof_calls);
+  glshim_prof_frames = 0;
+}
+#endif
 
 static ZBuffer *g_zb;
 static Canvas *g_canvas;
@@ -39,7 +55,7 @@ static GLint g_clear_z;
 
 static bool box_empty(Box b) { return b.x0 > b.x1 || b.y0 > b.y1; }
 
-static void box_add(Box *b, Box o) {
+TGL_HOT static void box_add(Box *b, Box o) {
   if (box_empty(o)) return;
   if (o.x0 < b->x0) b->x0 = o.x0;
   if (o.y0 < b->y0) b->y0 = o.y0;
@@ -64,7 +80,7 @@ static void reset_dirty_rectangle(void) {
  * {x0, y0, x1, y1}; returns 0 if nothing is left. The one rule for what a drawn
  * primitive covers: the dirty rectangle and, through the observer below,
  * tools/gl_budget.py both get its result. */
-static int glshim_clamp_box(GLint x0, GLint y0, GLint x1, GLint y1, int w, int h,
+TGL_HOT static int glshim_clamp_box(GLint x0, GLint y0, GLint x1, GLint y1, int w, int h,
                             int out[4]) {
   if (x0 > x1) {
     const GLint t = x0;
@@ -91,7 +107,7 @@ static int glshim_clamp_box(GLint x0, GLint y0, GLint x1, GLint y1, int w, int h
 void (*glshim_box_observer)(int x0, int y0, int x1, int y1);
 
 /* Called by TinyGL for everything it draws, in canvas pixels. */
-void glshim_note_box(GLint x0, GLint y0, GLint x1, GLint y1) {
+TGL_HOT void glshim_note_box(GLint x0, GLint y0, GLint x1, GLint y1) {
   if (!g_zb) return;
   int c[4];
   if (!glshim_clamp_box(x0, y0, x1, y1, g_canvas->w, g_canvas->h, c)) return;
@@ -123,6 +139,9 @@ void glshim_clear(ZBuffer *zb, GLint clear_z, GLint z, GLint clear_color,
     ZB_clear(zb, clear_z, z, clear_color, r, g, b);
     return;
   }
+#ifdef GL_PROFILE
+  const uint32_t prof_start = glshim_prof_now();
+#endif
   const Box all = whole_canvas();
   if (clear_color) {
     const PIXEL color = RGB_TO_PIXEL(r, g, b);
@@ -144,6 +163,9 @@ void glshim_clear(ZBuffer *zb, GLint clear_z, GLint z, GLint clear_color,
     g_z_valid = true;
     g_clear_z = z;
   }
+#ifdef GL_PROFILE
+  glshim_prof_add(GLPROF_CLEAR, prof_start);
+#endif
 }
 
 typedef struct {
@@ -206,6 +228,9 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable) {
                         boxes[i].x1 - boxes[i].x0 + 1,
                         boxes[i].y1 - boxes[i].y0 + 1);
   g_swap_drawn = g_swap_erased = kEmptyBox;
+#ifdef GL_PROFILE
+  glshim_prof_frames++;
+#endif
 }
 
 static int stride_in_bytes(int stride, int size) {
