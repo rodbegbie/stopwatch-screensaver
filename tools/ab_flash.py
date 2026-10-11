@@ -17,7 +17,6 @@ upload writes.
 import argparse
 import os
 import re
-import shutil
 import statistics
 import subprocess
 import sys
@@ -26,7 +25,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 FIRMWARE = ROOT / "firmware"
-IMAGE = FIRMWARE / ".pio" / "build" / "stopwatch" / "firmware.bin"
 
 RUN = re.compile(r"^run (?P<hack>\S+) (?P<fields>.*)$")
 GLPROF = re.compile(r"^glprof (?P<hack>\S+) (?P<fields>.*)$")
@@ -84,10 +82,14 @@ def render(results: dict[str, list[Capture]], keys: list[str]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def pio(*args: str, flags: str = "") -> subprocess.CompletedProcess:
+def pio(*args: str, flags: str, build_dir: Path) -> subprocess.CompletedProcess:
+    """`pio run` for the stopwatch. Each variant has its own `build_dir`:
+    PlatformIO cleans a build directory, image and all, when the flags it
+    was built with change, so variants sharing one wipe each other."""
     env = {
         **os.environ,
         "PLATFORMIO_CORE_DIR": str(ROOT / ".platformio"),
+        "PLATFORMIO_BUILD_DIR": str(build_dir),
         "NO_COLOR": "1",
         "PLATFORMIO_BUILD_FLAGS": flags,
     }
@@ -112,25 +114,20 @@ def pinned(hack: str, flags: str) -> str:
     return f'-DSTART_HACK=\\"{hack}\\" -DROTATE_SECONDS=0 {flags}'.strip()
 
 
-def build(name: str, flags: str, out: Path) -> Path:
-    result = pio(flags=flags)
+def build(name: str, flags: str, out: Path) -> None:
+    result = pio(flags=flags, build_dir=out / f"pio-{name}")
     (out / f"build-{name}.log").write_text(result.stdout + result.stderr)
     if result.returncode != 0:
         sys.exit(f"build of {name} failed; see {out / f'build-{name}.log'}")
-    image = out / f"{name}.bin"
-    shutil.copyfile(IMAGE, image)
-    return image
 
 
-def flash(image: Path, flags: str, log: Path) -> None:
-    """Upload `image` without rebuilding. `flags` must be the ones it was
-    built with: PlatformIO cleans the build directory, image and all, when
-    the flags change."""
-    shutil.copyfile(image, IMAGE)
-    result = pio("-t", "nobuild", "-t", "upload", flags=flags)
+def flash(name: str, flags: str, out: Path, log: Path) -> None:
+    """Upload the image `build` made, without rebuilding."""
+    build_dir = out / f"pio-{name}"
+    result = pio("-t", "nobuild", "-t", "upload", flags=flags, build_dir=build_dir)
     log.write_text(result.stdout + result.stderr)
     if result.returncode != 0 or "Hash of data verified" not in result.stdout:
-        sys.exit(f"flash of {image.name} did not verify; see {log}")
+        sys.exit(f"flash of {name} did not verify; see {log}")
 
 
 def main(argv: list[str]) -> int:
@@ -150,11 +147,12 @@ def main(argv: list[str]) -> int:
         name: pinned(args.hack, flags)
         for name, flags in (v.split("=", 1) for v in args.variants)
     }
-    images = {name: build(name, flags, args.out) for name, flags in variants.items()}
+    for name, flags in variants.items():
+        build(name, flags, args.out)
     results: dict[str, list[Capture]] = {name: [] for name in variants}
     for r in range(1, args.rounds + 1):
-        for name, image in images.items():
-            flash(image, variants[name], args.out / f"flash-{r}-{name}.log")
+        for name, flags in variants.items():
+            flash(name, flags, args.out, args.out / f"flash-{r}-{name}.log")
             log = args.out / f"serial-{r}-{name}.log"
             serial_capture.capture(str(log), args.seconds)
             results[name].append(parse_log(log.read_text(errors="replace"), args.hack))
