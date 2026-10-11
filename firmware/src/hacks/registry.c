@@ -136,6 +136,12 @@ static const char *const kHexTrailOverrides[] = {
     "*count: " HEXTRAIL_STR(HEXTRAIL_COUNT), NULL};
 XLOCKMORE_HACK_WITH(hextrail, "HexTrail", kHexTrailOverrides);
 
+/* Built only when the After Dark disk image is present; kept last so every
+ * other hack keeps its index. */
+#ifdef HAVE_AFTER_DARK_TOASTERS
+extern const HackEntry ad_flyingtoasters_hack;
+#endif
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -194,5 +200,9 @@ const HackEntry *const g_hacks[] = {
     &cynosure_hack,
     &moire_hack,
     &moire2_hack,
-    &hextrail_hack};
+    &hextrail_hack,
+#ifdef HAVE_AFTER_DARK_TOASTERS
+    &ad_flyingtoasters_hack,
+#endif
+};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);

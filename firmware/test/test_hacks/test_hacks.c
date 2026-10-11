@@ -111,7 +111,11 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Cynosure",
                                          "Moire",
                                          "Moire2",
-                                         "HexTrail"};
+                                         "HexTrail",
+#ifdef HAVE_AFTER_DARK_TOASTERS
+                                         "ad-flyingtoasters",
+#endif
+  };
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -468,6 +472,9 @@ static const uint64_t kBaseline[] = {
     0xcfa8f679f1a10fddull, /* Moire: taken after looking at the frames (single precision) */
     0x32f706208dc0a079ull, /* Moire2: taken after looking at the frames (bit planes) */
     0x0100bedf6ddf582cull, /* HexTrail: taken after looking at the frames (count 6, single precision) */
+#ifdef HAVE_AFTER_DARK_TOASTERS
+    0x159797e670660d18ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames */
+#endif
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -1106,6 +1113,60 @@ void test_hextrail_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("HexTrail", 1);
 }
 
+#ifdef HAVE_AFTER_DARK_TOASTERS
+/* A flyer enters and leaves past every edge, so a 70x70 sprite is put where
+ * 1, 36 or 40 of its columns and rows land on the canvas, and the canvas
+ * outside the clipped sprite must keep what it held. */
+void test_blit_clips_at_every_edge(void) {
+  enum { S = 70 };
+  static const int pos[] = {-69, -30, 430, 465};
+  const uint16_t ink = 0x1234; /* images hold canvas-order pixels */
+  Display *dpy = xshim_open_display(&cv);
+  GC gc = XCreateGC(dpy, XSHIM_WINDOW, 0, NULL);
+  XImage *im = XCreateImage(dpy, NULL, 16, ZPixmap, 0, NULL, S, S, 16, 0);
+  TEST_ASSERT_NOT_NULL(im);
+  uint16_t *pixels = malloc(S * S * sizeof *pixels);
+  TEST_ASSERT_NOT_NULL(pixels);
+  for (int i = 0; i < S * S; i++) pixels[i] = ink;
+  im->data = (char *)pixels;
+
+  for (size_t a = 0; a < sizeof pos / sizeof pos[0]; a++) {
+    for (size_t b = 0; b < sizeof pos / sizeof pos[0]; b++) {
+      const int x = pos[a], y = pos[b];
+      for (long i = 0; i < (long)cv.w * cv.h; i++)
+        cv.px[i] = (uint16_t)(0x8001 + i % 251);
+      XPutImage(dpy, XSHIM_WINDOW, gc, im, 0, 0, x, y, S, S);
+      for (int row = 0; row < cv.h; row++) {
+        for (int col = 0; col < cv.w; col++) {
+          const long i = (long)row * cv.w + col;
+          const int inside = col >= x && col < x + S && row >= y && row < y + S;
+          const uint16_t want = inside ? ink : (uint16_t)(0x8001 + i % 251);
+          if (cv.px[i] != want) {
+            char msg[80];
+            snprintf(msg, sizeof msg, "sprite at (%d, %d): pixel (%d, %d)", x, y,
+                     col, row);
+            TEST_FAIL_MESSAGE(msg);
+          }
+        }
+      }
+    }
+  }
+  XDestroyImage(im);
+  XFreeGC(dpy, gc);
+  xshim_close_display(dpy);
+}
+
+/* Each start builds five sprite images and frees them at stop. */
+void test_restart_does_not_leak(void) {
+  const int hack = index_of("ad-flyingtoasters");
+  TEST_ASSERT_TRUE(hack >= 0);
+  const size_t early = held_after_starting(hack, 3);
+  const size_t late = held_after_starting(hack, 53);
+  TEST_ASSERT_TRUE_MESSAGE(late < early + LEAK_SLACK_BYTES,
+                           "bytes held at rest grew over 50 more starts");
+}
+#endif
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -1177,6 +1238,10 @@ int main(void) {
   RUN_TEST(test_moire_stops_do_not_leak);
   RUN_TEST(test_moire2_stops_do_not_leak);
   RUN_TEST(test_hextrail_stops_do_not_leak);
+#ifdef HAVE_AFTER_DARK_TOASTERS
+  RUN_TEST(test_blit_clips_at_every_edge);
+  RUN_TEST(test_restart_does_not_leak);
+#endif
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
