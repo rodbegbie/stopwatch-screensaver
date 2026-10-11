@@ -79,8 +79,11 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   12 modes) shows the same one in every dump. To see others, build the hack
   alone (`probe_hacks.registry_source` and `shim_sources`) from a copy outside
   `vendor/`, with a `__attribute__((constructor))` that calls
-  `srandom(atoi(getenv("SEED")))`. Each boot on the device picks a new mode
-  too, so measure each mode from separate boots.
+  `srandom(atoi(getenv("SEED")))`. A device boot is deterministic too (Halo
+  chose Ramp on five boots in a row), so a hack that picks a mode with
+  `random()` always starts the same one: force another with a temporary
+  `*mode:` override to measure it. Rotation reaches other modes because the
+  random state differs by then.
 - Hexadrop (`hexadrop_single.c`) runs at about 10 fps, under the 15 fps bar.
   Splitting its step on the device showed the maths and the edge walk cost
   0.1 ms and all the rest is canvas writes: about 860 KB of 16-bit stores

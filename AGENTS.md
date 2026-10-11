@@ -12,7 +12,8 @@ embedded-specific choices as you make them. See `README.md` for setup and
 - `firmware/src/glshim/` (ours) is the GL layer for OpenGL hacks, over
   `firmware/src/tinygl/` (TinyGL, byte-identical, patched at build by
   `tools/tinygl_patch.py`). `xs_support/glx/` holds the copied GL helpers.
-  Gears was the first GL hack; Unknown Pleasures is the fifth.
+  Gears was the first GL hack; Unknown Pleasures is the fifth and StonerView
+  the sixth.
 - `firmware/src/runner/te_sync.[ch]` (ours, host-tested) times a push to the
   panel's refresh for a hack with `sync_to_refresh`; see
   `.claude/rules/device-display.md`.
@@ -227,6 +228,12 @@ ones below apply everywhere.
   work. Ignore it and carry on.
 - `esptool` reads of the 16 MB flash need `--baud 921600` (about 3.5 minutes)
   and show no progress when piped.
+- A background command (`run_in_background`) ignores `cd`, so `source
+  tools/env.sh` fails there with exit 127 and "pio not found": give it the
+  absolute path (`source /…/tools/env.sh && cd /…/firmware && pio …`).
+- On a busy Mac (load average over 10) the suite can look hung. Before
+  killing it, `sample $(pgrep -f .pio/build/native/program) 3` shows where it
+  is: it was in Unknown Pleasures, slow but moving.
 - A push to GitHub is sometimes rejected once and succeeds on an immediate
   retry; never force-push for this.
 - Read `push=` from a hack's second 5 s window on: the name overlay is stamped
@@ -247,7 +254,8 @@ ones below apply everywhere.
   `#include "hacks/<name>_direct.c"`: the wrapper exports only that one symbol,
   so it links beside the registered copy. See `test_interaggregate_blend`.
 - `pio test -e native -f test_<dir>` runs one suite (the xshim and
-  single-hack tests take about a second); `test_hacks` alone takes about 100 s.
+  single-hack tests take about a second); `test_hacks` alone takes about
+  2m20s and the whole `pio test -e native` about 5 minutes.
 - Count hacks from `g_hacks[]`, not from a list in a message or a note: a PR
   body said 14 where the registry had 15, and a review list had left one out.
   `grep -c` counts lines, and a line can hold several entries: use
