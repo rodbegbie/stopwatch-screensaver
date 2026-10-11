@@ -110,7 +110,9 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Vermiculate",
                                          "Cynosure",
                                          "Moire",
-                                         "Moire2"};
+                                         "Moire2",
+                                         "Boing",
+                                         "HexTrail"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -466,6 +468,8 @@ static const uint64_t kBaseline[] = {
     0, /* Cynosure: not yet pinned */
     0, /* Moire: not yet pinned */
     0, /* Moire2: not yet pinned */
+    0, /* Boing: not yet pinned */
+    0, /* HexTrail: not yet pinned */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -1100,6 +1104,14 @@ void test_moire2_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("Moire2", 0);
 }
 
+void test_boing_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Boing", 1);
+}
+
+void test_hextrail_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("HexTrail", 1);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -1170,6 +1182,8 @@ int main(void) {
   RUN_TEST(test_cynosure_stops_do_not_leak);
   RUN_TEST(test_moire_stops_do_not_leak);
   RUN_TEST(test_moire2_stops_do_not_leak);
+  RUN_TEST(test_boing_stops_do_not_leak);
+  RUN_TEST(test_hextrail_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
