@@ -33,16 +33,10 @@ typedef enum { PUSH_NONE, PUSH_ROWS, PUSH_ALL } PushKind;
  * in increasing y, grouped into batches (the last row of each has
  * end_of_group); otherwise *count is 0. PUSH_ALL means the rows would cost at
  * least as much as pushing the whole canvas in one call.
- * With use_disc, each span is clipped to the canvas's disc (rows left empty
- * are dropped) and the rows are split into the cheapest batches found; a
- * full frame then becomes bands rather than PUSH_ALL. Without it, whole dirty
- * spans are grouped greedily. */
+ * With use_disc, each span is first clipped to the canvas's disc and rows left
+ * empty are dropped. The model is fitted to pushes with one flush: on the board
+ * each extra flush in a push cost about 0.85 ms, not PUSH_FLUSH_NS (#77). */
 PushKind push_plan(Canvas *c, PushRow *rows, int *count, bool use_disc);
-
-/* The model's cost in ns of pushing `rows` in the batches they are marked
- * with, and the greedy grouping (which re-marks them). For tests. */
-int64_t push_plan_cost(const PushRow *rows, int count);
-int64_t push_group_greedy(PushRow *rows, int count);
 
 typedef struct {
   void *ctx;

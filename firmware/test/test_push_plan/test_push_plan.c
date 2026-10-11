@@ -213,14 +213,17 @@ void test_disc_clips_a_full_row_to_its_span(void) {
   TEST_ASSERT_EQUAL_INT(v1, rows[0].x1);
 }
 
-void test_disc_full_frame_is_bands_not_all(void) {
+/* On the board each extra flush in a push cost about 0.85 ms (issue #77): a
+ * full frame of clipped rows in 19 bands took 39.9 ms, and in the three flushes
+ * the greedy grouping makes 24.7 ms, against 27.8 for one full push. */
+void test_disc_full_frame_is_clipped_rows_in_few_flushes(void) {
   Canvas fresh;
   int count = 0;
   TEST_ASSERT_EQUAL_INT(0, canvas_init(&fresh, W, H, malloc));
   add_disc(&fresh);
   TEST_ASSERT_EQUAL_INT(PUSH_ROWS, push_plan(&fresh, rows, &count, true));
   TEST_ASSERT_EQUAL_INT(H, count);
-  TEST_ASSERT_TRUE(groups_in(rows, count) > 1);
+  TEST_ASSERT_TRUE(groups_in(rows, count) <= 3);
   for (int i = 0; i < count; i++) {
     int v0, v1;
     TEST_ASSERT_TRUE(canvas_visible_span(&fresh, rows[i].y, &v0, &v1));
@@ -228,53 +231,6 @@ void test_disc_full_frame_is_bands_not_all(void) {
     TEST_ASSERT_EQUAL_INT(v1, rows[i].x1);
   }
   canvas_free(&fresh);
-}
-
-/* The model predicts about 26.8 ms in bands against 28.2 ms for the greedy
- * grouping of the same clipped rows and 31.1 ms for one full push. */
-void test_disc_full_frame_beats_greedy_and_a_full_push(void) {
-  Canvas fresh;
-  int count = 0;
-  TEST_ASSERT_EQUAL_INT(0, canvas_init(&fresh, W, H, malloc));
-  add_disc(&fresh);
-  push_plan(&fresh, rows, &count, true);
-  const int64_t banded = push_plan_cost(rows, count);
-  const int64_t greedy = push_group_greedy(rows, count);
-  TEST_ASSERT_TRUE(banded < greedy);
-  TEST_ASSERT_TRUE(banded < (int64_t)W * H * PUSH_PIXEL_NS);
-  TEST_ASSERT_INT64_WITHIN(500000, 26800000, banded);
-  canvas_free(&fresh);
-}
-
-static void assert_disc_plan_no_dearer_than_greedy(void) {
-  int count = 0;
-  if (push_plan(&cv, rows, &count, true) != PUSH_ROWS) return;
-  const int64_t chosen = push_plan_cost(rows, count);
-  TEST_ASSERT_TRUE(chosen <= push_group_greedy(rows, count));
-}
-
-void test_disc_plan_never_costs_more_than_greedy(void) {
-  add_disc(&cv);
-  for (int y = 0; y < H; y += 2) canvas_fill_rect(&cv, 0, y, W, 1, C1);
-  assert_disc_plan_no_dearer_than_greedy();
-  srandom(7);
-  for (int k = 0; k < 200; k++) {
-    const int n = 1 + (int)(random() % 6);
-    for (int r = 0; r < n; r++)
-      canvas_fill_rect(&cv, (int)(random() % W), (int)(random() % H),
-                       1 + (int)(random() % 200), 1 + (int)(random() % 200), C1);
-    assert_disc_plan_no_dearer_than_greedy();
-  }
-}
-
-/* Longer than the split's lookback: one thin run must stay one flush. */
-void test_disc_keeps_a_long_thin_run_in_one_group(void) {
-  int count = 0;
-  add_disc(&cv);
-  canvas_fill_rect(&cv, 233, 100, 1, 266, C1);
-  TEST_ASSERT_EQUAL_INT(PUSH_ROWS, push_plan(&cv, rows, &count, true));
-  TEST_ASSERT_EQUAL_INT(266, count);
-  TEST_ASSERT_EQUAL_INT(1, groups_in(rows, count));
 }
 
 void test_without_the_flag_a_disc_canvas_plans_as_today(void) {
@@ -309,10 +265,7 @@ int main(void) {
   RUN_TEST(test_present_pushes_all_with_a_single_all_call);
   RUN_TEST(test_disc_drops_a_row_dirty_only_in_a_corner);
   RUN_TEST(test_disc_clips_a_full_row_to_its_span);
-  RUN_TEST(test_disc_full_frame_is_bands_not_all);
-  RUN_TEST(test_disc_full_frame_beats_greedy_and_a_full_push);
-  RUN_TEST(test_disc_plan_never_costs_more_than_greedy);
-  RUN_TEST(test_disc_keeps_a_long_thin_run_in_one_group);
+  RUN_TEST(test_disc_full_frame_is_clipped_rows_in_few_flushes);
   RUN_TEST(test_without_the_flag_a_disc_canvas_plans_as_today);
   return UNITY_END();
 }
