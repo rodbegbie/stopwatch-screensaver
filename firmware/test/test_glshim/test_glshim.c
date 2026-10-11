@@ -10,6 +10,7 @@
 #include "fps.h"
 #include "glshim/glshim.h"
 #include "glshim/glshim_prof.h"
+#include "tinygl/src/zgl.h"
 #include "x11shim/xshim.h"
 #include "zbuffer.h"
 
@@ -873,6 +874,58 @@ void test_the_device_is_never_turned(void) {
   TEST_ASSERT_TRUE(current_device_rotation() == 0.0);
 }
 
+/* Lighting reads the material when a vertex is shaded. With GL_LAZY_SHADE a
+ * vertex is shaded when its triangle is drawn, so a material change between
+ * two vertices of one triangle must first shade the vertices before it: the
+ * first two stay red and the third is green, as GL orders it. Built and run
+ * with and without the flag. */
+void test_a_material_change_mid_triangle_lights_earlier_vertices_with_the_old_one(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  const GLfloat red[4] = {1, 0, 0, 1}, green[4] = {0, 1, 0, 1};
+  glEnable(GL_LIGHTING);
+  glEnable(GL_LIGHT0);
+  glNormal3f(0, 0, 1);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, red);
+  glBegin(GL_TRIANGLES);
+  glVertex3f(-0.5f, -0.5f, 0);
+  glVertex3f(0.5f, -0.5f, 0);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, green);
+  glVertex3f(0, 0.5f, 0);
+  glEnd();
+  const GLVertex *v = gl_get_context()->vertex;
+  for (int i = 0; i < 2; i++) {
+    TEST_ASSERT_TRUE_MESSAGE(v[i].color.v[0] > 0.9f, "vertex before the change");
+    TEST_ASSERT_TRUE_MESSAGE(v[i].color.v[1] < 0.1f, "vertex before the change");
+  }
+  TEST_ASSERT_TRUE(v[2].color.v[0] < 0.1f);
+  TEST_ASSERT_TRUE(v[2].color.v[1] > 0.9f);
+}
+
+#if defined(GL_PROFILE) && defined(GL_LAZY_SHADE)
+/* A culled triangle's vertices are never lit; a drawn one's are, once each. */
+void test_lazy_lighting_skips_the_vertices_of_culled_triangles(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glEnable(GL_LIGHTING);
+  glEnable(GL_LIGHT0);
+  glEnable(GL_CULL_FACE);
+  glshim_prof_reset();
+  glBegin(GL_TRIANGLES);
+  glVertex3f(-0.5f, -0.5f, 0); /* clockwise: a back face */
+  glVertex3f(0, 0.5f, 0);
+  glVertex3f(0.5f, -0.5f, 0);
+  glEnd();
+  TEST_ASSERT_EQUAL_UINT32(0, glshim_prof_calls[GLPROF_SHADE]);
+  glBegin(GL_TRIANGLE_STRIP);
+  glVertex3f(-0.5f, -0.5f, 0);
+  glVertex3f(0.5f, -0.5f, 0);
+  glVertex3f(-0.5f, 0.5f, 0);
+  glVertex3f(0.5f, 0.5f, 0);
+  glEnd();
+  TEST_ASSERT_EQUAL_UINT32(2, glshim_prof_calls[GLPROF_FILL]);
+  TEST_ASSERT_EQUAL_UINT32(4, glshim_prof_calls[GLPROF_SHADE]);
+}
+#endif
+
 #ifdef GL_PROFILE
 /* The profile counts each stage once per call, and a list called from a list
  * counts once: a nested list must not add its time to its caller's twice. */
@@ -912,6 +965,10 @@ int main(void) {
   UNITY_BEGIN();
 #ifdef GL_PROFILE
   RUN_TEST(test_the_profile_counts_each_stage_once_per_call);
+#endif
+  RUN_TEST(test_a_material_change_mid_triangle_lights_earlier_vertices_with_the_old_one);
+#if defined(GL_PROFILE) && defined(GL_LAZY_SHADE)
+  RUN_TEST(test_lazy_lighting_skips_the_vertices_of_culled_triangles);
 #endif
   RUN_TEST(test_the_device_is_never_turned);
   RUN_TEST(test_a_smooth_horizontal_line_moves_a_quarter_pixel_at_a_time);

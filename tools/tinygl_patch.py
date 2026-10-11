@@ -270,6 +270,52 @@ void gl_draw_triangle_fill(GLVertex* p0, GLVertex* p1, GLVertex* p2) {
 TGL_HOT static void gl_draw_triangle_fill_plain(GLVertex* p0, GLVertex* p1, GLVertex* p2) {
 """
 
+# Lazy lighting (GL_LAZY_SHADE): TinyGL lights every vertex as it arrives,
+# before it knows whether any triangle that uses the vertex survives back-face
+# culling. Gears' heavy layout culls 12,300 of its 17,600 triangles. A lit
+# vertex is marked pending instead, and shaded when a triangle, line or point
+# that uses it is drawn. Lighting reads only the vertex's own eye position
+# and normal, which are kept, and the material and light state, so any
+# change to that state first shades every vertex still pending: the result is
+# what shading at arrival would have given.
+LAZY_SHADE_DECLARATIONS = """
+void gl_shade_pending(GLVertex* v);
+void gl_shade_pending_all(void);
+#ifdef GL_LAZY_SHADE
+#define GL_SHADE_NOW(v) do { if ((v)->shade_pending) gl_shade_pending(v); } while (0)
+#define GL_SHADE_FLUSH() gl_shade_pending_all()
+#else
+#define GL_SHADE_NOW(v) do { } while (0)
+#define GL_SHADE_FLUSH() do { } while (0)
+#endif
+#define GL_SHADE_NOW3(a, b, c) do { GL_SHADE_NOW(a); GL_SHADE_NOW(b); GL_SHADE_NOW(c); } while (0)
+"""
+
+LAZY_SHADE_FUNCTIONS = """/* Lazy lighting (GL_LAZY_SHADE): the colour, then the rasteriser's copy of
+ * it, as glopVertex and gl_transform_to_viewport_vertex_c would have set them. */
+TGL_HOT void gl_shade_pending(GLVertex* v) {
+	v->shade_pending = 0;
+	gl_shade_vertex(v);
+#if TGL_OPTIMIZATION_HINT_BRANCH_COST < 2
+	if (v->clip_code == 0)
+#endif
+	{
+		v->zp.r = (GLint)(v->color.v[0] * COLOR_CORRECTED_MULT_MASK + COLOR_MIN_MULT) & COLOR_MASK;
+		v->zp.g = (GLint)(v->color.v[1] * COLOR_CORRECTED_MULT_MASK + COLOR_MIN_MULT) & COLOR_MASK;
+		v->zp.b = (GLint)(v->color.v[2] * COLOR_CORRECTED_MULT_MASK + COLOR_MIN_MULT) & COLOR_MASK;
+	}
+}
+
+void gl_shade_pending_all(void) {
+	GLContext* c = gl_get_context();
+	GLint i;
+	for (i = 0; i < POLYGON_MAX_VERTEX; i++)
+		GL_SHADE_NOW(&c->vertex[i]);
+}
+
+/* non optimized lightening model */
+"""
+
 REPLACEMENTS: tuple[Replace, ...] = (
     Replace(
         "src/clip.c",
@@ -422,6 +468,94 @@ REPLACEMENTS: tuple[Replace, ...] = (
         "src/zmath.h",
         "#include <math.h>\n#include <stdlib.h>",
         '#include <math.h>\n#include "tinygl_single.h"\n#include <stdlib.h>',
+    ),
+    Replace(
+        "src/zgl.h",
+        "\tGLint edge_flag;\n} GLVertex;\n",
+        "\tGLint edge_flag;\n\tGLint shade_pending; /* lit, not shaded yet (GL_LAZY_SHADE) */\n"
+        "} GLVertex;\n",
+    ),
+    Replace(
+        "src/zgl.h",
+        "extern GLContext gl_ctx;\n",
+        "extern GLContext gl_ctx;\n" + LAZY_SHADE_DECLARATIONS,
+    ),
+    Replace(
+        "src/vertex.c",
+        "\tif (c->lighting_enabled) {\n\t\tgl_shade_vertex(v);\n",
+        "\tif (c->lighting_enabled) {\n#ifdef GL_LAZY_SHADE\n\t\tv->shade_pending = 1;\n"
+        "#else\n\t\tgl_shade_vertex(v);\n#endif\n",
+    ),
+    Replace(
+        "src/vertex.c",
+        "\t\tv->color = c->current_color;\n",
+        "\t\tv->color = c->current_color;\n#ifdef GL_LAZY_SHADE\n\t\tv->shade_pending = 0;\n#endif\n",
+    ),
+    Replace(
+        "src/light.c", "/* non optimized lightening model */\n", LAZY_SHADE_FUNCTIONS
+    ),
+    Replace(
+        "src/light.c",
+        "void glopMaterial(GLParam* p) {\n\tGLContext* c = gl_get_context();\n",
+        "void glopMaterial(GLParam* p) {\n\tGLContext* c = gl_get_context();\n"
+        "\tGL_SHADE_FLUSH();\n",
+    ),
+    Replace(
+        "src/light.c",
+        "void glopLight(GLParam* p) {\n\tGLContext* c = gl_get_context();\n",
+        "void glopLight(GLParam* p) {\n\tGLContext* c = gl_get_context();\n"
+        "\tGL_SHADE_FLUSH();\n",
+    ),
+    Replace(
+        "src/light.c",
+        "void glopLightModel(GLParam* p) {\n\tGLContext* c = gl_get_context();\n",
+        "void glopLightModel(GLParam* p) {\n\tGLContext* c = gl_get_context();\n"
+        "\tGL_SHADE_FLUSH();\n",
+    ),
+    Replace(
+        "src/light.c",
+        "void glopSetEnableSpecular(GLParam* p) {\n",
+        "void glopSetEnableSpecular(GLParam* p) {\n\tGL_SHADE_FLUSH();\n",
+    ),
+    Replace(
+        "src/clip.c",
+        "static void updateTmp(GLVertex* q, GLVertex* p0, GLVertex* p1, GLfloat t) { \n"
+        "\tGLContext* c = gl_get_context();\n",
+        "static void updateTmp(GLVertex* q, GLVertex* p0, GLVertex* p1, GLfloat t) { \n"
+        "\tGLContext* c = gl_get_context();\n"
+        "#ifdef GL_LAZY_SHADE\n\tq->shade_pending = 0; /* its colour comes from shaded vertices */\n#endif\n",
+    ),
+    Replace(
+        "src/misc.c",
+        "void glopEnableDisable(GLParam* p) {\n\tGLContext* c = gl_get_context();\n",
+        "void glopEnableDisable(GLParam* p) {\n\tGLContext* c = gl_get_context();\n"
+        "\tGL_SHADE_FLUSH();\n",
+    ),
+)
+
+# Anchors that earlier patches wrote (the dirty-rectangle hooks and the
+# profile scopes), so applied after REPLACEMENTS and HOT_FUNCTIONS.
+LATE_REPLACEMENTS: tuple[Replace, ...] = (
+    Replace(
+        "src/clip.c",
+        "{ glshim_note_triangle(p0, p1, p2);",
+        "{ GL_SHADE_NOW3(p0, p1, p2); glshim_note_triangle(p0, p1, p2);",
+        count=4,
+    ),
+    Replace(
+        "src/clip.c",
+        "\t\t\tgl_draw_triangle_clip(p0, p1, p2, 0);\n",
+        "\t\t\tGL_SHADE_NOW3(p0, p1, p2);\n\t\t\tgl_draw_triangle_clip(p0, p1, p2, 0);\n",
+    ),
+    Replace(
+        "src/clip.c",
+        "\tGLPROF_SCOPE(GLPROF_POINT);\n",
+        "\tGLPROF_SCOPE(GLPROF_POINT);\n\tGL_SHADE_NOW(p0);\n",
+    ),
+    Replace(
+        "src/clip.c",
+        "\tGLPROF_SCOPE(GLPROF_LINE);\n",
+        "\tGLPROF_SCOPE(GLPROF_LINE);\n\tGL_SHADE_NOW(p1);\n\tGL_SHADE_NOW(p2);\n",
     ),
 )
 
@@ -596,6 +730,15 @@ def patch_tree(sources: Mapping[str, str]) -> dict[str, str]:
                 f"{UPSTREAM_CHANGED}"
             )
         out[hot.path] = text.replace(hot.anchor, hot.replacement())
+    for rep in LATE_REPLACEMENTS:
+        text = _get(out, rep.path)
+        found = text.count(rep.anchor)
+        if found != rep.count:
+            raise ValueError(
+                f"expected {rep.count} of {rep.anchor!r} in {rep.path}, "
+                f"found {found}; {UPSTREAM_CHANGED}"
+            )
+        out[rep.path] = text.replace(rep.anchor, rep.replacement)
     for path in FLOAT_LITERAL_FILES:
         try:
             out[path] = float_literals.float_literals(_get(out, path))

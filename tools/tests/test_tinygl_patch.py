@@ -219,3 +219,62 @@ def test_only_the_list_call_is_timed_as_reentrant():
 
 def test_the_single_header_brings_in_the_switches(patched):
     assert '#include "glshim/glshim_prof.h"' in patched["src/tinygl_single.h"]
+
+
+def late_id(rep: "tp.Replace") -> str:
+    return f"{rep.path}:{rep.anchor[:28]!r}"
+
+
+@pytest.mark.parametrize("rep", tp.LATE_REPLACEMENTS, ids=late_id)
+def test_a_late_anchor_that_moved_is_refused(rep, monkeypatch):
+    """Late anchors are written by earlier patches, so break them there."""
+    monkeypatch.setattr(
+        tp,
+        "LATE_REPLACEMENTS",
+        tuple(
+            tp.Replace(r.path, r.anchor + "\x00", r.replacement, r.count)
+            if r is rep
+            else r
+            for r in tp.LATE_REPLACEMENTS
+        ),
+    )
+    with pytest.raises(ValueError, match="has upstream changed"):
+        tp.patch_tree(load_sources())
+
+
+def test_lazy_lighting_shades_before_every_draw(patched):
+    """Every place a lit vertex reaches the rasteriser shades it first."""
+    clip = patched["src/clip.c"]
+    assert clip.count("GL_SHADE_NOW3(p0, p1, p2); glshim_note_triangle") == 4
+    assert (
+        "GL_SHADE_NOW3(p0, p1, p2);\n\t\t\tgl_draw_triangle_clip(p0, p1, p2, 0);"
+        in clip
+    )
+    assert "GL_SHADE_NOW(p0);" in clip
+    assert "GL_SHADE_NOW(p1);\n\tGL_SHADE_NOW(p2);" in clip
+
+
+def test_clip_temporaries_are_never_shaded_again(patched):
+    """The clipper's stack vertices are interpolated from shaded ones and go
+    back through gl_draw_triangle; an uninitialised flag shaded them with the
+    material (a host test caught it as half-bright fills, depending on what
+    the stack held)."""
+    clip = patched["src/clip.c"]
+    tmp = clip[clip.index("static void updateTmp") :]
+    assert "q->shade_pending = 0;" in tmp[: tmp.index("q->color.v[0]")]
+
+
+@pytest.mark.parametrize(
+    "op",
+    [
+        "glopMaterial",
+        "glopLight",
+        "glopLightModel",
+        "glopSetEnableSpecular",
+        "glopEnableDisable",
+    ],
+)
+def test_lighting_state_changes_shade_what_is_pending_first(patched, op):
+    text = patched["src/misc.c" if op == "glopEnableDisable" else "src/light.c"]
+    body = text[text.index(f"void {op}(GLParam* p) {{") :]
+    assert "GL_SHADE_FLUSH();" in body[:120]
