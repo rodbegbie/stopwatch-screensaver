@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4MDFKXNTQ1W0YZ41ZHAM6X5",
+  "strategy": "manual-commit",
+  "branch": "feature/port-batch-flurry-halo-hexaddrop-stonerview-xmatrix",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "THIRD_PARTY_NOTICES.md",
+    "firmware/matrix_glyphs.py",
+    "firmware/platformio.ini",
+    "firmware/src/hacks/registry.c",
+    "firmware/src/hacks/xmatrix/xmatrix.c",
+    "firmware/src/x11shim/include/textclient.h",
+    "firmware/src/x11shim/include/ximage-loader.h",
+    "firmware/src/x11shim/pixmap.c",
+    "firmware/test/test_hacks/test_hacks.c",
+    "firmware/test/test_xshim/test_xshim.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 66,
+    "cache_creation_tokens": 43237,
+    "cache_read_tokens": 8783278,
+    "output_tokens": 27230,
+    "api_call_count": 33
+  }
+}

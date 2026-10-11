@@ -1,0 +1,21 @@
+<task-notification>
+<task-id>bxq1623ys</task-id>
+<tool-use-id>toolu_016cbbEHtKc4ELGkXe2y9ubt</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f04fec39-e104-4ef0-877f-22bf8e9a22c5/tasks/bxq1623ys.output</output-file>
+<status>completed</status>
+<summary>Background command "test_hacks for XMatrix hash and leak" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>brap75ar1</task-id>
+<tool-use-id>toolu_01CAqoGVXzADFDjzRqb49kGJ</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f04fec39-e104-4ef0-877f-22bf8e9a22c5/tasks/brap75ar1.output</output-file>
+<status>completed</status>
+<summary>Monitor "XMatrix test_hacks result" stream ended</summary>
+<event>test/test_hacks/test_hacks.c:444: test_frames_of_every_hack_but_maze_match_main: Expected 1 Was 1277439034199356729. XMatrix	[FAILED]
+============ 56 test cases: 1 failed, 54 succeeded in 00:02:19.584 ============
+[exited with code 0]</event>
+If this event is something the user would act on now, send a PushNotification. Routine or benign output doesn't need one.
+</task-notification>
