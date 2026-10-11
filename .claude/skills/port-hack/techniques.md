@@ -68,6 +68,15 @@ The ESP32-S3 has a single-precision FPU only, so double runs in software.
 - Once the maths is float, look at the fills before the next idea. CWaves'
   cosines were 4 ms of a 61 ms step; its 233 column fills were 57 (a thin
   full-height rectangle touches a new cache line a store). See `hacks.md`.
+- A float build can break a check that held in double. Both the S3 (`madd.s`)
+  and arm64 fuse a multiply and an add, so `t*n - floor(t*n)` uses the exact
+  product for the subtraction and the rounded one for the `floor`, and can
+  come out slightly negative: Celtic's `assert(tt>=0 && tt<1)` aborted at
+  t 0.331093 with 3422 segments. The 3000-frame test (`pio test`) found it
+  on the host, and the same abort would have hit the board. Compute the
+  product once in a build-time patch (`tools/celtic_patch.py`). Map any libm
+  call the hack makes that `single_precision.h` does not (`rint`, `floor`),
+  and check the object with `nm` for `__*df*` helpers, not only `__muldf3`.
 
 ## Slow hack
 
@@ -106,6 +115,23 @@ When: a ported hack runs under about 10 fps and the push is not the cause
   then `/usr/bin/time -p .pio/build/dump/program <index> 400 out.raw` three
   times, against the baseline. It cannot see costs that live in memory
   traffic (Deluxe's alpha mask: nothing on the host, 3-5 ms on the board).
+- Counting works where timing misleads: a scratch copy of the hack with a
+  counter in the inner function and a macro round `XDrawLine` gave Celtic's
+  spline evaluations and line draws per draw call on the host, by graph type.
+  A cost per eval and per line fitted to a first device capture (about 1.7 us
+  and 22 us, from three graph types and a handful of windows) estimated 63 ms
+  for the biggest type after the change; the next capture's 12.6-76.8 ms did
+  not contradict it, but the log does not say which type each window was, so
+  the fit is unchecked.
+- A hack's own pacing constants can be the lever: Celtic's 0.0001 tick (a
+  patch scales it, `CELTIC_STEP_SCALE`) set both the look-ahead's work and how
+  many draw calls a picture takes. Count the draw calls a picture takes and
+  the pause after it before reading `fps=`: with a 5 s pause the column read
+  5.2 in every window and measured the pause, not the drawing. Use
+  `1000 / (step + push + delay)` for the drawing rate.
+- Heap and speed were two problems in Celtic and one fix cured only the
+  first: the graph sized to the screen cut a pattern's heap about 9 times and
+  left spline evaluations per call unchanged. Measure both after each change.
 - A hack that redraws its whole picture every frame to animate colour (Braid)
   costs its full draw each frame whatever the push does. Check this before
   porting; the scorer does not flag it yet.

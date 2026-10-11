@@ -217,3 +217,23 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   never needs (see `gl.md`) gave 15.3, worst window 10.8. The single-precision
   wrapper adapts `get_position` and `get_rotation`: the hack passes `double`
   locals' addresses, which a float rename would write eight bytes (as Moire).
+- Celtic (`celtic_single.c`, issue #37) is registered after HexTrail and takes
+  a median step of 32 ms against 832 as copied (`assessment_measured.md`).
+  The wrapper is single precision (`rint` and `floor` mapped to float: the
+  header maps only some libm calls) and frees the colour table that
+  `celtic_init` callocs. `tools/celtic_patch.py` does three things at build
+  time. It works `t*n - floor(t*n)` out once and clamps it: in float a fused
+  multiply-add made it slightly negative and the hack's `assert()` aborted
+  (the 3000-frame test found it). It sizes the graph to the screen: upstream's
+  margins of -600 to -900 left most of a pattern off the screen, one held 1.1
+  MB on the host, and 44 of 300 random starts needed more than the board's free
+  heap by a model; grid and Kennicott now use minus one edge, and the triangle
+  width/2 plus two edges (its incircle is half its circumradius). And it
+  scales the 0.0001 animation tick by `CELTIC_STEP_SCALE` (default 4,
+  `-DCELTIC_STEP_SCALE=<n>`), which cuts the shadow look-ahead's work and a
+  picture's draw calls to 100 / scale. A test bounds a pattern's host bytes
+  over 150 starts. Do not shorten `*delay2`: it is a 5 s dwell on the finished
+  picture upstream, and only looks like a pause on black because the shim's
+  `erase_window` clears first (issue #86). When forcing a graph type in a
+  scratch copy to compare, set the margin for that type too, or the triangle
+  comes out too small to fill the screen.

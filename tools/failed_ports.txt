@@ -4,7 +4,6 @@
 # may still have its source in firmware/src/hacks/, unregistered, and measured
 # results in tools/assessment_measured.md; speed_backtest.py keeps those in its
 # figures.
-celtic: shelved at 1.2 fps and 300 KB of heap, see issue #37
 halftone: 5 fps; the shim's ellipse fill is 80% of it, issue #57
 flurry: needs GL TinyGL lacks, est. under 1 fps, issue #70
 hypnowheel: 4.0 fps at half resolution, fill-bound; Rod dropped it, #73

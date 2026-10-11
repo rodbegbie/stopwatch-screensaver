@@ -18,6 +18,19 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   on the host, and host leak numbers are twice the device's. On the device,
   plain `malloc`/`realloc` of about 868 KB reached PSRAM (free PSRAM fell by
   1.74 MB) and came back on restart; internal heap barely moved.
+- The board's `malloc` is `CONFIG_SPIRAM_USE_MALLOC=y` with
+  `SPIRAM_MALLOC_ALWAYSINTERNAL=4096`: a block up to 4 KB comes from internal
+  RAM and falls back to PSRAM when that is full, and a bigger one goes to PSRAM
+  first. An allocation fails only when PSRAM is gone, so a hack's `abort()` on
+  a failed allocation is not the risk it looks. The cost of a big pattern is
+  internal heap drained to near zero (Celtic read 1,792 B free) and its data
+  in slower PSRAM: compare the log's `psram=` with its idle value for the
+  overflow.
+- `erase_window` (`helpers.c`) clears on its first call and returns NULL.
+  Upstream's first call draws nothing and returns a state, so a hack that
+  waits after it (Celtic's 5 s `*delay2`) waits on the finished picture and
+  then a wipe runs. Here the wait is on black and the picture vanishes at once
+  (issue #86).
 - xlockmore hacks (the 40 that include `xlockmore.h`) need `-DSTANDALONE`,
   which every PlatformIO env and `score_hacks.py` set; without it they
   include `xlock.h` instead. The envs also define `HAVE_MOBILE`, because

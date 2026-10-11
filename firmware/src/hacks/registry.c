@@ -149,6 +149,7 @@ XLOCKMORE_HACK_WITH(hypnowheel, "Hypnowheel", kHypnowheelOverrides);
 
 /* Built only when the After Dark disk image is present; kept last so every
  * other hack keeps its index. */
+extern const HackEntry celtic_hack;
 #ifdef HAVE_AFTER_DARK_TOASTERS
 extern const HackEntry ad_flyingtoasters_hack;
 #endif
@@ -212,6 +213,7 @@ const HackEntry *const g_hacks[] = {
     &moire_hack,
     &moire2_hack,
     &hextrail_hack,
+    &celtic_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif

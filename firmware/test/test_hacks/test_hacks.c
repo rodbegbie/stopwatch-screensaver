@@ -112,6 +112,7 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Moire",
                                          "Moire2",
                                          "HexTrail",
+                                         "Celtic",
 #ifdef HAVE_AFTER_DARK_TOASTERS
                                          "ad-flyingtoasters",
 #endif
@@ -472,6 +473,7 @@ static const uint64_t kBaseline[] = {
     0xcfa8f679f1a10fddull, /* Moire: taken after looking at the frames (single precision) */
     0x32f706208dc0a079ull, /* Moire2: taken after looking at the frames (bit planes) */
     0x0100bedf6ddf582cull, /* HexTrail: taken after looking at the frames (count 6, single precision) */
+    0xd55d5d810361894eull, /* Celtic: taken after looking at the frames (single precision, graph sized to the screen, step scale 4) */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -1113,6 +1115,46 @@ void test_hextrail_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("HexTrail", 1);
 }
 
+void test_celtic_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Celtic", 0);
+}
+
+/* Celtic builds a graph, its edge couples and a spline segment for every
+ * directed edge, and upstream picks margins of up to 900 pixels outside the
+ * screen: unpatched, one pattern held 1.1 MB on the host and the board has
+ * 312 KB of free internal heap. The limit is about a third of that, in bytes
+ * held on the host, where 64-bit pointers make a pattern somewhat bigger than
+ * it is on the board. The worst of 150 patterns is now 125 KB. */
+#define CELTIC_HEAP_LIMIT_BYTES 150000ull
+
+static size_t celtic_pattern_bytes(int hack, unsigned seed) {
+  srandom(seed);
+  HackRunner *r = runner_create(&cv);
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  runner_start(r, hack);
+  runner_step(r);
+  const size_t during = __sanitizer_get_current_allocated_bytes();
+  runner_destroy(r);
+  return during - before;
+}
+
+void test_celtic_patterns_leave_most_of_the_boards_heap_free(void) {
+  const int celtic = index_of("Celtic");
+  TEST_ASSERT_TRUE(celtic >= 0);
+  size_t worst = 0;
+  unsigned worst_seed = 0;
+  for (unsigned seed = 1; seed <= 150; seed++) {
+    const size_t bytes = celtic_pattern_bytes(celtic, seed);
+    if (bytes > worst) {
+      worst = bytes;
+      worst_seed = seed;
+    }
+  }
+  char message[64];
+  snprintf(message, sizeof message, "worst pattern is seed %u", worst_seed);
+  TEST_ASSERT_LESS_THAN_UINT64_MESSAGE(CELTIC_HEAP_LIMIT_BYTES, worst, message);
+}
+
 #ifdef HAVE_AFTER_DARK_TOASTERS
 /* The runner waits the returned delay after the push, so the hack subtracts
  * the time its own step took to keep to 30 steps a second. */
@@ -1224,6 +1266,8 @@ int main(void) {
   RUN_TEST(test_moire_stops_do_not_leak);
   RUN_TEST(test_moire2_stops_do_not_leak);
   RUN_TEST(test_hextrail_stops_do_not_leak);
+  RUN_TEST(test_celtic_stops_do_not_leak);
+  RUN_TEST(test_celtic_patterns_leave_most_of_the_boards_heap_free);
 #ifdef HAVE_AFTER_DARK_TOASTERS
   RUN_TEST(test_toasters_delay_is_a_thirtieth_of_a_second_less_the_step);
   RUN_TEST(test_restart_does_not_leak);
