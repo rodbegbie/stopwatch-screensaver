@@ -15,6 +15,7 @@
 #include "alpha.h"
 #include "screenhack.h"
 #include "utils.h"
+#include "xshm.h"
 #include "x11shim/arc.h"
 #include "x11shim/stroke.h"
 #include "X11/Intrinsic.h"
@@ -505,6 +506,142 @@ void test_make_smooth_colormap_loops_without_jumps(void) {
   }
 }
 
+void test_make_color_ramp_runs_from_the_first_colour_to_the_second(void) {
+  XColor colors[10];
+  memset(colors, 0, sizeof(colors));
+  int n = 10;
+  make_color_ramp(NULL, NULL, 1, 0, 1.0, 1.0, 120, 1.0, 1.0, colors, &n, False,
+                  True, NULL);
+  TEST_ASSERT_EQUAL_INT(10, n);
+  TEST_ASSERT_TRUE(colors[0].red > 0xF000 && colors[0].green < 0x1000);
+  TEST_ASSERT_TRUE(colors[9].green > 0xF000 && colors[9].red < 0x1000);
+  TEST_ASSERT_TRUE(colors[5].red > 0x8000 && colors[5].green > 0x8000);
+  for (int i = 0; i < n; i++)
+    TEST_ASSERT_EQUAL_HEX(rgb565_from16(colors[i].red, colors[i].green, colors[i].blue),
+                          colors[i].pixel);
+}
+
+void test_make_color_ramp_closed_comes_back_to_the_first_colour(void) {
+  XColor colors[12];
+  memset(colors, 0, sizeof(colors));
+  int n = 12;
+  make_color_ramp(NULL, NULL, 1, 0, 1.0, 1.0, 120, 1.0, 1.0, colors, &n, True,
+                  True, NULL);
+  TEST_ASSERT_EQUAL_INT(12, n);
+  TEST_ASSERT_TRUE(colors[0].red > 0xF000 && colors[0].green < 0x1000);
+  TEST_ASSERT_TRUE(colors[6].green > 0xF000 && colors[6].red < 0x1000);
+  for (int i = 0; i < n; i++) {
+    const XColor *a = &colors[i], *b = &colors[(i + 1) % n];
+    TEST_ASSERT_TRUE(abs((int)a->red - (int)b->red) < 0x6000);
+    TEST_ASSERT_TRUE(abs((int)a->green - (int)b->green) < 0x6000);
+  }
+}
+
+void test_make_color_ramp_takes_the_short_way_round_the_hue_wheel(void) {
+  XColor colors[9];
+  memset(colors, 0, sizeof(colors));
+  int n = 9;
+  make_color_ramp(NULL, NULL, 1, 350, 1.0, 1.0, 10, 1.0, 1.0, colors, &n,
+                  False, True, NULL);
+  TEST_ASSERT_TRUE(colors[4].red > 0xF000);
+  TEST_ASSERT_TRUE(colors[4].green < 0x4000);
+  TEST_ASSERT_TRUE(colors[4].blue < 0x4000);
+}
+
+void test_make_color_ramp_takes_the_short_way_backwards_too(void) {
+  XColor colors[9];
+  memset(colors, 0, sizeof(colors));
+  int n = 9;
+  make_color_ramp(NULL, NULL, 1, 10, 1.0, 1.0, 350, 1.0, 1.0, colors, &n,
+                  False, True, NULL);
+  TEST_ASSERT_TRUE(colors[4].red > 0xF000);
+  TEST_ASSERT_TRUE(colors[4].green < 0x4000);
+}
+
+void test_make_color_ramp_blends_saturation_and_value_too(void) {
+  XColor colors[9];
+  memset(colors, 0, sizeof(colors));
+  int n = 9;
+  make_color_ramp(NULL, NULL, 1, 0, 1.0, 1.0, 0, 0.0, 0.5, colors, &n, False,
+                  True, NULL);
+  TEST_ASSERT_TRUE(colors[0].red > 0xF000 && colors[0].green < 0x1000);
+  for (int c = 0; c < 3; c++) {
+    const unsigned short v = c == 0 ? colors[8].red
+                             : c == 1 ? colors[8].green
+                                      : colors[8].blue;
+    TEST_ASSERT_UINT16_WITHIN(0x0400, 0x8000, v);
+  }
+  TEST_ASSERT_TRUE(colors[4].green > 0x2000 && colors[4].green < 0x6000);
+}
+
+void test_a_gc_remembers_its_function_but_draws_copy(void) {
+  XGCValues v = {0};
+  GC plain = XCreateGC(dpy, win, 0, &v);
+  TEST_ASSERT_EQUAL_INT(GXcopy, plain->function);
+  v.function = GXor;
+  GC ored = XCreateGC(dpy, win, GCFunction, &v);
+  TEST_ASSERT_EQUAL_INT(GXor, ored->function);
+  XSetFunction(dpy, ored, GXxor);
+  TEST_ASSERT_EQUAL_INT(GXxor, ored->function);
+  v.function = GXcopy;
+  XChangeGC(dpy, ored, GCFunction, &v);
+  TEST_ASSERT_EQUAL_INT(GXcopy, ored->function);
+  XSetFunction(dpy, ored, GXor);
+  XSetForeground(dpy, ored, 0x1234);
+  XFillRectangle(dpy, win, ored, 2, 2, 2, 2);
+  TEST_ASSERT_EQUAL_HEX(0x1234, at(2, 2));
+  XFreeGC(dpy, plain);
+  XFreeGC(dpy, ored);
+}
+
+void test_the_arrow_and_page_keysyms_have_x_values(void) {
+  TEST_ASSERT_EQUAL_HEX(0xFF51, XK_Left);
+  TEST_ASSERT_EQUAL_HEX(0xFF52, XK_Up);
+  TEST_ASSERT_EQUAL_HEX(0xFF53, XK_Right);
+  TEST_ASSERT_EQUAL_HEX(0xFF54, XK_Down);
+  TEST_ASSERT_EQUAL_HEX(0xFF55, XK_Prior);
+  TEST_ASSERT_EQUAL_HEX(0xFF56, XK_Next);
+}
+
+void test_visual_depth_is_sixteen(void) {
+  TEST_ASSERT_EQUAL_INT(16, visual_depth(NULL, NULL));
+}
+
+void test_xshm_image_is_a_16_bit_image_put_where_asked(void) {
+  XShmSegmentInfo shm;
+  XImage *im = create_xshm_image(dpy, NULL, 16, ZPixmap, &shm, 8, 2);
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_INT(8, im->width);
+  TEST_ASSERT_EQUAL_INT(2, im->height);
+  TEST_ASSERT_EQUAL_INT(16, im->bits_per_pixel);
+  for (int y = 0; y < 2; y++)
+    for (int x = 0; x < 8; x++) TEST_ASSERT_EQUAL_HEX64(0, XGetPixel(im, x, y));
+  for (int x = 0; x < 8; x++) XPutPixel(im, x, 1, 0x1234 + x);
+  XGCValues v = {0};
+  GC gc = XCreateGC(dpy, win, 0, &v);
+  put_xshm_image(dpy, win, gc, im, 0, 1, 3, 5, 8, 1, &shm);
+  TEST_ASSERT_EQUAL_HEX(0x1234, at(3, 5));
+  TEST_ASSERT_EQUAL_HEX(0x123B, at(10, 5));
+  TEST_ASSERT_EQUAL_HEX(0, at(2, 5));
+  TEST_ASSERT_EQUAL_HEX(0, at(3, 4));
+  XFreeGC(dpy, gc);
+  destroy_xshm_image(dpy, im, &shm);
+}
+
+void test_xshm_image_taller_than_the_window_edge_is_clipped(void) {
+  XShmSegmentInfo shm;
+  XImage *im = create_xshm_image(dpy, NULL, 16, ZPixmap, &shm, 4, 4);
+  for (int y = 0; y < 4; y++)
+    for (int x = 0; x < 4; x++) XPutPixel(im, x, y, 0x0800 + y);
+  XGCValues v = {0};
+  GC gc = XCreateGC(dpy, win, 0, &v);
+  put_xshm_image(dpy, win, gc, im, 0, 0, 0, 14, 4, 4, &shm);
+  TEST_ASSERT_EQUAL_HEX(0x0800, at(0, 14));
+  TEST_ASSERT_EQUAL_HEX(0x0801, at(3, 15));
+  XFreeGC(dpy, gc);
+  destroy_xshm_image(dpy, im, &shm);
+}
+
 void test_free_colors_accepts_a_colormap_from_the_helpers(void) {
   XColor colors[4];
   memset(colors, 0, sizeof(colors));
@@ -536,6 +673,16 @@ void test_ya_rand_init_with_a_seed_repeats_the_sequence(void) {
   long a = LRAND();
   ya_rand_init(42);
   TEST_ASSERT_EQUAL_INT64(a, LRAND());
+}
+
+void test_ya_random_follows_the_seeded_sequence_and_is_not_constant(void) {
+  ya_rand_init(42);
+  unsigned long a = ya_random();
+  unsigned long b = ya_random();
+  ya_rand_init(42);
+  TEST_ASSERT_EQUAL_UINT64(a, ya_random());
+  TEST_ASSERT_EQUAL_UINT64(b, ya_random());
+  TEST_ASSERT_NOT_EQUAL(a, b);
 }
 
 void test_nrand_stays_below_n_and_covers_the_range(void) {
@@ -2923,6 +3070,16 @@ int main(void) {
   RUN_TEST(test_draw_rectangle_outlines_a_w_plus_1_by_h_plus_1_box);
   RUN_TEST(test_make_uniform_colormap_gives_distinct_rgb565_colours);
   RUN_TEST(test_make_smooth_colormap_loops_without_jumps);
+  RUN_TEST(test_make_color_ramp_runs_from_the_first_colour_to_the_second);
+  RUN_TEST(test_make_color_ramp_closed_comes_back_to_the_first_colour);
+  RUN_TEST(test_make_color_ramp_takes_the_short_way_round_the_hue_wheel);
+  RUN_TEST(test_make_color_ramp_takes_the_short_way_backwards_too);
+  RUN_TEST(test_make_color_ramp_blends_saturation_and_value_too);
+  RUN_TEST(test_a_gc_remembers_its_function_but_draws_copy);
+  RUN_TEST(test_the_arrow_and_page_keysyms_have_x_values);
+  RUN_TEST(test_visual_depth_is_sixteen);
+  RUN_TEST(test_xshm_image_is_a_16_bit_image_put_where_asked);
+  RUN_TEST(test_xshm_image_taller_than_the_window_edge_is_clipped);
   RUN_TEST(test_free_colors_accepts_a_colormap_from_the_helpers);
   RUN_TEST(test_fill_rectangles_fills_each_rectangle_in_the_gc_colour);
   RUN_TEST(test_fill_rectangles_with_zero_count_draws_nothing);
@@ -2965,6 +3122,7 @@ int main(void) {
   RUN_TEST(test_pointer_motion_mask_is_the_x11_bit);
   RUN_TEST(test_window_attributes_have_your_event_mask);
   RUN_TEST(test_ya_rand_init_with_a_seed_repeats_the_sequence);
+  RUN_TEST(test_ya_random_follows_the_seeded_sequence_and_is_not_constant);
   RUN_TEST(test_nrand_stays_below_n_and_covers_the_range);
   RUN_TEST(test_lrand_is_non_negative_and_below_maxrand);
   RUN_TEST(test_countof_gives_the_array_length);

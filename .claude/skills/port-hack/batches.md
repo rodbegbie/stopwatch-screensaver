@@ -22,8 +22,14 @@ live in `.claude/rules/hacks.md`, not here.
    unseen separately.
 6. Pin all the new hashes in one run, after looking at the frames:
    `HACK_PINS_OUT=<file> pio test -e native -f test_hacks`.
-7. Measured rows, rules, a regenerated assessment, and a notes file for Rod: what
-   to look at, which choices are his, what was not measured.
+7. Soak the whole registry before handing over: `-DROTATE_SECONDS=5` for five
+   laps, then look for a reboot, a panic or a "Stack canary", and compare PSRAM
+   on each visit of the new hacks (it should match exactly).
+8. Measured rows, rules, a regenerated assessment, and a notes file for Rod: what
+   to look at, which choices are his, what was not measured. His review changes
+   the numbers (a hack dropped, one retuned), so rewrite the notes after it or
+   put the final state in the PR body, which is the record. A stale notes file
+   misleads.
 
 ## Traps
 
@@ -48,11 +54,17 @@ was wrong three times running. The usual causes here:
 - soft double: `xtensa-esp32s3-elf-nm <object> | grep ' U __.*df'`; `frand` hides
   a `1.0` in its macro body (`hacks/single_frand.h`)
 - a pause the hack asks for (`wait=`): override `*delay` and say the pace changed
+- a GL hack's clear and push, which scale with the dirty box, and work the GL
+  layer does that nothing reads (a depth clear with the depth test off):
+  `gl_budget.py` shows vertices submitted against triangles drawn
 
 ## Choices for Rod
 
 When look and speed trade off, leave a build flag per option, measure each, and
-register the one nearer his bar. After his hands-on notes, expect to retune.
+register the one nearer his bar. After his hands-on notes, expect to retune or
+drop: from seven ports he kept six and dropped Boing, and asked for HexTrail to
+be faster. Keep a flashable rotation build ready (`-DROTATE_SECONDS=25`, the new
+hacks first) and say which build the board holds when you stop.
 
 ## Tools
 

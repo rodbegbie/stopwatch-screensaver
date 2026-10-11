@@ -52,6 +52,8 @@ static bool g_color_valid;
 static bool g_z_valid;
 static PIXEL g_clear_color;
 static GLint g_clear_z;
+static bool g_z_deferred; /* a depth clear is waiting for the depth test */
+static GLint g_deferred_z;
 
 static bool box_empty(Box b) { return b.x0 > b.x1 || b.y0 > b.y1; }
 
@@ -72,6 +74,7 @@ static Box whole_canvas(void) {
 static void reset_dirty_rectangle(void) {
   g_color_box = g_z_box = kEmptyBox;
   g_color_valid = g_z_valid = false;
+  g_z_deferred = false;
   g_swap_drawn = kEmptyBox;
   g_swap_erased = g_canvas ? whole_canvas() : kEmptyBox;
 }
@@ -133,6 +136,24 @@ static void fill_pixels(uint16_t *p, uint16_t v, int n) {
   if (n) *a = v;
 }
 
+static unsigned g_depth_clears;
+
+unsigned glshim_depth_clears(void) { return g_depth_clears; }
+
+/* With the depth test off nothing reads the depth buffer, so a clear that asks
+ * for it waits until the test is switched on (glshim_depth_test_changed).
+ * g_z_box keeps growing meanwhile: the rasteriser still writes depth. */
+static void clear_depth(ZBuffer *zb, GLint z) {
+  g_depth_clears++;
+  const Box area = g_z_valid && z == g_clear_z ? g_z_box : whole_canvas();
+  for (int y = area.y0; y <= area.y1; y++)
+    fill_pixels((uint16_t *)(zb->zbuf + y * zb->xsize) + area.x0, (uint16_t)z,
+                area.x1 - area.x0 + 1);
+  g_z_box = kEmptyBox;
+  g_z_valid = true;
+  g_clear_z = z;
+}
+
 void glshim_clear(ZBuffer *zb, GLint clear_z, GLint z, GLint clear_color,
                   GLint r, GLint g, GLint b) {
   if (zb != g_zb) { /* not opened through glshim_open: the stock clear */
@@ -155,17 +176,23 @@ void glshim_clear(ZBuffer *zb, GLint clear_z, GLint z, GLint clear_color,
     g_clear_color = color;
   }
   if (clear_z) {
-    const Box area = g_z_valid && z == g_clear_z ? g_z_box : all;
-    for (int y = area.y0; y <= area.y1; y++)
-      fill_pixels((uint16_t *)(zb->zbuf + y * zb->xsize) + area.x0, (uint16_t)z,
-                  area.x1 - area.x0 + 1);
-    g_z_box = kEmptyBox;
-    g_z_valid = true;
-    g_clear_z = z;
+    if (zb->depth_test) {
+      g_z_deferred = false;
+      clear_depth(zb, z);
+    } else {
+      g_z_deferred = true;
+      g_deferred_z = z;
+    }
   }
 #ifdef GL_PROFILE
   glshim_prof_add(GLPROF_CLEAR, prof_start);
 #endif
+}
+
+void glshim_depth_test_changed(ZBuffer *zb) {
+  if (zb != g_zb || !zb->depth_test || !g_z_deferred) return;
+  g_z_deferred = false;
+  clear_depth(zb, g_deferred_z);
 }
 
 typedef struct {
@@ -330,6 +357,30 @@ int glIsEnabled(GLint cap) {
 }
 
 void glLineWidth(GLfloat width) { (void)width; }
+
+void glOrtho(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top,
+             GLdouble znear, GLdouble zfar) {
+  const float w = (float)right - (float)left;
+  const float h = (float)top - (float)bottom;
+  const float d = (float)zfar - (float)znear;
+  const GLfloat m[16] = {2.0f / w,
+                         0,
+                         0,
+                         0,
+                         0,
+                         2.0f / h,
+                         0,
+                         0,
+                         0,
+                         0,
+                         -2.0f / d,
+                         0,
+                         -((float)right + (float)left) / w,
+                         -((float)top + (float)bottom) / h,
+                         -((float)zfar + (float)znear) / d,
+                         1.0f};
+  glMultMatrixf(m);
+}
 
 void gluPerspective(GLdouble fovy, GLdouble aspect, GLdouble znear,
                     GLdouble zfar) {

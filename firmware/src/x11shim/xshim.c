@@ -50,6 +50,7 @@ GC XCreateGC(Display *dpy, Drawable d, unsigned long mask, XGCValues *v) {
   gc->foreground = (mask & GCForeground) ? v->foreground : 0xFFFF;
   gc->cap_style = CapButt;
   gc->join_style = JoinMiter;
+  gc->function = GXcopy;
   XChangeGC(dpy, gc, mask & ~GCForeground, v);
   return gc;
 }
@@ -70,6 +71,7 @@ int XSetForeground(Display *dpy, GC gc, unsigned long pixel) {
 int XChangeGC(Display *dpy, GC gc, unsigned long mask, XGCValues *v) {
   (void)dpy;
   if (mask & GCForeground) gc->foreground = v->foreground;
+  if (mask & GCFunction) gc->function = v->function;
   if (mask & GCBackground) gc->background = v->background;
   if (mask & GCLineWidth) gc->line_width = v->line_width;
   if (mask & GCCapStyle) gc->cap_style = v->cap_style;
@@ -78,7 +80,8 @@ int XChangeGC(Display *dpy, GC gc, unsigned long mask, XGCValues *v) {
 }
 
 int XSetFunction(Display *dpy, GC gc, int function) {
-  (void)dpy, (void)gc, (void)function;
+  (void)dpy;
+  gc->function = function;
   return 0;
 }
 

@@ -67,6 +67,28 @@ void make_uniform_colormap(Screen *screen, Visual *visual, Colormap cmap,
     set_colour(&colors[i], base + i * 360.0 / *ncolorsP, 1.0, 1.0);
 }
 
+void make_color_ramp(Screen *screen, Visual *visual, Colormap cmap, int h1,
+                     double s1, double v1, int h2, double s2, double v2,
+                     XColor *colors, int *ncolorsP, Bool closed_p,
+                     Bool allocate_p, Bool *writable_pP) {
+  (void)screen;
+  (void)visual;
+  (void)cmap;
+  (void)allocate_p;
+  if (writable_pP) *writable_pP = False;
+  const int n = *ncolorsP;
+  int dh = ((h2 - h1) % 360 + 360) % 360;
+  if (dh > 180) dh -= 360;
+  for (int i = 0; i < n; i++) {
+    double t = n > 1 ? (double)i / (n - 1) : 0.0;
+    if (closed_p) {
+      t = (double)i * 2.0 / n;
+      if (t > 1.0) t = 2.0 - t;
+    }
+    set_colour(&colors[i], h1 + dh * t, s1 + (s2 - s1) * t, v1 + (v2 - v1) * t);
+  }
+}
+
 /* Three anchor colours, one per third of the hue wheel so the loop always
  * goes all the way round, blended forward from each anchor to the next and
  * from the last back to the first. */

@@ -45,7 +45,9 @@ Follow `adding-a-hack.md`. Show the registry test failing before
 copying. Fill each shim gap test-first, then break the code on purpose and
 watch the test fail ("Tests that cannot be fooled"). Filling a missing
 function is a shim gap. Changing what every hack sees (the runner, a default, a
-shared helper) is not: stop and ask Rod first.
+shared helper) is not: stop and ask Rod first. A speed-up in the shared GL
+layer counts too, even when every pinned frame hash still matches (HexTrail's
+deferred depth clear): ask before writing it, and name it in the PR body.
 
 ## 4. Verify on the host
 
@@ -60,7 +62,11 @@ Flash only after Rod says so in this conversation; approval for one flash is
 not approval for the next. See "Device capture". Report "compiles", "host tests
 pass" and "runs on the device" separately; only Rod can say what the screen
 shows. If it is slow, measure, change one thing, flash again and compare; if it
-is still slow, say so and suggest dropping it. Record the numbers in
+is still slow, say so and suggest dropping it. A hack that runs at a good rate
+can still go: Rod dropped Boing (8.3 fps, "pretty boring on a small screen")
+and asked for HexTrail to be tuned because it fell under 10 fps before the
+rotation moved on. Judge a hack on a 466 px round screen, and by its worst
+window as well as its mean. Record the numbers in
 `tools/assessment_measured.md`, marking anything unmeasured as such.
 
 ## 6. Deliver
@@ -82,3 +88,5 @@ ideas become issues.
 | "My test passes, so it tests something" | A test through Pyro passed with the runner broken. Break the code on purpose. |
 | "AGENTS.md says to fix shim gaps, so I can change the runner" | A new function is a gap. A change every hack sees needs Rod. |
 | "Rod approved flashing earlier" | Ask again for each flash. |
+| "Single precision is done, so the hack is as fast as it gets" | HexTrail gained 0.3 fps from it and 2.3 from a depth clear in the GL layer. Read what the shared code does each frame. |
+| "The mean is above 10 fps" | HexTrail's mean was 15.3 and its worst window 10.8; its step grew all cycle. Read the lowest window. |

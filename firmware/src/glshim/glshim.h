@@ -26,6 +26,10 @@ void glshim_close(void);
  * closed its context. */
 int glshim_is_open(void);
 
+/* How many depth clears have actually run (a clear made while the depth test
+ * is off is deferred until it is switched on). For the tests. */
+unsigned glshim_depth_clears(void);
+
 Bool glXMakeCurrent(Display *dpy, GLXDrawable drawable, GLXContext ctx);
 /* Called with every box (clamped, non-empty) that TinyGL reports it has drawn
  * in, in canvas pixels. NULL in the firmware; tools/gl_budget.py sets it so
@@ -76,6 +80,10 @@ int glIsEnabled(GLint cap);
  * is the width a hack asks for on a canvas under 640 pixels. Accepted and
  * ignored. */
 void glLineWidth(GLfloat width);
+/* TinyGL has this commented out of its header. Multiplies the current matrix
+ * by the usual orthographic projection. */
+void glOrtho(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top,
+             GLdouble znear, GLdouble zfar);
 
 /* TinyGL defines these but its header does not declare them. */
 void glVertex3f(GLfloat x, GLfloat y, GLfloat z);

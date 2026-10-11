@@ -54,6 +54,16 @@ The ESP32-S3 has a single-precision FPU only, so double runs in software.
   chaotic hack diverges later but should keep its look.
 - Results: Galaxy 5 to 14 fps. Substrate step 119-121 ms to 37-38 ms, 6.2 to
   12.5 fps.
+- A hack that passes the address of its own `double` local to a shim function
+  (`rgb_to_hsv (..., &s, &v)`) writes eight bytes into a four-byte float, and
+  the compiler does not warn. Moire's frames were all different from the
+  double build's until `moire_single.c` mapped the call to an adapter defined
+  before `single_precision.h`. Cmp the wrapper's frames against the unmodified
+  hack's. A hack with no decimal literals must stay out of
+  `patch_float_literals.py`, which refuses it.
+- Once the maths is float, look at the fills before the next idea. CWaves'
+  cosines were 4 ms of a 61 ms step; its 233 column fills were 57 (a thin
+  full-height rectangle touches a new cache line a store). See `hacks.md`.
 
 ## Slow hack
 
@@ -86,6 +96,20 @@ When: a ported hack runs under about 10 fps and the push is not the cause
 - A hack that redraws its whole picture every frame to animate colour (Braid)
   costs its full draw each frame whatever the push does. Check this before
   porting; the scorer does not flag it yet.
+- A fix that moves the frame rate by under 5% shows the maths was not the
+  cost. HexTrail in single precision went from 12.7 to 13.0 fps; the 2.3 fps
+  that mattered came from reading what the GL layer does each frame
+  (`glshim_clear`) and finding a depth clear that nothing read, because the hack
+  never enables the depth test. Run `nm` on the object, then read the shared
+  code the hack calls before trying a third idea in the hack.
+- A step that grows over the hack's cycle (HexTrail: 19 ms to a ceiling, then it
+  restarts) needs the worst window, not the mean. Capture at least one full
+  cycle (150 s covered HexTrail's 65 s), read the lowest `fps=`, and compare the
+  time spent below 10 fps with the rotation interval: Rod saw it fall under 10
+  before the 25 s change. If a resource such as `count` scales the cost, give it
+  an `#ifndef` default in `registry.c` (`HEXTRAIL_COUNT`) so one flash tests
+  another value, and measure two or three values: count 6 gave a mean of 12.7,
+  10 gave 9.1 and 20 gave 5.7, in double precision.
 
 ## Thin lines in a GL hack
 
