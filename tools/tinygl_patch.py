@@ -455,6 +455,16 @@ REPLACEMENTS: tuple[Replace, ...] = (
         "glshim_clear(c->zb, mask & GL_DEPTH_BUFFER_BIT,",
     ),
     Replace(
+        "include/zbuffer.h",
+        "void *gl_zalloc(GLint size);\n#else\n",
+        "void *gl_zalloc(GLint size);\nvoid *gl_zalloc_hot(GLint size);\n#else\n",
+    ),
+    Replace(
+        "src/init.c",
+        "\t\tc->matrix_stack[i] = gl_zalloc(c->matrix_stack_depth_max[i] * sizeof(M4));\n",
+        "\t\tc->matrix_stack[i] = gl_zalloc_hot(c->matrix_stack_depth_max[i] * sizeof(M4));\n",
+    ),
+    Replace(
         "src/zgl.h",
         "#define OP_BUFFER_MAX_SIZE 4096",
         "#define OP_BUFFER_MAX_SIZE 64",
@@ -668,6 +678,16 @@ void* gl_zalloc(GLint size) {
 	void* p = gl_malloc(size);
 	if (p) memset(p, 0, size);
 	return p;
+}
+
+/* For state read on every vertex (the matrix stacks): internal RAM when
+ * built with GL_INTERNAL_MATRICES (issue #43), PSRAM by size otherwise. */
+void* gl_zalloc_hot(GLint size) {
+#if defined(ESP_PLATFORM) && defined(GL_INTERNAL_MATRICES)
+	void* p = heap_caps_calloc(1, size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+	if (p) return p;
+#endif
+	return gl_zalloc(size);
 }
 """
 
