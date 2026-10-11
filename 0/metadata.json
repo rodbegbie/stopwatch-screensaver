@@ -1,0 +1,266 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4PNDVZ7GVH39P3SSCV7MWJR",
+  "session_id": "2e9731bd-8fdb-464e-a0db-d7affa5f2452",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-11T23:40:35.567472Z",
+  "branch": "fix/56-stroker-seam",
+  "checkpoints_count": 2,
+  "save_step_count": 9,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "e0b54e7477d2",
+  "checkpoint_transcript_start": 3633,
+  "transcript_lines_at_start": 3633,
+  "compact_transcript_start": 344,
+  "token_usage": {
+    "input_tokens": 40,
+    "cache_creation_tokens": 32121,
+    "cache_read_tokens": 11311771,
+    "output_tokens": 23719,
+    "api_call_count": 20
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01MNgAbESpp3DsuaxpmuhCp8",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:using-git-worktrees"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "c4ce9792ba84",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 35,
+        "end": 36,
+        "entry_ids": [
+          "872b4110-5391-434b-8ba2-724c706c6254"
+        ],
+        "tool_use_id": "toolu_01MNgAbESpp3DsuaxpmuhCp8"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01MNgAbESpp3DsuaxpmuhCp8"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:using-git-worktrees",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01LLeFaakLjqiBXU55QXPFi6",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "c4ce9792ba84",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 329,
+        "end": 330,
+        "entry_ids": [
+          "be1a6269-cb78-4c6e-9479-4fb2c31f1537"
+        ],
+        "tool_use_id": "toolu_01LLeFaakLjqiBXU55QXPFi6"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01LLeFaakLjqiBXU55QXPFi6"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_012avWQ5qfHaYUB7uMQ2GiGG",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:brainstorming"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "9ce0841da89c",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 943,
+        "end": 944,
+        "entry_ids": [
+          "abaadff8-5407-41c2-b944-1ec83a6b1e40"
+        ],
+        "tool_use_id": "toolu_012avWQ5qfHaYUB7uMQ2GiGG"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_012avWQ5qfHaYUB7uMQ2GiGG"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:brainstorming",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01R8RjWYH3JHgCa9CqL4VS3N",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "port-hack"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "9ce0841da89c",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 1088,
+        "end": 1089,
+        "entry_ids": [
+          "b8549904-ebf2-4aec-a685-29fa0a433f56"
+        ],
+        "tool_use_id": "toolu_01R8RjWYH3JHgCa9CqL4VS3N"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01R8RjWYH3JHgCa9CqL4VS3N"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: port-hack",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_0185ib7AUvq4TBR1rivksuDv",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "deliver-branch"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "56e63e5effb4",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 3222,
+        "end": 3223,
+        "entry_ids": [
+          "25d75453-12ab-44c3-b06b-038d8690282d"
+        ],
+        "tool_use_id": "toolu_0185ib7AUvq4TBR1rivksuDv"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_0185ib7AUvq4TBR1rivksuDv"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: deliver-branch",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 23
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 291,
+      "user_lines_removed": 1,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "firmware/patch_float_literals.py": 5,
+        "firmware/test/test_hacks/test_hacks.c": 44,
+        "firmware/test/test_xshim/test_xshim.c": 16,
+        "tools/celtic_patch.py": 90,
+        "tools/tests/test_celtic_patch.py": 136
+      },
+      "user_removed_per_file": {
+        "firmware/patch_float_literals.py": 1
+      }
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 16,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 16,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 16,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 16,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 7,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 16,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 8,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 16,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 9,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 16,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 10,
+      "user_lines_added": 9,
+      "user_lines_removed": 2,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "firmware/src/x11shim/stroke.c": 9
+      },
+      "user_removed_per_file": {
+        "firmware/src/x11shim/stroke.c": 2
+      }
+    }
+  ]
+}
