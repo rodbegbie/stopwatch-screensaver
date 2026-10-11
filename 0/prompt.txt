@@ -1,0 +1,25 @@
+Yes, that order's grand, start with #65.  The device is busy at the moment with another agents' tasks, so lets focus on the things we can do on the host at first.
+
+---
+
+Let's wait for an on-device measurement.  You can leave comments on issues for future reference.
+
+---
+
+Yes, go ahead with #56
+
+---
+
+Good to know.  Celtic optimization is already a topic of some interest to me, and filed as issue 37.  Let's take a stab at it and see how it goes.
+
+---
+
+It should be quickly drawing the celtic knot weave pattern across the display
+
+---
+
+Yes, a sparser knot would be acceptable.
+
+---
+
+yes
