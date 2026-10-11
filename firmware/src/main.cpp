@@ -500,42 +500,6 @@ static void pollBattery() {
   overlay_set_battery(&overlay, M5.Power.getBatteryLevel());
 }
 
-#if defined(GL_PROFILE) || defined(PSRAM_AUTOLOAD)
-#include "rom/cache.h"
-#include "soc/extmem_reg.h"
-
-/* Issue #43 experiment: the data cache's hardware next-line prefetch
- * ("autoload") over mapped PSRAM. PSRAM_AUTOLOAD picks the trigger: 1 on a
- * miss, 2 on a hit, 3 on both. The region must hold only mapped pages: over
- * the whole 32 MB data bus a prefetch into an unmapped page faulted and the
- * board boot-looped. It runs from the canvas (allocated first) to the end of
- * the mapping, less 64 KB so a prefetch never runs off the end. */
-static void cacheAutoload(const void *psramStart) {
-  uint32_t start = (uint32_t)psramStart & ~0xFFFFu;
-  uint32_t end = start + ESP.getPsramSize();
-  if (end > SOC_EXTRAM_DATA_HIGH) end = SOC_EXTRAM_DATA_HIGH;
-  end -= 0x10000;
-  Serial.printf("psram region start=0x%08x end=0x%08x size=%u\n", (unsigned)start,
-                (unsigned)end, (unsigned)ESP.getPsramSize());
-#ifdef PSRAM_AUTOLOAD
-  Cache_Disable_DCache_Autoload();
-  const struct autoload_region_config region = {
-      .region = CACHE_AUTOLOAD_REGION0, .ena = 1, .addr = start, .size = end - start};
-  Cache_Config_DCache_Region_Autoload(&region);
-  const struct autoload_config config = {.ena = 1,
-                                         .order = CACHE_AUTOLOAD_POSITIVE,
-                                         .trigger = (uint8_t)(PSRAM_AUTOLOAD - 1),
-                                         .size = 0};
-  Cache_Config_DCache_Autoload(&config);
-  Cache_Enable_DCache_Autoload();
-#endif
-  Serial.printf("dcache autoload ctrl=0x%08x sct0 addr=0x%08x size=0x%08x\n",
-                (unsigned)REG_READ(EXTMEM_DCACHE_AUTOLOAD_CTRL_REG),
-                (unsigned)REG_READ(EXTMEM_DCACHE_AUTOLOAD_SCT0_ADDR_REG),
-                (unsigned)REG_READ(EXTMEM_DCACHE_AUTOLOAD_SCT0_SIZE_REG));
-}
-#endif
-
 #ifdef GL_PROFILE
 /* Issue #43: cycles per access to a new 32-byte cache line in PSRAM, taking
  * the lines in address order (line_rmw) and down columns, a row apart, as a
@@ -580,9 +544,6 @@ void setup() {
 
   if (canvas_init(&canvas, kSize, kSize, ps_malloc) != 0)
     halt("PSRAM alloc failed");
-#if defined(GL_PROFILE) || defined(PSRAM_AUTOLOAD)
-  cacheAutoload(canvas.px);
-#endif
 #ifdef GL_PROFILE
   memBench(canvas.px);
 #endif

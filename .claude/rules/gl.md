@@ -206,10 +206,12 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
 - Lazy lighting is the default (`GL_LAZY_SHADE`; `-DGL_EAGER_SHADE` restores
   TinyGL's order): a vertex is lit when something that uses it is drawn, so
   culled triangles cost nothing. Gears 61.1 to 57.7 ms, Morph3D 61.4 to
-  58.4 ms, frame hashes unchanged. `GL_IRAM`, `GL_INTERNAL_MATRICES` and
-  `PSRAM_AUTOLOAD` moved Gears by under 1 ms. An autoload region over the
-  whole 32 MB data bus boot-looped the board (a prefetch into unmapped pages
-  faulted the panic handler too); it covers mapped PSRAM only now.
+  58.4 ms, frame hashes unchanged. `GL_IRAM` (still a switch) and two
+  experiments since removed, matrix stacks in internal RAM and the data
+  cache's next-line prefetch (autoload) over PSRAM, moved Gears by under 1 ms.
+  The prefetch needs a region that holds only mapped pages: over the whole
+  32 MB data bus it boot-looped the board (the panic handler faulted too), and
+  a region worked out from an allocation's address cannot promise that.
 - Fill is compute-bound, not PSRAM-miss-bound. A new PSRAM cache line costs
   129 cycles to read and about 220 to read and write back (the `membench`
   line of a profile build), but neighbouring triangles reuse lines. A banded
