@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4MY8GACZS0103VQQTPXF20F",
+  "strategy": "manual-commit",
+  "branch": "feature/port-batch-vermiculate-moire-boing-cwaves-cynosure-hextrail",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/patch_float_literals.py",
+    "firmware/platformio.ini",
+    "firmware/src/hacks/cwaves_single.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 82,
+    "cache_creation_tokens": 138238,
+    "cache_read_tokens": 4790636,
+    "output_tokens": 34702,
+    "api_call_count": 41
+  }
+}
