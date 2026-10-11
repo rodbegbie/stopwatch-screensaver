@@ -8,6 +8,7 @@
 #define LRAND() ((long)random())
 #define NRAND(n) ((int)(LRAND() % (n)))
 #define MAXRAND (2147483648.0)
+#define ya_random() ((unsigned long)random())
 
 /* The GL helpers (rotator.c) use frand; other hacks may define their own. */
 #ifdef USE_GL

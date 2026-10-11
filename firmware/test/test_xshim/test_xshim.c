@@ -538,6 +538,16 @@ void test_ya_rand_init_with_a_seed_repeats_the_sequence(void) {
   TEST_ASSERT_EQUAL_INT64(a, LRAND());
 }
 
+void test_ya_random_follows_the_seeded_sequence_and_is_not_constant(void) {
+  ya_rand_init(42);
+  unsigned long a = ya_random();
+  unsigned long b = ya_random();
+  ya_rand_init(42);
+  TEST_ASSERT_EQUAL_UINT64(a, ya_random());
+  TEST_ASSERT_EQUAL_UINT64(b, ya_random());
+  TEST_ASSERT_NOT_EQUAL(a, b);
+}
+
 void test_nrand_stays_below_n_and_covers_the_range(void) {
   int seen[10] = {0};
   for (int i = 0; i < 1000; i++) {
@@ -2965,6 +2975,7 @@ int main(void) {
   RUN_TEST(test_pointer_motion_mask_is_the_x11_bit);
   RUN_TEST(test_window_attributes_have_your_event_mask);
   RUN_TEST(test_ya_rand_init_with_a_seed_repeats_the_sequence);
+  RUN_TEST(test_ya_random_follows_the_seeded_sequence_and_is_not_constant);
   RUN_TEST(test_nrand_stays_below_n_and_covers_the_range);
   RUN_TEST(test_lrand_is_non_negative_and_below_maxrand);
   RUN_TEST(test_countof_gives_the_array_length);

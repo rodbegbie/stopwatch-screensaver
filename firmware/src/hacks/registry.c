@@ -110,6 +110,12 @@ static const char *const kUnknownPleasuresOverrides[] = {
 XLOCKMORE_HACK_SYNCED(unknownpleasures, "UnknownPleasures",
                       kUnknownPleasuresOverrides);
 
+extern const HackEntry cwaves_hack;
+
+extern const HackEntry vermiculate_hack;
+
+extern const HackEntry cynosure_hack;
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -162,5 +168,8 @@ const HackEntry *const g_hacks[] = {
     &fireworkx_hack,
     &starfish_hack,
     &goop_hack,
-    &loop_hack};
+    &loop_hack,
+    &cwaves_hack,
+    &vermiculate_hack,
+    &cynosure_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);

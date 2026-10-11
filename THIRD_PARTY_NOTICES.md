@@ -105,6 +105,9 @@ implied warranty.
 | `firmware/src/hacks/loop/loop.c` | Copyright (c) 1996 by David Bagley | xlock permission notice (below) |
 | `firmware/src/hacks/loop/automata.h` | Copyright (c) 1995 by David Bagley | xlock permission notice (below) |
 | `firmware/src/hacks/hypnowheel/hypnowheel.c` | Copyright (c) 2008 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/cwaves/cwaves.c` | Copyright (c) 2007-2014 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/vermiculate/vermiculate.c` | Copyright (C) 2001 Tyler Pierce | jwz permission notice (above) |
+| `firmware/src/hacks/cynosure/cynosure.c` | Copyright 1996 ozymandias G desiderata; ported by Jamie Zawinski 1997 | ogd notice (see "ozymandias G desiderata notice (Cynosure)" below) |
 | `firmware/src/xs_support/glx/involute.c` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.h` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/normals.c` | Copyright (c) 2002-2004 Jamie Zawinski | jwz permission notice (above) |
@@ -146,6 +149,21 @@ shall have no liability with respect to the infringement of copyrights,
 trade secrets or any patents by this file or any part thereof.  In no
 event will the author be liable for any lost revenue or profits or
 other special, indirect and consequential damages.
+```
+
+### ozymandias G desiderata notice (Cynosure)
+
+`cynosure.c` is Jamie Zawinski's 1997 C port of a 1996 Java program, and its
+header keeps the original author's copyright notice, which grants use on one
+condition: the copyright is retained. It is reproduced here as it appears in
+the file:
+
+```text
+Copyright 1996 ozymandias G desiderata. Title, ownership rights, and
+intellectual property rights in and to this software remain with
+ozymandias G desiderata. This software may be copied, modified,
+or used as long as this copyright is retained. Use this code at your
+own risk.
 ```
 
 ### Carnegie Mellon University notice (Pedal)

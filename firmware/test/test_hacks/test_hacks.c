@@ -105,7 +105,10 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Fireworkx",
                                          "Starfish",
                                          "Goop",
-                                         "Loop"};
+                                         "Loop",
+                                         "CWaves",
+                                         "Vermiculate",
+                                         "Cynosure"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -456,6 +459,9 @@ static const uint64_t kBaseline[] = {
     0x77bfaaf3faa1cc64ull, /* Starfish: taken after looking at the frames (spline.h before the float rename) */
     0x5694978ccee06fd6ull, /* Goop: taken after looking at the frames (spline.h before the float rename) */
     0xe79bc5d8b096d29full, /* Loop: taken after looking at the frames (a fresh mode choice per start) */
+    0, /* CWaves: not yet pinned */
+    0, /* Vermiculate: not yet pinned */
+    0, /* Cynosure: not yet pinned */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -1070,6 +1076,18 @@ void test_loop_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("Loop", 1);
 }
 
+void test_cwaves_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("CWaves", 0);
+}
+
+void test_vermiculate_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Vermiculate", 0);
+}
+
+void test_cynosure_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Cynosure", 0);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -1135,6 +1153,9 @@ int main(void) {
   RUN_TEST(test_starfish_stops_do_not_leak);
   RUN_TEST(test_goop_stops_do_not_leak);
   RUN_TEST(test_loop_stops_do_not_leak);
+  RUN_TEST(test_cwaves_stops_do_not_leak);
+  RUN_TEST(test_vermiculate_stops_do_not_leak);
+  RUN_TEST(test_cynosure_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);

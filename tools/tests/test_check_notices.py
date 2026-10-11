@@ -68,6 +68,21 @@ int x;
     assert cn.check(src, md) == []
 
 
+def test_ogd_cynosure_notice_passes(tmp_path):
+    ogd = """/* cynosure --- draw some rectangles
+ *
+ *   Copyright 1996 ozymandias G desiderata. Title, ownership rights, and
+ *   intellectual property rights in and to this software remain with
+ *   ozymandias G desiderata. This software may be copied, modified,
+ *   or used as long as this copyright is retained. Use this code at your
+ *   own risk.
+ */
+int x;
+"""
+    src, md = setup(tmp_path, {"cynosure/cynosure.c": ogd}, "| cynosure.c | x | y |")
+    assert cn.check(src, md) == []
+
+
 def test_file_without_notice_is_reported(tmp_path):
     src, md = setup(tmp_path, {"pyro/pyro.c": "int x;\n"}, "pyro")
     problems = cn.check(src, md)
