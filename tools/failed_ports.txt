@@ -6,3 +6,4 @@
 # figures.
 celtic: shelved at 1.2 fps and 300 KB of heap, see issue #37
 halftone: 5 fps; the shim's ellipse fill is 80% of it, issue #57
+flurry: needs GL TinyGL lacks, est. under 1 fps, issue #70

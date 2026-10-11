@@ -656,7 +656,7 @@ needing few additions come first.
 | Hack | Kind | Effort | Speed | Ported | Shim gaps | Flags | LOC |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | celtic | 2d | S | high (1.2 ms) | ❌ | - | - | 1141 |
-| halftone | 2d | S | high (0.67 ms) | ❌ | - | pixmaps | 413 |
+| halftone | 2d | S | high (0.66 ms) | ❌ | - | pixmaps | 413 |
 | abstractile | 2d | M | - | - | `BlackPixelOfScreen`, `make_color_loop`, `make_color_ramp`, `rgb_to_hsv` | - | 1625 |
 | barcode | 2d | M | - | - | `LSBFirst`, `XImage.bitmap_bit_order`, `XImage.byte_order`, `XYBitmap` | - | 2055 |
 | bouboule | 2d | M | - | - | `GXor`, `XSetFunction` | xor | 860 |
@@ -789,7 +789,7 @@ needing few additions come first.
 | flipscreen3d | gl | XL | - | - | - | - | 524 |
 | fliptext | gl | XL | - | - | - | - | 1005 |
 | floppy | gl | XL | - | - | - | - | 584 |
-| flurry | gl | XL | - | - | - | - | 550 |
+| flurry | gl | XL | - | ❌ | - | - | 550 |
 | flyingtoasters | gl | XL | - | - | - | - | 924 |
 | geodesic | gl | XL | - | - | - | float-heavy | 825 |
 | geodesicgears | gl | XL | - | - | - | float-heavy | 1802 |
@@ -942,6 +942,7 @@ needing few additions come first.
 ## Failed ports
 
 - **celtic**: shelved at 1.2 fps and 300 KB of heap, see issue #37
+- **flurry**: needs GL TinyGL lacks, est. under 1 fps, issue #70
 - **halftone**: 5 fps; the shim's ellipse fill is 80% of it, issue #57
 
 ## Excluded files
