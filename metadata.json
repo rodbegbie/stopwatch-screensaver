@@ -3,8 +3,13 @@
   "checkpoint_id": "01M4N10JWSFM4PPHRHVJ59675V",
   "strategy": "manual-commit",
   "branch": "feature/44-pipes",
-  "checkpoints_count": 1,
-  "files_touched": null,
+  "checkpoints_count": 2,
+  "files_touched": [
+    "docs/pipes-lab/README.md",
+    "docs/pipes-lab/build.py",
+    "docs/pipes-lab/lab_main.c",
+    "docs/pipes-lab/pipes_incremental.h"
+  ],
   "sessions": [
     {
       "metadata": "/0/metadata.json",
@@ -12,13 +17,20 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 114,
-    "cache_creation_tokens": 82799,
-    "cache_read_tokens": 20388246,
-    "output_tokens": 41112,
-    "api_call_count": 57
+    "input_tokens": 124,
+    "cache_creation_tokens": 89821,
+    "cache_read_tokens": 22245017,
+    "output_tokens": 44807,
+    "api_call_count": 62
   }
 }
