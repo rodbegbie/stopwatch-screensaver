@@ -61,8 +61,11 @@ typedef struct {
   int line_width;
   int cap_style;
   int join_style;
-  /* Accepted and ignored: a polygon is always filled even-odd. */
+  /* Accepted and ignored: a polygon is always filled even-odd, and always
+   * solid (no fill style or stipple). */
   int fill_rule;
+  int fill_style;
+  Pixmap stipple;
 } XGCValues;
 
 typedef struct {
@@ -155,7 +158,9 @@ enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
 #define GCPlaneMask (1L << 1)
 #define GCForeground (1L << 2)
 #define GCBackground (1L << 3)
+#define GCFillStyle (1L << 8)
 #define GCFillRule (1L << 9)
+#define GCStipple (1L << 11)
 #define EvenOddRule 0
 #define WindingRule 1
 #define GCLineWidth (1L << 4)
@@ -183,6 +188,7 @@ enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
 #define DoGreen 2
 #define DoBlue 4
 #define CoordModeOrigin 0
+#define CoordModePrevious 1
 #define Complex 0
 
 #define DefaultScreen(dpy) ((void)(dpy), 0)
@@ -245,7 +251,8 @@ Status XGetWindowAttributes(Display *, Window, XWindowAttributes *);
 int XClearWindow(Display *, Window);
 int XSetWindowBackground(Display *, Window, unsigned long pixel);
 int XDrawPoint(Display *, Drawable, GC, int x, int y);
-/* Only CoordModeOrigin is supported. */
+/* CoordModeOrigin and CoordModePrevious (each point an offset from the one
+ * before) are supported by the point, line and polygon calls. */
 int XDrawPoints(Display *, Drawable, GC, XPoint *pts, int n, int mode);
 int XDrawLine(Display *, Drawable, GC, int x1, int y1, int x2, int y2);
 /* Outlines a (w + 1) by (h + 1) box, as Xlib does. */
@@ -276,6 +283,13 @@ int XFillPolygon(Display *, Drawable, GC, XPoint *pts, int n, int shape,
  * as their drawable still draw on the canvas. */
 Pixmap XCreatePixmap(Display *, Drawable, unsigned int w, unsigned int h,
                      unsigned int depth);
+/* data is X bitmap data: rows padded to whole bytes, the least significant bit
+ * of a byte the leftmost pixel. Set bits take fg and clear bits bg; a depth of
+ * 1 makes a bitmap (fg and bg ignored), any other a colour pixmap. */
+Pixmap XCreatePixmapFromBitmapData(Display *, Drawable, char *data,
+                                   unsigned int w, unsigned int h,
+                                   unsigned long fg, unsigned long bg,
+                                   unsigned int depth);
 int XFreePixmap(Display *, Pixmap);
 /* Reports the canvas for the window and the pixmap's own size otherwise.
  * Returns 0 and writes nothing for a pixmap that does not exist. */

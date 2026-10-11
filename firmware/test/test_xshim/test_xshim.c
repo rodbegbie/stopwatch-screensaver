@@ -2701,6 +2701,78 @@ void test_the_gc_function_and_alpha_calls_are_accepted_and_change_nothing(void) 
   XFreeGC(dpy, gc);
 }
 
+void test_relative_coordinates_fill_the_same_polygon_as_absolute_ones(void) {
+  GC gc = new_gc(0xFFFF, 0);
+  XPoint absolute[4] = {{4, 4}, {12, 4}, {12, 12}, {4, 12}};
+  XFillPolygon(dpy, win, gc, absolute, 4, Convex, CoordModeOrigin);
+  const int want = count_set();
+  TEST_ASSERT_TRUE(want > 40);
+  XClearWindow(dpy, win);
+  XPoint relative[4] = {{4, 4}, {8, 0}, {0, 8}, {-8, 0}};
+  XFillPolygon(dpy, win, gc, relative, 4, Convex, CoordModePrevious);
+  TEST_ASSERT_EQUAL_INT(want, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(8, 8));
+  TEST_ASSERT_EQUAL_HEX16(0, at(2, 2));
+  XFreeGC(dpy, gc);
+}
+
+void test_relative_coordinates_draw_the_same_lines_and_points_as_absolute_ones(void) {
+  GC gc = new_gc(0xFFFF, 0);
+  XPoint abs_line[3] = {{2, 2}, {9, 2}, {9, 9}};
+  XDrawLines(dpy, win, gc, abs_line, 3, CoordModeOrigin);
+  const int want = count_set();
+  XClearWindow(dpy, win);
+  XPoint rel_line[3] = {{2, 2}, {7, 0}, {0, 7}};
+  XDrawLines(dpy, win, gc, rel_line, 3, CoordModePrevious);
+  TEST_ASSERT_EQUAL_INT(want, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(9, 5));
+  XClearWindow(dpy, win);
+  XPoint rel_pts[3] = {{3, 3}, {2, 1}, {1, 1}};
+  XDrawPoints(dpy, win, gc, rel_pts, 3, CoordModePrevious);
+  TEST_ASSERT_EQUAL_INT(3, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(3, 3));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(5, 4));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(6, 5));
+  XFreeGC(dpy, gc);
+}
+
+void test_a_pixmap_made_from_bitmap_data_reads_least_significant_bit_first(void) {
+  static const char data[2] = {0x01, (char)0x80};
+  Pixmap bits = XCreatePixmapFromBitmapData(dpy, win, (char *)data, 8, 2, 1, 0, 1);
+  TEST_ASSERT_NOT_EQUAL(None, bits);
+  GC gc = new_gc(0xFFFF, 0x0001);
+  XCopyPlane(dpy, bits, win, gc, 0, 0, 8, 2, 0, 0, 1);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(0, 0));
+  TEST_ASSERT_EQUAL_HEX16(0x0001, at(1, 0));
+  TEST_ASSERT_EQUAL_HEX16(0x0001, at(7, 0));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(7, 1));
+  TEST_ASSERT_EQUAL_HEX16(0x0001, at(0, 1));
+  XFreePixmap(dpy, bits);
+  Pixmap colour = XCreatePixmapFromBitmapData(dpy, win, (char *)data, 8, 2, 0xF800, 0x001F, 16);
+  TEST_ASSERT_NOT_EQUAL(None, colour);
+  XCopyArea(dpy, colour, win, gc, 0, 0, 8, 2, 0, 4);
+  TEST_ASSERT_EQUAL_HEX16(0xF800, at(0, 4));
+  TEST_ASSERT_EQUAL_HEX16(0x001F, at(1, 4));
+  TEST_ASSERT_EQUAL_HEX16(0xF800, at(7, 5));
+  XFreePixmap(dpy, colour);
+  XFreeGC(dpy, gc);
+  TEST_ASSERT_EQUAL_UINT64(None, XCreatePixmapFromBitmapData(dpy, win, (char *)data, 0, 2, 1, 0, 1));
+}
+
+void test_stipple_constants_and_fields_are_accepted_and_fills_stay_solid(void) {
+  TEST_ASSERT_EQUAL_INT(1, CoordModePrevious);
+  TEST_ASSERT_EQUAL_HEX64(1L << 8, GCFillStyle);
+  TEST_ASSERT_EQUAL_HEX64(1L << 11, GCStipple);
+  XGCValues v = {0};
+  v.foreground = 0xFFFF;
+  v.fill_style = FillOpaqueStippled;
+  v.stipple = None;
+  GC gc = XCreateGC(dpy, win, GCForeground | GCFillStyle | GCStipple, &v);
+  XFillRectangle(dpy, win, gc, 0, 0, 4, 4);
+  TEST_ASSERT_EQUAL_INT(16, count_set());
+  XFreeGC(dpy, gc);
+}
+
 void test_create_image_refuses_depths_and_sizes_it_cannot_hold(void) {
   TEST_ASSERT_NULL(XCreateImage(dpy, NULL, 8, ZPixmap, 0, NULL, 4, 4, 8, 0));
   TEST_ASSERT_NULL(XCreateImage(dpy, NULL, 32, ZPixmap, 0, NULL, 0, 4, 32, 0));
@@ -2794,6 +2866,10 @@ int main(void) {
   RUN_TEST(test_the_display_a_screen_leads_to_is_the_one_most_recently_opened);
   RUN_TEST(test_closing_displays_out_of_order_never_leaves_a_dangling_current_display);
   RUN_TEST(test_the_gc_function_and_alpha_calls_are_accepted_and_change_nothing);
+  RUN_TEST(test_relative_coordinates_fill_the_same_polygon_as_absolute_ones);
+  RUN_TEST(test_relative_coordinates_draw_the_same_lines_and_points_as_absolute_ones);
+  RUN_TEST(test_a_pixmap_made_from_bitmap_data_reads_least_significant_bit_first);
+  RUN_TEST(test_stipple_constants_and_fields_are_accepted_and_fills_stay_solid);
   RUN_TEST(test_create_image_refuses_depths_and_sizes_it_cannot_hold);
   RUN_TEST(test_file_to_ximage_has_no_decoder_and_returns_null);
   RUN_TEST(test_ease_in_out_sine_runs_from_0_to_1_through_one_half);

@@ -146,10 +146,30 @@ int XDrawPoint(Display *dpy, Drawable d, GC gc, int x, int y) {
   return 0;
 }
 
+/* CoordModePrevious: each point after the first is an offset from the one
+ * before it. Returns pts for CoordModeOrigin, otherwise absolute coordinates
+ * in `stack` (up to stack_n points) or in a heap array, which the caller frees
+ * when it is neither pts nor `stack`. NULL when memory runs out. */
+static XPoint *absolute_points(XPoint *pts, int n, int mode, XPoint *stack,
+                               int stack_n) {
+  if (mode != CoordModePrevious || n <= 0) return pts;
+  XPoint *out = n <= stack_n ? stack : (XPoint *)malloc((size_t)n * sizeof(XPoint));
+  if (!out) return NULL;
+  out[0] = pts[0];
+  for (int i = 1; i < n; i++) {
+    out[i].x = (short)(out[i - 1].x + pts[i].x);
+    out[i].y = (short)(out[i - 1].y + pts[i].y);
+  }
+  return out;
+}
+
 int XDrawPoints(Display *dpy, Drawable d, GC gc, XPoint *pts, int n,
                 int mode) {
-  (void)mode;
-  for (int i = 0; i < n; i++) XDrawPoint(dpy, d, gc, pts[i].x, pts[i].y);
+  XPoint stack[64];
+  XPoint *a = absolute_points(pts, n, mode, stack, 64);
+  if (!a) return 0;
+  for (int i = 0; i < n; i++) XDrawPoint(dpy, d, gc, a[i].x, a[i].y);
+  if (a != pts && a != stack) free(a);
   return 0;
 }
 
@@ -188,8 +208,7 @@ int XDrawRectangle(Display *dpy, Drawable d, GC gc, int x, int y,
   return 0;
 }
 
-int XDrawLines(Display *dpy, Drawable d, GC gc, XPoint *pts, int n, int mode) {
-  (void)mode;
+static int draw_lines(Display *dpy, Drawable d, GC gc, XPoint *pts, int n) {
   if (gc->line_width > 1 && n > 0) {
     Canvas *c = xshim_target(dpy, d);
     if (!c) return 0;
@@ -210,6 +229,15 @@ int XDrawLines(Display *dpy, Drawable d, GC gc, XPoint *pts, int n, int mode) {
   for (int i = 1; i < n; i++)
     XDrawLine(dpy, d, gc, pts[i - 1].x, pts[i - 1].y, pts[i].x, pts[i].y);
   return 0;
+}
+
+int XDrawLines(Display *dpy, Drawable d, GC gc, XPoint *pts, int n, int mode) {
+  XPoint stack[64];
+  XPoint *a = absolute_points(pts, n, mode, stack, 64);
+  if (!a) return 0;
+  const int r = draw_lines(dpy, d, gc, a, n);
+  if (a != pts && a != stack) free(a);
+  return r;
 }
 
 int XDrawSegments(Display *dpy, Drawable d, GC gc, XSegment *segs, int n) {
@@ -311,10 +339,7 @@ int XFillArcs(Display *dpy, Drawable d, GC gc, XArc *arcs, int n) {
   return 0;
 }
 
-int XFillPolygon(Display *dpy, Drawable d, GC gc, XPoint *pts, int n,
-                 int shape, int mode) {
-  (void)shape;
-  (void)mode;
+static int fill_polygon(Display *dpy, Drawable d, GC gc, XPoint *pts, int n) {
   Canvas *c = xshim_target(dpy, d);
   if (!c || n < 3) return 0;
   int stack_xy[2 * 64];
@@ -330,6 +355,17 @@ int XFillPolygon(Display *dpy, Drawable d, GC gc, XPoint *pts, int n,
   canvas_fill_polygon(c, xy, n, (uint16_t)gc->foreground);
   if (xy != stack_xy) free(xy);
   return 0;
+}
+
+int XFillPolygon(Display *dpy, Drawable d, GC gc, XPoint *pts, int n,
+                 int shape, int mode) {
+  (void)shape;
+  XPoint stack[64];
+  XPoint *a = absolute_points(pts, n, mode, stack, 64);
+  if (!a) return 0;
+  const int r = fill_polygon(dpy, d, gc, a, n);
+  if (a != pts && a != stack) free(a);
+  return r;
 }
 
 Status XAllocColor(Display *dpy, Colormap cmap, XColor *c) {

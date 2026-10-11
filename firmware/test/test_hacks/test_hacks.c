@@ -104,7 +104,8 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Qix",
                                          "Fireworkx",
                                          "Starfish",
-                                         "Goop"};
+                                         "Goop",
+                                         "Loop"};
   const int n = sizeof(expected) / sizeof(expected[0]);
   TEST_ASSERT_EQUAL_INT(n, g_hack_count);
   for (int i = 0; i < n; i++) TEST_ASSERT_EQUAL_STRING(expected[i], g_hacks[i]->name);
@@ -454,6 +455,7 @@ static const uint64_t kBaseline[] = {
     0, /* Fireworkx: not yet pinned */
     0, /* Starfish: not yet pinned */
     0, /* Goop: not yet pinned */
+    0, /* Loop: not yet pinned */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -885,6 +887,7 @@ void test_slow_hacks_register_their_lighter_settings(void) {
   TEST_ASSERT_TRUE_MESSAGE(overrides_contain("FuzzyFlakes", "*density: 3"),
                            "FuzzyFlakes *density");
   TEST_ASSERT_TRUE_MESSAGE(overrides_contain("LMorph", "*delay: 10000"), "LMorph *delay");
+  TEST_ASSERT_TRUE_MESSAGE(overrides_contain("Loop", "*delay: 50000"), "Loop *delay");
 }
 
 void test_hexadrop_stops_do_not_leak(void) {
@@ -924,6 +927,10 @@ void test_starfish_stops_do_not_leak(void) {
 
 void test_goop_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("Goop", 0);
+}
+
+void test_loop_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Loop", 0);
 }
 
 int main(void) {
@@ -985,6 +992,7 @@ int main(void) {
   RUN_TEST(test_fireworkx_stops_do_not_leak);
   RUN_TEST(test_starfish_stops_do_not_leak);
   RUN_TEST(test_goop_stops_do_not_leak);
+  RUN_TEST(test_loop_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);

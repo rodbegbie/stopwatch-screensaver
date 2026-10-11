@@ -206,6 +206,25 @@ static void set_bit(struct XshimPixmap *pm, int x, int y, int on) {
   *byte = on ? (uint8_t)(*byte | mask) : (uint8_t)(*byte & ~mask);
 }
 
+Pixmap XCreatePixmapFromBitmapData(Display *dpy, Drawable d, char *data,
+                                   unsigned int w, unsigned int h,
+                                   unsigned long fg, unsigned long bg,
+                                   unsigned int depth) {
+  Pixmap p = XCreatePixmap(dpy, d, w, h, depth);
+  struct XshimPixmap *pm = pixmap_of(p);
+  if (!pm || !data) return p;
+  const size_t row_bytes = ((size_t)w + 7) / 8;
+  for (unsigned y = 0; y < h; y++)
+    for (unsigned x = 0; x < w; x++) {
+      const int on = ((unsigned char)data[y * row_bytes + x / 8] >> (x % 8)) & 1;
+      if (pm->depth == 1)
+        set_bit(pm, (int)x, (int)y, on);
+      else
+        pm->canvas.px[y * w + x] = (uint16_t)(on ? fg : bg);
+    }
+  return p;
+}
+
 /* Copies the part of the rectangle that lies inside both the source and the
  * destination (a pixmap, or the canvas when dst is NULL), so a huge width or
  * height costs nothing. All sums are in 64 bits. Between a colour source and a

@@ -34,6 +34,10 @@ extern const HackEntry whirlwindwarp_hack;
 extern const HackEntry flame_hack;
 extern const HackEntry maze_hack;
 XLOCKMORE_HACK(hopalong, "Hopalong");
+/* Loop asks for 100 ms between generations, which held it to 8.7 fps with a
+ * step of 3.5-7 ms; 50 ms evolves the colony about twice as fast. */
+static const char *const kLoopOverrides[] = {"*delay: 50000", NULL};
+XLOCKMORE_HACK_WITH(loop, "Loop", kLoopOverrides);
 XLOCKMORE_HACK(vines, "Vines");
 XLOCKMORE_HACK(sierpinski, "Sierpinski");
 XLOCKMORE_HACK(fadeplot, "FadePlot");
@@ -157,5 +161,6 @@ const HackEntry *const g_hacks[] = {
     &qix_hack,
     &fireworkx_hack,
     &starfish_hack,
-    &goop_hack};
+    &goop_hack,
+    &loop_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);
