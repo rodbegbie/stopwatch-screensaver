@@ -112,6 +112,7 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Moire",
                                          "Moire2",
                                          "HexTrail",
+                                         "Celtic",
 #ifdef HAVE_AFTER_DARK_TOASTERS
                                          "ad-flyingtoasters",
 #endif
@@ -472,6 +473,7 @@ static const uint64_t kBaseline[] = {
     0xcfa8f679f1a10fddull, /* Moire: taken after looking at the frames (single precision) */
     0x32f706208dc0a079ull, /* Moire2: taken after looking at the frames (bit planes) */
     0x0100bedf6ddf582cull, /* HexTrail: taken after looking at the frames (count 6, single precision) */
+    0x2dc4a0a6fa4a9997ull, /* Celtic: taken after looking at the frames (single precision) */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -1113,6 +1115,10 @@ void test_hextrail_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("HexTrail", 1);
 }
 
+void test_celtic_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Celtic", 0);
+}
+
 #ifdef HAVE_AFTER_DARK_TOASTERS
 /* The runner waits the returned delay after the push, so the hack subtracts
  * the time its own step took to keep to 30 steps a second. */
@@ -1224,6 +1230,7 @@ int main(void) {
   RUN_TEST(test_moire_stops_do_not_leak);
   RUN_TEST(test_moire2_stops_do_not_leak);
   RUN_TEST(test_hextrail_stops_do_not_leak);
+  RUN_TEST(test_celtic_stops_do_not_leak);
 #ifdef HAVE_AFTER_DARK_TOASTERS
   RUN_TEST(test_toasters_delay_is_a_thirtieth_of_a_second_less_the_step);
   RUN_TEST(test_restart_does_not_leak);
