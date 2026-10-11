@@ -1,0 +1,3 @@
+Take a look at issues 43 and 44.  Now that we have some more GL hacks ported, it's probably a good time to investigate more approaches that could improve the performance.
+
+I'm about to go to bed, so I won't be here to approve any decisions or let you flash the device for a few hours.  So try and make as much progress as you can, leaving comments on the issues, and put together a report of things you tried, what you learned, and what you want to do next.  I'll probably be back around 7am.
