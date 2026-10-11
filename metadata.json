@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4N1WBT0AJQ43EX9Z0VWEFAV",
+  "strategy": "manual-commit",
+  "branch": "feature/43-gl-speed-experiments",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "tools/tinygl_patch.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 28,
+    "cache_creation_tokens": 13029,
+    "cache_read_tokens": 5772812,
+    "output_tokens": 7117,
+    "api_call_count": 14
+  }
+}
