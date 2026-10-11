@@ -108,9 +108,12 @@ def pio(*args: str, flags: str = "") -> subprocess.CompletedProcess:
     )
 
 
-def build(name: str, flags: str, hack: str, out: Path) -> Path:
-    pinned = f'-DSTART_HACK=\\"{hack}\\" -DROTATE_SECONDS=0 {flags}'.strip()
-    result = pio(flags=pinned)
+def pinned(hack: str, flags: str) -> str:
+    return f'-DSTART_HACK=\\"{hack}\\" -DROTATE_SECONDS=0 {flags}'.strip()
+
+
+def build(name: str, flags: str, out: Path) -> Path:
+    result = pio(flags=flags)
     (out / f"build-{name}.log").write_text(result.stdout + result.stderr)
     if result.returncode != 0:
         sys.exit(f"build of {name} failed; see {out / f'build-{name}.log'}")
@@ -119,9 +122,12 @@ def build(name: str, flags: str, hack: str, out: Path) -> Path:
     return image
 
 
-def flash(image: Path, log: Path) -> None:
+def flash(image: Path, flags: str, log: Path) -> None:
+    """Upload `image` without rebuilding. `flags` must be the ones it was
+    built with: PlatformIO cleans the build directory, image and all, when
+    the flags change."""
     shutil.copyfile(image, IMAGE)
-    result = pio("-t", "nobuild", "-t", "upload")
+    result = pio("-t", "nobuild", "-t", "upload", flags=flags)
     log.write_text(result.stdout + result.stderr)
     if result.returncode != 0 or "Hash of data verified" not in result.stdout:
         sys.exit(f"flash of {image.name} did not verify; see {log}")
@@ -140,15 +146,15 @@ def main(argv: list[str]) -> int:
     import serial_capture
 
     args.out.mkdir(parents=True, exist_ok=True)
-    variants = dict(v.split("=", 1) for v in args.variants)
-    images = {
-        name: build(name, flags, args.hack, args.out)
-        for name, flags in variants.items()
+    variants = {
+        name: pinned(args.hack, flags)
+        for name, flags in (v.split("=", 1) for v in args.variants)
     }
+    images = {name: build(name, flags, args.out) for name, flags in variants.items()}
     results: dict[str, list[Capture]] = {name: [] for name in variants}
     for r in range(1, args.rounds + 1):
         for name, image in images.items():
-            flash(image, args.out / f"flash-{r}-{name}.log")
+            flash(image, variants[name], args.out / f"flash-{r}-{name}.log")
             log = args.out / f"serial-{r}-{name}.log"
             serial_capture.capture(str(log), args.seconds)
             results[name].append(parse_log(log.read_text(errors="replace"), args.hack))
