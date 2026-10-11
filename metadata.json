@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4MRZDEZ20A122F7AZWDTP45",
+  "strategy": "manual-commit",
+  "branch": "feature/port-batch-goop-loop-starfish-qix-hypnowheel-fireworkx",
+  "checkpoints_count": 6,
+  "files_touched": [
+    "firmware/patch_float_literals.py",
+    "firmware/platformio.ini",
+    "firmware/src/hacks/fireworkx_single.c",
+    "firmware/src/hacks/float_polygon.h",
+    "firmware/src/hacks/goop_direct.c",
+    "firmware/src/hacks/loop_direct.c",
+    "firmware/src/hacks/span_erase.h",
+    "firmware/test/test_float_polygon/test_float_polygon.c",
+    "firmware/test/test_hacks/test_hacks.c",
+    "firmware/test/test_span_erase/test_span_erase.c",
+    "tools/assessment_measured.md",
+    "tools/fireworkx_patch.py",
+    "tools/tests/test_fireworkx_patch.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 142,
+    "cache_creation_tokens": 123829,
+    "cache_read_tokens": 56475366,
+    "output_tokens": 88579,
+    "api_call_count": 71
+  }
+}
