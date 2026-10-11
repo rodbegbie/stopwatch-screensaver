@@ -263,7 +263,10 @@ not tied to any toaster.
     missing hack would hide a broken tool.
 - It is added to `extra_scripts` in all three envs (`stopwatch`, `native`,
   `dump`).
-- The image path is fixed: `vendor/after-dark-v2.0v-800k`.
+- The image path is `vendor/after-dark-v2.0v-800k`. The environment
+  variable `AFTER_DARK_IMAGE` overrides it (decided by Claude while planning)
+  so the absent and broken cases can be built without touching the shared,
+  symlinked `vendor/`.
 
 ### The hack
 
