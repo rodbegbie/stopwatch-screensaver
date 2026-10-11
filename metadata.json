@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4MEQYF85S6CGY6MRPCEHP7A",
+  "strategy": "manual-commit",
+  "branch": "feature/port-batch-flurry-halo-hexaddrop-stonerview-xmatrix",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "firmware/src/hacks/halo_circles.h",
+    "firmware/src/hacks/halo_direct.c",
+    "firmware/src/hacks/halo_planes.h",
+    "firmware/test/test_halo_planes/test_halo_planes.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 56,
+    "cache_creation_tokens": 50331,
+    "cache_read_tokens": 8936831,
+    "output_tokens": 36786,
+    "api_call_count": 28
+  }
+}

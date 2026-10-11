@@ -1,0 +1,21 @@
+<task-notification>
+<task-id>bq3hky0v3</task-id>
+<tool-use-id>toolu_01JBD3ZcsPQFVPtWueCYZmnN</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f04fec39-e104-4ef0-877f-22bf8e9a22c5/tasks/bq3hky0v3.output</output-file>
+<status>completed</status>
+<summary>Background command "Final full native test suite" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bq65ijtco</task-id>
+<tool-use-id>toolu_0174d9uBCQ4vBKak6MXnkaBa</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f04fec39-e104-4ef0-877f-22bf8e9a22c5/tasks/bq65ijtco.output</output-file>
+<status>completed</status>
+<summary>Monitor "Final full suite result" stream ended</summary>
+<event>test/test_xshim/test_xshim.c:2536: test_mirroring_each_glyph_column_block_through_get_and_put_image	[PASSED]
+================ 453 test cases: 453 succeeded in 00:04:52.172 ================
+[exited with code 0]</event>
+If this event is something the user would act on now, send a PushNotification. Routine or benign output doesn't need one.
+</task-notification>
