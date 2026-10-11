@@ -174,3 +174,20 @@ def test_a_program_that_fails_is_an_error(tmp_path):
     program = _script(tmp_path, "exit 3\n")
     with pytest.raises(sb.BacktestError, match="stats 7 exited 3"):
         sb.measure_host(program, 7)
+
+
+def test_only_hacks_with_a_measured_step_are_run_on_the_host():
+    asked = []
+
+    def fake(program, index):
+        asked.append(index)
+        return 1.0
+
+    got = sb.measure_registered(
+        "program",
+        ["pyro", "diskless", "pedal"],
+        {"pyro": (1.0, 2.0), "pedal": (1.0, 2.0)},
+        fake,
+    )
+    assert asked == [0, 2]
+    assert got == {"pyro": 1.0, "pedal": 1.0}

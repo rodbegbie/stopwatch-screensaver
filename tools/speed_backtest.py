@@ -262,6 +262,18 @@ uses its midpoint.
 """
 
 
+def measure_registered(program, names, measured, measure=None):
+    """Host time for each registered hack that has a device-measured step. A
+    hack without one is never run: a build without its art (the toasters)
+    lacks that index."""
+    measure = measure or measure_host
+    return {
+        name: measure(program, i)
+        for i, name in enumerate(names)
+        if name in measured
+    }
+
+
 def main(argv: list[str], root: Path | None = None) -> int:
     root = root or Path(__file__).resolve().parent.parent
     parser = argparse.ArgumentParser(description=__doc__)
@@ -281,7 +293,7 @@ def main(argv: list[str], root: Path | None = None) -> int:
             )
         names = registry_names(Path(args.registry).read_text())
         measured = probe_hacks.parse_measured(Path(args.measured).read_text())
-        host = {name: measure_host(program, i) for i, name in enumerate(names)}
+        host = measure_registered(program, names, measured)
         failed_path = Path(args.failed_ports)
         shelved = (
             list(score_hacks.read_failed_ports(failed_path.read_text()))

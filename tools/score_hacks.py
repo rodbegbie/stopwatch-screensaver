@@ -53,6 +53,7 @@ PROBED_EFFORTS = {"S"}
 EFFORT_ORDER = {"S": 0, "M": 1, "L": 2, "XL": 3}
 REGISTRY_ARRAY = re.compile(r"\bg_hacks\s*\[\s*\]\s*=\s*\{(.*?)\}\s*;", re.DOTALL)
 REGISTRY_ENTRY = re.compile(r"&(\w+)_hack\b")
+OWN_HACKS = frozenset({"ad_flyingtoasters"})
 PORTED = "\u2705"
 FAILED = "\u274c"
 
@@ -377,7 +378,7 @@ def run(args: argparse.Namespace, vendor: Path, root: Path) -> int:
     if not registry.exists():
         raise ScoreError(f"registry not found: {registry} (see --registry)")
     known = {r["name"] for r in rows}
-    ported = registered_hacks(registry.read_text()) & known
+    ported = registered_hacks(registry.read_text()) - OWN_HACKS
     failed_path = Path(args.failed_ports)
     failed = read_failed_ports(failed_path.read_text()) if failed_path.exists() else {}
     check_ports(ported, failed, known)

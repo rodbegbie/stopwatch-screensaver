@@ -6,7 +6,8 @@
 
 Strips sector tags from the image, reads the Flying Toasters module's resource
 fork through machfs, decodes its PICT sprites and writes them as a C header.
-It never imports machfs at module level, so the tools tests run without it.
+It never imports machfs at module level, so the tools tests run without it. machfs (the HFS reader uv fetches) is
+MIT-licensed: https://github.com/elliotnunn/machfs.
 
     uv run tools/after_dark_sprites.py IMAGE -o HEADER
 """
