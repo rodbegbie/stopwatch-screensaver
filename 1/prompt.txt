@@ -1,0 +1,13 @@
+<task-notification>
+<task-id>b7gc1x27j</task-id>
+<tool-use-id>toolu_017AFdrVwPDMiEoCBLuWtzdx</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f04fec39-e104-4ef0-877f-22bf8e9a22c5/tasks/b7gc1x27j.output</output-file>
+<status>completed</status>
+<summary>Monitor "Full suite result" stream ended</summary>
+<event>================ 514 test cases: 514 succeeded in 00:04:47.290 ================</event>
+If this event is something the user would act on now, send a PushNotification. Routine or benign output doesn't need one.
+</task-notification>
+
+---
+
+/address-findings
