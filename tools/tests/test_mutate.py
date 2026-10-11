@@ -50,6 +50,26 @@ def test_a_test_that_crashes_counts_as_caught_and_a_compiler_error_does_not(proj
     assert [s for _, s, _ in results] == ["CAUGHT", "BUILD ERROR"]
 
 
+@pytest.mark.parametrize(
+    "lines",
+    [
+        ["src/thing.c:3:10: fatal error: nothing.h: No such file or directory"],
+        ["*** [.pio/build/native/test/thing.o] Error 1"],
+        ["Building stage has failed, see errors above."],
+    ],
+)
+def test_each_way_pio_reports_a_failed_build_is_a_build_error(project, lines):
+    prints = "".join(f"    print({line!r})\n" for line in lines)
+    (project / "check.py").write_text(
+        "import sys\nns = {}\nexec(open('thing.py').read(), ns)\n"
+        "if ns['VALUE'] == 2:\n"
+        + prints
+        + "    print('test_thing [FAILED]')\n    sys.exit(1)\n"
+    )
+    ((_, status, _),) = run(project, [("VALUE = 1", "VALUE = 2")])
+    assert status == "BUILD ERROR"
+
+
 def test_each_mutation_starts_from_the_original_and_the_file_is_restored(project):
     results = run(project, [("VALUE = 1", "VALUE = 2"), ("NOTE = 'x'", "NOTE = 'y'")])
     assert [s for _, s, _ in results] == ["CAUGHT", "SURVIVED"]

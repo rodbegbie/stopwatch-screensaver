@@ -21,11 +21,15 @@ real newlines inside the quotes.
 
 import argparse
 import os
+import re
 import shlex
 import subprocess
 import sys
 from pathlib import Path
 
+BUILD_FAILURE = re.compile(
+    r"\berror:|Building stage has failed|^\*\*\* \[.*\] Error \d+"
+)
 FAILURE_MARKERS = (
     "[FAILED]",
     "Sanitizer",
@@ -63,7 +67,7 @@ def run_mutations(
             ]
             if r.returncode == 0:
                 results.append((old, "SURVIVED", ""))
-            elif any(": error:" in l for l in out.splitlines()):
+            elif any(BUILD_FAILURE.search(l) for l in out.splitlines()):
                 results.append((old, "BUILD ERROR", ""))
             elif failures:
                 results.append((old, "CAUGHT", failures[0].strip()[-100:]))
