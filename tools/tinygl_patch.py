@@ -592,6 +592,38 @@ REPLACEMENTS: tuple[Replace, ...] = (
         "void glopEnableDisable(GLParam* p) {\n\tGLContext* c = gl_get_context();\n"
         "\tGL_SHADE_FLUSH();\n",
     ),
+    # Additive blending (issue #73): a blend that only adds the colours (each
+    # factor ONE or one TinyGL treats as ONE, with GL_FUNC_ADD) takes a
+    # saturating add on the byte-swapped RGB565 pixel. TinyGL's own path
+    # decoded the swapped pixel as unswapped and ran three switches a pixel.
+    Replace(
+        "include/zbuffer.h",
+        "#define TGL_BLEND_VARS GLuint zbblendeq = zb->blendeq; GLuint sfactor = zb->sfactor; "
+        "GLuint dfactor = zb->dfactor;",
+        "static inline PIXEL glshim_add565(PIXEL dst, PIXEL src) {\n"
+        "\tGLuint a = TGL_SWAP16(dst), b = TGL_SWAP16(src);\n"
+        "\tGLuint r = (a & 0xF800) + (b & 0xF800), g = (a & 0x07E0) + (b & 0x07E0), "
+        "bl = (a & 0x001F) + (b & 0x001F);\n"
+        "\tif (r > 0xF800) r = 0xF800;\n\tif (g > 0x07E0) g = 0x07E0;\n"
+        "\tif (bl > 0x001F) bl = 0x001F;\n"
+        "\treturn (PIXEL)TGL_SWAP16(r | g | bl);\n}\n"
+        "#define TGL_BLEND_ADDS(sf, df, eq) ((sf) != GL_ONE_MINUS_SRC_COLOR && (sf) != GL_ZERO && "
+        "(df) != GL_ONE_MINUS_DST_COLOR && (df) != GL_ZERO && (eq) != GL_FUNC_SUBTRACT && "
+        "(eq) != GL_FUNC_REVERSE_SUBTRACT)\n"
+        "#define TGL_BLEND_VARS GLuint zbblendeq = zb->blendeq; GLuint sfactor = zb->sfactor; "
+        "GLuint dfactor = zb->dfactor; GLint tgl_adds = TGL_BLEND_ADDS(sfactor, dfactor, zbblendeq);",
+    ),
+    Replace(
+        "include/zbuffer.h",
+        "#define TGL_BLEND_FUNC(source, dest){\t",
+        "#define TGL_BLEND_FUNC(source, dest){ if (tgl_adds) { (dest) = glshim_add565((dest), (source)); } else\t",
+    ),
+    Replace(
+        "include/zbuffer.h",
+        "#define TGL_BLEND_FUNC_RGB(rr, gg, bb, dest){\t",
+        "#define TGL_BLEND_FUNC_RGB(rr, gg, bb, dest){ if (tgl_adds) { (dest) = glshim_add565((dest), "
+        "RGB_TO_PIXEL((rr), (gg), (bb))); } else\t",
+    ),
 )
 
 # Anchors that earlier patches wrote (the dirty-rectangle hooks and the

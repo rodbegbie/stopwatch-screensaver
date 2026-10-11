@@ -286,3 +286,11 @@ def test_lazy_lighting_defers_the_eye_normal_but_keeps_the_original(patched):
     assert "#ifdef GL_LAZY_SHADE\n\t\tv->normal.X = c->current_normal.X;" in vertex
     assert tp.NORMAL_TRANSFORM in vertex
     assert "gl_eye_normal(v, &n);\n\tgl_shade_vertex(v);" in patched["src/light.c"]
+
+
+def test_additive_blending_saturates_each_channel(patched):
+    zbuffer = patched["include/zbuffer.h"]
+    assert "static inline PIXEL glshim_add565(PIXEL dst, PIXEL src)" in zbuffer
+    assert "GLint tgl_adds = TGL_BLEND_ADDS(sfactor, dfactor, zbblendeq);" in zbuffer
+    assert "if (tgl_adds) { (dest) = glshim_add565((dest), (source)); } else" in zbuffer
+    assert "if (tgl_adds) { (dest) = glshim_add565((dest), RGB_TO_PIXEL(" in zbuffer

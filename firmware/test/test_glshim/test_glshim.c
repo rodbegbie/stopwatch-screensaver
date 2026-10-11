@@ -854,6 +854,64 @@ void test_blending_set_up_in_the_other_order_is_opaque_too(void) {
   TEST_ASSERT_EQUAL_HEX16(rgb565(0, 255, 0), centre_pixel());
 }
 
+/* Additive blending (GL_ONE, GL_ONE; and GL_SRC_ALPHA, GL_ONE, since TinyGL
+ * has no alpha) adds each channel of the canvas's byte-swapped RGB565 and
+ * saturates it on its own (issue #73). TinyGL's own blend decoded the swapped
+ * pixel as unswapped, which was right only for black and white. */
+static uint16_t unswap(uint16_t v) { return (uint16_t)((v << 8) | (v >> 8)); }
+
+static uint16_t saturating_sum(uint16_t a, uint16_t b) {
+  const unsigned x = unswap(a), y = unswap(b);
+  unsigned r = (x >> 11) + (y >> 11), g = ((x >> 5) & 63) + ((y >> 5) & 63),
+           bl = (x & 31) + (y & 31);
+  if (r > 31) r = 31;
+  if (g > 63) g = 63;
+  if (bl > 31) bl = 31;
+  return unswap((uint16_t)((r << 11) | (g << 5) | bl));
+}
+
+static uint16_t alone(float r, float g, float b, int flat) {
+  open_line_scene(0);
+  glShadeModel(flat ? GL_FLAT : GL_SMOOTH);
+  fill_everything_with(r, g, b, 0);
+  return centre_pixel();
+}
+
+static uint16_t added(float r1, float g1, float b1, float r2, float g2, float b2,
+                      GLenum sfactor, int flat) {
+  open_line_scene(0);
+  glShadeModel(flat ? GL_FLAT : GL_SMOOTH);
+  fill_everything_with(r1, g1, b1, 0);
+  glEnable(GL_BLEND);
+  glBlendFunc(sfactor, GL_ONE);
+  fill_everything_with(r2, g2, b2, 0);
+  return centre_pixel();
+}
+
+void test_additive_blend_adds_each_channel(void) {
+  for (int flat = 0; flat < 2; flat++) {
+    const uint16_t red = alone(0.25f, 0, 0, flat), blue = alone(0, 0, 0.25f, flat);
+    TEST_ASSERT_EQUAL_HEX16(saturating_sum(red, blue),
+                            added(0.25f, 0, 0, 0, 0, 0.25f, GL_ONE, flat));
+  }
+}
+
+void test_additive_blend_saturates_each_channel_on_its_own(void) {
+  for (int flat = 0; flat < 2; flat++) {
+    const uint16_t a = alone(0.8f, 0.15f, 0, flat);
+    const uint16_t sum = added(0.8f, 0.15f, 0, 0.8f, 0.15f, 0, GL_ONE, flat);
+    TEST_ASSERT_EQUAL_HEX16(saturating_sum(a, a), sum);
+    TEST_ASSERT_EQUAL_UINT(31, unswap(sum) >> 11);                         /* red saturates */
+    TEST_ASSERT_EQUAL_UINT(2 * ((unswap(a) >> 5) & 63), (unswap(sum) >> 5) & 63); /* green does not */
+  }
+}
+
+void test_source_alpha_with_one_adds_too(void) {
+  const uint16_t red = alone(0.25f, 0, 0, 0), green = alone(0, 0.25f, 0, 0);
+  TEST_ASSERT_EQUAL_HEX16(saturating_sum(red, green),
+                          added(0.25f, 0, 0, 0, 0.25f, 0, GL_SRC_ALPHA, 0));
+}
+
 /* Polygon offset. A second fill at exactly the same depth wins a tie, since
  * TinyGL's test is >=. With the offset enabled it is pushed back and loses. */
 static uint16_t second_fill_behind_the_first(int enable, float factor, float units,
@@ -1119,6 +1177,9 @@ int main(void) {
   RUN_TEST(test_line_width_changes_neither_a_smooth_nor_a_plain_line);
   RUN_TEST(test_smoothing_can_be_switched_off_again);
   RUN_TEST(test_a_fill_blended_with_source_alpha_is_opaque);
+  RUN_TEST(test_additive_blend_adds_each_channel);
+  RUN_TEST(test_additive_blend_saturates_each_channel_on_its_own);
+  RUN_TEST(test_source_alpha_with_one_adds_too);
   RUN_TEST(test_blending_set_up_in_the_other_order_is_opaque_too);
   RUN_TEST(test_a_coplanar_fill_wins_the_depth_tie_without_an_offset);
   RUN_TEST(test_a_positive_offset_pushes_a_fill_back_behind_its_twin);
