@@ -422,7 +422,7 @@ static void present() {
 #ifdef TE_DIAG
   uint32_t pushT0 = (uint32_t)esp_timer_get_time();
 #endif
-  int pushedRows = push_present(&canvas, pushRows, &pushSink);
+  int pushedRows = push_present(&canvas, pushRows, &pushSink, false);
   rowsPushed += pushedRows;
 #ifdef TE_DIAG
   if (pushedRows > 300 && pushCount < kPushLog) {

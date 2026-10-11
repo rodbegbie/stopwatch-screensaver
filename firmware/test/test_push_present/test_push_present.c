@@ -45,7 +45,7 @@ static void on_all(void *ctx) {
 }
 static const PushSink sink = {NULL, on_begin, on_row, on_all, on_end};
 
-static int present(void) { return push_present(&cv, rows, &sink); }
+static int present(void) { return push_present(&cv, rows, &sink, false); }
 static bool shadow_matches_canvas(void) {
   return memcmp(shadow, cv.px, (size_t)W * H * sizeof(uint16_t)) == 0;
 }
