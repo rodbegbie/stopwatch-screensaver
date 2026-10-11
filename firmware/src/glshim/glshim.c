@@ -306,6 +306,30 @@ int glIsEnabled(GLint cap) {
 
 void glLineWidth(GLfloat width) { (void)width; }
 
+void glOrtho(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top,
+             GLdouble znear, GLdouble zfar) {
+  const float w = (float)right - (float)left;
+  const float h = (float)top - (float)bottom;
+  const float d = (float)zfar - (float)znear;
+  const GLfloat m[16] = {2.0f / w,
+                         0,
+                         0,
+                         0,
+                         0,
+                         2.0f / h,
+                         0,
+                         0,
+                         0,
+                         0,
+                         -2.0f / d,
+                         0,
+                         -((float)right + (float)left) / w,
+                         -((float)top + (float)bottom) / h,
+                         -((float)zfar + (float)znear) / d,
+                         1.0f};
+  glMultMatrixf(m);
+}
+
 void gluPerspective(GLdouble fovy, GLdouble aspect, GLdouble znear,
                     GLdouble zfar) {
   const float top = (float)znear * tanf((float)fovy * 3.14159265f / 360.0f);

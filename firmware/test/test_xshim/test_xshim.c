@@ -594,6 +594,15 @@ void test_a_gc_remembers_its_function_but_draws_copy(void) {
   XFreeGC(dpy, ored);
 }
 
+void test_the_arrow_and_page_keysyms_have_x_values(void) {
+  TEST_ASSERT_EQUAL_HEX(0xFF51, XK_Left);
+  TEST_ASSERT_EQUAL_HEX(0xFF52, XK_Up);
+  TEST_ASSERT_EQUAL_HEX(0xFF53, XK_Right);
+  TEST_ASSERT_EQUAL_HEX(0xFF54, XK_Down);
+  TEST_ASSERT_EQUAL_HEX(0xFF55, XK_Prior);
+  TEST_ASSERT_EQUAL_HEX(0xFF56, XK_Next);
+}
+
 void test_visual_depth_is_sixteen(void) {
   TEST_ASSERT_EQUAL_INT(16, visual_depth(NULL, NULL));
 }
@@ -3067,6 +3076,7 @@ int main(void) {
   RUN_TEST(test_make_color_ramp_takes_the_short_way_backwards_too);
   RUN_TEST(test_make_color_ramp_blends_saturation_and_value_too);
   RUN_TEST(test_a_gc_remembers_its_function_but_draws_copy);
+  RUN_TEST(test_the_arrow_and_page_keysyms_have_x_values);
   RUN_TEST(test_visual_depth_is_sixteen);
   RUN_TEST(test_xshm_image_is_a_16_bit_image_put_where_asked);
   RUN_TEST(test_xshm_image_taller_than_the_window_edge_is_clipped);

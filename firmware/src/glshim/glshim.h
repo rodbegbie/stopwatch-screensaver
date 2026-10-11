@@ -76,6 +76,10 @@ int glIsEnabled(GLint cap);
  * is the width a hack asks for on a canvas under 640 pixels. Accepted and
  * ignored. */
 void glLineWidth(GLfloat width);
+/* TinyGL has this commented out of its header. Multiplies the current matrix
+ * by the usual orthographic projection. */
+void glOrtho(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top,
+             GLdouble znear, GLdouble zfar);
 
 /* TinyGL defines these but its header does not declare them. */
 void glVertex3f(GLfloat x, GLfloat y, GLfloat z);

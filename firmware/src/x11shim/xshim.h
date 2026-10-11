@@ -108,6 +108,14 @@ typedef struct {
 } XSegment;
 
 typedef unsigned long KeySym;
+/* The values X uses. No key event ever arrives, so a hack only compares
+ * against them. */
+#define XK_Left 0xFF51
+#define XK_Up 0xFF52
+#define XK_Right 0xFF53
+#define XK_Down 0xFF54
+#define XK_Prior 0xFF55
+#define XK_Next 0xFF56
 
 /* The device has no keyboard: nothing makes one, and XLookupString finds no
  * characters in it. The type exists so a hack's key handler compiles. */
