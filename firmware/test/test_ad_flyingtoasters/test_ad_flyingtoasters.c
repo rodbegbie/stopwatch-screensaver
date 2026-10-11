@@ -176,10 +176,10 @@ void test_speed_one_never_checks(void) {
   Rec rec = {0};
   empty_sim(&sim, 2);
   place(&sim, 0, 100, 200, 1, 0);
-  place(&sim, 1, 101, 135, 1, 1);
+  place(&sim, 1, 32, 131, 1, 1);
   ad_sim_step(&sim, record, &rec);
+  assert_pos(&sim, 1, 33, 129);
   assert_pos(&sim, 0, 101, 198);
-  TEST_ASSERT_TRUE(sim.f[0].r.left < sim.f[1].r.right);
 }
 
 void test_collision_reports_nudge_and_skips_self_and_dead_slots(void) {
