@@ -562,8 +562,88 @@ void test_random_primitive_calls_mark_every_pixel_they_change(void) {
   }
 }
 
+void test_no_disc_means_whole_rows(void) {
+  int x0, x1;
+  for (int y = 0; y < c.h; y++) {
+    TEST_ASSERT_TRUE(canvas_visible_span(&c, y, &x0, &x1));
+    TEST_ASSERT_EQUAL_INT(0, x0);
+    TEST_ASSERT_EQUAL_INT(c.w - 1, x1);
+  }
+}
+
+static Canvas disc_canvas(int w, int h) {
+  Canvas d;
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&d, w, h, malloc));
+  TEST_ASSERT_EQUAL_INT(0, canvas_set_disc(&d, malloc));
+  return d;
+}
+
+void test_disc_rows_are_symmetric_and_widest_in_the_middle(void) {
+  Canvas d = disc_canvas(466, 466);
+  int a0, a1, b0, b1;
+  for (int y = 0; y < 233; y++) {
+    TEST_ASSERT_TRUE(canvas_visible_span(&d, y, &a0, &a1));
+    TEST_ASSERT_TRUE(canvas_visible_span(&d, 465 - y, &b0, &b1));
+    TEST_ASSERT_EQUAL_INT(a0, b0);
+    TEST_ASSERT_EQUAL_INT(a1, b1);
+    TEST_ASSERT_EQUAL_INT(465, a0 + a1);
+  }
+  for (int y = 232; y <= 233; y++) {
+    TEST_ASSERT_TRUE(canvas_visible_span(&d, y, &a0, &a1));
+    TEST_ASSERT_EQUAL_INT(0, a0);
+    TEST_ASSERT_EQUAL_INT(465, a1);
+  }
+  TEST_ASSERT_TRUE(canvas_visible_span(&d, 0, &a0, &a1));
+  TEST_ASSERT_TRUE(a1 - a0 + 1 < 100);
+  canvas_free(&d);
+}
+
+/* Nearest point of pixel (x, y)'s square to the centre, against the radius. */
+static bool touches_circle(int x, int y, int w, int h) {
+  const double cx = w / 2.0, cy = h / 2.0, r = (w < h ? w : h) / 2.0;
+  const double nx = cx < x ? x : (cx > x + 1 ? x + 1 : cx);
+  const double ny = cy < y ? y : (cy > y + 1 ? y + 1 : cy);
+  return (nx - cx) * (nx - cx) + (ny - cy) * (ny - cy) < r * r;
+}
+
+static void assert_disc_matches_circle(int w, int h) {
+  Canvas d = disc_canvas(w, h);
+  for (int y = 0; y < h; y++) {
+    int x0 = 0, x1 = -1;
+    const bool any = canvas_visible_span(&d, y, &x0, &x1);
+    for (int x = 0; x < w; x++) {
+      const bool in = any && x >= x0 && x <= x1;
+      if (in != touches_circle(x, y, w, h)) {
+        char msg[64];
+        snprintf(msg, sizeof msg, "%dx%d at (%d, %d)", w, h, x, y);
+        TEST_FAIL_MESSAGE(msg);
+      }
+    }
+  }
+  canvas_free(&d);
+}
+
+void test_disc_includes_every_pixel_touching_the_circle(void) {
+  assert_disc_matches_circle(466, 466);
+  assert_disc_matches_circle(17, 17);
+  assert_disc_matches_circle(20, 12);
+}
+
+void test_disc_follows_a_small_canvas(void) {
+  Canvas d = disc_canvas(16, 16);
+  int x0, x1;
+  TEST_ASSERT_TRUE(canvas_visible_span(&d, 0, &x0, &x1));
+  TEST_ASSERT_TRUE(x0 > 0);
+  TEST_ASSERT_EQUAL_INT(15, x0 + x1);
+  canvas_free(&d);
+}
+
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_no_disc_means_whole_rows);
+  RUN_TEST(test_disc_rows_are_symmetric_and_widest_in_the_middle);
+  RUN_TEST(test_disc_includes_every_pixel_touching_the_circle);
+  RUN_TEST(test_disc_follows_a_small_canvas);
   RUN_TEST(test_polygon_fill_matches_the_reference_on_random_polygons);
   RUN_TEST(test_polygon_keeps_every_crossing_when_a_scanline_has_over_64);
   RUN_TEST(test_rgb565_white_black_red);
