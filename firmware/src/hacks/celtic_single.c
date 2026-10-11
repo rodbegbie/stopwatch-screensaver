@@ -22,6 +22,13 @@
 #undef XSCREENSAVER_MODULE
 #define XSCREENSAVER_MODULE(CLASS, PREFIX)
 
+/* Upstream advances each spline by 0.0001 a tick; tools/celtic_patch.py
+ * multiplies that by this. A pattern then takes 100 / CELTIC_STEP_SCALE draw
+ * calls, and a call costs about that many times fewer evaluations. */
+#ifndef CELTIC_STEP_SCALE
+#define CELTIC_STEP_SCALE 4
+#endif
+
 #include "celtic_floatlit.c"
 
 /* celtic_init callocs the colour table and celtic_free never frees it. */

@@ -78,6 +78,27 @@ MARGIN_REPLACEMENTS = [
 ]
 
 
+# Every animation tick advances each spline's parameter t by `step`, 100 ticks
+# a draw call, and the shadow look-ahead walks t by `step` until the point is a
+# shadow's width away. At 0.0001 a pattern takes 100 draw calls and a draw call
+# is 25,000 to 58,000 Bezier evaluations. A larger step cuts the evaluations in
+# a draw call by the same factor and finishes the pattern in that many times
+# fewer calls, with each line segment that much longer (about a pixel). The
+# wrapper defines CELTIC_STEP_SCALE, and -DCELTIC_STEP_SCALE=<n> overrides it.
+STEP_OLD = "  double step=0.0001;"
+STEP_NEW = "  double step=0.0001*CELTIC_STEP_SCALE;"
+
+
+def scale_the_animation_step(source: str) -> str:
+    found = source.count(STEP_OLD)
+    if found != 1:
+        raise ValueError(
+            f"expected 1 `{STEP_OLD.strip()}` in celtic.c, found {found}; "
+            "has upstream changed?"
+        )
+    return source.replace(STEP_OLD, STEP_NEW)
+
+
 def fit_the_graph_to_the_screen(source: str) -> str:
     for old, new in MARGIN_REPLACEMENTS:
         found = source.count(old)

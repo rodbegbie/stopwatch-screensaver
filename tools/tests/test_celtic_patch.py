@@ -134,3 +134,43 @@ def test_the_copied_celtic_source_fits_the_screen_cleanly():
     out = cp.fit_the_graph_to_the_screen(CELTIC.read_text())
     assert out.count(MARGIN) == 2
     assert "(random()%10)*100-900" not in out
+
+
+ANIMATE = """\
+static void pattern_animate(struct state *st)
+{
+  int ticks;
+  double step=0.0001; /* TODO: set the step (or the delay) as a
+                        * function of the spline length, so that
+                        * drawing speed is constant
+                        */
+  Spline s;
+}
+"""
+
+
+def test_the_animation_step_is_scaled_by_a_macro_the_build_can_set():
+    out = cp.scale_the_animation_step(ANIMATE)
+    assert "double step=0.0001*CELTIC_STEP_SCALE;" in out
+    assert "double step=0.0001;" not in out
+
+
+def test_the_rest_of_the_animation_function_is_untouched():
+    out = cp.scale_the_animation_step(ANIMATE)
+    assert out.startswith(
+        "static void pattern_animate(struct state *st)\n{\n  int ticks;"
+    )
+    assert "  Spline s;\n}" in out
+    assert "drawing speed is constant" in out
+
+
+def test_a_changed_step_fails_loudly():
+    with pytest.raises(ValueError, match="has upstream changed"):
+        cp.scale_the_animation_step(ANIMATE.replace("0.0001", "0.0002"))
+    with pytest.raises(ValueError, match="has upstream changed"):
+        cp.scale_the_animation_step(ANIMATE + ANIMATE)
+
+
+def test_the_copied_celtic_source_scales_its_step_cleanly():
+    out = cp.scale_the_animation_step(CELTIC.read_text())
+    assert out.count("double step=0.0001*CELTIC_STEP_SCALE;") == 1

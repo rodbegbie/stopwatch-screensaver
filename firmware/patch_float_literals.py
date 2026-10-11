@@ -23,6 +23,7 @@ for name in ("braid",) + ('euler2d', 'compass', 'fuzzyflakes', 'halftone', 'inte
     if name == "celtic":
         source = celtic_patch.compute_spline_position_once(source)
         source = celtic_patch.fit_the_graph_to_the_screen(source)
+        source = celtic_patch.scale_the_animation_step(source)
     patched = float_literals.float_literals(source)
     target = generated / f"{name}_floatlit.c"
     if not target.exists() or target.read_text() != patched:
