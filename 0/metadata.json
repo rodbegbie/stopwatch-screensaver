@@ -3,7 +3,7 @@
   "checkpoint_id": "01M4MGSJ1R5PDQ328F3G1S4TK2",
   "session_id": "f04fec39-e104-4ef0-877f-22bf8e9a22c5",
   "strategy": "manual-commit",
-  "created_at": "2026-10-11T03:41:08.358068Z",
+  "created_at": "2026-10-11T03:41:22.27274Z",
   "branch": "feature/port-batch-flurry-halo-hexaddrop-stonerview-xmatrix",
   "checkpoints_count": 1,
   "files_touched": [
@@ -13,15 +13,15 @@
   "agent": "Claude Code",
   "model": "claude-sonnet-5-5",
   "turn_id": "fd5821d5ddb6",
-  "checkpoint_transcript_start": 2743,
-  "transcript_lines_at_start": 2743,
-  "compact_transcript_start": 285,
+  "checkpoint_transcript_start": 2776,
+  "transcript_lines_at_start": 2776,
+  "compact_transcript_start": 289,
   "token_usage": {
-    "input_tokens": 6,
-    "cache_creation_tokens": 2265,
-    "cache_read_tokens": 1195582,
-    "output_tokens": 1077,
-    "api_call_count": 3
+    "input_tokens": 2,
+    "cache_creation_tokens": 2628,
+    "cache_read_tokens": 400383,
+    "output_tokens": 667,
+    "api_call_count": 1
   },
   "skill_events_version": 1,
   "skill_events": [
@@ -123,44 +123,15 @@
     "turn_count": 19
   },
   "initial_attribution": {
-    "calculated_at": "2026-10-11T03:41:08.283463Z",
-    "agent_lines": 4,
+    "calculated_at": "2026-10-11T03:41:22.200871Z",
+    "agent_lines": 2,
     "agent_removed": 2,
     "human_added": 0,
     "human_modified": 0,
     "human_removed": 0,
-    "total_committed": 4,
-    "total_lines_changed": 6,
+    "total_committed": 2,
+    "total_lines_changed": 4,
     "agent_percentage": 100,
     "metric_version": 2
-  },
-  "prompt_attributions": [
-    {
-      "checkpoint_number": 1,
-      "user_lines_added": 171,
-      "user_lines_removed": 0,
-      "agent_lines_added": 0,
-      "agent_lines_removed": 0,
-      "user_added_per_file": {
-        ".private-journal/2026-10-07/19-59-30-000000-79f41e20.md": 8,
-        ".private-journal/2026-10-07/22-51-53-000000-2f0b9ece.md": 8,
-        ".private-journal/2026-10-08/07-50-07-000000-0110d472.md": 8,
-        ".private-journal/2026-10-08/15-15-15-000000-4004028d.md": 19,
-        ".private-journal/2026-10-08/15-45-25-000000-61b97d2d.md": 8,
-        ".private-journal/2026-10-08/17-26-54-000000-98ba9899.md": 12,
-        ".private-journal/2026-10-09/00-21-50-000000-1de20801.md": 8,
-        ".private-journal/2026-10-09/12-29-59-000000-8e4c6857.md": 16,
-        ".private-journal/2026-10-09/15-14-18-000000-357340fa.md": 8,
-        ".private-journal/2026-10-09/20-40-34-000000-16250e9e.md": 8,
-        ".private-journal/2026-10-09/23-14-53-000000-38a6b176.md": 8,
-        ".private-journal/2026-10-10/00-39-42-000000-64095098.md": 8,
-        ".private-journal/2026-10-10/06-35-48-000000-d0ecd666.md": 8,
-        ".private-journal/2026-10-10/08-14-59-000000-d35e8085.md": 8,
-        ".private-journal/2026-10-10/13-26-22-000000-2fbe913b.md": 8,
-        ".private-journal/2026-10-10/14-12-27-000000-d7ee8c7f.md": 8,
-        ".private-journal/2026-10-10/16-50-32-000000-e5b073a3.md": 12,
-        ".private-journal/2026-10-10/18-22-56-000000-72f01b1c.md": 8
-      }
-    }
-  ]
+  }
 }
