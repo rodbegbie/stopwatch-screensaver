@@ -3,8 +3,21 @@
   "checkpoint_id": "01M4MYVS5GR490GHZZMJQK0E78",
   "strategy": "manual-commit",
   "branch": "feature/port-batch-vermiculate-moire-boing-cwaves-cynosure-hextrail",
-  "checkpoints_count": 1,
-  "files_touched": null,
+  "checkpoints_count": 2,
+  "files_touched": [
+    "THIRD_PARTY_NOTICES.md",
+    "firmware/platformio.ini",
+    "firmware/src/hacks/moire/moire.c",
+    "firmware/src/hacks/moire_single.c",
+    "firmware/src/hacks/registry.c",
+    "firmware/src/x11shim/helpers.c",
+    "firmware/src/x11shim/include/colors.h",
+    "firmware/src/x11shim/include/visual.h",
+    "firmware/src/x11shim/include/xshm.h",
+    "firmware/src/x11shim/xshm.c",
+    "firmware/test/test_hacks/test_hacks.c",
+    "firmware/test/test_xshim/test_xshim.c"
+  ],
   "sessions": [
     {
       "metadata": "/0/metadata.json",
@@ -12,13 +25,20 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 70,
-    "cache_creation_tokens": 60138,
-    "cache_read_tokens": 6909603,
-    "output_tokens": 32936,
-    "api_call_count": 35
+    "input_tokens": 126,
+    "cache_creation_tokens": 107851,
+    "cache_read_tokens": 12251038,
+    "output_tokens": 61783,
+    "api_call_count": 63
   }
 }
