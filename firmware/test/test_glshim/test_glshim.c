@@ -9,6 +9,7 @@
 #include "core/canvas.h"
 #include "fps.h"
 #include "glshim/glshim.h"
+#include "tinygl/src/zgl.h"
 #include "x11shim/xshim.h"
 #include "zbuffer.h"
 
@@ -872,8 +873,35 @@ void test_the_device_is_never_turned(void) {
   TEST_ASSERT_TRUE(current_device_rotation() == 0.0);
 }
 
+/* TinyGL is built without GL_POLYGON, which also drops GL_LINE_LOOP, and an
+ * unhandled primitive kept counting vertices: the fifth was written past
+ * c->vertex, over the matrices and colours that follow it (Pipes' buildlwo.c
+ * draws polygons; the context's light list was overwritten). Such a primitive
+ * still draws nothing, but must leave the rest of the context alone. */
+void test_an_unhandled_primitive_never_writes_past_the_vertex_buffer(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glEnable(GL_LIGHTING);
+  glEnable(GL_LIGHT0);
+  glBegin(GL_TRIANGLES); /* brings the derived matrices up to date */
+  glEnd();
+  GLContext *c = gl_get_context();
+  const char *from = (const char *)&c->matrix_model_view_inv;
+  const size_t n = (const char *)(&c->first_light + 1) - from;
+  char before[1024];
+  TEST_ASSERT_TRUE(n <= sizeof before);
+  memcpy(before, from, n);
+  const GLenum kinds[2] = {GL_POLYGON, GL_LINE_LOOP};
+  for (int k = 0; k < 2; k++) {
+    glBegin(kinds[k]);
+    for (int i = 0; i < 12; i++) glVertex3f(cosf(i * 0.5f), sinf(i * 0.5f), 0);
+    glEnd();
+  }
+  TEST_ASSERT_EQUAL_MEMORY(before, from, n);
+}
+
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_an_unhandled_primitive_never_writes_past_the_vertex_buffer);
   RUN_TEST(test_the_device_is_never_turned);
   RUN_TEST(test_a_smooth_horizontal_line_moves_a_quarter_pixel_at_a_time);
   RUN_TEST(test_a_smooth_vertical_line_moves_a_quarter_pixel_at_a_time);

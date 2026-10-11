@@ -423,6 +423,15 @@ REPLACEMENTS: tuple[Replace, ...] = (
         "#include <math.h>\n#include <stdlib.h>",
         '#include <math.h>\n#include "tinygl_single.h"\n#include <stdlib.h>',
     ),
+    # Built without GL_POLYGON (which also drops GL_LINE_LOOP), an unhandled
+    # primitive draws nothing but kept counting vertices, and the fifth was
+    # written past c->vertex over the matrices and colours after it.
+    Replace(
+        "src/vertex.c",
+        "#else\n\tdefault:\n\t\tbreak;\n#endif\n\t}\n\n\tc->vertex_n = n;",
+        "#else\n\tdefault:\n\t\tn = 0; /* draws nothing; must not run past c->vertex */\n"
+        "\t\tbreak;\n#endif\n\t}\n\n\tc->vertex_n = n;",
+    ),
 )
 
 # Files with unsuffixed decimal literals, which are `double` in C.
