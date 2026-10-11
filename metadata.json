@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4P49MNY7RN0RNWSEJ43D23E",
+  "strategy": "manual-commit",
+  "branch": "feature/flying-toasters-design",
+  "checkpoints_count": 2,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 26,
+    "cache_creation_tokens": 15869,
+    "cache_read_tokens": 4639446,
+    "output_tokens": 6914,
+    "api_call_count": 13,
+    "subagent_tokens": {
+      "input_tokens": 28,
+      "cache_creation_tokens": 121772,
+      "cache_read_tokens": 1354672,
+      "output_tokens": 4193,
+      "api_call_count": 14
+    }
+  }
+}
