@@ -1,6 +1,6 @@
 ## Measured on the device
 
-Sixty-three hacks have been run so far (default settings, 466×466 canvas
+Seventy hacks have been run so far (default settings, 466×466 canvas
 pushed to the display every frame, canvas held in PSRAM). The firmware times
 each frame in three parts, averaged over 5 seconds: **step** is the hack's own
 draw call, **push** is sending the canvas to the display, and **wait** is what
@@ -106,6 +106,56 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Hypnowheel | 1.4 | 720 ms | 32.6 ms | 0 ms | about 0.64 MB |
 | Hypnowheel (`*layers: 1`, probe) | 4.4 | 200 ms | 32.5 ms | 0 ms | about 0.64 MB |
 | Hypnowheel (`*count: 5`, probe) | 2.0 | 511 ms | 32.6 ms | 0 ms | about 0.64 MB |
+| CWaves (as copied, double) | 7.8 | 95-97 ms | 32.6 ms | 0 ms | about 7 KB |
+| CWaves (single precision) | 10.6 | 61 ms | 32.4 ms | 0 ms | about 7 KB |
+| CWaves | 20.0-20.2 | 16.1-16.2 ms | 32.5 ms | 0 ms | about 7 KB |
+| Vermiculate | 74-79 | 1.3-2.2 ms | 1.8-2.9 ms | 8.4-9.5 ms | about 0.46 MB |
+| Cynosure | 1.8 | 17.0-17.8 ms | 27.5-28.5 ms | 523-524 ms | none measurable |
+| Moire (as copied, double) | 4.8 | 40.6-44.4 ms | 1.3 ms | 283.6 ms | none measurable |
+| Moire | 4.8 | 9.5-9.7 ms | 1.3 ms | 283.7 ms | none measurable |
+| Moire2 (first plane code) | 9.6 | 53.7-54.0 ms | 32.5 ms | 19.6 ms | about 0.25 MB |
+| Moire2 (plane copy and expansion in 32 bits) | 12.6 | 28.0-28.3 ms | 32.4 ms | 19.8 ms | about 0.25 MB |
+| Moire2 | 16.2 | 28.1-28.3 ms | 32.5 ms | 0 ms | about 0.25 MB |
+| Moire2 (no expansion, probe) | 12.2 | 26.9 ms | 0.1 ms | 55.4 ms | about 0.25 MB |
+| Moire2 (no expansion or plane copy, probe) | 18.0 | 0.5 ms | 0.1 ms | 55.5 ms | about 0.25 MB |
+| Boing (with scanlines) | 5.0 | 169-172 ms | 32.4 ms | 0 ms | about 0.64 MB |
+| Boing | 8.2-8.4 | 87.1-89.0 ms | 32.4 ms | 0 ms | about 0.64 MB |
+| Boing (no scanlines, `*ballSize: 0.3`, probe) | 9.2-9.4 | 73.9-75.2 ms | 32.6 ms | 0 ms | about 0.64 MB |
+| HexTrail (`*count: 20`, upstream's) | 3.2-15.0, mean 5.7 | 34-293 ms | 5.0-32.2 ms | 0-28 ms | about 0.86 MB |
+| HexTrail (`*count: 10`) | 6.4-31.2, mean 9.1 | 19-122 ms | 10.1-32.4 ms | 0-3 ms | about 0.70 MB |
+| HexTrail | 9.2-36.8, mean 12.7 | 13-76 ms | 11.1-32.5 ms | 0-3 ms | about 0.66 MB |
+
+The seven rows from CWaves to HexTrail are the CWaves, Vermiculate, Cynosure,
+Moire, Moire2, Boing and HexTrail batch (2026-10-11), each from a pinned build
+read for 30 to 150 s with Rod's go-ahead to flash while he was away. There is
+no idle PSRAM reading for this build (the 7,327,227 above predates the QR
+overlay), so "Extra PSRAM" is the drop from 6,989,667 bytes, which Cynosure
+and Moire read and which allocate almost nothing; treat it as good to about
+10 KB. Free heap was flat in every capture and no stack canary, panic or
+reboot appeared.
+
+CWaves' cosines were 4 ms of a 61 ms step in single precision; the rest was
+233 two-pixel-wide column fills, each store on a different cache line of the
+PSRAM canvas. The picture depends on x only, so the wrapper writes the columns
+into row 0 and copies that row down (frames identical to the unmodified hack).
+Moire is paced by its own delays, 50 ms between 20-row chunks and 5 s between
+pictures, so its fps says nothing about speed: the step fell from 44 to 9.5 ms
+a chunk. Cynosure waits 500 ms between frames by design (upstream's
+default), as Forest does.
+
+Moire2's first plane code took 54 ms. Skipping one call at a time showed the
+plane copies at 26 ms and the expansion at 27 ms, both slowed by 64-bit index
+maths on a 32-bit core and, for the expansion, a branch a pixel. Working in
+32 bits and a byte at a time took the step to 28 ms, and overriding the hack's
+50 ms delay (which waited out all but the 28 ms) took it to 16.2 fps. The
+occasional frame that builds new planes takes 96-141 ms.
+
+Boing's scanlines, 208 blended full-width lines, cost about 83 ms of the 171 ms
+step; a smaller ball (0.3 for 0.5) saves 13 ms more, so the rest is fixed
+(the clear, the wall and the shadow). HexTrail draws every hexagon built so
+far, so its step climbs to a ceiling and it restarts; the means above are over
+150 s, which covers several cycles. The two GL hacks are below the 15 fps bar
+in their registered form (8.3 and 12.7), and Boing is below it by a lot.
 
 Unknown Pleasures' rows are from pinned builds (2026-10-10). The first flash
 had TinyGL's one-pixel lines and its additive blend, so the black quads that
