@@ -16,9 +16,14 @@ static Canvas cv;
 static uint16_t *shadow; /* what the display holds */
 static PushRow *rows;
 static int calls;
+/* As on the device: the disc, except for a hack synced to the panel's
+ * refresh, which pushes whole rows. */
+static bool use_disc;
 
 void setUp(void) {
   TEST_ASSERT_EQUAL_INT(0, canvas_init(&cv, W, H, malloc));
+  TEST_ASSERT_EQUAL_INT(0, canvas_set_disc(&cv, malloc));
+  use_disc = true;
   shadow = malloc((size_t)W * H * sizeof(uint16_t));
   rows = malloc(H * sizeof(PushRow));
   for (int i = 0; i < W * H; i++) shadow[i] = UNSET;
@@ -45,9 +50,17 @@ static void on_all(void *ctx) {
 }
 static const PushSink sink = {NULL, on_begin, on_row, on_all, on_end};
 
-static int present(void) { return push_present(&cv, rows, &sink, false); }
+static int present(void) { return push_present(&cv, rows, &sink, use_disc); }
 static bool shadow_matches_canvas(void) {
-  return memcmp(shadow, cv.px, (size_t)W * H * sizeof(uint16_t)) == 0;
+  if (!use_disc) return memcmp(shadow, cv.px, (size_t)W * H * sizeof(uint16_t)) == 0;
+  for (int y = 0; y < H; y++) {
+    int x0, x1;
+    if (!canvas_visible_span(&cv, y, &x0, &x1)) continue;
+    if (memcmp(shadow + (size_t)y * W + x0, cv.px + (size_t)y * W + x0,
+               (size_t)(x1 - x0 + 1) * sizeof(uint16_t)))
+      return false;
+  }
+  return true;
 }
 
 #define OVERLAY_X 133
@@ -80,12 +93,21 @@ void test_a_present_after_nothing_was_drawn_touches_the_display_not_at_all(void)
   TEST_ASSERT_EQUAL_INT(before, calls);
 }
 
-void test_every_registered_hack_reaches_the_display_intact(void) {
+void test_the_corners_are_never_sent(void) {
+  present();
+  TEST_ASSERT_EQUAL_HEX16(UNSET, shadow[0]);
+  TEST_ASSERT_EQUAL_HEX16(UNSET, shadow[W - 1]);
+  TEST_ASSERT_EQUAL_HEX16(UNSET, shadow[(size_t)(H - 1) * W]);
+  TEST_ASSERT_EQUAL_HEX16(UNSET, shadow[(size_t)H * W - 1]);
+  TEST_ASSERT_TRUE(shadow_matches_canvas());
+}
+
+static void replay_every_hack(int frames) {
   HackRunner *r = runner_create(&cv);
   TEST_ASSERT_NOT_NULL(r);
   for (int i = 0; i < g_hack_count; i++) {
     TEST_ASSERT_EQUAL_INT(0, runner_start(r, i));
-    for (int f = 0; f < 3000; f++) {
+    for (int f = 0; f < frames; f++) {
       runner_step(r);
       present();
       if (f % 10 == 9) TEST_ASSERT_TRUE_MESSAGE(shadow_matches_canvas(), g_hacks[i]->name);
@@ -93,6 +115,13 @@ void test_every_registered_hack_reaches_the_display_intact(void) {
     TEST_ASSERT_TRUE_MESSAGE(shadow_matches_canvas(), g_hacks[i]->name);
   }
   runner_destroy(r);
+}
+
+void test_every_registered_hack_reaches_the_display_intact(void) { replay_every_hack(3000); }
+
+void test_every_hack_reaches_the_display_intact_in_whole_rows(void) {
+  use_disc = false;
+  replay_every_hack(1000);
 }
 
 void test_switching_hacks_shows_the_new_one_whole_from_its_first_frame(void) {
@@ -149,7 +178,9 @@ int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_a_fresh_canvas_reaches_the_display_in_full);
   RUN_TEST(test_a_present_after_nothing_was_drawn_touches_the_display_not_at_all);
+  RUN_TEST(test_the_corners_are_never_sent);
   RUN_TEST(test_every_registered_hack_reaches_the_display_intact);
+  RUN_TEST(test_every_hack_reaches_the_display_intact_in_whole_rows);
   RUN_TEST(test_switching_hacks_shows_the_new_one_whole_from_its_first_frame);
   RUN_TEST(test_overlay_text_is_erased_from_the_display_on_the_next_frame);
   RUN_TEST(test_overlay_text_is_erased_when_the_hack_changes_in_the_next_frame);
