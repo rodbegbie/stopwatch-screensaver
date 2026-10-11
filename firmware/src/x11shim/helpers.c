@@ -12,15 +12,6 @@ static double frand_unit(void) {
   return (double)random() / ((double)RAND_MAX + 1.0);
 }
 
-/* No wipe animation: clear the window and report that erasing is done. */
-eraser_state *erase_window(Display *dpy, Window w, eraser_state *st) {
-  (void)st;
-  XClearWindow(dpy, w);
-  return NULL;
-}
-
-void eraser_free(eraser_state *st) { (void)st; }
-
 Bool has_writable_cells(Screen *screen, Visual *visual) {
   (void)screen, (void)visual;
   return False;

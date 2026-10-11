@@ -237,6 +237,10 @@ void xshim_release_pixmaps(Display *dpy);
  * told when the hack stops: xshim_release_pixmaps calls it once, with the
  * display, after freeing the pixmaps, and then clears it. */
 void xshim_set_release_hook(void (*hook)(Display *dpy));
+/* Test hooks for erase_window: pin the wipe to effect `index`, or pass -1 for
+ * a random one; and how many effects there are. */
+void xshim_erase_force_effect(int index);
+int xshim_erase_effect_count(void);
 
 GC XCreateGC(Display *, Drawable, unsigned long mask, XGCValues *);
 int XFreeGC(Display *, GC);
