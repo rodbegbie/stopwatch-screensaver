@@ -13,14 +13,31 @@ Bool mono_p = False;
 const char *progname = "stopwatch-screensaver";
 const char *progclass = "StopwatchScreensaver";
 
+static Display *g_current_display;
+
+Display *xshim_current_display(void) { return g_current_display; }
+
 Display *xshim_open_display(Canvas *canvas) {
   Display *dpy = (Display *)calloc(1, sizeof(*dpy));
-  if (dpy) dpy->canvas = canvas;
+  if (dpy) {
+    dpy->canvas = canvas;
+    dpy->previous = g_current_display;
+    g_current_display = dpy;
+  }
   return dpy;
 }
 
 void xshim_close_display(Display *dpy) {
   if (!dpy) return;
+  if (g_current_display == dpy) {
+    g_current_display = dpy->previous;
+  } else {
+    for (Display *d = g_current_display; d; d = d->previous)
+      if (d->previous == dpy) {
+        d->previous = dpy->previous;
+        break;
+      }
+  }
   xshim_release_pixmaps(dpy);
   free(dpy);
 }
@@ -57,6 +74,16 @@ int XChangeGC(Display *dpy, GC gc, unsigned long mask, XGCValues *v) {
   if (mask & GCLineWidth) gc->line_width = v->line_width;
   if (mask & GCCapStyle) gc->cap_style = v->cap_style;
   if (mask & GCJoinStyle) gc->join_style = v->join_style;
+  return 0;
+}
+
+int XSetFunction(Display *dpy, GC gc, int function) {
+  (void)dpy, (void)gc, (void)function;
+  return 0;
+}
+
+int jwxyz_XSetAlphaAllowed(Display *dpy, GC gc, Bool allowed) {
+  (void)dpy, (void)gc, (void)allowed;
   return 0;
 }
 

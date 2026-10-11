@@ -27,6 +27,8 @@ typedef struct XshimDisplay {
   struct XshimPixmap *pixmaps;
   /* What XClearWindow paints; XSetWindowBackground sets it. */
   unsigned long window_background;
+  /* The display that was current when this one opened, for xshim_current_display. */
+  struct XshimDisplay *previous;
 } Display;
 
 typedef unsigned long Pixmap;
@@ -191,12 +193,16 @@ enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
 #define RootWindowOfScreen(screen) ((void)(screen), XSHIM_WINDOW)
 /* There is one screen and it is true colour: 65,536 colours, none writable. */
 #define DefaultScreenOfDisplay(dpy) ((void)(dpy), (Screen *)0)
+/* The screen carries no pointer back, so this is the display opened last. */
+#define DisplayOfScreen(screen) ((void)(screen), xshim_current_display())
 #define CellsOfScreen(screen) ((void)(screen), 65536)
 #define PointerMotionMask (1L << 6)
 /* Events never arrive, so selecting them does nothing. */
 int XSelectInput(Display *, Window, long mask);
 #define WhitePixel(dpy, scr) ((void)(dpy), (void)(scr), 0xFFFFUL)
 #define BlackPixel(dpy, scr) ((void)(dpy), (void)(scr), 0x0000UL)
+#define WhitePixelOfScreen(screen) ((void)(screen), 0xFFFFUL)
+#define BlackPixelOfScreen(screen) ((void)(screen), 0x0000UL)
 
 extern Bool mono_p;
 extern const char *progname;
@@ -216,7 +222,13 @@ void xshim_set_release_hook(void (*hook)(Display *dpy));
 
 GC XCreateGC(Display *, Drawable, unsigned long mask, XGCValues *);
 int XFreeGC(Display *, GC);
+/* The display xshim_open_display made most recently and has not closed. */
+Display *xshim_current_display(void);
 int XSetForeground(Display *, GC, unsigned long pixel);
+/* Accepted and ignored: drawing is always GXcopy (see XGCValues). */
+int XSetFunction(Display *, GC, int function);
+/* A GC may draw with alpha under jwxyz; here it is accepted and ignored. */
+int jwxyz_XSetAlphaAllowed(Display *, GC, Bool allowed);
 /* Honours GCForeground, GCBackground, GCLineWidth, GCCapStyle and
  * GCJoinStyle; the rest of the mask is ignored. */
 int XChangeGC(Display *, GC, unsigned long mask, XGCValues *);

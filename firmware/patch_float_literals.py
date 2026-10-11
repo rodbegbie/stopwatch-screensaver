@@ -14,7 +14,7 @@ import float_literals  # noqa: E402
 generated = Path(env.subst("$BUILD_DIR")) / "generated"  # noqa: F821
 generated.mkdir(parents=True, exist_ok=True)
 
-for name in ("braid",) + ('euler2d', 'compass', 'fuzzyflakes', 'halftone', 'interaggregate', 'anemone', 'lmorph', 'hexadrop', 'fireworkx', 'starfish'):
+for name in ("braid",) + ('euler2d', 'compass', 'fuzzyflakes', 'halftone', 'interaggregate', 'anemone', 'lmorph', 'hexadrop', 'fireworkx', 'starfish', 'goop'):
     patched = float_literals.float_literals(
         (project / "src" / "hacks" / name / f"{name}.c").read_text()
     )

@@ -2659,6 +2659,48 @@ void test_fill_rule_constants_and_the_even_odd_fill_of_a_pentagram(void) {
   XFreeGC(dpy, white);
 }
 
+void test_the_screen_stand_in_leads_back_to_the_display_and_its_black_and_white(void) {
+  Screen *screen = DefaultScreenOfDisplay(dpy);
+  TEST_ASSERT_TRUE(DisplayOfScreen(screen) == dpy);
+  TEST_ASSERT_EQUAL_HEX64(BlackPixel(dpy, DefaultScreen(dpy)), BlackPixelOfScreen(screen));
+  TEST_ASSERT_EQUAL_HEX64(WhitePixel(dpy, DefaultScreen(dpy)), WhitePixelOfScreen(screen));
+}
+
+void test_the_display_a_screen_leads_to_is_the_one_most_recently_opened(void) {
+  Canvas other;
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&other, 4, 4, malloc));
+  Display *second = xshim_open_display(&other);
+  TEST_ASSERT_TRUE(DisplayOfScreen(DefaultScreenOfDisplay(second)) == second);
+  xshim_close_display(second);
+  canvas_free(&other);
+  TEST_ASSERT_TRUE(DisplayOfScreen(DefaultScreenOfDisplay(dpy)) == dpy);
+}
+
+void test_closing_displays_out_of_order_never_leaves_a_dangling_current_display(void) {
+  Canvas a, b;
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&a, 4, 4, malloc));
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&b, 4, 4, malloc));
+  Display *da = xshim_open_display(&a);
+  Display *db = xshim_open_display(&b);
+  TEST_ASSERT_TRUE(xshim_current_display() == db);
+  xshim_close_display(da);
+  TEST_ASSERT_TRUE(xshim_current_display() == db);
+  xshim_close_display(db);
+  TEST_ASSERT_TRUE(xshim_current_display() == dpy);
+  canvas_free(&a);
+  canvas_free(&b);
+}
+
+void test_the_gc_function_and_alpha_calls_are_accepted_and_change_nothing(void) {
+  GC gc = new_gc(0xF800, 0);
+  XSetFunction(dpy, gc, GXxor);
+  jwxyz_XSetAlphaAllowed(dpy, gc, True);
+  XFillRectangle(dpy, win, gc, 0, 0, 4, 4);
+  XFillRectangle(dpy, win, gc, 0, 0, 4, 4);
+  TEST_ASSERT_EQUAL_HEX16(0xF800, at(1, 1));
+  XFreeGC(dpy, gc);
+}
+
 void test_create_image_refuses_depths_and_sizes_it_cannot_hold(void) {
   TEST_ASSERT_NULL(XCreateImage(dpy, NULL, 8, ZPixmap, 0, NULL, 4, 4, 8, 0));
   TEST_ASSERT_NULL(XCreateImage(dpy, NULL, 32, ZPixmap, 0, NULL, 0, 4, 32, 0));
@@ -2748,6 +2790,10 @@ int main(void) {
   RUN_TEST(test_a_closed_spline_reuses_its_points_and_grows_them_for_more_controls);
   RUN_TEST(test_a_closed_spline_of_one_point_is_that_point);
   RUN_TEST(test_fill_rule_constants_and_the_even_odd_fill_of_a_pentagram);
+  RUN_TEST(test_the_screen_stand_in_leads_back_to_the_display_and_its_black_and_white);
+  RUN_TEST(test_the_display_a_screen_leads_to_is_the_one_most_recently_opened);
+  RUN_TEST(test_closing_displays_out_of_order_never_leaves_a_dangling_current_display);
+  RUN_TEST(test_the_gc_function_and_alpha_calls_are_accepted_and_change_nothing);
   RUN_TEST(test_create_image_refuses_depths_and_sizes_it_cannot_hold);
   RUN_TEST(test_file_to_ximage_has_no_decoder_and_returns_null);
   RUN_TEST(test_ease_in_out_sine_runs_from_0_to_1_through_one_half);
