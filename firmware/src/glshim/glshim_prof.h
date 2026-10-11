@@ -47,6 +47,9 @@ enum {
   GLPROF_FILL,
   GLPROF_POINT,
   GLPROF_LINE,
+  GLPROF_BAND_CLEAR, /* held frames: filling each band */
+  GLPROF_BAND_REPLAY, /* replaying the held calls */
+  GLPROF_BAND_COPY, /* copying bands to the canvas */
   GLPROF_SLOTS
 };
 

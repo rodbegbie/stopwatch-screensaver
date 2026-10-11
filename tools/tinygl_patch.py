@@ -69,6 +69,12 @@ DIRTY_DECLARATIONS = """/* clip.c */
 void glshim_note_box(GLint x0, GLint y0, GLint x1, GLint y1);
 void glshim_clear(ZBuffer* zb, GLint clear_z, GLint z, GLint clear_color, GLint r, GLint g, GLint b);
 void glshim_depth_test_changed(ZBuffer* zb);
+
+/* Held frames, drawn in bands (src/glshim/glshim_band.h). */
+typedef void (*GlshimFillFn)(ZBuffer*, ZBufferPoint*, ZBufferPoint*, ZBufferPoint*);
+int glshim_band_fill(ZBuffer* zb, GlshimFillFn fn, ZBufferPoint* a, ZBufferPoint* b, ZBufferPoint* c);
+void glshim_band_spill(ZBuffer* zb);
+#define GLSHIM_FILL(fn, zb, a, b, c) do { if (!glshim_band_fill((zb), (fn), (a), (b), (c))) fn((zb), (a), (b), (c)); } while (0)
 """
 
 DIRTY_TRIANGLE_HELPER = """static void glshim_note_triangle(GLVertex* p0, GLVertex* p1, GLVertex* p2) {
@@ -86,6 +92,7 @@ DIRTY_TRIANGLE_HELPER = """static void glshim_note_triangle(GLVertex* p0, GLVert
 """
 
 DIRTY_POINT = """void gl_draw_point(GLVertex* p0) {
+	glshim_band_spill(gl_get_context()->zb);
 	if (p0->clip_code == 0) {
 		GLint m = (GLint)gl_get_context()->zb->pointsize + 1;
 		glshim_note_box(p0->zp.x - m, p0->zp.y - m, p0->zp.x + m, p0->zp.y + m);
@@ -93,6 +100,7 @@ DIRTY_POINT = """void gl_draw_point(GLVertex* p0) {
 """
 
 DIRTY_LINE = """void gl_draw_line(GLVertex* p1, GLVertex* p2) {
+	glshim_band_spill(gl_get_context()->zb);
 	if ((p1->clip_code | p2->clip_code) == 0) {
 		GLint lx = p1->zp.x < p2->zp.x ? p1->zp.x : p2->zp.x;
 		GLint hx = p1->zp.x < p2->zp.x ? p2->zp.x : p1->zp.x;
@@ -487,11 +495,13 @@ REPLACEMENTS: tuple[Replace, ...] = (
     Replace(
         "src/zraster.c",
         "void glopDrawPixels(GLParam* p) {\n",
-        "void glopDrawPixels(GLParam* p) {\n\tglshim_note_box(0, 0, 100000, 100000);\n",
+        "void glopDrawPixels(GLParam* p) {\n\tglshim_band_spill(gl_get_context()->zb);\n"
+        "\tglshim_note_box(0, 0, 100000, 100000);\n",
     ),
     Replace(
         "src/ztext.c",
         "\tc->zb->pbuf[x] = pix;\n",
+        "\tglshim_band_spill(c->zb);\n"
         "\tglshim_note_box(x % c->zb->xsize, x / c->zb->xsize, x % c->zb->xsize,\n\t\t\t\tx / c->zb->xsize);\n\tc->zb->pbuf[x] = pix;\n",
     ),
     Replace(
@@ -632,6 +642,33 @@ REPLACEMENTS: tuple[Replace, ...] = (
         "src/zline.c",
         "\tif (zbps == 1) {\n",
         "\tif (zbps == 1) {\n\t\tif (p->y < 0 || p->y >= zb->ysize)\n\t\t\treturn;\n",
+    ),
+    Replace(
+        "src/clip.c",
+        "\t\tZB_setTexture(c->zb, c->current_texture->images[0].pixmap);\n",
+        "\t\tglshim_band_spill(c->zb);\n\t\tZB_setTexture(c->zb, c->current_texture->images[0].pixmap);\n",
+    ),
+    Replace(
+        "src/clip.c",
+        "ZB_fillTriangleSmooth(c->zb, &p0->zp, &p1->zp, &p2->zp);",
+        "GLSHIM_FILL(ZB_fillTriangleSmooth, c->zb, &p0->zp, &p1->zp, &p2->zp);",
+    ),
+    Replace(
+        "src/clip.c",
+        "ZB_fillTriangleSmoothNOBLEND(c->zb, &p0->zp, &p1->zp, &p2->zp);",
+        "GLSHIM_FILL(ZB_fillTriangleSmoothNOBLEND, c->zb, &p0->zp, &p1->zp, &p2->zp);",
+        count=2,
+    ),
+    Replace(
+        "src/clip.c",
+        "ZB_fillTriangleFlat(c->zb, &p0->zp, &p1->zp, &p2->zp);",
+        "GLSHIM_FILL(ZB_fillTriangleFlat, c->zb, &p0->zp, &p1->zp, &p2->zp);",
+    ),
+    Replace(
+        "src/clip.c",
+        "ZB_fillTriangleFlatNOBLEND(c->zb, &p0->zp, &p1->zp, &p2->zp);",
+        "GLSHIM_FILL(ZB_fillTriangleFlatNOBLEND, c->zb, &p0->zp, &p1->zp, &p2->zp);",
+        count=2,
     ),
 )
 

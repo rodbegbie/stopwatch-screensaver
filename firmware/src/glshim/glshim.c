@@ -18,6 +18,7 @@
 
 #include "core/canvas.h"
 #include "zbuffer.h"
+#include "glshim/glshim_band.h"
 #include "glshim/glshim_prof.h"
 
 #ifdef GL_PROFILE
@@ -26,7 +27,8 @@ uint32_t glshim_prof_calls[GLPROF_SLOTS];
 uint32_t glshim_prof_frames;
 int glshim_prof_depth;
 const char *const glshim_prof_names[GLPROF_SLOTS] = {
-    "clear", "list", "vertex", "shade", "tri", "fill", "point", "line"};
+    "clear", "list", "vertex", "shade", "tri", "fill", "point", "line",
+    "bclear", "breplay", "bcopy"};
 
 void glshim_prof_reset(void) {
   memset(glshim_prof_time, 0, sizeof glshim_prof_time);
@@ -54,6 +56,7 @@ static PIXEL g_clear_color;
 static GLint g_clear_z;
 static bool g_z_deferred; /* a depth clear is waiting for the depth test */
 static GLint g_deferred_z;
+static GLint g_held_z; /* the depth a held frame was cleared to */
 
 static bool box_empty(Box b) { return b.x0 > b.x1 || b.y0 > b.y1; }
 
@@ -145,6 +148,7 @@ unsigned glshim_depth_clears(void) { return g_depth_clears; }
  * g_z_box keeps growing meanwhile: the rasteriser still writes depth. */
 static void clear_depth(ZBuffer *zb, GLint z) {
   g_depth_clears++;
+  glshim_band_depth_valid();
   const Box area = g_z_valid && z == g_clear_z ? g_z_box : whole_canvas();
   for (int y = area.y0; y <= area.y1; y++)
     fill_pixels((uint16_t *)(zb->zbuf + y * zb->xsize) + area.x0, (uint16_t)z,
@@ -164,6 +168,26 @@ void glshim_clear(ZBuffer *zb, GLint clear_z, GLint z, GLint clear_color,
   const uint32_t prof_start = glshim_prof_now();
 #endif
   const Box all = whole_canvas();
+  if (clear_color && clear_z) {
+    const PIXEL color = RGB_TO_PIXEL(r, g, b);
+    if (glshim_band_begin(zb, color, z)) {
+      /* Held: the bands start as the clear colour and depth, so the canvas is
+       * left alone, and the PSRAM z-buffer is not written this frame. */
+      box_add(&g_swap_erased, g_color_valid && color == g_clear_color ? g_color_box : all);
+      g_color_box = kEmptyBox;
+      g_color_valid = true;
+      g_clear_color = color;
+      g_z_box = kEmptyBox;
+      g_z_valid = false;
+      g_z_deferred = false;
+      g_held_z = z;
+#ifdef GL_PROFILE
+      glshim_prof_add(GLPROF_CLEAR, prof_start);
+#endif
+      return;
+    }
+  }
+  glshim_band_spill(zb);
   if (clear_color) {
     const PIXEL color = RGB_TO_PIXEL(r, g, b);
     const Box area = g_color_valid && color == g_clear_color ? g_color_box : all;
@@ -189,6 +213,16 @@ void glshim_clear(ZBuffer *zb, GLint clear_z, GLint z, GLint clear_color,
 #endif
 }
 
+/* Draws the held frame, colour and depth over the whole canvas (a direct
+ * clear after a held frame would have cleared all its depth), so the rest of
+ * the frame can be drawn directly. */
+void glshim_band_spill(ZBuffer *zb) {
+  if (zb != g_zb || !glshim_band_holding()) return;
+  glshim_band_draw(zb, 0, 0, g_canvas->w - 1, g_canvas->h - 1, 1);
+  g_z_valid = true;
+  g_clear_z = g_held_z;
+}
+
 void glshim_depth_test_changed(ZBuffer *zb) {
   if (zb != g_zb || !zb->depth_test || !g_z_deferred) return;
   g_z_deferred = false;
@@ -211,6 +245,7 @@ static void release_hook(Display *dpy) {
 
 void glshim_close(void) {
   if (!g_zb) return;
+  glshim_band_close();
   glClose();
   ZB_close(g_zb);
   g_zb = NULL;
@@ -229,6 +264,7 @@ GLXContext *glshim_open(Canvas *canvas) {
   g_zb = ZB_open(canvas->w, canvas->h, ZB_MODE_5R6G5B, canvas->px);
   if (!g_zb) return NULL;
   glInit(g_zb);
+  glshim_band_open(canvas->w, canvas->h); /* if it fails, frames draw directly */
   g_vertex = g_normal = g_color = (ClientArray){0};
   g_canvas = canvas;
   reset_dirty_rectangle();
@@ -248,6 +284,11 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable) {
   (void)dpy;
   (void)drawable;
   if (!g_canvas) return;
+  if (glshim_band_holding()) {
+    Box b = g_swap_erased;
+    box_add(&b, g_swap_drawn);
+    glshim_band_draw(g_zb, b.x0, b.y0, b.x1, b.y1, 0);
+  }
   const Box boxes[2] = {g_swap_erased, g_swap_drawn};
   for (int i = 0; i < 2; i++)
     if (!box_empty(boxes[i]))
