@@ -54,6 +54,16 @@ The ESP32-S3 has a single-precision FPU only, so double runs in software.
   chaotic hack diverges later but should keep its look.
 - Results: Galaxy 5 to 14 fps. Substrate step 119-121 ms to 37-38 ms, 6.2 to
   12.5 fps.
+- A hack that passes the address of its own `double` local to a shim function
+  (`rgb_to_hsv (..., &s, &v)`) writes eight bytes into a four-byte float, and
+  the compiler does not warn. Moire's frames were all different from the
+  double build's until `moire_single.c` mapped the call to an adapter defined
+  before `single_precision.h`. Cmp the wrapper's frames against the unmodified
+  hack's. A hack with no decimal literals must stay out of
+  `patch_float_literals.py`, which refuses it.
+- Once the maths is float, look at the fills before the next idea. CWaves'
+  cosines were 4 ms of a 61 ms step; its 233 column fills were 57 (a thin
+  full-height rectangle touches a new cache line a store). See `hacks.md`.
 
 ## Slow hack
 

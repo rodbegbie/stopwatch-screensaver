@@ -168,3 +168,46 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   `failed_ports.txt` entry stay): about 70 percent of its step is additively
   blended pixel fill (about 1.2 us a pixel) and 30 percent is per-triangle
   setup (about 35 us), so `*layers` and `*count` cannot reach 15 fps.
+- CWaves (`cwaves_single.c`) fills 233 columns, each a 2 by 466 rectangle, so
+  every store lands on a different cache line of the PSRAM canvas: after single
+  precision took the step from 95 to 61 ms, 57 of those were the fills and 4
+  the cosines. The picture depends on x alone, so the wrapper writes each
+  full-height column into canvas row 0 and the draw wrapper copies that row
+  down (frames identical to the unmodified hack): 16 ms, 20 fps. Any hack that
+  paints thin full-height strips can do the same.
+- A single-precision wrapper must watch for a hack that passes the address of
+  one of its own `double` locals to a shim function (`rgb_to_hsv (..., &fgs,
+  &fgv)` in Moire): the prototype still says `double *`, so the float local is
+  written eight bytes and the frames come out as colour noise, with no
+  compiler warning. `moire_single.c` defines an adapter before
+  `single_precision.h` and maps the name to it. Compare the wrapper's frames
+  with the unmodified hack's: they were all different here, and identical once
+  the adapter was in. A hack with no decimal literals (Moire) must not be in
+  `patch_float_literals.py`, which refuses a file without any.
+- Moire and Cynosure are paced by their own delays (Moire draws a 20-row chunk
+  every 50 ms and holds each picture 5 s; Cynosure waits 500 ms a frame, which
+  is upstream's default), so their fps is low whatever the step is. Cynosure's
+  `XCreateBitmapFromData`, which the scorer lists as a gap, is inside a
+  `DO_STIPPLE` block that is never defined.
+- Moire2 (`moire2_direct.c`, `moire2_planes.h`, built on Halo's planes) keeps
+  its four depth-1 pixmaps as bit planes and adds an outline circle, an XOR
+  rectangle, an OR/XOR/copy between planes (the GC's `function`, which the shim
+  now remembers) and a faster expansion to the window. Upstream's free leaves
+  its pixmaps to the X server, and the runner frees only the shim's own, so the
+  wrapper frees the planes. The first version ran at 9.6 fps: the plane copy
+  and the expansion were 26 and 27 ms, because 64-bit index maths is several
+  instructions an operation on a 32-bit core and the expansion branched on
+  every pixel. After clipping everything fits an int; a byte table of eight
+  pixels written four bytes at a time did the rest (28 ms). The 50 ms delay is
+  overridden to 10 ms: 12.6 fps became 16.2.
+- Boing and HexTrail are GL (`boing_gl.c`, `hextrail_gl.c`). Boing's 208
+  scanlines are blended full-width lines and cost half its step: 5.0 fps with
+  them, 8.3 without, so the registry turns them off (`-DBOING_SCANLINES` puts
+  them back); the ball size barely matters (0.3 saves 13 ms). HexTrail draws
+  every hexagon it has built, so its step climbs from about 19 ms to a ceiling
+  and it restarts: use a mean over a cycle (150 s). The grid is `count * 2`
+  squared, and a smaller count makes fewer, larger hexagons over the same area:
+  mean 5.7 fps at upstream's 20, 9.1 at 10, 12.7 at 6 (registered,
+  `-DHEXTRAIL_COUNT=<n>`). Neither reaches 15 fps (8.3 and 12.7 mean), so
+  keeping or dropping them, and how the look trades against speed, is Rod's
+  call.
