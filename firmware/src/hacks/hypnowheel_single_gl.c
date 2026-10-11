@@ -6,7 +6,10 @@
  * It passes the addresses of `double` locals to get_position and
  * get_rotation, which take `double *`: as floats they would be written eight
  * bytes (see moire_single.c). The adapters come before single_precision.h, so
- * their `double` is the real one. */
+ * their `double` is the real one.
+ *
+ * With -DHYPNOWHEEL_HALF it renders at half the width and height (issue #43):
+ * its fill is about three quarters of its frame. */
 #define USE_GL
 #include <ctype.h>
 #include <math.h>
@@ -46,3 +49,17 @@ static void hypnowheel_get_rotation(rotator *rot, float *x, float *y, float *z,
 #define get_rotation hypnowheel_get_rotation
 
 #include "hypnowheel/hypnowheel.c"
+
+#ifdef HYPNOWHEEL_HALF
+/* Half resolution (glshim_set_render_scale): an init that asks for scale 2
+ * before the hack's init_GL opens the context, swapped into the hack's
+ * function table as loop_direct.c does. */
+static void init_hypnowheel_half(ModeInfo *mi) {
+  glshim_set_render_scale(2);
+  init_hypnowheel(mi);
+}
+
+__attribute__((constructor)) static void hypnowheel_renders_at_half_size(void) {
+  hypnowheel_xlockmore_function_table.hack_init = init_hypnowheel_half;
+}
+#endif

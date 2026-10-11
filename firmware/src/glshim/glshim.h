@@ -25,6 +25,13 @@ void glshim_close(void);
 /* True while a context is open. The tests use it to check that stopping a hack
  * closed its context. */
 int glshim_is_open(void);
+/* Read by the next glshim_open and reset by glshim_close: at 2, TinyGL draws
+ * at half the width and height, glViewport is halved to match, and each swap
+ * doubles every pixel of the dirty box into the canvas. For a hack whose fill
+ * is too slow at full size (Hypnowheel). */
+void glshim_set_render_scale(int scale);
+void glshim_Viewport(GLint x, GLint y, GLint w, GLint h);
+#define glViewport glshim_Viewport
 
 /* How many depth clears have actually run (a clear made while the depth test
  * is off is deferred until it is switched on). For the tests. */

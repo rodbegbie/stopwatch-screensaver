@@ -912,6 +912,75 @@ void test_source_alpha_with_one_adds_too(void) {
                           added(0.25f, 0, 0, 0, 0.25f, 0, GL_SRC_ALPHA, 0));
 }
 
+/* Half resolution (issue #43, for Hypnowheel): at scale 2 TinyGL draws into a
+ * half-size buffer, glViewport is halved to match, and the swap doubles each
+ * pixel into the canvas. A smooth three-colour triangle comes out in 2 by 2
+ * blocks only if pixels really are doubled. */
+static void corner_triangle_frame(float x0, float y0) {
+  glViewport(0, 0, SIZE, SIZE);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  glClearColor(0, 0, 0, 0);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glBegin(GL_TRIANGLES);
+  glColor3f(1, 0, 0);
+  glVertex3f(x0, y0, 0);
+  glColor3f(0, 1, 0);
+  glVertex3f(1, y0, 0);
+  glColor3f(0, 0, 1);
+  glVertex3f(x0, 1, 0);
+  glEnd();
+}
+
+void test_at_scale_two_each_pixel_becomes_a_two_by_two_block(void) {
+  glshim_set_render_scale(2);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  corner_triangle_frame(-1, -1);
+  glXSwapBuffers(dpy, 0);
+  int lit = 0;
+  for (int y = 0; y < SIZE; y += 2)
+    for (int x = 0; x < SIZE; x += 2) {
+      const uint16_t v = cv.px[y * SIZE + x];
+      TEST_ASSERT_EQUAL_HEX16(v, cv.px[y * SIZE + x + 1]);
+      TEST_ASSERT_EQUAL_HEX16(v, cv.px[(y + 1) * SIZE + x]);
+      TEST_ASSERT_EQUAL_HEX16(v, cv.px[(y + 1) * SIZE + x + 1]);
+      if (v) lit++;
+    }
+  TEST_ASSERT_TRUE(lit > SIZE * SIZE / 16);
+  TEST_ASSERT_NOT_EQUAL(0, cv.px[(SIZE - 1) * SIZE]); /* bottom left */
+  TEST_ASSERT_EQUAL_HEX16(0, cv.px[SIZE - 1]);        /* top right */
+}
+
+void test_at_scale_two_the_dirty_box_is_scaled(void) {
+  glshim_set_render_scale(2);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  corner_triangle_frame(0.5f, 0.5f); /* the first frame is a full clear */
+  glXSwapBuffers(dpy, 0);
+  canvas_clear_dirty(&cv);
+  corner_triangle_frame(0.5f, 0.5f); /* top right only */
+  glXSwapBuffers(dpy, 0);
+  int x0, x1, rows = 0;
+  for (int y = 0; y < SIZE; y++) {
+    if (!canvas_dirty_row(&cv, y, &x0, &x1)) continue;
+    rows++;
+    TEST_ASSERT_TRUE(y < SIZE / 2);
+    TEST_ASSERT_EQUAL_INT(SIZE - 1, x1); /* the doubled right edge */
+    TEST_ASSERT_TRUE(x0 >= SIZE / 2 && x0 % 2 == 0);
+  }
+  TEST_ASSERT_TRUE(rows > 0 && rows % 2 == 0);
+}
+
+void test_closing_resets_the_scale(void) {
+  glshim_set_render_scale(2);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glshim_close();
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  corner_triangle_frame(-1, -1); /* at scale 1 it lands on the canvas at once */
+  TEST_ASSERT_NOT_EQUAL(0, cv.px[(SIZE - 1) * SIZE]);
+}
+
 /* Polygon offset. A second fill at exactly the same depth wins a tie, since
  * TinyGL's test is >=. With the offset enabled it is pushed back and loses. */
 static uint16_t second_fill_behind_the_first(int enable, float factor, float units,
@@ -1177,6 +1246,9 @@ int main(void) {
   RUN_TEST(test_line_width_changes_neither_a_smooth_nor_a_plain_line);
   RUN_TEST(test_smoothing_can_be_switched_off_again);
   RUN_TEST(test_a_fill_blended_with_source_alpha_is_opaque);
+  RUN_TEST(test_at_scale_two_each_pixel_becomes_a_two_by_two_block);
+  RUN_TEST(test_at_scale_two_the_dirty_box_is_scaled);
+  RUN_TEST(test_closing_resets_the_scale);
   RUN_TEST(test_additive_blend_adds_each_channel);
   RUN_TEST(test_additive_blend_saturates_each_channel_on_its_own);
   RUN_TEST(test_source_alpha_with_one_adds_too);
