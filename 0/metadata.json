@@ -1,0 +1,263 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4NXACE9RQ1C4CX5QB4JKVW0",
+  "session_id": "6133968b-782a-4c24-bf62-d71759b14157",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-11T16:39:17.200072Z",
+  "branch": "feature/43-banded-renderer",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/superpowers/plans/2026-10-11-banded-renderer.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-5-5",
+  "turn_id": "771c7fd7e56a",
+  "checkpoint_transcript_start": 3691,
+  "transcript_lines_at_start": 3691,
+  "compact_transcript_start": 399,
+  "token_usage": {
+    "input_tokens": 28,
+    "cache_creation_tokens": 52700,
+    "cache_read_tokens": 3491026,
+    "output_tokens": 29654,
+    "api_call_count": 14
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01VS3c4LMCdxsj3zfpKK7KAb",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "port-hack"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "2b0851d067b8",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 1295,
+        "end": 1296,
+        "entry_ids": [
+          "9cb6f3a4-d2e1-4371-b3a2-4e7d016c63e7"
+        ],
+        "tool_use_id": "toolu_01VS3c4LMCdxsj3zfpKK7KAb"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01VS3c4LMCdxsj3zfpKK7KAb"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: port-hack",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01UDu8u7K3Dz1jwaAUnYq1QX",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "2b0851d067b8",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 1734,
+        "end": 1735,
+        "entry_ids": [
+          "1d942778-5703-487a-bb36-910b13b2adbb"
+        ],
+        "tool_use_id": "toolu_01UDu8u7K3Dz1jwaAUnYq1QX"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01UDu8u7K3Dz1jwaAUnYq1QX"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_011PgJnXTbEhdoondRgupgiH",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "deliver-branch"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "f5bb0ae8f7a2",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 2933,
+        "end": 2934,
+        "entry_ids": [
+          "9bb3da57-db7a-42cc-ba7a-937c9387a80c"
+        ],
+        "tool_use_id": "toolu_011PgJnXTbEhdoondRgupgiH"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_011PgJnXTbEhdoondRgupgiH"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: deliver-branch",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_018puGVSjW6ZugKFzznj3D3C",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:brainstorming"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "f5bb0ae8f7a2",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 3138,
+        "end": 3139,
+        "entry_ids": [
+          "daac63de-b5af-4c54-bda6-aad8dd94e51d"
+        ],
+        "tool_use_id": "toolu_018puGVSjW6ZugKFzznj3D3C"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_018puGVSjW6ZugKFzznj3D3C"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:brainstorming",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_011HRyEGfWxVmCh5EyWUF7kN",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "68cd3cf0f835",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 3601,
+        "end": 3602,
+        "entry_ids": [
+          "851f792a-993f-4483-b761-6910eaa19ef1"
+        ],
+        "tool_use_id": "toolu_011HRyEGfWxVmCh5EyWUF7kN"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_011HRyEGfWxVmCh5EyWUF7kN"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01C6HMAzreVqvFhtiPpFXYCh",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:writing-plans"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "771c7fd7e56a",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 3697,
+        "end": 3698,
+        "entry_ids": [
+          "4ea5d3a7-2516-4f71-b9e3-f7b881b7dac1"
+        ],
+        "tool_use_id": "toolu_01C6HMAzreVqvFhtiPpFXYCh"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01C6HMAzreVqvFhtiPpFXYCh"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:writing-plans",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 14
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-10-11T16:39:17.091746Z",
+    "agent_lines": 416,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 416,
+    "total_lines_changed": 416,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 223,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".private-journal/2026-10-07/19-59-30-000000-79f41e20.md": 8,
+        ".private-journal/2026-10-07/22-51-53-000000-2f0b9ece.md": 8,
+        ".private-journal/2026-10-08/07-50-07-000000-0110d472.md": 8,
+        ".private-journal/2026-10-08/15-15-15-000000-4004028d.md": 19,
+        ".private-journal/2026-10-08/15-45-25-000000-61b97d2d.md": 8,
+        ".private-journal/2026-10-08/17-26-54-000000-98ba9899.md": 12,
+        ".private-journal/2026-10-09/00-21-50-000000-1de20801.md": 8,
+        ".private-journal/2026-10-09/12-29-59-000000-8e4c6857.md": 16,
+        ".private-journal/2026-10-09/15-14-18-000000-357340fa.md": 8,
+        ".private-journal/2026-10-09/20-40-34-000000-16250e9e.md": 8,
+        ".private-journal/2026-10-09/23-14-53-000000-38a6b176.md": 8,
+        ".private-journal/2026-10-10/00-39-42-000000-64095098.md": 8,
+        ".private-journal/2026-10-10/06-35-48-000000-d0ecd666.md": 8,
+        ".private-journal/2026-10-10/08-14-59-000000-d35e8085.md": 8,
+        ".private-journal/2026-10-10/13-26-22-000000-2fbe913b.md": 8,
+        ".private-journal/2026-10-10/14-12-27-000000-d7ee8c7f.md": 8,
+        ".private-journal/2026-10-10/16-50-32-000000-e5b073a3.md": 12,
+        ".private-journal/2026-10-10/18-22-56-000000-72f01b1c.md": 8,
+        ".private-journal/2026-10-10/21-06-23-000000-62ec9202.md": 16,
+        ".private-journal/2026-10-10/22-30-43-000000-105e6a83.md": 12,
+        ".private-journal/2026-10-11/00-20-59-000000-ffdf8de5.md": 8,
+        ".private-journal/2026-10-11/01-52-21-000000-5b254987.md": 8,
+        ".private-journal/2026-10-11/08-53-41-000000-674129e6.md": 8
+      }
+    }
+  ]
+}
