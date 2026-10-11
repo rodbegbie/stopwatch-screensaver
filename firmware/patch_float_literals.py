@@ -15,7 +15,7 @@ import fireworkx_patch  # noqa: E402
 generated = Path(env.subst("$BUILD_DIR")) / "generated"  # noqa: F821
 generated.mkdir(parents=True, exist_ok=True)
 
-for name in ("braid",) + ('euler2d', 'compass', 'fuzzyflakes', 'halftone', 'interaggregate', 'anemone', 'lmorph', 'hexadrop', 'fireworkx', 'starfish', 'goop'):
+for name in ("braid",) + ('euler2d', 'compass', 'fuzzyflakes', 'halftone', 'interaggregate', 'anemone', 'lmorph', 'hexadrop', 'fireworkx', 'starfish', 'goop', 'cwaves', 'hextrail'):
     source = (project / "src" / "hacks" / name / f"{name}.c").read_text()
     if name == "fireworkx":
         source = fireworkx_patch.scale_for_a_small_window(source)

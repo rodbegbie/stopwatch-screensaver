@@ -32,7 +32,12 @@ hack, and holds a recipe per trap. The steps:
    counts. A resource
    override can skip a hack's restart cleanup: Galaxy leaked at `count: 2`, so
    leak-test any override.
-8. If Rod drops a port after seeing it (Celtic): remove it from `g_hacks[]`, the
-   expected list, its hash and its leak test; keep the source and notices row;
-   add `name: reason` (short: it is printed as a bullet) to
-   `tools/failed_ports.txt`; file an issue.
+8. If Rod drops a port after seeing it (Celtic, Hypnowheel, Boing): remove it
+   from `g_hacks[]`, the expected list, its hash and its leak test; keep the
+   source and notices row; add `name: reason` (short: it is printed as a
+   bullet) to `tools/failed_ports.txt`. For a GL hack, keep the `<name>_gl.c`
+   wrapper but exclude it and the directory (`-<hacks/boing/>
+   -<hacks/boing_gl.c>`) in all three `build_src_filter` lines, or it still
+   builds. A reason Rod gave in his own words ("boring on a small screen") is
+   the reason to record. File an issue only if there is something to come back
+   to.

@@ -114,8 +114,10 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   display outlives the hack, and Hexadrop's colour once turned Pyro's clear
   into a solid fill. No key events ever arrive, so `XLookupString` finds no
   characters, and an Xt timer (`X11/Intrinsic.h`) is never made.
-- The shim still draws nothing into a depth-1 pixmap and ignores a GC's
-  function. Halo handles both inside its own wrapper (`halo_planes.h`).
+- The shim still draws nothing into a depth-1 pixmap and draws every GC as
+  `GXcopy`; it only remembers the function in `gc->function` now (GXcopy, GXor,
+  GXxor). Halo and Moire2 handle both inside their own wrappers
+  (`halo_planes.h`, `moire2_planes.h`).
 - `screenhack.h`'s `frand` has a `1.0` inside its macro body, so the float
   literal pass cannot reach it and a single-precision wrapper still divides in
   double (software on the S3; `nm` shows `__divdf3`). `hacks/single_frand.h`
@@ -132,6 +134,16 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   `XQueryColor`; `DisplayOfScreen` (the display opened last); the fill-rule,
   fill-style and stipple constants (accepted, ignored: fills are solid and
   even-odd); and `XSetFunction` and `jwxyz_XSetAlphaAllowed` (no-ops).
+- Added for the third batch, each test-first: `ya_random` (the C library's
+  `random()`, so `ya_rand_init` seeds it); `make_color_ramp` (the short way
+  round the hue wheel, there and back when `closed_p`; ours, not
+  xscreensaver's); `visual_depth` (always 16); `xshm.h` with
+  `create_xshm_image`, `put_xshm_image` and `destroy_xshm_image`, which are a
+  zeroed 16-bit `XImage` and `XPutImage` (`x11shim/xshm.c`); the arrow and page
+  keysym constants (X's values; no key event ever arrives); and `glOrtho` (see
+  `gl.md`). The Edit tool drops a trailing space from `old_string` and
+  `new_string`: an edit that ends at a space in `platformio.ini`'s
+  `build_src_filter` glued two entries together (it still built, which hid it).
 - `allocate_alpha_colors` still finds no colour planes, so a hack that wants
   transparency (Qix, Goop) falls back to opaque layers and prints "couldn't
   allocate any color planes" on the host.

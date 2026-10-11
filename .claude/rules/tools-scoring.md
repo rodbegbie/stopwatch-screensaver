@@ -28,3 +28,10 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   backtest reads a measured row only when its name is the bare hack name
   (`| Deluxe |`); a row with a note in brackets is skipped, so put the build
   that is registered in the bare row.
+- `speed_backtest.py` stops with "hypnowheel: does not compile ... 'rotator.h'
+  file not found": a dropped GL port counts in the backtest and is probed
+  standalone, without the GL helpers' include path. `docs/speed-backtest.md`
+  was last regenerated before Hypnowheel was ported, and was not regenerated
+  for the CWaves batch either. The scorer also lists calls inside code that is
+  never compiled (`XCreateBitmapFromData` in Cynosure's `DO_STIPPLE` block) as
+  gaps.

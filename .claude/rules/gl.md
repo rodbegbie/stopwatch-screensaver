@@ -170,6 +170,23 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   benchmarks; Morph3D's shape is random per boot. To split a frame, add a
   temporary `#if GL_PROFILE == n` early return to a TinyGL function through
   `tinygl_patch.py` and flash with `-DGL_PROFILE=n`; never commit it.
+- A `glClear` of the depth buffer while the depth test is off does nothing
+  until the test is enabled (`glshim_depth_test_changed`, patched into
+  `misc.c`): nothing reads depth with the test off, and the clear is a second
+  full-canvas fill of PSRAM. HexTrail clears it every frame and never enables
+  the test; skipping it took 13.0 fps to 15.3. `glshim_depth_clears()` counts
+  the clears that ran, for the tests.
+- TinyGL has `glOrtho` commented out of its header (Boing needs it). `glshim.c`
+  builds the usual matrix and calls `glMultMatrixf`; `test_glshim` checks it
+  with an off-centre, non-square box and with the near and far planes, since
+  ordering two triangles alone could not tell the depth term was wrong.
+- Boing on TinyGL: its smooth, blended scanlines and shadow are the slow part
+  (see `hacks.md`). The budget model predicted 106 ms a frame with scanlines
+  and the board took 204 (171 step, 32 push): add that as a calibration point,
+  since the model has no blend term. HexTrail was predicted at 15.7 fps for
+  its early frames at count 20 and the first window on the board read 15.0,
+  but the model reads one early frame and the hack's cost grows over its
+  cycle (the step reached 293 ms).
 - Overlapping the push with the next frame (core 0 pushing while core 1
   renders) is untried; it needs a second 434 KB buffer, a lock around M5GFX, and
   the PSRAM bandwidth may limit the gain.

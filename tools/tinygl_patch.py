@@ -68,6 +68,7 @@ DIRTY_DECLARATIONS = """/* clip.c */
 /* The dirty rectangle, kept in src/glshim/glshim.c. */
 void glshim_note_box(GLint x0, GLint y0, GLint x1, GLint y1);
 void glshim_clear(ZBuffer* zb, GLint clear_z, GLint z, GLint clear_color, GLint r, GLint g, GLint b);
+void glshim_depth_test_changed(ZBuffer* zb);
 """
 
 DIRTY_TRIANGLE_HELPER = """static void glshim_note_triangle(GLVertex* p0, GLVertex* p1, GLVertex* p2) {
@@ -407,6 +408,11 @@ REPLACEMENTS: tuple[Replace, ...] = (
         "src/clear.c",
         "ZB_clear(c->zb, mask & GL_DEPTH_BUFFER_BIT,",
         "glshim_clear(c->zb, mask & GL_DEPTH_BUFFER_BIT,",
+    ),
+    Replace(
+        "src/misc.c",
+        "\t\tc->zb->depth_test = v;\n",
+        "\t\tc->zb->depth_test = v;\n\t\tglshim_depth_test_changed(c->zb);\n",
     ),
     Replace(
         "src/zgl.h",
