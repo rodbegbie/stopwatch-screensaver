@@ -163,11 +163,14 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   for a rectangle list for each of eight colour states, most empty, and it
   freed its cells and drew nothing more (a black screen at 18 fps, half the
   starts, never seen on the host). `loop_direct.c` asks for one byte, and a test
-  swaps in an allocator that returns NULL for zero. Hypnowheel (1.4 fps) was dropped from the
-  rotation after Rod saw it (issue #73; its source, notices row and a
-  `failed_ports.txt` entry stay): about 70 percent of its step is additively
-  blended pixel fill (about 1.2 us a pixel) and 30 percent is per-triangle
-  setup (about 35 us), so `*layers` and `*count` cannot reach 15 fps.
+  swaps in an allocator that returns NULL for zero. Hypnowheel was dropped from
+  the rotation after Rod saw it, twice (issue #73; its source, notices row and a
+  `failed_ports.txt` entry stay). `hypnowheel_single_gl.c` registers it only
+  with `-DHYPNOWHEEL_PROBE`, as the last entry, for measuring. A board profile
+  showed about 275 ms of its 706 ms step was `double` trig in every vertex, not
+  fill as first thought; single precision gives 2.2 fps. The rest is fill
+  (about 334 ms): `-DHYPNOWHEEL_HALF` renders at half resolution
+  (`glshim_set_render_scale`) for 4.0 fps, still too slow for Rod.
 - CWaves (`cwaves_single.c`) fills 233 columns, each a 2 by 466 rectangle, so
   every store lands on a different cache line of the PSRAM canvas: after single
   precision took the step from 95 to 61 ms, 57 of those were the fills and 4

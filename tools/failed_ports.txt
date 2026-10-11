@@ -7,5 +7,5 @@
 celtic: shelved at 1.2 fps and 300 KB of heap, see issue #37
 halftone: 5 fps; the shim's ellipse fill is 80% of it, issue #57
 flurry: needs GL TinyGL lacks, est. under 1 fps, issue #70
-hypnowheel: 1.4 fps, blended pixel fill; Rod dropped it, issue #73
+hypnowheel: 4.0 fps at half resolution, fill-bound; Rod dropped it, #73
 boing: 8.3 fps and plain on a small screen; Rod dropped it, scanlines cost 83 ms

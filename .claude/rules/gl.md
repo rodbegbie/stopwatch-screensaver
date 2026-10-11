@@ -78,7 +78,12 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   it is only right for black and white. A white-on-black frame hides this, and
   smooth (grey) lines did not. The fill wrapper (`gl_draw_triangle_fill` in
   `tinygl_patch.py`) treats `SRC_ALPHA, ONE_MINUS_SRC_ALPHA`, which is alpha 1
-  in real GL, as an opaque fill. Other blend functions still use the macro and
+  in real GL, as an opaque fill. A blend that only adds (each factor `GL_ONE`
+  or one TinyGL treats as one, such as StonerView's `GL_SRC_ALPHA, GL_ONE`,
+  with `GL_FUNC_ADD`) takes `glshim_add565`, a saturating add per channel on
+  the swapped pixel (`TGL_BLEND_ADDS` in `tinygl_patch.py`); StonerView's
+  colours went from scattered dark and rainbow squares to smooth runs of hue,
+  and Rod preferred them. The other blend functions still use the macro and
   are wrong for any colour but black and white.
 - Polygon offset was stored and never read. The fill wrapper applies it:
   `factor` times the polygon's steepest depth slope plus `units` times one
@@ -183,3 +188,31 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
 - Overlapping the push with the next frame (core 0 pushing while core 1
   renders) is untried; it needs a second 434 KB buffer, a lock around M5GFX, and
   the PSRAM bandwidth may limit the gain.
+- Board profiles (issue #43): `-DGL_PROFILE` prints a `glprof` line after
+  each `run` line with cycle counts per stage (clear, list, vertex, shade,
+  tri, fill, point, line; nested, so vertex includes tri and fill), and
+  `tools/ab_flash.py` builds variants pinned, flashes them in turn and
+  tabulates the windows. Each variant needs its own build directory:
+  PlatformIO cleans a build directory, image and all, when the build flags
+  change. Gears' boot layout: fill 28 ms, vertex work outside lighting
+  17 ms, clear 6 ms, lighting 3.7 ms of a 61 ms step.
+- Lazy lighting is the default (`GL_LAZY_SHADE`; `-DGL_EAGER_SHADE` restores
+  TinyGL's order): a vertex is lit when something that uses it is drawn, so
+  culled triangles cost nothing. Gears 61.1 to 57.7 ms, Morph3D 61.4 to
+  58.4 ms, frame hashes unchanged. `GL_IRAM`, `GL_INTERNAL_MATRICES` and
+  `PSRAM_AUTOLOAD` moved Gears by under 1 ms. An autoload region over the
+  whole 32 MB data bus boot-looped the board (a prefetch into unmapped pages
+  faulted the panic handler too); it covers mapped PSRAM only now.
+- Fill is compute-bound, not PSRAM-miss-bound. A new PSRAM cache line costs
+  129 cycles to read and about 220 to read and write back (the `membench`
+  line of a profile build), but neighbouring triangles reuse lines. A banded
+  renderer that held a frame's triangles and replayed them into 32-row bands
+  in internal RAM was exact but slower: Gears 59 to 76 ms (replay 38 ms
+  against 30 ms of direct fill), Hypnowheel 476 to 528 ms. It was reverted
+  (`feature/43-banded-renderer` history). Faster fill needs fewer cycles a
+  pixel or fewer pixels, not other memory.
+- `glshim_set_render_scale(2)`, read by the next `glshim_open`, renders at half
+  the width and height: `glViewport` is a macro for `glshim_Viewport`, which
+  divides by the scale, and the swap doubles the dirty box into the canvas.
+  Hypnowheel's fill went from 334 to 129 ms (not a quarter: rows and triangles
+  still cost). Nothing registered uses it.

@@ -106,6 +106,8 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Hypnowheel | 1.4 | 720 ms | 32.6 ms | 0 ms | about 0.64 MB |
 | Hypnowheel (`*layers: 1`, probe) | 4.4 | 200 ms | 32.5 ms | 0 ms | about 0.64 MB |
 | Hypnowheel (`*count: 5`, probe) | 2.0 | 511 ms | 32.6 ms | 0 ms | about 0.64 MB |
+| Hypnowheel (single precision, saturating blend, probe) | 2.2 | 426 ms | 32.6 ms | 0 ms | not measured |
+| Hypnowheel (as above, half resolution, probe) | 4.0 | 227 ms | 32.5 ms | 0 ms | not measured |
 | CWaves (as copied, double) | 7.8 | 95-97 ms | 32.6 ms | 0 ms | about 7 KB |
 | CWaves (single precision) | 10.6 | 61 ms | 32.4 ms | 0 ms | about 7 KB |
 | CWaves | 20.0-20.2 | 16.1-16.2 ms | 32.5 ms | 0 ms | about 7 KB |
@@ -628,8 +630,10 @@ builds drew garbage (a layout mismatch in `spline.h`, since fixed) and the
 speeds they were measured at are not recorded; the rows above are from the
 fixed builds. Loop's registered build asks for 50 ms
 between generations (upstream asks for 100). Hypnowheel's probes used
-temporary registry overrides, since reverted; they separate its additively
-blended pixel fill (about 70 percent of the step) from its per-triangle setup.
+temporary registry overrides, since reverted. The later rows are
+`GL_PROFILE` builds with `-DHYPNOWHEEL_PROBE` (2026-10-11, issue #43): about
+275 ms of the 706 ms step was `double` trig, which single precision removed;
+half resolution (`-DHYPNOWHEEL_HALF`) took fill from 334 to 129 ms.
 Qix's internal heap read about 43 KB low while it ran, which was its leaked
 segment arrays (fixed). Colour and pace were not judged.
 
