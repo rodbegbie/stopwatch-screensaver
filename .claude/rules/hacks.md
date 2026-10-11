@@ -114,3 +114,29 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   textures, none in TinyGL here. With `gl_budget.py`'s per-vertex and
   per-pixel costs that is well under 1 fps (arithmetic, not a measurement:
   the tool cannot read a multi-file hack).
+- Qix and Fireworkx both leaked on every stop, found by the restart leak test.
+  Qix's `qix_free` skips each segment's `lines[i].p` array (about 48 KB per
+  stop); Fireworkx below 24 bits never frees its own 565 image buffer (48 KB).
+  Their wrappers (`qix_direct.c`, `fireworkx_single.c`) free the missing piece
+  before calling upstream's free. LeakSanitizer does not run on macOS, but
+  `MallocStackLogging=1 leaks --atExit -- .pio/build/dump/program <index> 0
+  out.raw` names the allocating line in seconds (rebuild `-e dump` first: a
+  `pio test` deletes the program).
+- Starfish and Goop spent most of a frame in the shim's polygon fill (double
+  maths per edge per row). `hacks/float_polygon.h` fills any even-odd polygon
+  in float and took Starfish from 8.5 to 20 fps and Goop from 7.2 to 12; Goop
+  then draws straight onto the window (its `XCreatePixmap` is the window and
+  the `XCopyArea` is skipped), 16 fps. It is not wired into the shim: the
+  shared `canvas_fill_polygon` is still double (Hexadrop has its own convex
+  float fill). Goop draws opaque layers (`goop_direct.c` takes the
+  `HAVE_JWXYZ` path); upstream's translucent overlap needs colour planes.
+- Fireworkx renders at 1/`FIREWORKX_SCALE` of the width and height
+  (`hacks/lowrez_put.h`: it is told the window is smaller and `XPutImage`
+  draws each pixel as a square): 2.4 fps as copied, 11 at a scale of 3, 12.4 at
+  4. Its glow, flash pass and 565 conversion are full-frame walks over PSRAM.
+  Its header says "(GPL)" but the text is the standard permission notice.
+- Loop asks for 100 ms between generations (8.7 fps with a 3.5-7 ms step); the
+  registry overrides it to 50 ms. Hypnowheel is 1.4 fps and stays under the bar:
+  about 70 percent of its step is additively blended pixel fill (about 1.2 us a
+  pixel) and 30 percent is per-triangle setup (about 35 us), so `*layers` and
+  `*count` cannot reach 15 fps.

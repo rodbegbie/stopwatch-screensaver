@@ -116,3 +116,19 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   characters, and an Xt timer (`X11/Intrinsic.h`) is never made.
 - The shim still draws nothing into a depth-1 pixmap and ignores a GC's
   function. Halo handles both inside its own wrapper (`halo_planes.h`).
+- `screenhack.h`'s `frand` has a `1.0` inside its macro body, so the float
+  literal pass cannot reach it and a single-precision wrapper still divides in
+  double (software on the S3; `nm` shows `__divdf3`). `hacks/single_frand.h`
+  redefines it in float; it is opt-in, because the older wrappers' frame hashes
+  are pinned with the original.
+- Added for the second batch, each test-first: 16-bit ZPixmap `XImage`s
+  (ordinary little-endian RGB565, byte-swapped by `XPutImage`) and
+  `ImageByteOrder`; `CoordModePrevious` in `XFillPolygon`, `XDrawLines` and
+  `XDrawPoints`; `XCreatePixmapFromBitmapData` (X bitmap data is least
+  significant bit first); a spline of our own (`spline.c`, not xscreensaver's);
+  `XQueryColor`; `DisplayOfScreen` (the display opened last); the fill-rule,
+  fill-style and stipple constants (accepted, ignored: fills are solid and
+  even-odd); and `XSetFunction` and `jwxyz_XSetAlphaAllowed` (no-ops).
+- `allocate_alpha_colors` still finds no colour planes, so a hack that wants
+  transparency (Qix, Goop) falls back to opaque layers and prints "couldn't
+  allocate any color planes" on the host.

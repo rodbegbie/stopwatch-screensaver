@@ -452,12 +452,12 @@ static const uint64_t kBaseline[] = {
     0x12097254df6ad0a2ull, /* StonerView: taken after looking at the frames */
     0x692e426561735c0dull, /* Halo: taken after looking at the frames, with GCBackground honoured */
     0x9b1b0de461b6438bull, /* XMatrix: taken after looking at the frames, trace off */
-    0, /* Qix: not yet pinned */
-    0, /* Fireworkx: not yet pinned */
-    0, /* Starfish: not yet pinned */
-    0, /* Goop: not yet pinned */
-    0, /* Loop: not yet pinned */
-    0, /* Hypnowheel: not yet pinned */
+    0x51a9a94db9bf9128ull, /* Qix: taken after looking at the frames */
+    0xc04760c7c039f30bull, /* Fireworkx: taken after looking at the frames */
+    0x51be30fbd6d04d2dull, /* Starfish: taken after looking at the frames */
+    0x13379c8986b55de4ull, /* Goop: taken after looking at the frames */
+    0xed98a503cd77ba2full, /* Loop: taken after looking at the frames */
+    0x5f47ef604f59cbd4ull, /* Hypnowheel: taken after looking at the frames */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {

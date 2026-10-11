@@ -1,6 +1,6 @@
 ## Measured on the device
 
-Fifty-seven hacks have been run so far (default settings, 466×466 canvas
+Sixty-three hacks have been run so far (default settings, 466×466 canvas
 pushed to the display every frame, canvas held in PSRAM). The firmware times
 each frame in three parts, averaged over 5 seconds: **step** is the hack's own
 draw call, **push** is sending the canvas to the display, and **wait** is what
@@ -88,6 +88,22 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Halo (Ramp mode, 100 ms delay, colour pixmap) | 4.6-15.4 | 35.7-110 ms | 7.9-31.9 ms | 17.6-80.9 ms | about 0.42 MB |
 | Halo (Seuss mode, colour pixmaps) | 5.2-10.2 | 77-172 ms | 15.4-18.9 ms | 4.3-5.8 ms | about 0.85 MB |
 | XMatrix (typed trace, then rain) | 17.6-87.2 | 0.1-23.2 ms | 3.4-32.5 ms | 0-8.2 ms | about 0.47 MB |
+| Qix | 31.4-48.6 | 8.8-17.9 ms | 8.9-12.8 ms | 0-2.4 ms | about 5 KB |
+| Fireworkx (as copied, double) | 2.0-2.6 | 367-587 ms | 32.4-36.0 ms | 0 ms | about 3.1 MB |
+| Fireworkx (single precision, float frand) | 2.8 | 327-348 ms | 32.4 ms | 0 ms | about 3.1 MB |
+| Fireworkx (scale 2) | 7.6-7.8 | 96-99 ms | 32.5 ms | 0 ms | about 0.8 MB |
+| Fireworkx (scale 3, registered) | 10.6-11.2 | 56-62 ms | 32.5-32.6 ms | 0 ms | about 0.35 MB |
+| Fireworkx (scale 4) | 11.8-12.6 | 46-51 ms | 32.6 ms | 0 ms | about 0.2 MB |
+| Starfish (as copied) | 8.2-9.2 | 76-87 ms | 32.6-35.5 ms | 0 ms | none measurable |
+| Starfish (registered: float polygon fill) | 19.8-20.0 | 16.4-16.9 ms | 32.5 ms | 0 ms | none measurable |
+| Goop (as copied, opaque layers) | 7.0-7.4 | 103-109 ms | 32.4 ms | 0 ms | about 0.75 MB |
+| Goop (single precision, float polygon fill) | 11.8-12.4 | 48-52 ms | 32.4 ms | 0 ms | about 0.75 MB |
+| Goop (registered: pixmap is the window) | 15.6-16.2 | 28-31 ms | 32.6 ms | 0 ms | about 0.3 MB |
+| Loop (as copied, 100 ms delay) | 8.6-9.0 | 3.5-6.9 ms | 1.1-5.1 ms | 101-110 ms | about 1 MB |
+| Loop (registered, 50 ms delay) | 15.4-16.8 | 4.5-10.4 ms | 1.5-3.7 ms | 52-54 ms | about 1 MB |
+| Hypnowheel | 1.4 | 720 ms | 32.6 ms | 0 ms | about 0.64 MB |
+| Hypnowheel (`*layers: 1`, probe) | 4.4 | 200 ms | 32.5 ms | 0 ms | about 0.64 MB |
+| Hypnowheel (`*count: 5`, probe) | 2.0 | 511 ms | 32.6 ms | 0 ms | about 0.64 MB |
 
 Unknown Pleasures' rows are from pinned builds (2026-10-10). The first flash
 had TinyGL's one-pixel lines and its additive blend, so the black quads that
@@ -537,3 +553,17 @@ Seuss colour-pixmap row's PSRAM is two 434 KB pixmaps). Halo's registered
 build asks for a 10 ms pause between frames (upstream asks for 100 ms). XMatrix
 runs its typed trace first, then the rain, where it is limited by the 466-row
 push. Flurry was not ported, so has no row. Colour and pace were not judged.
+
+Qix, Fireworkx, Starfish, Goop, Loop and Hypnowheel were measured on pinned
+builds (2026-10-11), one 25-40 second capture per row. Fireworkx's picture is
+rendered at a third of the width and height and drawn four times over by
+`lowrez_put.h`, and the scales are a build flag (`FIREWORKX_SCALE`); the
+registered build asks for 3. Starfish and Goop fill their polygons with
+`float_polygon.h` instead of the shim's double-precision fill, which was most
+of their step; Goop also draws straight onto the window instead of a
+window-sized pixmap it then copied. Loop's registered build asks for 50 ms
+between generations (upstream asks for 100). Hypnowheel's probes used
+temporary registry overrides, since reverted; they separate its additively
+blended pixel fill (about 70 percent of the step) from its per-triangle setup.
+Qix's internal heap read about 43 KB low while it ran, which was its leaked
+segment arrays (fixed). Colour and pace were not judged.
