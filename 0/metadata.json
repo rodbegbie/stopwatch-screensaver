@@ -1,0 +1,354 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4PB6TE4D2ZM8PM78W6A1JDS",
+  "session_id": "52b5f480-1b35-4f9b-b546-dbc5c1aff2c6",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-11T20:41:58.85867Z",
+  "branch": "feature/flying-toasters-design",
+  "checkpoints_count": 1,
+  "save_step_count": 10,
+  "files_touched": [
+    "THIRD_PARTY_NOTICES.md",
+    "docs/superpowers/plans/2026-10-11-ad-flyingtoasters.md",
+    "docs/superpowers/specs/2026-10-11-flying-toasters-design.md",
+    "firmware/src/hacks/ad_flyingtoasters/ad_sim.c",
+    "firmware/test/test_ad_flyingtoasters/test_ad_flyingtoasters.c",
+    "tools/check_notices.py",
+    "tools/tests/test_check_notices.py"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-5-5",
+  "turn_id": "89c27eb496e8",
+  "checkpoint_transcript_start": 3098,
+  "transcript_lines_at_start": 3098,
+  "compact_transcript_start": 309,
+  "token_usage": {
+    "input_tokens": 32,
+    "cache_creation_tokens": 12327,
+    "cache_read_tokens": 8080174,
+    "output_tokens": 8445,
+    "api_call_count": 16,
+    "subagent_tokens": {
+      "input_tokens": 0,
+      "cache_creation_tokens": 0,
+      "cache_read_tokens": 0,
+      "output_tokens": 0,
+      "api_call_count": 0
+    }
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_011fe7Ftxi9dW82Wu9scxvei",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:brainstorming"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "2def62d30305",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 36,
+        "end": 37,
+        "entry_ids": [
+          "8f4bee43-9398-4483-a94f-2184953716a9"
+        ],
+        "tool_use_id": "toolu_011fe7Ftxi9dW82Wu9scxvei"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_011fe7Ftxi9dW82Wu9scxvei"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:brainstorming",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01VGfKq8uTyw5p9JGR4U5Hi6",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "38cabf25d0ea",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 547,
+        "end": 548,
+        "entry_ids": [
+          "12978f82-ec4b-494e-901b-f95a9a8a2a3b"
+        ],
+        "tool_use_id": "toolu_01VGfKq8uTyw5p9JGR4U5Hi6"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01VGfKq8uTyw5p9JGR4U5Hi6"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01CRtci7fCUbUEKsa1MgDPdY",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:writing-plans"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "b21cb8f7f7e8",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 893,
+        "end": 894,
+        "entry_ids": [
+          "9ba948ae-7f21-4460-b535-ffd00aa32413"
+        ],
+        "tool_use_id": "toolu_01CRtci7fCUbUEKsa1MgDPdY"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01CRtci7fCUbUEKsa1MgDPdY"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:writing-plans",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_011BUPrC5nyQDPQ2wKBp9Jjz",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:subagent-driven-development"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "3f09d1df5e8b",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 1036,
+        "end": 1037,
+        "entry_ids": [
+          "39e8ec28-beca-4853-a396-d53754866fb3"
+        ],
+        "tool_use_id": "toolu_011BUPrC5nyQDPQ2wKBp9Jjz"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_011BUPrC5nyQDPQ2wKBp9Jjz"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:subagent-driven-development",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_016r7TLG1nxZW4DKc6x4DTrv",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": ".claude/worktrees/flying-toasters:deliver-branch"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "9b01b21bfd03",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 2546,
+        "end": 2547,
+        "entry_ids": [
+          "3f569402-d813-4e65-815e-f96234785477"
+        ],
+        "tool_use_id": "toolu_016r7TLG1nxZW4DKc6x4DTrv"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_016r7TLG1nxZW4DKc6x4DTrv"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: .claude/worktrees/flying-toasters:deliver-branch",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "prompt-skill-claude-code-address-findings-2026-10-11T20:27:50.875283Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "address-findings"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "290c6398c186",
+      "timestamp": "2026-10-11T20:27:50.875283Z",
+      "native": {
+        "command": "/address-findings"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/address-findings",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 40
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-10-11T20:41:58.721768Z",
+    "agent_lines": 0,
+    "agent_removed": 1069,
+    "human_added": 806,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 806,
+    "total_lines_changed": 1875,
+    "agent_percentage": 57.013333333333335,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 22,
+      "agent_lines_removed": 9
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 22,
+      "agent_lines_removed": 9
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 22,
+      "agent_lines_removed": 9
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 953,
+      "user_lines_removed": 8,
+      "agent_lines_added": 24,
+      "agent_lines_removed": 928,
+      "user_added_per_file": {
+        "AGENTS.md": 19,
+        "docs/superpowers/specs/2026-10-11-flying-toasters-design.md": 386,
+        "firmware/src/hacks/ad_flyingtoasters/ad_flyingtoasters.c": 6,
+        "firmware/src/hacks/ad_flyingtoasters/ad_sprites.c": 46,
+        "firmware/src/hacks/ad_flyingtoasters/ad_sprites.h": 23,
+        "firmware/test/test_ad_flyingtoasters/test_ad_flyingtoasters.c": 420,
+        "firmware/test/test_hacks/test_hacks.c": 53
+      },
+      "user_removed_per_file": {
+        "firmware/src/hacks/ad_flyingtoasters/ad_flyingtoasters.c": 6,
+        "firmware/test/test_hacks/test_hacks.c": 2
+      }
+    },
+    {
+      "checkpoint_number": 7,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 8,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 9,
+      "user_lines_added": 1402,
+      "user_lines_removed": 225,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".claude/rules/gl.md": 49,
+        ".claude/rules/hacks.md": 8,
+        ".claude/rules/tools-scoring.md": 4,
+        ".claude/skills/port-hack/techniques.md": 18,
+        "AGENTS.md": 19,
+        "docs/porting-assessment.md": 15,
+        "firmware/src/glshim/glshim.c": 73,
+        "firmware/src/glshim/glshim.h": 7,
+        "firmware/src/glshim/glshim_prof.h": 110,
+        "firmware/src/hacks/hypnowheel_single_gl.c": 65,
+        "firmware/src/hacks/registry.c": 15,
+        "firmware/src/main.cpp": 53,
+        "firmware/test/test_glshim/test_glshim.c": 320,
+        "firmware/test/test_hacks/test_hacks.c": 1,
+        "tools/ab_flash.py": 166,
+        "tools/assessment_measured.md": 6,
+        "tools/failed_ports.txt": 1,
+        "tools/gl_budget.py": 3,
+        "tools/tests/test_ab_flash.py": 43,
+        "tools/tests/test_tinygl_patch.py": 117,
+        "tools/tinygl_patch.py": 309
+      },
+      "user_removed_per_file": {
+        ".claude/rules/gl.md": 1,
+        ".claude/rules/hacks.md": 5,
+        "docs/porting-assessment.md": 11,
+        "docs/superpowers/specs/2026-10-07-stopwatch-xscreensaver-design.md": 195,
+        "firmware/src/glshim/glshim.c": 6,
+        "firmware/test/test_hacks/test_hacks.c": 1,
+        "tools/assessment_measured.md": 2,
+        "tools/failed_ports.txt": 1,
+        "tools/gl_budget.py": 2,
+        "tools/tinygl_patch.py": 1
+      }
+    },
+    {
+      "checkpoint_number": 10,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 11,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 58,
+      "agent_lines_removed": 1069
+    }
+  ]
+}
