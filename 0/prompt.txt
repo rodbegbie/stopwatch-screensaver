@@ -950,3 +950,7 @@ Yes! I'm so happy about this!  Open the PR when you're ready.
   
   ### Verdict: all findings addressed
 </agent-message>
+
+---
+
+/address-findings
