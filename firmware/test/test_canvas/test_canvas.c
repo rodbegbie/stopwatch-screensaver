@@ -638,8 +638,22 @@ void test_disc_follows_a_small_canvas(void) {
   canvas_free(&d);
 }
 
+/* main.cpp's QR overlay: a 328 px square centred on the 466 px screen. */
+void test_the_centred_qr_square_lies_inside_the_disc(void) {
+  Canvas d = disc_canvas(466, 466);
+  const int side = 328, at = (466 - side) / 2;
+  for (int y = at; y < at + side; y++) {
+    int x0, x1;
+    TEST_ASSERT_TRUE(canvas_visible_span(&d, y, &x0, &x1));
+    TEST_ASSERT_TRUE(x0 <= at);
+    TEST_ASSERT_TRUE(x1 >= at + side - 1);
+  }
+  canvas_free(&d);
+}
+
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_the_centred_qr_square_lies_inside_the_disc);
   RUN_TEST(test_no_disc_means_whole_rows);
   RUN_TEST(test_disc_rows_are_symmetric_and_widest_in_the_middle);
   RUN_TEST(test_disc_includes_every_pixel_touching_the_circle);
