@@ -106,6 +106,59 @@ void test_an_edge_that_starts_above_the_canvas_enters_at_the_right_column(void) 
   TEST_ASSERT_EQUAL_HEX16(0, cv.px[0 * 64 + 50]);
 }
 
+void test_a_translucent_fill_mixes_with_what_is_under_it(void) {
+  canvas_clear(&cv, px_swap(0xFFFF));
+  const XPoint sq[4] = {{4, 4}, {20, 4}, {20, 20}, {4, 20}};
+  float_fill_polygon_alpha(&cv, sq, 4, px_swap(0x0000), 16);
+  /* Half of white (31, 63, 31) is (15, 31, 15). */
+  TEST_ASSERT_EQUAL_HEX16(px_swap((15 << 11) | (31 << 5) | 15), cv.px[10 * 64 + 10]);
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0xFFFF), cv.px[30 * 64 + 40]);
+}
+
+void test_the_new_colour_counts_alpha_parts_in_32_and_the_old_the_rest(void) {
+  const XPoint sq[4] = {{4, 4}, {20, 4}, {20, 20}, {4, 20}};
+  /* Red (31, 0, 0) at 8/32 over green (0, 63, 0) is (7, 47, 0). */
+  canvas_clear(&cv, px_swap(63 << 5));
+  float_fill_polygon_alpha(&cv, sq, 4, px_swap(31 << 11), 8);
+  TEST_ASSERT_EQUAL_HEX16(px_swap((7 << 11) | (47 << 5)), cv.px[10 * 64 + 10]);
+  /* And at 24/32 it is (23, 15, 0). */
+  canvas_clear(&cv, px_swap(63 << 5));
+  float_fill_polygon_alpha(&cv, sq, 4, px_swap(31 << 11), 24);
+  TEST_ASSERT_EQUAL_HEX16(px_swap((23 << 11) | (15 << 5)), cv.px[10 * 64 + 10]);
+}
+
+void test_a_translucent_fill_covers_the_pixels_an_opaque_one_does(void) {
+  const XPoint star[5] = {{32, 2}, {42, 44}, {4, 18}, {60, 18}, {22, 44}};
+  canvas_clear(&cv, 0);
+  float_fill_polygon(&cv, star, 5, px_swap(0xFFFF));
+  Canvas other;
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&other, 64, 48, malloc));
+  canvas_clear(&other, 0);
+  float_fill_polygon_alpha(&other, star, 5, px_swap(0xFFFF), 23);
+  for (int i = 0; i < 64 * 48; i++)
+    TEST_ASSERT_EQUAL_INT_MESSAGE(cv.px[i] != 0, other.px[i] != 0, "coverage");
+  canvas_free(&other);
+}
+
+void test_the_ends_of_the_alpha_range_are_nothing_and_opaque(void) {
+  const XPoint sq[4] = {{4, 4}, {20, 4}, {20, 20}, {4, 20}};
+  canvas_clear(&cv, px_swap(0x1234));
+  float_fill_polygon_alpha(&cv, sq, 4, px_swap(0xFFFF), 0);
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1234), cv.px[10 * 64 + 10]);
+  float_fill_polygon_alpha(&cv, sq, 4, px_swap(0xFFFF), 32);
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0xFFFF), cv.px[10 * 64 + 10]);
+}
+
+void test_a_translucent_fill_marks_what_it_drew_dirty(void) {
+  canvas_clear_dirty(&cv);
+  const XPoint tri[3] = {{10, 10}, {20, 10}, {15, 20}};
+  float_fill_polygon_alpha(&cv, tri, 3, px_swap(0xF800), 16);
+  int x0, x1;
+  TEST_ASSERT_TRUE(canvas_dirty_row(&cv, 12, &x0, &x1));
+  TEST_ASSERT_TRUE(x0 >= 10 && x1 <= 20);
+  TEST_ASSERT_FALSE(canvas_dirty_row(&cv, 30, &x0, &x1));
+}
+
 void test_degenerate_input_draws_nothing(void) {
   const XPoint line[2] = {{1, 1}, {30, 30}};
   float_fill_polygon(&cv, line, 2, 0xFFFF);
@@ -154,6 +207,11 @@ int main(void) {
   RUN_TEST(test_a_ring_made_of_an_outline_and_a_smaller_copy_fills_only_between_them);
   RUN_TEST(test_a_polygon_hanging_off_the_canvas_is_clipped_and_marks_only_what_it_drew);
   RUN_TEST(test_an_edge_that_starts_above_the_canvas_enters_at_the_right_column);
+  RUN_TEST(test_a_translucent_fill_mixes_with_what_is_under_it);
+  RUN_TEST(test_the_new_colour_counts_alpha_parts_in_32_and_the_old_the_rest);
+  RUN_TEST(test_a_translucent_fill_covers_the_pixels_an_opaque_one_does);
+  RUN_TEST(test_the_ends_of_the_alpha_range_are_nothing_and_opaque);
+  RUN_TEST(test_a_translucent_fill_marks_what_it_drew_dirty);
   RUN_TEST(test_degenerate_input_draws_nothing);
   RUN_TEST(test_a_polygon_of_hundreds_of_vertices_fills_like_the_shim);
   RUN_TEST(test_filling_again_and_again_does_not_grow_memory);

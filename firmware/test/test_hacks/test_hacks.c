@@ -454,8 +454,8 @@ static const uint64_t kBaseline[] = {
     0x9b1b0de461b6438bull, /* XMatrix: taken after looking at the frames, trace off */
     0x51a9a94db9bf9128ull, /* Qix: taken after looking at the frames */
     0xc04760c7c039f30bull, /* Fireworkx: taken after looking at the frames */
-    0x51be30fbd6d04d2dull, /* Starfish: taken after looking at the frames */
-    0x13379c8986b55de4ull, /* Goop: taken after looking at the frames */
+    0x77bfaaf3faa1cc64ull, /* Starfish: taken after looking at the frames (spline.h before the float rename) */
+    0x5694978ccee06fd6ull, /* Goop: taken after looking at the frames (spline.h before the float rename) */
     0xed98a503cd77ba2full, /* Loop: taken after looking at the frames */
     0x5f47ef604f59cbd4ull, /* Hypnowheel: taken after looking at the frames */
 };
@@ -466,6 +466,36 @@ void test_frames_of_every_hack_but_maze_match_main(void) {
     if (kBaseline[i] == 0) continue;
     TEST_ASSERT_EQUAL_UINT64_MESSAGE(kBaseline[i], hash_after(i, 200),
                                      g_hacks[i]->name);
+  }
+}
+
+static int distinct_colours(void) {
+  static uint8_t seen[65536 / 8];
+  memset(seen, 0, sizeof seen);
+  int n = 0;
+  for (long i = 0; i < (long)cv.w * cv.h; i++) {
+    const uint16_t v = cv.px[i];
+    if (!(seen[v / 8] & (1 << (v % 8)))) {
+      seen[v / 8] |= (uint8_t)(1 << (v % 8));
+      n++;
+    }
+  }
+  return n;
+}
+
+/* Starfish and Goop were once pinned drawing one or two flat colours: their
+ * wrappers redefine `double` as `float`, and spline.h, included by the hack
+ * after that, gave the control arrays a float layout that spline.c (built with
+ * doubles) read as doubles. A hash taken from that frame proved nothing. */
+void test_hacks_that_use_the_spline_draw_a_real_picture(void) {
+  static const char *const names[] = {"Starfish", "Goop"};
+  for (int k = 0; k < 2; k++) {
+    srandom(1);
+    HackRunner *r = runner_create(&cv);
+    TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of(names[k])));
+    for (int f = 0; f < 200; f++) runner_step(r);
+    TEST_ASSERT_TRUE_MESSAGE(distinct_colours() >= 8, names[k]);
+    runner_destroy(r);
   }
 }
 
@@ -963,6 +993,7 @@ int main(void) {
   RUN_TEST(test_substrate_restarts_do_not_leak);
   RUN_TEST(test_substrate_draws_what_it_drew_before_pixels_were_swapped);
   RUN_TEST(test_frames_of_every_hack_but_maze_match_main);
+  RUN_TEST(test_hacks_that_use_the_spline_draw_a_real_picture);
   RUN_TEST(test_maze_frame_matches_main);
   RUN_TEST(test_pacman_levels_do_not_leak);
   RUN_TEST(test_pacman_start_and_stop_do_not_leak);

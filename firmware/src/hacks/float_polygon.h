@@ -27,8 +27,33 @@ static int float_edge_order(const void *a, const void *b) {
   return (ea->y0 > eb->y0) - (ea->y0 < eb->y0);
 }
 
-static void float_fill_polygon(Canvas *c, const XPoint *pts, int n, uint16_t color) {
-  if (!pts || n < 3) return;
+/* One row's span [xa, xb] mixed with what is there: the canvas holds byte
+ * swapped RGB565, so each pixel is unpacked, weighted `alpha` parts in 32
+ * against the old colour's 32 - alpha, and packed again. */
+static void float_blend_span(Canvas *c, int xa, int xb, int y, uint16_t color, int alpha) {
+  if (y < 0 || y >= c->h || xb < 0 || xa >= c->w) return;
+  if (xa < 0) xa = 0;
+  if (xb >= c->w) xb = c->w - 1;
+  if (xa > xb) return;
+  const uint16_t src = px_swap(color);
+  const int sr = src >> 11, sg = (src >> 5) & 63, sb = src & 31;
+  const int inv = 32 - alpha;
+  uint16_t *row = c->px + (size_t)y * (size_t)c->w;
+  for (int x = xa; x <= xb; x++) {
+    const uint16_t d = px_swap(row[x]);
+    const int r = (sr * alpha + (d >> 11) * inv) >> 5;
+    const int g = (sg * alpha + ((d >> 5) & 63) * inv) >> 5;
+    const int b = (sb * alpha + (d & 31) * inv) >> 5;
+    row[x] = px_swap((uint16_t)((r << 11) | (g << 5) | b));
+  }
+  canvas_mark_dirty(c, xa, y, xb - xa + 1, 1);
+}
+
+/* As float_fill_polygon, but the colour is mixed in: `alpha` is in 32nds,
+ * 32 opaque and 0 nothing. */
+static void float_fill_polygon_alpha(Canvas *c, const XPoint *pts, int n, uint16_t color, int alpha) {
+  if (!pts || n < 3 || alpha <= 0) return;
+  if (alpha > 32) alpha = 32;
   FloatEdge stack_edges[128];
   FloatEdge *edges = stack_edges;
   const FloatEdge *stack_order[128];
@@ -94,11 +119,20 @@ static void float_fill_polygon(Canvas *c, const XPoint *pts, int n, uint16_t col
       for (int k = 0; k + 1 < nx; k += 2) {
         const int xa = (int)ceilf(xs[k] - 0.5f);
         const int xb = (int)ceilf(xs[k + 1] - 0.5f) - 1;
-        if (xb >= xa) canvas_fill_rect(c, xa, y, xb - xa + 1, 1, color);
+        if (xb >= xa) {
+          if (alpha >= 32)
+            canvas_fill_rect(c, xa, y, xb - xa + 1, 1, color);
+          else
+            float_blend_span(c, xa, xb, y, color, alpha);
+        }
       }
     }
   }
   free(heap);
+}
+
+static void float_fill_polygon(Canvas *c, const XPoint *pts, int n, uint16_t color) {
+  float_fill_polygon_alpha(c, pts, n, color, 32);
 }
 
 /* XFillPolygon's arguments, for a wrapper to `#define XFillPolygon` onto: the

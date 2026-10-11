@@ -124,12 +124,21 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   `pio test` deletes the program).
 - Starfish and Goop spent most of a frame in the shim's polygon fill (double
   maths per edge per row). `hacks/float_polygon.h` fills any even-odd polygon
-  in float and took Starfish from 8.5 to 20 fps and Goop from 7.2 to 12; Goop
-  then draws straight onto the window (its `XCreatePixmap` is the window and
-  the `XCopyArea` is skipped), 16 fps. It is not wired into the shim: the
-  shared `canvas_fill_polygon` is still double (Hexadrop has its own convex
-  float fill). Goop draws opaque layers (`goop_direct.c` takes the
-  `HAVE_JWXYZ` path); upstream's translucent overlap needs colour planes.
+  in float, optionally mixed in at an alpha in 32nds, and took Starfish from
+  8.5 to 19 fps. Goop draws straight onto the window (its `XCreatePixmap` is
+  the window and the `XCopyArea` is skipped) and blends each blob in at the
+  alpha upstream's jwxyz path uses: 11 fps translucent, 14.5 opaque
+  (`GOOP_ALPHA=32`). The shared `canvas_fill_polygon` is still double (Hexadrop
+  has its own convex float fill). Goop is built through `goop_direct.c` with
+  `HAVE_JWXYZ`; the colour-plane path needs planes the canvas lacks.
+- A wrapper that does `#define double float` must include any header with a
+  `double` in a struct the shim's `.c` files also use BEFORE the define: the
+  hack includes it again, the guard keeps the copy seen through the macro, and
+  the two sides disagree on the layout. `spline.h` did this to Starfish and
+  Goop: they drew garbage (flat colours) at 16-20 fps and their first pinned
+  hashes were of it. Look at a frame after any change that is not
+  pixel-identical by construction; `test_hacks_that_use_the_spline_draw_a_real_picture`
+  now fails on a flat screen.
 - Fireworkx renders at 1/`FIREWORKX_SCALE` of the width and height
   (`hacks/lowrez_put.h`: it is told the window is smaller and `XPutImage`
   draws each pixel as a square): 2.4 fps as copied, 11 at a scale of 3, 12.4 at

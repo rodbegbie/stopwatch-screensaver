@@ -190,10 +190,10 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Fireworkx (scale 3, registered) | 10.6-11.2 | 56-62 ms | 32.5-32.6 ms | 0 ms | about 0.35 MB |
 | Fireworkx (scale 4) | 11.8-12.6 | 46-51 ms | 32.6 ms | 0 ms | about 0.2 MB |
 | Starfish (as copied) | 8.2-9.2 | 76-87 ms | 32.6-35.5 ms | 0 ms | none measurable |
-| Starfish (registered: float polygon fill) | 19.8-20.0 | 16.4-16.9 ms | 32.5 ms | 0 ms | none measurable |
+| Starfish (registered: float polygon fill) | 19.0-19.2 | 18.6-19.0 ms | 32.5 ms | 0 ms | none measurable |
 | Goop (as copied, opaque layers) | 7.0-7.4 | 103-109 ms | 32.4 ms | 0 ms | about 0.75 MB |
-| Goop (single precision, float polygon fill) | 11.8-12.4 | 48-52 ms | 32.4 ms | 0 ms | about 0.75 MB |
-| Goop (registered: pixmap is the window) | 15.6-16.2 | 28-31 ms | 32.6 ms | 0 ms | about 0.3 MB |
+| Goop (opaque layers, `GOOP_ALPHA=32`) | 14.4-14.6 | 35.1-35.6 ms | 32.5-32.6 ms | 0 ms | about 0.3 MB |
+| Goop (translucent layers, registered) | 11.0-11.4 | 54-57 ms | 32.5 ms | 0 ms | about 0.3 MB |
 | Loop (as copied, 100 ms delay) | 8.6-9.0 | 3.5-6.9 ms | 1.1-5.1 ms | 101-110 ms | about 1 MB |
 | Loop (registered, 50 ms delay) | 15.4-16.8 | 4.5-10.4 ms | 1.5-3.7 ms | 52-54 ms | about 1 MB |
 | Hypnowheel | 1.4 | 720 ms | 32.6 ms | 0 ms | about 0.64 MB |
@@ -656,7 +656,11 @@ rendered at a third of the width and height and drawn four times over by
 registered build asks for 3. Starfish and Goop fill their polygons with
 `float_polygon.h` instead of the shim's double-precision fill, which was most
 of their step; Goop also draws straight onto the window instead of a
-window-sized pixmap it then copied. Loop's registered build asks for 50 ms
+window-sized pixmap it then copied, and blends each blob in at the alpha
+upstream's jwxyz path gives it (23 parts in 32). Their first single-precision
+builds drew garbage (a layout mismatch in `spline.h`, since fixed) and the
+speeds they were measured at are not recorded; the rows above are from the
+fixed builds. Loop's registered build asks for 50 ms
 between generations (upstream asks for 100). Hypnowheel's probes used
 temporary registry overrides, since reverted; they separate its additively
 blended pixel fill (about 70 percent of the step) from its per-triangle setup.
@@ -687,7 +691,7 @@ needing few additions come first.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | celtic | 2d | S | high (1.2 ms) | ❌ | - | - | 1141 |
 | cwaves | 2d | S | high (0.73 ms) | - | - | - | 219 |
-| greynetic | 2d | S | medium (0.024 ms) | - | - | - | 297 |
+| greynetic | 2d | S | medium (0.017 ms) | - | - | - | 297 |
 | halftone | 2d | S | high (0.67 ms) | ❌ | - | pixmaps | 413 |
 | abstractile | 2d | M | - | - | `make_color_loop`, `make_color_ramp` | - | 1625 |
 | ant | 2d | M | - | - | `NUMSTIPPLES`, `automata.h`, `hexagonUnit`, `triangleUnit` | - | 1351 |

@@ -20,6 +20,11 @@
 
 #include "screenhack.h"
 
+/* spline.h must come in before `double` becomes `float`: the hack includes it
+ * too, but the include guard then keeps this copy, and spline.c is built with
+ * doubles. Seen through the macro, the control arrays are float*, spline.c
+ * reads them as double*, and every blob becomes garbage. */
+#include "spline.h"
 #include "hacks/float_polygon.h"
 #include "hacks/single_precision.h"
 #include "hacks/single_frand.h"
@@ -48,7 +53,23 @@ static int goop_copy_area(Display *dpy, Drawable src, Drawable dst, GC gc,
 #undef XSCREENSAVER_MODULE
 #define XSCREENSAVER_MODULE(CLASS, PREFIX)
 #define HAVE_JWXYZ
-#define XFillPolygon float_x_fill_polygon
+
+/* Upstream's jwxyz path gives each layer's colour an alpha of 0xBB (73 percent),
+ * so blobs that overlap show through each other. The shim has no per-pixel
+ * alpha, so every blob fills with that weight: 23 parts in 32. 32 is opaque. */
+#ifndef GOOP_ALPHA
+#define GOOP_ALPHA 23
+#endif
+
+static int goop_fill_blob(Display *dpy, Drawable d, GC gc, XPoint *pts, int n,
+                          int shape, int mode) {
+  (void)shape, (void)mode;
+  Canvas *c = xshim_target(dpy, d);
+  if (c) float_fill_polygon_alpha(c, pts, n, (uint16_t)gc->foreground, GOOP_ALPHA);
+  return 0;
+}
+
+#define XFillPolygon goop_fill_blob
 #undef M_PI
 #define M_PI 3.14159265358979323846f
 

@@ -11,6 +11,11 @@
 
 #include "screenhack.h"
 
+/* spline.h must come in before `double` becomes `float`: the hack includes it
+ * too, but the include guard then keeps this copy, and spline.c is built with
+ * doubles. Seen through the macro, the control arrays are float*, spline.c
+ * reads them as double*, and every blob becomes garbage. */
+#include "spline.h"
 #include "hacks/float_polygon.h"
 #include "hacks/single_precision.h"
 #include "hacks/single_frand.h"
