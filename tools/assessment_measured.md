@@ -1,6 +1,6 @@
 ## Measured on the device
 
-Fifty-two hacks have been run so far (default settings, 466×466 canvas
+Fifty-three hacks have been run so far (default settings, 466×466 canvas
 pushed to the display every frame, canvas held in PSRAM). The firmware times
 each frame in three parts, averaged over 5 seconds: **step** is the hack's own
 draw call, **push** is sending the canvas to the display, and **wait** is what
@@ -75,6 +75,22 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Halftone | 4.5-5.2 | 163-193 ms | 32.5 ms | 0 ms | none measurable |
 | Truchet | 0.8-1.0 | 652-900 ms | 34.4-36.1 ms | 404-406 ms | about 1.5 MB |
 | Truchet (scrolling mode) | 7.2-8.0 | 19.8-36.0 ms | 31.5-39.9 ms | 66-75 ms | about 1.5 MB |
+| UnknownPleasures | 5.0-5.2 | 162-169 ms | 32.3-37.1 ms | 0 ms | about 0.93 MB |
+| UnknownPleasures (first flash: aliased lines, additive quads) | 3.6-3.8 | 226-237 ms | 32.3-48.3 ms | 0 ms | about 0.93 MB |
+| UnknownPleasures (20 rows of 50 points, final code; not registered) | 7.4-7.6 | 90-92 ms | 41.6-43.0 ms | 0 ms | 6.27 MB free, with the QR overlay's buffers |
+
+Unknown Pleasures' rows are from pinned builds (2026-10-10). The first flash
+had TinyGL's one-pixel lines and its additive blend, so the black quads that
+should hide the rows behind a peak hid nothing; the registered row is after
+smooth lines, opaque fills, polygon offset and the refresh-synced push (see the
+GL notes and `.claude/rules/device-display.md`). Its push figure includes the
+wait for the panel's next TE pulse: 32.3 ms of push and about 4 ms of waiting.
+A tap on the overlay adds about 16 ms to the push (48 ms). The 20 by 50
+variant (`*count: 40`, `*resolution: 50`) is the final code on a later main,
+which holds a QR buffer, so its free PSRAM is not comparable with the others.
+Its step is 45 percent below the registered build's (91 ms against 165); on
+the first-flash code the same smaller scene cut the step by 34 percent (234 to
+154 ms). Heap was flat in every capture, and no reset or panic appeared.
 
 Truchet's rows are from a pinned build (2026-10-10). Each start picks one of
 twelve modes at random. The tiling row is two windows from one start (650 to

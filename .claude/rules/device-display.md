@@ -99,7 +99,8 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   1.1 and 15.8 ms did, with the seam at row 495 and row 268: about 107 rows per
   millisecond, so the bad window is only about 5 ms wide. It is valid for a
   full-frame push (the 20.6 ms copy). A push of another size moves the flush
-  and the sweep would have to be repeated. `-DTE_DIAG` logs the TE period and
+  and the sweep would have to be repeated: the QR overlay's 328-row push is
+  one, so a seam may show while the code is up. `-DTE_DIAG` logs the TE period and
   where pushes start.
 - Reading a film of the display: iPhone slo-mo files store their first and
   last seconds at normal speed, so the label changes every ~100 frames there
