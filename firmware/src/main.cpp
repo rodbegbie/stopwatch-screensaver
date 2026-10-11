@@ -500,10 +500,40 @@ static void pollBattery() {
   overlay_set_battery(&overlay, M5.Power.getBatteryLevel());
 }
 
+#if defined(GL_PROFILE) || defined(PSRAM_AUTOLOAD)
+#include "rom/cache.h"
+#include "soc/extmem_reg.h"
+
+/* Issue #43 experiment: the data cache's hardware next-line prefetch
+ * ("autoload") over the PSRAM and flash data range. PSRAM_AUTOLOAD picks the
+ * trigger: 1 on a miss, 2 on a hit, 3 on both. */
+static void cacheAutoload() {
+#ifdef PSRAM_AUTOLOAD
+  Cache_Disable_DCache_Autoload();
+  const struct autoload_region_config region = {
+      .region = CACHE_AUTOLOAD_REGION0, .ena = 1, .addr = 0x3C000000, .size = 0x02000000};
+  Cache_Config_DCache_Region_Autoload(&region);
+  const struct autoload_config config = {.ena = 1,
+                                         .order = CACHE_AUTOLOAD_POSITIVE,
+                                         .trigger = (uint8_t)(PSRAM_AUTOLOAD - 1),
+                                         .size = 0};
+  Cache_Config_DCache_Autoload(&config);
+  Cache_Enable_DCache_Autoload();
+#endif
+  Serial.printf("dcache autoload ctrl=0x%08x sct0 addr=0x%08x size=0x%08x\n",
+                (unsigned)REG_READ(EXTMEM_DCACHE_AUTOLOAD_CTRL_REG),
+                (unsigned)REG_READ(EXTMEM_DCACHE_AUTOLOAD_SCT0_ADDR_REG),
+                (unsigned)REG_READ(EXTMEM_DCACHE_AUTOLOAD_SCT0_SIZE_REG));
+}
+#endif
+
 void setup() {
   auto cfg = M5.config();
   M5.begin(cfg);
   Serial.begin(115200);
+#if defined(GL_PROFILE) || defined(PSRAM_AUTOLOAD)
+  cacheAutoload();
+#endif
   M5.Display.setSwapBytes(false);
   teInit();
 
