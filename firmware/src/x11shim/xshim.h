@@ -157,6 +157,7 @@ enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
 #define FillOpaqueStippled 3
 #define Convex 2
 #define GXcopy 0x3
+#define GXxor 0x6
 #define ButtonPress 4
 #define Expose 12
 #define DoRed 1

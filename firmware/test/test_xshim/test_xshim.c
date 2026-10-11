@@ -104,6 +104,11 @@ void test_clear_window_uses_the_window_background(void) {
   TEST_ASSERT_EQUAL_INT(0, count_set());
 }
 
+void test_graphics_functions_have_xs_values(void) {
+  TEST_ASSERT_EQUAL_INT(0x3, GXcopy);
+  TEST_ASSERT_EQUAL_INT(0x6, GXxor);
+}
+
 void test_draw_line_and_lines_connect_points(void) {
   XGCValues v;
   v.foreground = 0xFFFF;
@@ -2409,6 +2414,7 @@ int main(void) {
   RUN_TEST(test_get_window_attributes_reports_canvas_size);
   RUN_TEST(test_clear_window_uses_black_background);
   RUN_TEST(test_clear_window_uses_the_window_background);
+  RUN_TEST(test_graphics_functions_have_xs_values);
   RUN_TEST(test_draw_line_and_lines_connect_points);
   RUN_TEST(test_fill_arc_full_circle_draws);
   RUN_TEST(test_fill_arcs_fills_each_full_arc_in_the_gc_colour);

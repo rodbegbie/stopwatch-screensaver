@@ -74,6 +74,7 @@ implied warranty.
 | `firmware/src/hacks/truchet/truchet.c` | Copyright (c) 1998 Adrian Likins | jwz permission notice (above) |
 | `firmware/src/hacks/unknownpleasures/unknownpleasures.c` | Copyright (c) 2013-2025 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/hexadrop/hexadrop.c` | Copyright (c) 1999-2019 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/halo/halo.c` | Copyright (c) 1993-2013 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/stonerview/stonerview.c` | Copyright 1998-2001 Andrew Plotkin; ported to xscreensaver by Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/stonerview/stonerview.h` | Copyright 1998-2001 Andrew Plotkin; ported to xscreensaver by Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/stonerview/stonerview-move.c` | Copyright 1998-2001 Andrew Plotkin; ported to xscreensaver by Jamie Zawinski | jwz permission notice (above) |
