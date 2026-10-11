@@ -32,8 +32,11 @@ typedef enum { PUSH_NONE, PUSH_ROWS, PUSH_ALL } PushKind;
  * `rows` has room for c->h entries. For PUSH_ROWS, `rows` holds *count entries
  * in increasing y, grouped into batches (the last row of each has
  * end_of_group); otherwise *count is 0. PUSH_ALL means the rows would cost at
- * least as much as pushing the whole canvas in one call. */
-PushKind push_plan(Canvas *c, PushRow *rows, int *count);
+ * least as much as pushing the whole canvas in one call.
+ * With use_disc, each span is first clipped to the canvas's disc and rows left
+ * empty are dropped. The model is fitted to pushes with one flush: on the board
+ * each extra flush in a push cost about 0.85 ms, not PUSH_FLUSH_NS (#77). */
+PushKind push_plan(Canvas *c, PushRow *rows, int *count, bool use_disc);
 
 typedef struct {
   void *ctx;
@@ -46,7 +49,7 @@ typedef struct {
 /* Plans, then runs the plan through the sink: nothing for PUSH_NONE; for
  * PUSH_ROWS, begin, a row call per row, end, once per group; a single all for PUSH_ALL. Returns the
  * number of rows pushed (0, the row count, or c->h). */
-int push_present(Canvas *c, PushRow *scratch, const PushSink *sink);
+int push_present(Canvas *c, PushRow *scratch, const PushSink *sink, bool use_disc);
 
 #ifdef __cplusplus
 }

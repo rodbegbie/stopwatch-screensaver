@@ -1288,8 +1288,205 @@ void test_an_unhandled_primitive_never_writes_past_the_vertex_buffer(void) {
   TEST_ASSERT_EQUAL_MEMORY(before, from, n);
 }
 
+/* The round panel (issue #77): with a disc on the canvas, clears skip the
+ * corners nobody sees. */
+#define SENTINEL 0x5A5A
+
+static void assert_disc_is(uint16_t v) {
+  for (int y = 0; y < SIZE; y++) {
+    int x0, x1;
+    if (!canvas_visible_span(&cv, y, &x0, &x1)) continue;
+    for (int x = x0; x <= x1; x++) TEST_ASSERT_EQUAL_HEX16(v, cv.px[y * SIZE + x]);
+  }
+}
+
+void test_no_disc_clear_is_unchanged(void) {
+  canvas_clear(&cv, SENTINEL);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glClearColor(0, 0, 0, 0);
+  glClear(GL_COLOR_BUFFER_BIT);
+  TEST_ASSERT_EQUAL_HEX16(0, cv.px[0]);
+  TEST_ASSERT_EQUAL_HEX16(0, cv.px[SIZE * SIZE - 1]);
+  TEST_ASSERT_NULL(glshim_span_x0);
+}
+
+void test_disc_clear_leaves_the_corners_alone(void) {
+  TEST_ASSERT_EQUAL_INT(0, canvas_set_disc(&cv, malloc));
+  canvas_clear(&cv, SENTINEL);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glClearColor(0, 0, 0, 0);
+  glClear(GL_COLOR_BUFFER_BIT);
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, cv.px[0]);
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, cv.px[SIZE * SIZE - 1]);
+  assert_disc_is(0);
+}
+
+void test_disc_depth_clear_is_clipped_too(void) {
+  TEST_ASSERT_EQUAL_INT(0, canvas_set_disc(&cv, malloc));
+  ZBuffer *zb = *glshim_open(&cv);
+  for (int i = 0; i < SIZE * SIZE; i++) zb->zbuf[i] = SENTINEL;
+  glEnable(GL_DEPTH_TEST);
+  glClear(GL_DEPTH_BUFFER_BIT);
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, zb->zbuf[0]);
+  for (int y = 0; y < SIZE; y++) {
+    int x0, x1;
+    TEST_ASSERT_TRUE(canvas_visible_span(&cv, y, &x0, &x1));
+    TEST_ASSERT_NOT_EQUAL(SENTINEL, zb->zbuf[y * SIZE + x0]);
+    TEST_ASSERT_NOT_EQUAL(SENTINEL, zb->zbuf[y * SIZE + x1]);
+  }
+}
+
+void test_disc_scale_two_clears_every_block_touching_the_disc(void) {
+  TEST_ASSERT_EQUAL_INT(0, canvas_set_disc(&cv, malloc));
+  canvas_clear(&cv, SENTINEL);
+  glshim_set_render_scale(2);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glClearColor(0, 0, 0, 0);
+  glClear(GL_COLOR_BUFFER_BIT);
+  glXSwapBuffers(dpy, 0);
+  assert_disc_is(0);
+  TEST_ASSERT_NOT_NULL(glshim_span_x0);
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, cv.px[0]);
+}
+
+void test_the_disc_spans_go_with_the_context(void) {
+  TEST_ASSERT_EQUAL_INT(0, canvas_set_disc(&cv, malloc));
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  TEST_ASSERT_NOT_NULL(glshim_span_x0);
+  TEST_ASSERT_NOT_NULL(glshim_span_x1);
+  glshim_close();
+  TEST_ASSERT_NULL(glshim_span_x0);
+  TEST_ASSERT_NULL(glshim_span_x1);
+}
+
+static void flat_view(void) {
+  glViewport(0, 0, SIZE, SIZE);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  glDisable(GL_LIGHTING);
+}
+
+void test_disc_fill_leaves_the_corners_alone(void) {
+  TEST_ASSERT_EQUAL_INT(0, canvas_set_disc(&cv, malloc));
+  canvas_clear(&cv, SENTINEL);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  flat_view();
+  glColor3f(1, 0, 0);
+  glBegin(GL_TRIANGLES);
+  glVertex3f(-1, -1, 0);
+  glVertex3f(1, -1, 0);
+  glVertex3f(1, 1, 0);
+  glVertex3f(-1, -1, 0);
+  glVertex3f(1, 1, 0);
+  glVertex3f(-1, 1, 0);
+  glEnd();
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, cv.px[0]);
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, cv.px[SIZE - 1]);
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, cv.px[(SIZE - 1) * SIZE]);
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, cv.px[SIZE * SIZE - 1]);
+  assert_disc_is(rgb565(255, 0, 0));
+}
+
+/* Every vertex is right of the disc's left edge; only the top right one is
+ * past its right edge, so that test alone must turn the clip on. */
+void test_disc_fill_clips_a_triangle_out_only_on_the_right(void) {
+  TEST_ASSERT_EQUAL_INT(0, canvas_set_disc(&cv, malloc));
+  canvas_clear(&cv, SENTINEL);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  flat_view();
+  glColor3f(1, 0, 0);
+  glBegin(GL_TRIANGLES);
+  glVertex3f(0, 0, 0);
+  glVertex3f(1, 1, 0);
+  glVertex3f(0, 1, 0);
+  glEnd();
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, cv.px[SIZE - 1]);
+  TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), cv.px[8 * SIZE + 40]);
+}
+
+/* Two smooth, depth-tested triangles over the top left corner, where the disc
+ * cuts every scanline short on the left: clipping must start each scanline
+ * with the depth and colour it would have had, so inside the disc the frame
+ * matches one drawn without a disc. */
+static void two_triangles_in_the_corner(void) {
+  flat_view();
+  glEnable(GL_DEPTH_TEST);
+  glClearColor(0, 0, 0, 0);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glBegin(GL_TRIANGLES);
+  glColor3f(1, 0, 0);
+  glVertex3f(-1, 1, -0.6f);
+  glColor3f(0, 1, 0);
+  glVertex3f(0.3f, 1, 0.8f);
+  glColor3f(0, 0, 1);
+  glVertex3f(-1, -0.3f, 0.8f);
+  glColor3f(1, 1, 0);
+  glVertex3f(-1, 0.9f, 0.1f);
+  glColor3f(0, 1, 1);
+  glVertex3f(0.2f, 0.9f, 0.1f);
+  glColor3f(1, 0, 1);
+  glVertex3f(-1, -0.2f, 0.1f);
+  glEnd();
+}
+
+void test_disc_clipped_triangle_matches_the_unclipped_one_inside(void) {
+  uint16_t plain[SIZE * SIZE];
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  two_triangles_in_the_corner();
+  memcpy(plain, cv.px, sizeof plain);
+  TEST_ASSERT_EQUAL_INT(0, canvas_set_disc(&cv, malloc));
+  canvas_clear(&cv, SENTINEL);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  two_triangles_in_the_corner();
+  int checked = 0;
+  for (int y = 0; y < SIZE; y++) {
+    int x0, x1;
+    if (!canvas_visible_span(&cv, y, &x0, &x1)) continue;
+    for (int x = x0; x <= x1; x++, checked++)
+      TEST_ASSERT_EQUAL_HEX16(plain[y * SIZE + x], cv.px[y * SIZE + x]);
+  }
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, cv.px[0]);
+  TEST_ASSERT_NOT_EQUAL(0, plain[0]); /* the triangles do reach the corner */
+  TEST_ASSERT_TRUE(checked > SIZE * SIZE / 2);
+}
+
+/* At scale 2 the fill reads the half-size spans, a row per half-res line. */
+void test_disc_clipped_triangle_matches_the_unclipped_one_at_scale_two(void) {
+  uint16_t plain[SIZE * SIZE];
+  glshim_set_render_scale(2);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  two_triangles_in_the_corner();
+  glXSwapBuffers(dpy, 0);
+  memcpy(plain, cv.px, sizeof plain);
+  TEST_ASSERT_EQUAL_INT(0, canvas_set_disc(&cv, malloc));
+  canvas_clear(&cv, SENTINEL);
+  glshim_set_render_scale(2);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  two_triangles_in_the_corner();
+  glXSwapBuffers(dpy, 0);
+  for (int y = 0; y < SIZE; y++) {
+    int x0, x1;
+    if (!canvas_visible_span(&cv, y, &x0, &x1)) continue;
+    for (int x = x0; x <= x1; x++)
+      TEST_ASSERT_EQUAL_HEX16(plain[y * SIZE + x], cv.px[y * SIZE + x]);
+  }
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, cv.px[0]);
+  TEST_ASSERT_NOT_EQUAL(0, plain[0]);
+}
+
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_disc_clipped_triangle_matches_the_unclipped_one_at_scale_two);
+  RUN_TEST(test_disc_fill_leaves_the_corners_alone);
+  RUN_TEST(test_disc_fill_clips_a_triangle_out_only_on_the_right);
+  RUN_TEST(test_disc_clipped_triangle_matches_the_unclipped_one_inside);
+  RUN_TEST(test_no_disc_clear_is_unchanged);
+  RUN_TEST(test_disc_clear_leaves_the_corners_alone);
+  RUN_TEST(test_disc_depth_clear_is_clipped_too);
+  RUN_TEST(test_disc_scale_two_clears_every_block_touching_the_disc);
+  RUN_TEST(test_the_disc_spans_go_with_the_context);
   RUN_TEST(test_an_unhandled_primitive_never_writes_past_the_vertex_buffer);
 #ifdef GL_PROFILE
   RUN_TEST(test_the_profile_counts_each_stage_once_per_call);

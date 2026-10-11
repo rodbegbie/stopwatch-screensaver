@@ -422,7 +422,13 @@ static void present() {
 #ifdef TE_DIAG
   uint32_t pushT0 = (uint32_t)esp_timer_get_time();
 #endif
-  int pushedRows = push_present(&canvas, pushRows, &pushSink);
+  /* A synced hack's TE offset was measured for whole rows (issue #68). */
+#ifdef PUSH_NO_DISC
+  const bool useDisc = false;
+#else
+  const bool useDisc = !g_hacks[runner_index(runner)]->sync_to_refresh;
+#endif
+  int pushedRows = push_present(&canvas, pushRows, &pushSink, useDisc);
   rowsPushed += pushedRows;
 #ifdef TE_DIAG
   if (pushedRows > 300 && pushCount < kPushLog) {
@@ -544,6 +550,7 @@ void setup() {
 
   if (canvas_init(&canvas, kSize, kSize, ps_malloc) != 0)
     halt("PSRAM alloc failed");
+  if (canvas_set_disc(&canvas, malloc) != 0) halt("disc alloc failed");
 #ifdef GL_PROFILE
   memBench(canvas.px);
 #endif
