@@ -101,7 +101,9 @@ Moved verbatim from the Gotchas section of AGENTS.md.
 - XMatrix needs `matrix_glyphs.py` (a `pre:` script in every env), which
   converts four PNGs from `vendor/` into blobs in the build directory: they
   are never committed (1.5 MB of C text each for the large sheets). It
-  starts with a typed "trace" sequence, then rain; `*matrixFont: small`
+  registers through `xmatrix_direct.c` with `*trace: False`, which skips the
+  typed "connecting" sequence it would open with (the rare "Knock, knock,
+  Neo" event, `knockKnock`, is still on); `*matrixFont: small`
   gives 46 columns instead of 23. Its text modes read no text: the
   `textclient.h` stand-in never opens a source, and Xt timers never fire.
 - Flurry is not ported. It draws 3,600 blended, textured quads a frame and
