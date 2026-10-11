@@ -255,6 +255,13 @@ ones below apply everywhere.
 - After a mutation check, `grep` that the change applied: a `sed` that matches
   nothing leaves the tests green and proves nothing. Restore the file and
   confirm with `cmp` or `git diff`.
+- Mutating a regex or any pattern with backslashes: write the mutation as a
+  scratchpad script (as the loop-of-mutations gotcha says) and `assert old in
+  text` first. Shell quoting doubles the backslashes, nothing changes, and the
+  passing run looks like a surviving mutant.
+- `ruff check tools` already reports about 17 findings on `main` (e.g. an
+  unused `noqa: E402` in `test_mutate.py`): run `ruff check` and
+  `ruff format --check` on the files you touched, not the directory.
 - To test code inside a wrapped hack (a `static inline` blend, say), give the
   test its own dir and `#define <name>_hack <name>_hack_under_test` before
   `#include "hacks/<name>_direct.c"`: the wrapper exports only that one symbol,
