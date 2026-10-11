@@ -1,0 +1,1 @@
+Definitely remove PSRAM_AUTOLOAD, given the finding that a reviewer left on the trail.  I'm ambivalent about the other two.  Do what you think makes sense.
