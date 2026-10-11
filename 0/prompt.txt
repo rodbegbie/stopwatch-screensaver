@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>b4qiqweuv</task-id>
+<tool-use-id>toolu_01KDG3SkgQD9f47d3tbGT5zx</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/6133968b-782a-4c24-bf62-d71759b14157/tasks/b4qiqweuv.output</output-file>
+<status>completed</status>
+<summary>Background command "A/B lazy shading on Morph3D in the background" completed (exit code 0)</summary>
+</task-notification>
