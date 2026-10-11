@@ -874,7 +874,7 @@ void test_the_device_is_never_turned(void) {
   TEST_ASSERT_TRUE(current_device_rotation() == 0.0);
 }
 
-/* Lighting reads the material when a vertex is shaded. With GL_LAZY_SHADE a
+/* Lighting reads the material when a vertex is shaded. With lazy lighting a
  * vertex is shaded when its triangle is drawn, so a material change between
  * two vertices of one triangle must first shade the vertices before it: the
  * first two stay red and the third is green, as GL orders it. Built and run
@@ -901,7 +901,26 @@ void test_a_material_change_mid_triangle_lights_earlier_vertices_with_the_old_on
   TEST_ASSERT_TRUE(v[2].color.v[1] > 0.9f);
 }
 
-#if defined(GL_PROFILE) && defined(GL_LAZY_SHADE)
+#ifndef GL_EAGER_SHADE
+/* Lazy lighting is the default (issue #43): a culled triangle's vertices are
+ * left waiting to be lit, and GL_EAGER_SHADE goes back to lighting each
+ * vertex as it arrives. */
+void test_lazy_lighting_is_the_default(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glEnable(GL_LIGHTING);
+  glEnable(GL_LIGHT0);
+  glEnable(GL_CULL_FACE);
+  glBegin(GL_TRIANGLES);
+  glVertex3f(-0.5f, -0.5f, 0); /* clockwise: a back face */
+  glVertex3f(0, 0.5f, 0);
+  glVertex3f(0.5f, -0.5f, 0);
+  glEnd();
+  const GLVertex *v = gl_get_context()->vertex;
+  for (int i = 0; i < 3; i++) TEST_ASSERT_EQUAL_INT(1, v[i].shade_pending);
+}
+#endif
+
+#if defined(GL_PROFILE) && !defined(GL_EAGER_SHADE)
 /* A culled triangle's vertices are never lit; a drawn one's are, once each. */
 void test_lazy_lighting_skips_the_vertices_of_culled_triangles(void) {
   TEST_ASSERT_NOT_NULL(glshim_open(&cv));
@@ -967,7 +986,10 @@ int main(void) {
   RUN_TEST(test_the_profile_counts_each_stage_once_per_call);
 #endif
   RUN_TEST(test_a_material_change_mid_triangle_lights_earlier_vertices_with_the_old_one);
-#if defined(GL_PROFILE) && defined(GL_LAZY_SHADE)
+#ifndef GL_EAGER_SHADE
+  RUN_TEST(test_lazy_lighting_is_the_default);
+#endif
+#if defined(GL_PROFILE) && !defined(GL_EAGER_SHADE)
   RUN_TEST(test_lazy_lighting_skips_the_vertices_of_culled_triangles);
 #endif
   RUN_TEST(test_the_device_is_never_turned);

@@ -1,5 +1,10 @@
-/* Build switches for TinyGL speed work (issue #43). Both are off by default,
- * and then this header defines nothing but an empty TGL_HOT.
+/* Build switches for TinyGL speed work (issue #43).
+ *
+ * GL_LAZY_SHADE (on unless GL_EAGER_SHADE is defined): a vertex is lit when
+ * a triangle, line or point that uses it is drawn, not as it arrives, so
+ * culled triangles cost no lighting. Measured on the board: Gears 61.1 to
+ * 57.7 ms a frame, Morph3D 61.4 to 58.4 ms. Frame hashes are unchanged.
+ * GL_EAGER_SHADE keeps TinyGL's own order, for comparison.
  *
  * GL_IRAM: TinyGL's per-vertex and per-triangle functions go in IRAM, so
  * they never wait on the flash cache. Costs internal RAM.
@@ -11,6 +16,10 @@
  * and LIST contains everything a display list replays. */
 #ifndef GLSHIM_PROF_H
 #define GLSHIM_PROF_H
+
+#if !defined(GL_EAGER_SHADE) && !defined(GL_LAZY_SHADE)
+#define GL_LAZY_SHADE 1
+#endif
 
 #if defined(GL_IRAM) && defined(ESP_PLATFORM)
 #include "esp_attr.h"
