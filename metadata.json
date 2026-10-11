@@ -3,7 +3,7 @@
   "checkpoint_id": "01M4PF8VY7Y3MEV7AZ1GP1XKP1",
   "strategy": "manual-commit",
   "branch": "worktree-pacman-issues-32-56-65",
-  "checkpoints_count": 6,
+  "checkpoints_count": 7,
   "files_touched": [
     "firmware/test/test_hacks/test_hacks.c"
   ],
@@ -21,20 +21,27 @@
       "compact_transcript": "/1/transcript.jsonl",
       "content_hash": "/1/content_hash.txt",
       "prompt": "/1/prompt.txt"
+    },
+    {
+      "metadata": "/2/metadata.json",
+      "transcript": "/2/full.jsonl",
+      "compact_transcript": "/2/transcript.jsonl",
+      "content_hash": "/2/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 600,
-    "cache_creation_tokens": 514516,
-    "cache_read_tokens": 103464028,
-    "output_tokens": 214507,
-    "api_call_count": 300,
+    "input_tokens": 612,
+    "cache_creation_tokens": 526653,
+    "cache_read_tokens": 105733878,
+    "output_tokens": 220371,
+    "api_call_count": 306,
     "subagent_tokens": {
-      "input_tokens": 0,
-      "cache_creation_tokens": 0,
-      "cache_read_tokens": 0,
-      "output_tokens": 0,
-      "api_call_count": 0
+      "input_tokens": 46,
+      "cache_creation_tokens": 119264,
+      "cache_read_tokens": 1942147,
+      "output_tokens": 4455,
+      "api_call_count": 23
     }
   }
 }
