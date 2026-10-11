@@ -127,6 +127,39 @@ void test_the_new_colour_counts_alpha_parts_in_32_and_the_old_the_rest(void) {
   TEST_ASSERT_EQUAL_HEX16(px_swap((23 << 11) | (15 << 5)), cv.px[10 * 64 + 10]);
 }
 
+/* An independent per-channel reference for one pixel, on ordinary RGB565. */
+static uint16_t reference_mix(uint16_t src, uint16_t dst, int alpha) {
+  const int r = (((src >> 11) * alpha) + ((dst >> 11) * (32 - alpha))) >> 5;
+  const int g = ((((src >> 5) & 63) * alpha) + (((dst >> 5) & 63) * (32 - alpha))) >> 5;
+  const int b = (((src & 31) * alpha) + ((dst & 31) * (32 - alpha))) >> 5;
+  return (uint16_t)((r << 11) | (g << 5) | b);
+}
+
+static int channel_gap(uint16_t a, uint16_t b) {
+  int d = abs((a >> 11) - (b >> 11));
+  int g = abs(((a >> 5) & 63) - ((b >> 5) & 63));
+  int bl = abs((a & 31) - (b & 31));
+  return d > g ? (d > bl ? d : bl) : (g > bl ? g : bl);
+}
+
+void test_a_translucent_fill_is_within_one_level_of_a_per_channel_mix(void) {
+  const XPoint sq[4] = {{0, 0}, {64, 0}, {64, 48}, {0, 48}};
+  srandom(7);
+  for (int alpha = 1; alpha < 32; alpha += 3) {
+    uint16_t before[64 * 48];
+    for (int i = 0; i < 64 * 48; i++) {
+      before[i] = (uint16_t)(random() & 0xFFFF);
+      cv.px[i] = px_swap(before[i]);
+    }
+    const uint16_t src = (uint16_t)(random() & 0xFFFF);
+    float_fill_polygon_alpha(&cv, sq, 4, px_swap(src), alpha);
+    for (int i = 0; i < 64 * 48; i++) {
+      TEST_ASSERT_TRUE_MESSAGE(channel_gap(px_swap(cv.px[i]), reference_mix(src, before[i], alpha)) <= 1,
+                               "a mixed pixel is more than one level from the reference");
+    }
+  }
+}
+
 void test_a_translucent_fill_covers_the_pixels_an_opaque_one_does(void) {
   const XPoint star[5] = {{32, 2}, {42, 44}, {4, 18}, {60, 18}, {22, 44}};
   canvas_clear(&cv, 0);
@@ -209,6 +242,7 @@ int main(void) {
   RUN_TEST(test_an_edge_that_starts_above_the_canvas_enters_at_the_right_column);
   RUN_TEST(test_a_translucent_fill_mixes_with_what_is_under_it);
   RUN_TEST(test_the_new_colour_counts_alpha_parts_in_32_and_the_old_the_rest);
+  RUN_TEST(test_a_translucent_fill_is_within_one_level_of_a_per_channel_mix);
   RUN_TEST(test_a_translucent_fill_covers_the_pixels_an_opaque_one_does);
   RUN_TEST(test_the_ends_of_the_alpha_range_are_nothing_and_opaque);
   RUN_TEST(test_a_translucent_fill_marks_what_it_drew_dirty);

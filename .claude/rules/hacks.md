@@ -124,13 +124,16 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   `pio test` deletes the program).
 - Starfish and Goop spent most of a frame in the shim's polygon fill (double
   maths per edge per row). `hacks/float_polygon.h` fills any even-odd polygon
-  in float, optionally mixed in at an alpha in 32nds, and took Starfish from
-  8.5 to 19 fps. Goop draws straight onto the window (its `XCreatePixmap` is
-  the window and the `XCopyArea` is skipped) and blends each blob in at the
-  alpha upstream's jwxyz path uses: 11 fps translucent, 14.5 opaque
-  (`GOOP_ALPHA=32`). The shared `canvas_fill_polygon` is still double (Hexadrop
-  has its own convex float fill). Goop is built through `goop_direct.c` with
-  `HAVE_JWXYZ`; the colour-plane path needs planes the canvas lacks.
+  in float, optionally mixed in at an alpha in 32nds (all three colour
+  channels with one multiply), and took Starfish from 8.5 to 19 fps. Goop draws
+  straight onto the window (its `XCreatePixmap` is the window and the
+  `XCopyArea` is skipped) and blends each blob in at the alpha upstream's jwxyz
+  path uses. Its full-frame clear cost 15 ms, so `hacks/span_erase.h` erases
+  only the bounding boxes the blobs filled last frame (pixel-identical frames):
+  14.6-15.2 fps translucent. The shared `canvas_fill_polygon` is still double
+  (Hexadrop has its own convex float fill). Goop is built through
+  `goop_direct.c` with `HAVE_JWXYZ`; the colour-plane path needs planes the
+  canvas lacks.
 - A wrapper that does `#define double float` must include any header with a
   `double` in a struct the shim's `.c` files also use BEFORE the define: the
   hack includes it again, the guard keeps the copy seen through the macro, and
@@ -145,6 +148,15 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   draws each pixel as a square): 2.4 fps as copied, 11 at a scale of 3, 12.4 at
   4. Its glow, flash pass and 565 conversion are full-frame walks over PSRAM.
   Its header says "(GPL)" but the text is the standard permission notice.
+  Everything it works in is in pixels, tuned for a window about 1024 wide: at
+  152 pixels a burst filled the picture and the glow blur (energy kept, output
+  doubled) saturated, so the screen was white. `tools/fireworkx_patch.py`
+  (run before the float literal pass; the copy stays byte-identical) scales the
+  spark speed, gravity, flash reach and velocity jitter by the render width
+  over 1024, and the wrapper throws 120 sparks a shell instead of 500 and fires
+  two of its four shells. 12.4-12.6 fps, with a dark background between
+  bursts. The shell count cannot change (it is baked into the SSE layout), so
+  the idle shells are given an endless life and no sparks.
 - Loop asks for 100 ms between generations (8.7 fps with a 3.5-7 ms step); the
   registry overrides it to 50 ms. Hypnowheel (1.4 fps) was dropped from the
   rotation after Rod saw it (issue #73; its source, notices row and a

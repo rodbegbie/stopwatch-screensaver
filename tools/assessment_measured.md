@@ -92,13 +92,15 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Fireworkx (as copied, double) | 2.0-2.6 | 367-587 ms | 32.4-36.0 ms | 0 ms | about 3.1 MB |
 | Fireworkx (single precision, float frand) | 2.8 | 327-348 ms | 32.4 ms | 0 ms | about 3.1 MB |
 | Fireworkx (scale 2) | 7.6-7.8 | 96-99 ms | 32.5 ms | 0 ms | about 0.8 MB |
-| Fireworkx (scale 3, registered) | 10.6-11.2 | 56-62 ms | 32.5-32.6 ms | 0 ms | about 0.35 MB |
+| Fireworkx (scale 3, upstream's constants) | 10.6-11.2 | 56-62 ms | 32.5-32.6 ms | 0 ms | about 0.35 MB |
+| Fireworkx (scale 3, lengths scaled, 2 shells of 120 sparks, registered) | 12.4-12.6 | 45.8-47.1 ms | 32.5 ms | 0 ms | about 0.33 MB |
 | Fireworkx (scale 4) | 11.8-12.6 | 46-51 ms | 32.6 ms | 0 ms | about 0.2 MB |
 | Starfish (as copied) | 8.2-9.2 | 76-87 ms | 32.6-35.5 ms | 0 ms | none measurable |
 | Starfish (registered: float polygon fill) | 19.0-19.2 | 18.6-19.0 ms | 32.5 ms | 0 ms | none measurable |
 | Goop (as copied, opaque layers) | 7.0-7.4 | 103-109 ms | 32.4 ms | 0 ms | about 0.75 MB |
 | Goop (opaque layers, `GOOP_ALPHA=32`) | 14.4-14.6 | 35.1-35.6 ms | 32.5-32.6 ms | 0 ms | about 0.3 MB |
-| Goop (translucent layers, registered) | 11.0-11.4 | 54-57 ms | 32.5 ms | 0 ms | about 0.3 MB |
+| Goop (translucent layers, full clear) | 11.0-11.4 | 54-57 ms | 32.5 ms | 0 ms | about 0.3 MB |
+| Goop (translucent, packed blend, partial erase, registered) | 14.6-15.2 | 44.7-46.9 ms | 19.8-21.3 ms | 0 ms | about 0.3 MB |
 | Loop (as copied, 100 ms delay) | 8.6-9.0 | 3.5-6.9 ms | 1.1-5.1 ms | 101-110 ms | about 1 MB |
 | Loop (registered, 50 ms delay) | 15.4-16.8 | 4.5-10.4 ms | 1.5-3.7 ms | 52-54 ms | about 1 MB |
 | Hypnowheel | 1.4 | 720 ms | 32.6 ms | 0 ms | about 0.64 MB |
@@ -571,3 +573,13 @@ temporary registry overrides, since reverted; they separate its additively
 blended pixel fill (about 70 percent of the step) from its per-triangle setup.
 Qix's internal heap read about 43 KB low while it ran, which was its leaked
 segment arrays (fixed). Colour and pace were not judged.
+
+Fireworkx's registered row scales the lengths it works in (spark speed,
+gravity, the flash light's reach, the velocity jitter) by the width it renders
+at over the 1024 it is tuned for, throws 120 sparks a shell instead of 500, and
+fires two of its four shells (`tools/fireworkx_patch.py`; the build flags are
+`FIREWORKX_PIXCOUNT` and `FIREWORKX_SHELLS`): at a third of its size upstream's
+constants made every burst fill the picture and the glow blur saturate to
+white. Goop's registered row blends all three colour channels with one
+multiply (`float_polygon.h`) and clears only where last frame's blobs were
+(`span_erase.h`), which also shrinks its push.

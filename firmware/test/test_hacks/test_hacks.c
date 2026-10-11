@@ -452,10 +452,10 @@ static const uint64_t kBaseline[] = {
     0x692e426561735c0dull, /* Halo: taken after looking at the frames, with GCBackground honoured */
     0x9b1b0de461b6438bull, /* XMatrix: taken after looking at the frames, trace off */
     0x51a9a94db9bf9128ull, /* Qix: taken after looking at the frames */
-    0xc04760c7c039f30bull, /* Fireworkx: taken after looking at the frames */
+    0xa25b9411b50849b8ull, /* Fireworkx: taken after looking at the frames (shells and lengths scaled to the render size) */
     0x77bfaaf3faa1cc64ull, /* Starfish: taken after looking at the frames (spline.h before the float rename) */
     0x5694978ccee06fd6ull, /* Goop: taken after looking at the frames (spline.h before the float rename) */
-    0xed98a503cd77ba2full, /* Loop: taken after looking at the frames */
+    0xe79bc5d8b096d29full, /* Loop: taken after looking at the frames (a fresh mode choice per start) */
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
@@ -495,6 +495,25 @@ void test_hacks_that_use_the_spline_draw_a_real_picture(void) {
     TEST_ASSERT_TRUE_MESSAGE(distinct_colours() >= 8, names[k]);
     runner_destroy(r);
   }
+}
+
+/* Loop picks squares or hexagons at random when it starts, but upstream keeps
+ * the choice in a static, so the first start in a process (a boot, on the
+ * device) fixed it for good. */
+extern int loop_neighbors_in_use(void);
+
+void test_loop_picks_squares_or_hexagons_again_at_every_start(void) {
+  int seen4 = 0, seen6 = 0;
+  HackRunner *r = runner_create(&cv);
+  for (int seed = 1; seed <= 40; seed++) {
+    srandom(seed);
+    TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("Loop")));
+    runner_step(r);
+    seen4 += loop_neighbors_in_use() == 4;
+    seen6 += loop_neighbors_in_use() == 6;
+  }
+  runner_destroy(r);
+  TEST_ASSERT_TRUE_MESSAGE(seen4 > 0 && seen6 > 0, "Loop kept the mode of its first start");
 }
 
 void test_maze_frame_matches_main(void) {
@@ -981,6 +1000,7 @@ int main(void) {
   RUN_TEST(test_substrate_draws_what_it_drew_before_pixels_were_swapped);
   RUN_TEST(test_frames_of_every_hack_but_maze_match_main);
   RUN_TEST(test_hacks_that_use_the_spline_draw_a_real_picture);
+  RUN_TEST(test_loop_picks_squares_or_hexagons_again_at_every_start);
   RUN_TEST(test_maze_frame_matches_main);
   RUN_TEST(test_pacman_levels_do_not_leak);
   RUN_TEST(test_pacman_start_and_stop_do_not_leak);

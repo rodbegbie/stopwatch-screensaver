@@ -19,6 +19,17 @@
 #ifndef FIREWORKX_SCALE
 #define FIREWORKX_SCALE 3
 #endif
+/* The sparks a shell throws (upstream: 500 at a window about 1024 wide), and
+ * how many of its four shells are ever fired. See tools/fireworkx_patch.py. */
+#ifndef FIREWORKX_PIXCOUNT
+#define FIREWORKX_PIXCOUNT 120
+#endif
+#ifndef FIREWORKX_SHELLS
+#define FIREWORKX_SHELLS 2
+#endif
+/* The width it renders at, over the 1024 it is tuned for. */
+#define FIREWORKX_SIZE \
+  ((float)(466 / FIREWORKX_SCALE - (466 / FIREWORKX_SCALE) % 4) / 1024.0f)
 #define LOWREZ_SCALE FIREWORKX_SCALE
 #include "hacks/lowrez_put.h"
 
@@ -38,8 +49,25 @@
  * image shares the render buffer, as it does at 24 bits): 48 KB lost each
  * time Fireworkx stops. */
 #define fireworkx_free fireworkx_free_upstream
+#define fireworkx_init fireworkx_init_upstream
 #include "fireworkx_floatlit.c"
 #undef fireworkx_free
+#undef fireworkx_init
+
+/* It always runs four shells (the count is baked into its SSE layout), and a
+ * shell that never fires throws no sparks and no flash. */
+static void *fireworkx_init(Display *dpy, Window window) {
+  struct state *st = (struct state *)fireworkx_init_upstream(dpy, window);
+  if (!st) return st;
+  for (unsigned n = FIREWORKX_SHELLS; n < SHELLCOUNT; n++) {
+    fireshell *fs = &st->fireshell_array[n];
+    fs->life = 0x7FFFFFFF;
+    fs->mortar_fired = 0;
+    fs->flash_r = fs->flash_g = fs->flash_b = 0.0f;
+    for (unsigned k = 0; k < FIREWORKX_PIXCOUNT; k++) fs->fpix[k].burn = 0;
+  }
+  return st;
+}
 
 static void fireworkx_free(Display *dpy, Window window, void *closure) {
   struct state *st = (struct state *)closure;

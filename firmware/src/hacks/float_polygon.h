@@ -27,24 +27,28 @@ static int float_edge_order(const void *a, const void *b) {
   return (ea->y0 > eb->y0) - (ea->y0 < eb->y0);
 }
 
-/* One row's span [xa, xb] mixed with what is there: the canvas holds byte
- * swapped RGB565, so each pixel is unpacked, weighted `alpha` parts in 32
- * against the old colour's 32 - alpha, and packed again. */
+/* One row's span [xa, xb] mixed with what is there. The canvas holds byte
+ * swapped RGB565, so each pixel is unswapped, and all three channels are mixed
+ * at once: spreading a pixel's fields apart (red at bit 11, blue at bit 0,
+ * green at bit 21, with room between them) lets one multiply weight them all,
+ * `alpha` parts in 32 of the new colour and the rest of the old. Each field's
+ * sum fits its own bit range and the shift drops the low bits, so the result
+ * is the per-channel (new * alpha + old * (32 - alpha)) / 32, rounded down. */
+#define FLOAT_FIELDS 0x07E0F81Fu
+
 static void float_blend_span(Canvas *c, int xa, int xb, int y, uint16_t color, int alpha) {
   if (y < 0 || y >= c->h || xb < 0 || xa >= c->w) return;
   if (xa < 0) xa = 0;
   if (xb >= c->w) xb = c->w - 1;
   if (xa > xb) return;
-  const uint16_t src = px_swap(color);
-  const int sr = src >> 11, sg = (src >> 5) & 63, sb = src & 31;
-  const int inv = 32 - alpha;
+  const uint32_t src = px_swap(color);
+  const uint32_t weighted = ((src | (src << 16)) & FLOAT_FIELDS) * (uint32_t)alpha;
+  const uint32_t inv = (uint32_t)(32 - alpha);
   uint16_t *row = c->px + (size_t)y * (size_t)c->w;
   for (int x = xa; x <= xb; x++) {
-    const uint16_t d = px_swap(row[x]);
-    const int r = (sr * alpha + (d >> 11) * inv) >> 5;
-    const int g = (sg * alpha + ((d >> 5) & 63) * inv) >> 5;
-    const int b = (sb * alpha + (d & 31) * inv) >> 5;
-    row[x] = px_swap((uint16_t)((r << 11) | (g << 5) | b));
+    const uint32_t d = px_swap(row[x]);
+    const uint32_t mixed = ((weighted + ((d | (d << 16)) & FLOAT_FIELDS) * inv) >> 5) & FLOAT_FIELDS;
+    row[x] = px_swap((uint16_t)(mixed | (mixed >> 16)));
   }
   canvas_mark_dirty(c, xa, y, xb - xa + 1, 1);
 }
