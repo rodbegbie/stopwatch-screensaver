@@ -82,8 +82,9 @@ Pixmap image_data_to_pixmap(Display *dpy, Window win, const unsigned char *data,
                             unsigned long size, int *width_ret,
                             int *height_ret, Pixmap *mask_ret) {
   (void)win;
-  *width_ret = *height_ret = 0;
-  *mask_ret = None;
+  if (width_ret) *width_ret = 0;
+  if (height_ret) *height_ret = 0;
+  if (mask_ret) *mask_ret = None;
   if (size < 8 || memcmp(data, "565M", 4) != 0) return None;
 
   const unsigned w = le16(data + 4), h = le16(data + 6);
@@ -92,21 +93,21 @@ Pixmap image_data_to_pixmap(Display *dpy, Window win, const unsigned char *data,
   if (w == 0 || h == 0 || size != 8 + pixel_bytes + mask_bytes) return None;
 
   struct XshimPixmap *colour = pixmap_new((int)w, (int)h, 16);
-  struct XshimPixmap *mask = pixmap_new((int)w, (int)h, 1);
-  if (!colour || !mask) {
+  struct XshimPixmap *mask = mask_ret ? pixmap_new((int)w, (int)h, 1) : NULL;
+  if (!colour || (mask_ret && !mask)) {
     pixmap_free(colour);
     pixmap_free(mask);
     return None;
   }
   for (unsigned i = 0; i < w * h; i++)
     colour->canvas.px[i] = px_swap((uint16_t)le16(data + 8 + 2 * i));
-  memcpy(mask->bits, data + 8 + pixel_bytes, (size_t)mask_bytes);
+  if (mask) memcpy(mask->bits, data + 8 + pixel_bytes, (size_t)mask_bytes);
 
   track(dpy, colour);
-  track(dpy, mask);
-  *width_ret = (int)w;
-  *height_ret = (int)h;
-  *mask_ret = (Pixmap)(uintptr_t)mask;
+  if (mask) track(dpy, mask);
+  if (width_ret) *width_ret = (int)w;
+  if (height_ret) *height_ret = (int)h;
+  if (mask_ret) *mask_ret = (Pixmap)(uintptr_t)mask;
   return (Pixmap)(uintptr_t)colour;
 }
 

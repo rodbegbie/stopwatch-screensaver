@@ -18,6 +18,7 @@
 #include "x11shim/arc.h"
 #include "x11shim/stroke.h"
 #include "X11/Intrinsic.h"
+#include "textclient.h"
 #include "x11shim/xshim.h"
 #include "ximage-loader.h"
 
@@ -631,6 +632,19 @@ void test_image_data_to_pixmap_makes_a_colour_pixmap_and_a_mask(void) {
   TEST_ASSERT_EQUAL_UINT(1, depth);
   XFreePixmap(dpy, p);
   XFreePixmap(dpy, mask);
+}
+
+void test_image_data_to_pixmap_without_a_mask_pointer_still_loads_the_colours(void) {
+  int w = 99, h = 99;
+  fill_blob();
+  Pixmap p = image_data_to_pixmap(dpy, win, blob, sizeof(blob), &w, &h, NULL);
+  TEST_ASSERT_NOT_EQUAL(None, p);
+  TEST_ASSERT_EQUAL_INT(BLOB_W, w);
+  TEST_ASSERT_EQUAL_INT(BLOB_H, h);
+  XImage *im = XGetImage(dpy, p, 0, 0, BLOB_W, BLOB_H, ~0UL, ZPixmap);
+  TEST_ASSERT_NOT_NULL(im);
+  XDestroyImage(im);
+  XFreePixmap(dpy, p);
 }
 
 void test_image_data_to_pixmap_rejects_a_blob_that_is_not_ours(void) {
@@ -2432,6 +2446,12 @@ void test_the_device_has_no_keyboard_so_lookup_string_finds_nothing(void) {
   TEST_ASSERT_EQUAL_INT('x', c);
 }
 
+void test_there_is_never_a_text_source(void) {
+  TEST_ASSERT_NULL(textclient_open(dpy));
+  TEST_ASSERT_EQUAL_INT(-1, textclient_getc(NULL));
+  TEST_ASSERT_FALSE(textclient_puts(NULL, "x"));
+}
+
 void test_the_timer_stand_ins_never_fire_and_can_be_cancelled(void) {
   XtAppContext app = XtDisplayToApplicationContext(dpy);
   XtIntervalId id = XtAppAddTimeOut(app, 333, NULL, NULL);
@@ -2516,6 +2536,7 @@ int main(void) {
   RUN_TEST(test_mirroring_each_glyph_column_block_through_get_and_put_image);
   RUN_TEST(test_the_device_has_no_keyboard_so_lookup_string_finds_nothing);
   RUN_TEST(test_the_timer_stand_ins_never_fire_and_can_be_cancelled);
+  RUN_TEST(test_there_is_never_a_text_source);
   RUN_TEST(test_create_image_refuses_depths_and_sizes_it_cannot_hold);
   RUN_TEST(test_file_to_ximage_has_no_decoder_and_returns_null);
   RUN_TEST(test_ease_in_out_sine_runs_from_0_to_1_through_one_half);
@@ -2526,6 +2547,7 @@ int main(void) {
   RUN_TEST(test_a_replacement_clock_is_used_until_it_is_cleared);
   RUN_TEST(test_release_hook_runs_once_with_the_display_and_is_then_cleared);
   RUN_TEST(test_image_data_to_pixmap_makes_a_colour_pixmap_and_a_mask);
+  RUN_TEST(test_image_data_to_pixmap_without_a_mask_pointer_still_loads_the_colours);
   RUN_TEST(test_image_data_to_pixmap_rejects_a_blob_that_is_not_ours);
   RUN_TEST(test_get_geometry_of_the_window_is_the_canvas_and_of_nothing_is_failure);
   RUN_TEST(test_copy_area_draws_the_image_at_the_destination);

@@ -75,6 +75,7 @@ implied warranty.
 | `firmware/src/hacks/unknownpleasures/unknownpleasures.c` | Copyright (c) 2013-2025 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/hexadrop/hexadrop.c` | Copyright (c) 1999-2019 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/halo/halo.c` | Copyright (c) 1993-2013 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/xmatrix/xmatrix.c` | Copyright (c) 1999-2018 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/stonerview/stonerview.c` | Copyright 1998-2001 Andrew Plotkin; ported to xscreensaver by Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/stonerview/stonerview.h` | Copyright 1998-2001 Andrew Plotkin; ported to xscreensaver by Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/stonerview/stonerview-move.c` | Copyright 1998-2001 Andrew Plotkin; ported to xscreensaver by Jamie Zawinski | jwz permission notice (above) |
@@ -236,6 +237,16 @@ this repository does not contain it. `firmware/pacman_sprites.py` reads it from
 `vendor/` at build time and converts it to the raw blob described in
 `ximage-loader.h` (3 MB as C text) in the build directory. The sprites are not
 part of the MIT-licensed code in this repository.
+
+### The XMatrix glyph sheets
+
+XMatrix draws its characters from `hacks/images/matrix1.png`, `matrix1b.png`,
+`matrix2.png` and `matrix2b.png` in xscreensaver 6.16, two sizes of two glyph
+sheets. The files have no licence text of their own, and this repository does
+not contain them. `firmware/matrix_glyphs.py` reads them from `vendor/` at
+build time and converts each to the raw blob described in `ximage-loader.h` in
+the build directory. The glyph sheets are not part of the MIT-licensed code in
+this repository.
 
 ### Silicon Graphics notice (trackball)
 

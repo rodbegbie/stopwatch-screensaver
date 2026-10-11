@@ -23,7 +23,8 @@ extern "C" {
 
 /* Returns a colour pixmap, and writes its size and a depth-1 mask pixmap
  * through the pointers. Returns None (and writes zeros and None) when the
- * blob is not valid or memory runs out. The caller frees both pixmaps. */
+ * blob is not valid or memory runs out. The caller frees both pixmaps. Any of
+ * the three pointers may be NULL (xmatrix passes no mask, and none is made). */
 Pixmap image_data_to_pixmap(Display *, Window, const unsigned char *data,
                             unsigned long size, int *width_ret,
                             int *height_ret, Pixmap *mask_ret);

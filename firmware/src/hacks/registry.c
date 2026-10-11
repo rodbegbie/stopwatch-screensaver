@@ -92,6 +92,7 @@ extern const HackEntry wormhole_hack;
 extern const HackEntry truchet_hack;
 extern const HackEntry hexadrop_hack;
 extern const HackEntry halo_hack;
+extern const HackEntry xmatrix_hack;
 /* The xlockmore framework reads ncolors and cycles, which the hack does not
  * define. The override cuts its own 30 ms pause to 10 ms, as for Gears. Its
  * thin lines move a few pixels a frame, so a seam between the old and the
@@ -147,5 +148,6 @@ const HackEntry *const g_hacks[] = {
     &unknownpleasures_hack,
     &hexadrop_hack,
     &stonerview_hack,
-    &halo_hack};
+    &halo_hack,
+    &xmatrix_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);
