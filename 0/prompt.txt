@@ -1,0 +1,29 @@
+I'm going to bed now.  YOu have permission to flash and reflash the device to test things while I'm gone.  I'll be back around 7am.  Good luck!
+
+---
+
+<task-notification>
+<task-id>bbbww34sm</task-id>
+<tool-use-id>toolu_01RrFDLpLfbm1HFJd8FzXQKR</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/621b1db1-c1c2-4b2b-a61b-b882a2244e83/tasks/bbbww34sm.output</output-file>
+<status>completed</status>
+<summary>Background command "/Users/rod/build/stopwatch-screensaver/.claude/worktrees/port-batch-3/.venv/bin/python -I /Users/rod/build/stopwatch-screensaver/.claude/worktrees/port-batch-3/tools/serial_capture.py /private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/621b1db1-c1c2-4b2b-a61b-b882a2244e83/scratchpad/soak.log 1800" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bp0u0vr4b</task-id>
+<tool-use-id>toolu_01YD4MBwQGWqJ87R6QRixMmg</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/621b1db1-c1c2-4b2b-a61b-b882a2244e83/tasks/bp0u0vr4b.output</output-file>
+<status>completed</status>
+<summary>Background command "until ! pgrep -f 'serial_capture.py' &gt; /dev/null; do sleep 10; done; echo soak finished" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Great. They mostly look fantastic.  Colours look good to my eyes.  Boing is too slow and pretty boring on a small screen, so take it out of the rotation.  Hextrail is great, but slows down pretty quickly -- It drops below 10 fps before the 25 seconds rotates it to Pyro, so a candidate for a bit more optimisation if possible.
+
+---
+
+Yes, flash it and measure HexTrail

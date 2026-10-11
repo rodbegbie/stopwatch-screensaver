@@ -1,0 +1,24 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4NMKN1HQMN9CBPM0TYSQBXH",
+  "strategy": "manual-commit",
+  "branch": "feature/port-batch-vermiculate-moire-boing-cwaves-cynosure-hextrail",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 60,
+    "cache_creation_tokens": 43994,
+    "cache_read_tokens": 5074789,
+    "output_tokens": 21384,
+    "api_call_count": 30
+  }
+}
