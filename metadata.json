@@ -3,7 +3,7 @@
   "checkpoint_id": "01M4N0B8JXWN5J7A6DEV8PYQR4",
   "strategy": "manual-commit",
   "branch": "feature/43-gl-speed-experiments",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "firmware/test/test_glshim/test_glshim.c",
     "tools/tests/test_tinygl_patch.py",
@@ -16,13 +16,20 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 58,
-    "cache_creation_tokens": 55824,
-    "cache_read_tokens": 8378634,
-    "output_tokens": 38189,
-    "api_call_count": 29
+    "input_tokens": 86,
+    "cache_creation_tokens": 76353,
+    "cache_read_tokens": 13179801,
+    "output_tokens": 50450,
+    "api_call_count": 43
   }
 }
