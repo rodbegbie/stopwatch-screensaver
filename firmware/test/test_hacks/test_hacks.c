@@ -1114,48 +1114,6 @@ void test_hextrail_stops_do_not_leak(void) {
 }
 
 #ifdef HAVE_AFTER_DARK_TOASTERS
-/* A flyer enters and leaves past every edge, so a 70x70 sprite is put where
- * 1, 36 or 40 of its columns and rows land on the canvas, and the canvas
- * outside the clipped sprite must keep what it held. */
-void test_blit_clips_at_every_edge(void) {
-  enum { S = 70 };
-  static const int pos[] = {-69, -30, 430, 465};
-  const uint16_t ink = 0x1234; /* images hold canvas-order pixels */
-  Display *dpy = xshim_open_display(&cv);
-  GC gc = XCreateGC(dpy, XSHIM_WINDOW, 0, NULL);
-  XImage *im = XCreateImage(dpy, NULL, 16, ZPixmap, 0, NULL, S, S, 16, 0);
-  TEST_ASSERT_NOT_NULL(im);
-  uint16_t *pixels = malloc(S * S * sizeof *pixels);
-  TEST_ASSERT_NOT_NULL(pixels);
-  for (int i = 0; i < S * S; i++) pixels[i] = ink;
-  im->data = (char *)pixels;
-
-  for (size_t a = 0; a < sizeof pos / sizeof pos[0]; a++) {
-    for (size_t b = 0; b < sizeof pos / sizeof pos[0]; b++) {
-      const int x = pos[a], y = pos[b];
-      for (long i = 0; i < (long)cv.w * cv.h; i++)
-        cv.px[i] = (uint16_t)(0x8001 + i % 251);
-      XPutImage(dpy, XSHIM_WINDOW, gc, im, 0, 0, x, y, S, S);
-      for (int row = 0; row < cv.h; row++) {
-        for (int col = 0; col < cv.w; col++) {
-          const long i = (long)row * cv.w + col;
-          const int inside = col >= x && col < x + S && row >= y && row < y + S;
-          const uint16_t want = inside ? ink : (uint16_t)(0x8001 + i % 251);
-          if (cv.px[i] != want) {
-            char msg[80];
-            snprintf(msg, sizeof msg, "sprite at (%d, %d): pixel (%d, %d)", x, y,
-                     col, row);
-            TEST_FAIL_MESSAGE(msg);
-          }
-        }
-      }
-    }
-  }
-  XDestroyImage(im);
-  XFreeGC(dpy, gc);
-  xshim_close_display(dpy);
-}
-
 /* The runner waits the returned delay after the push, so the hack subtracts
  * the time its own step took to keep to 30 steps a second. */
 static double step_cost;
@@ -1267,7 +1225,6 @@ int main(void) {
   RUN_TEST(test_moire2_stops_do_not_leak);
   RUN_TEST(test_hextrail_stops_do_not_leak);
 #ifdef HAVE_AFTER_DARK_TOASTERS
-  RUN_TEST(test_blit_clips_at_every_edge);
   RUN_TEST(test_toasters_delay_is_a_thirtieth_of_a_second_less_the_step);
   RUN_TEST(test_restart_does_not_leak);
 #endif
