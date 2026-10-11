@@ -376,10 +376,11 @@ def run(args: argparse.Namespace, vendor: Path, root: Path) -> int:
     registry = Path(args.registry)
     if not registry.exists():
         raise ScoreError(f"registry not found: {registry} (see --registry)")
-    ported = registered_hacks(registry.read_text())
+    known = {r["name"] for r in rows}
+    ported = registered_hacks(registry.read_text()) & known
     failed_path = Path(args.failed_ports)
     failed = read_failed_ports(failed_path.read_text()) if failed_path.exists() else {}
-    check_ports(ported, failed, {r["name"] for r in rows})
+    check_ports(ported, failed, known)
     if args.probe:
         probe_speed(
             rows,
