@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4P8KTWD0X6D3A1WB0JW38N2",
+  "strategy": "manual-commit",
+  "branch": "feature/77-round-screen-corners",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/test/test_push_present/test_push_present.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 70945,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1380736,
+    "output_tokens": 2929,
+    "api_call_count": 23,
+    "subagent_tokens_complete": false
+  }
+}
