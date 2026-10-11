@@ -516,6 +516,24 @@ void test_loop_picks_squares_or_hexagons_again_at_every_start(void) {
   TEST_ASSERT_TRUE_MESSAGE(seen4 > 0 && seen6 > 0, "Loop kept the mode of its first start");
 }
 
+/* Not a check: with HACK_PINS_OUT=<file> in the environment it writes the frame
+ * hash of every hack whose baseline is 0 (not pinned yet), one `Name 0x...`
+ * line each, so a batch of new hacks can be pinned in one run. Look at the
+ * frames before pinning them (see "Batches" in the port-hack skill). Maze and
+ * Coral stay at 0 on purpose. */
+void test_write_the_unpinned_hashes_when_asked(void) {
+  const char *out = getenv("HACK_PINS_OUT");
+  if (!out) return;
+  FILE *f = fopen(out, "w");
+  TEST_ASSERT_NOT_NULL(f);
+  for (int i = 0; i < g_hack_count; i++) {
+    if (kBaseline[i] != 0) continue;
+    fprintf(f, "%s 0x%016llx\n", g_hacks[i]->name,
+            (unsigned long long)hash_after(i, 200));
+  }
+  fclose(f);
+}
+
 void test_maze_frame_matches_main(void) {
   TEST_ASSERT_EQUAL_UINT64(0x0693082a4399bc39ull, hash_after(index_of("Maze"), 200));
 }
@@ -1001,6 +1019,7 @@ int main(void) {
   RUN_TEST(test_frames_of_every_hack_but_maze_match_main);
   RUN_TEST(test_hacks_that_use_the_spline_draw_a_real_picture);
   RUN_TEST(test_loop_picks_squares_or_hexagons_again_at_every_start);
+  RUN_TEST(test_write_the_unpinned_hashes_when_asked);
   RUN_TEST(test_maze_frame_matches_main);
   RUN_TEST(test_pacman_levels_do_not_leak);
   RUN_TEST(test_pacman_start_and_stop_do_not_leak);
