@@ -3,8 +3,13 @@
   "checkpoint_id": "01M4P2BM45R0X6V5FF4H4HC1E1",
   "strategy": "manual-commit",
   "branch": "feature/43-banded-renderer",
-  "checkpoints_count": 2,
-  "files_touched": null,
+  "checkpoints_count": 3,
+  "files_touched": [
+    "firmware/src/glshim/glshim.c",
+    "firmware/src/glshim/glshim.h",
+    "firmware/src/hacks/hypnowheel_single_gl.c",
+    "firmware/test/test_glshim/test_glshim.c"
+  ],
   "sessions": [
     {
       "metadata": "/0/metadata.json",
@@ -12,14 +17,21 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": "/0/prompt.txt"
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 12,
-    "cache_creation_tokens": 10936,
-    "cache_read_tokens": 2049116,
-    "output_tokens": 5884,
-    "api_call_count": 6,
+    "input_tokens": 18,
+    "cache_creation_tokens": 13943,
+    "cache_read_tokens": 3452629,
+    "output_tokens": 8249,
+    "api_call_count": 9,
     "subagent_tokens": {
       "input_tokens": 26,
       "cache_creation_tokens": 149550,
