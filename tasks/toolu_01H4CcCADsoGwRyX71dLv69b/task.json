@@ -1,0 +1,15 @@
+{
+  "tool_use_id": "toolu_01H4CcCADsoGwRyX71dLv69b",
+  "agent_id": "af50dcb7ede8cdca7",
+  "subagent_type": "general-purpose",
+  "task_description": "Builder check on toasters design",
+  "token_usage": {
+    "input_tokens": 18,
+    "cache_creation_tokens": 77979,
+    "cache_read_tokens": 541960,
+    "output_tokens": 185,
+    "api_call_count": 9
+  },
+  "started_at": "2026-10-11T10:18:02.340252-07:00",
+  "completed_at": "2026-10-11T10:20:00.272722-07:00"
+}
