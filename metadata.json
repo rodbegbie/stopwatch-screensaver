@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4MS5QSCZX792EHW3ZH7CVM1",
+  "strategy": "manual-commit",
+  "branch": "feature/port-batch-goop-loop-starfish-qix-hypnowheel-fireworkx",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/porting-assessment.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 4,
+    "cache_creation_tokens": 1874,
+    "cache_read_tokens": 1729886,
+    "output_tokens": 1190,
+    "api_call_count": 2
+  }
+}
