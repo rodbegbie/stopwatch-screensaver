@@ -141,7 +141,7 @@ def pict_v2(frame, ops: bytes) -> bytes:
 
 def make_pict_v2_indexed(frame, clut, rows, flags=0, depth=4) -> bytes:
     top, left, bottom, right = frame
-    per_byte = 8 // depth
+    per_byte = max(8 // max(depth, 1), 1)
     row_bytes = (right - left + per_byte - 1) // per_byte
     assert len(rows) == bottom - top
     pixmap_header = struct.pack(
@@ -290,7 +290,7 @@ def test_v2_positional_colour_table_ignores_stored_indices():
 
 
 def test_v2_stored_indices_used_when_flag_clear():
-    clut = {3: (0x1000, 0x2000, 0x3000), 9: (0xFF00, 0xFF00, 0xFF00)}
+    clut = {0: WHITE, 3: (0x1000, 0x2000, 0x3000), 9: (0xFF00, 0xFF00, 0xFF00)}
     rows = [bytes([0x39]) + bytes(7), bytes(8)]
     _, _, px = ads.decode_pict(make_pict_v2_indexed(V2_FRAME, clut, rows))
     assert px[0] == (0x10, 0x20, 0x30)
@@ -307,3 +307,158 @@ def test_pict_without_an_image_raises():
     pict = pict_v2((0, 0, 2, 2), struct.pack(">H", 0x00FF))
     with pytest.raises(ads.ExtractError, match="no image"):
         ads.decode_pict(pict)
+
+
+def test_pixel_value_missing_from_colour_table_raises_naming_it():
+    clut = {0: BLACK, 5: (0xFFFF, 0, 0)}
+    rows = [bytes([0x07]) + bytes(7), bytes(8)]
+    with pytest.raises(ads.ExtractError, match="colour 7"):
+        ads.decode_pict(make_pict_v2_indexed(V2_FRAME, clut, rows))
+
+
+@pytest.mark.parametrize("depth", [16, 32, 3, 0])
+def test_unsupported_pixmap_depth_raises_naming_it(depth):
+    width = 16 // max(8 // max(depth, 1), 1)
+    rows = [bytes(width), bytes(width)]
+    pict = make_pict_v2_indexed(V2_FRAME, V2_CLUT, rows, depth=depth)
+    with pytest.raises(ads.ExtractError, match=f"depth {depth}"):
+        ads.decode_pict(pict)
+
+
+def make_64px_pict(size=64, black_first=False):
+    row_bytes = size // 8
+    rows = [bytes(row_bytes) for _ in range(size)]
+    if black_first:
+        rows[0] = bytes([0x80]) + bytes(row_bytes - 1)
+    frame = (0, 0, size, size)
+    return make_pict_v1_bitmap(frame, frame, rows)
+
+
+SPRITE_IDS = [128, 129, 130, 131, 132, 228, 229, 230, 231, 232]
+
+
+def test_mono_bits_packs_msb_first_with_black_as_one():
+    px = [BLACK] + [WHITE] * (64 * 64 - 1)
+    bits = ads.mono_bits(px)
+    assert len(bits) == 512
+    assert bits[:2] == bytes([0x80, 0x00])
+
+
+def test_mono_bits_last_pixel_is_lowest_bit_of_last_byte():
+    px = [WHITE] * (64 * 64 - 1) + [BLACK]
+    assert ads.mono_bits(px)[-1] == 0x01
+
+
+def test_sprites_from_fork_returns_five_colour_and_five_mono():
+    fork = make_resource_fork(
+        {("PICT", i): make_64px_pict(black_first=i == 130) for i in SPRITE_IDS}
+    )
+    colour, mono = ads.sprites_from_fork(fork)
+    assert [len(c) for c in colour] == [4096] * 5
+    assert [len(m) for m in mono] == [512] * 5
+    assert mono[2][0] == 0x80 and mono[0][0] == 0
+    assert colour[0][0] == WHITE
+
+
+def test_missing_pict_is_named_in_the_error():
+    fork = make_resource_fork(
+        {("PICT", i): make_64px_pict() for i in SPRITE_IDS if i != 232}
+    )
+    with pytest.raises(ads.ExtractError, match="PICT 232"):
+        ads.sprites_from_fork(fork)
+
+
+def test_wrong_sized_pict_is_rejected():
+    resources = {("PICT", i): make_64px_pict() for i in SPRITE_IDS}
+    resources[("PICT", 229)] = make_64px_pict(size=32)
+    with pytest.raises(ads.ExtractError, match=r"PICT 229.*32x32"):
+        ads.sprites_from_fork(make_resource_fork(resources))
+
+
+def test_header_declares_both_arrays_and_the_hash():
+    colour = [[(1, 2, 3)] * 4096 for _ in range(5)]
+    mono = [bytes([0xA5]) * 512 for _ in range(5)]
+    text = ads.render_header(colour, mono, "ab12")
+    assert "ad_colour_rgb[5][64 * 64 * 3]" in text
+    assert "ad_mono_bits[5][64 * 64 / 8]" in text
+    assert "sha256 ab12" in text
+    assert "#define AD_ART_SIZE 64" in text
+    assert "AFTER_DARK_TOASTER_SPRITES_H" in text
+    assert "0x01,0x02,0x03" in text.replace(" ", "")
+    assert "0xA5" in text
+
+
+def test_header_has_exactly_the_expected_number_of_bytes():
+    colour = [[(1, 2, 3)] * 4096 for _ in range(5)]
+    mono = [bytes([0xA5]) * 512 for _ in range(5)]
+    text = ads.render_header(colour, mono, "ab12")
+    assert text.count("0x01") == 5 * 4096
+    assert text.count("0xA5") == 5 * 512
+
+
+def test_main_writes_nothing_when_extraction_fails(tmp_path, capsys):
+    out = tmp_path / "h.h"
+    (tmp_path / "img").write_bytes(bytes(100))
+    assert ads.main([str(tmp_path / "img"), "-o", str(out)]) != 0
+    assert not out.exists()
+    assert not (tmp_path / "h.h.partial").exists()
+    assert "838,400" in capsys.readouterr().err
+
+
+def test_main_reports_a_missing_image(tmp_path, capsys):
+    out = tmp_path / "h.h"
+    assert ads.main([str(tmp_path / "nope"), "-o", str(out)]) != 0
+    assert not out.exists()
+    assert "nope" in capsys.readouterr().err
+
+
+def make_volume(machfs, folder=None, name="Flying Toasters", rsrc=b""):
+    volume = machfs.Volume()
+    volume.name = "Test"
+    if folder:
+        volume[folder] = machfs.Folder()
+        target = volume[folder]
+    else:
+        target = volume
+    if name:
+        item = machfs.File()
+        item.type, item.creator = b"APPL", b"????"
+        item.data = b"d"
+        item.rsrc = rsrc
+        target[name] = item
+    return volume.write(size=819_200)
+
+
+def test_read_module_fork_returns_the_resource_fork():
+    machfs = pytest.importorskip("machfs")
+    image = make_volume(machfs, "After Dark Files", rsrc=b"fork-bytes")
+    assert ads.read_module_fork(image) == b"fork-bytes"
+
+
+def test_read_module_fork_names_a_missing_folder():
+    machfs = pytest.importorskip("machfs")
+    image = make_volume(machfs, folder=None)
+    with pytest.raises(ads.ExtractError, match="After Dark Files"):
+        ads.read_module_fork(image)
+
+
+def test_read_module_fork_names_a_missing_file():
+    machfs = pytest.importorskip("machfs")
+    image = make_volume(machfs, "After Dark Files", name=None)
+    with pytest.raises(ads.ExtractError, match="Flying Toasters"):
+        ads.read_module_fork(image)
+
+
+REPO = Path(__file__).resolve().parent.parent.parent
+
+
+def test_real_image_gives_ten_sprites():
+    pytest.importorskip("machfs")
+    image = REPO / "vendor" / "after-dark-v2.0v-800k"
+    if not image.is_file():
+        pytest.skip("no After Dark disk image")
+    colour, mono = ads.sprites_from_fork(
+        ads.read_module_fork(ads.strip_sector_tags(image.read_bytes()))
+    )
+    assert [len(c) for c in colour] == [4096] * 5
+    assert [len(m) for m in mono] == [512] * 5

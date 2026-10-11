@@ -4,12 +4,18 @@
 # ///
 """Read After Dark 2.0 sprites out of its 800K disk image.
 
-This module holds the pure-Python half: stripping sector tags from the image,
-parsing a Mac resource fork and decoding the PICT resources the sprites use.
+Strips sector tags from the image, reads the Flying Toasters module's resource
+fork through machfs, decodes its PICT sprites and writes them as a C header.
 It never imports machfs at module level, so the tools tests run without it.
+
+    uv run tools/after_dark_sprites.py IMAGE -o HEADER
 """
 
+import argparse
+import hashlib
 import struct
+import sys
+from pathlib import Path
 
 TAGGED_IMAGE_SIZE = 838_400
 PLAIN_VOLUME_SIZE = 819_200
@@ -131,6 +137,8 @@ def draw_packbits_rect(data, pos, frame_origin, frame_size, pixels) -> int:
     clut: dict[int, tuple[int, int, int]] = {}
     if is_pixmap:
         depth = struct.unpack(">h", data[pos + 18 : pos + 20])[0]
+        if depth not in (1, 2, 4, 8):
+            raise ExtractError(f"unsupported PixMap depth {depth}")
         pos += 36
         _seed, flags, count_minus_one = struct.unpack(">IHH", data[pos : pos + 8])
         pos += 8
@@ -175,5 +183,122 @@ def draw_packbits_rect(data, pos, frame_origin, frame_size, pixels) -> int:
             else:
                 shift = (per_byte - 1 - col % per_byte) * depth
                 value = (row[col // per_byte] >> shift) & mask
-                pixels[y * width + x] = clut.get(value, (255, 0, 255))
+                if value not in clut:
+                    raise ExtractError(
+                        f"PICT pixel uses colour {value}, not in its table"
+                    )
+                pixels[y * width + x] = clut[value]
     return pos
+
+
+SPRITE_SIZE = 64
+COLOUR_PICT_IDS = (228, 229, 230, 231, 232)
+MONO_PICT_IDS = (128, 129, 130, 131, 132)
+MODULE_FOLDER = "After Dark Files"
+MODULE_FILE = "Flying Toasters"
+
+
+def mono_bits(pixels: list[tuple[int, int, int]]) -> bytes:
+    out = bytearray(len(pixels) // 8)
+    for i, pixel in enumerate(pixels):
+        if pixel == (0, 0, 0):
+            out[i >> 3] |= 0x80 >> (i & 7)
+    return bytes(out)
+
+
+def sprites_from_fork(
+    fork: bytes,
+) -> tuple[list[list[tuple[int, int, int]]], list[bytes]]:
+    resources = parse_resource_fork(fork)
+
+    def load(pict_id: int) -> list[tuple[int, int, int]]:
+        if ("PICT", pict_id) not in resources:
+            raise ExtractError(f"PICT {pict_id} not found in the module")
+        width, height, pixels = decode_pict(resources[("PICT", pict_id)])
+        if (width, height) != (SPRITE_SIZE, SPRITE_SIZE):
+            raise ExtractError(f"PICT {pict_id} is {width}x{height}, expected 64x64")
+        return pixels
+
+    colour = [load(i) for i in COLOUR_PICT_IDS]
+    mono = [mono_bits(load(i)) for i in MONO_PICT_IDS]
+    return colour, mono
+
+
+def c_array(name: str, rows: list[bytes], row_len: str, comment: str) -> str:
+    lines = [
+        f"static const unsigned char {name}[{len(rows)}][{row_len}] = {{ /* {comment} */"
+    ]
+    for row in rows:
+        lines.append("  {")
+        for i in range(0, len(row), 16):
+            lines.append("    " + ",".join(f"0x{b:02X}" for b in row[i : i + 16]) + ",")
+        lines.append("  },")
+    lines.append("};")
+    return "\n".join(lines)
+
+
+def render_header(
+    colour, mono, sha256: str, source: str = "the After Dark 2.0 disk image"
+) -> str:
+    colour_rows = [bytes(c for pixel in sprite for c in pixel) for sprite in colour]
+    return "\n".join(
+        [
+            (f"/* Generated from {source}, sha256 {sha256}. Do not commit. */"),
+            "#ifndef AFTER_DARK_TOASTER_SPRITES_H",
+            "#define AFTER_DARK_TOASTER_SPRITES_H",
+            "",
+            f"#define AD_ART_SIZE {SPRITE_SIZE}",
+            "",
+            c_array("ad_colour_rgb", colour_rows, "64 * 64 * 3", "frames 0-3, toast"),
+            "",
+            c_array("ad_mono_bits", list(mono), "64 * 64 / 8", "MSB first, 1 = black"),
+            "",
+            "#endif",
+            "",
+        ]
+    )
+
+
+def read_module_fork(volume: bytes) -> bytes:
+    import machfs
+
+    vol = machfs.Volume()
+    vol.read(volume)
+    try:
+        folder = vol[MODULE_FOLDER]
+    except KeyError:
+        raise ExtractError(f"folder '{MODULE_FOLDER}' not found on the disk") from None
+    try:
+        module = folder[MODULE_FILE]
+    except KeyError:
+        raise ExtractError(
+            f"file '{MODULE_FILE}' not found in '{MODULE_FOLDER}'"
+        ) from None
+    return module.rsrc
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser.add_argument("image", type=Path)
+    parser.add_argument("-o", "--output", type=Path, required=True)
+    args = parser.parse_args(argv)
+
+    try:
+        image = args.image.read_bytes()
+        fork = read_module_fork(strip_sector_tags(image))
+        colour, mono = sprites_from_fork(fork)
+        text = render_header(
+            colour, mono, hashlib.sha256(image).hexdigest(), args.image.name
+        )
+    except (ExtractError, OSError) as error:
+        print(f"after_dark_sprites: {error}", file=sys.stderr)
+        return 1
+
+    partial = args.output.with_name(args.output.name + ".partial")
+    partial.write_text(text)
+    partial.replace(args.output)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
