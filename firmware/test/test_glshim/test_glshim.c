@@ -91,6 +91,90 @@ void test_perspective_and_lookat_put_a_point_where_the_maths_says(void) {
   TEST_ASSERT_EQUAL_HEX16(0, cv.px[32 * SIZE + 16]);
 }
 
+/* TinyGL's glOrtho is commented out of its header. The box here is not
+ * centred and not square (x 0 to 10, y 0 to 20, z -1 to 1), so a transposed
+ * matrix, a flipped sign or a swapped axis would put the triangle somewhere
+ * else. By hand: x = 2.5 of 10 is a quarter of the way across, column 16 of
+ * 64; y = 15 of 20 is a quarter of the way down from the top, row 16. */
+void test_ortho_puts_a_point_where_the_maths_says(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glViewport(0, 0, SIZE, SIZE);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glOrtho(0, 10, 0, 20, -1, 1);
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  glDisable(GL_LIGHTING);
+  glColor3f(1, 0, 0);
+  glBegin(GL_TRIANGLES);
+  glVertex3f(1.5f, 13.0f, 0.0f);
+  glVertex3f(3.5f, 13.0f, 0.0f);
+  glVertex3f(2.5f, 17.0f, 0.0f);
+  glEnd();
+  TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), cv.px[16 * SIZE + 16]);
+  TEST_ASSERT_EQUAL_HEX16(0, cv.px[16 * SIZE + 48]);
+  TEST_ASSERT_EQUAL_HEX16(0, cv.px[48 * SIZE + 16]);
+  TEST_ASSERT_EQUAL_HEX16(0, cv.px[48 * SIZE + 48]);
+}
+
+/* Depth is mapped too: the near plane is z = -near, so two overlapping
+ * triangles show the nearer one whatever order they are drawn in. */
+void test_ortho_maps_depth_so_the_nearer_triangle_wins(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glViewport(0, 0, SIZE, SIZE);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glOrtho(-1, 1, -1, 1, 1, 5);
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  glDisable(GL_LIGHTING);
+  glEnable(GL_DEPTH_TEST);
+  for (int near_first = 0; near_first < 2; near_first++) {
+    glClearColor(0, 0, 0, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    for (int pass = 0; pass < 2; pass++) {
+      const int near = near_first ? pass == 0 : pass == 1;
+      glColor3f(near ? 0.0f : 1.0f, near ? 1.0f : 0.0f, 0);
+      glBegin(GL_TRIANGLES);
+      glVertex3f(-0.8f, -0.8f, near ? -2.0f : -4.0f);
+      glVertex3f(0.8f, -0.8f, near ? -2.0f : -4.0f);
+      glVertex3f(0.0f, 0.8f, near ? -2.0f : -4.0f);
+      glEnd();
+    }
+    TEST_ASSERT_EQUAL_HEX16(rgb565(0, 255, 0), cv.px[(SIZE / 2) * SIZE + SIZE / 2]);
+  }
+}
+
+/* The planes are where they are asked: near 1 and far 5 keep a triangle at
+ * z = -4.9 and clip one at -5.1, and clip one at -0.9 and keep one at -1.1. */
+static int ortho_triangle_shows_at(float z) {
+  glClearColor(0, 0, 0, 0);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glColor3f(1, 0, 0);
+  glBegin(GL_TRIANGLES);
+  glVertex3f(-0.8f, -0.8f, z);
+  glVertex3f(0.8f, -0.8f, z);
+  glVertex3f(0.0f, 0.8f, z);
+  glEnd();
+  return cv.px[(SIZE / 2) * SIZE + SIZE / 2] == rgb565(255, 0, 0);
+}
+
+void test_ortho_clips_at_the_near_and_far_planes(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glViewport(0, 0, SIZE, SIZE);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glOrtho(-1, 1, -1, 1, 1, 5);
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  glDisable(GL_LIGHTING);
+  glEnable(GL_DEPTH_TEST);
+  TEST_ASSERT_TRUE(ortho_triangle_shows_at(-4.9f));
+  TEST_ASSERT_FALSE(ortho_triangle_shows_at(-5.1f));
+  TEST_ASSERT_TRUE(ortho_triangle_shows_at(-1.1f));
+  TEST_ASSERT_FALSE(ortho_triangle_shows_at(-0.9f));
+}
+
 /* TinyGL lights a vertex with specular only if glSetEnableSpecular(1) is on
  * (it is off by default, and the hacks here never switch it on, so Gears has
  * no highlights). With it on, a vertex whose normal is (1, 0, 0) under a
@@ -396,6 +480,38 @@ void test_stale_depth_does_not_hide_the_next_frame(void) {
   triangle(-0.5f, -0.5f, 0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0, 0, 1);
   glXSwapBuffers(dpy, 0);
   clear_all();
+  triangle(-0.5f, -0.5f, 0.5f, -0.5f, 0.0f, 0.5f, 0.5f, 0, 1, 0);
+  glXSwapBuffers(dpy, 0);
+  TEST_ASSERT_EQUAL_HEX16(rgb565(0, 255, 0), cv.px[(SIZE / 2) * SIZE + SIZE / 2]);
+}
+
+/* With the depth test off nothing reads the depth buffer, so a glClear that
+ * asks for it does no work until the test is switched on. HexTrail asks every
+ * frame and never enables the test: a second full-canvas clear of PSRAM. */
+void test_a_depth_clear_does_nothing_while_the_depth_test_is_off(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glDisable(GL_DEPTH_TEST);
+  const unsigned before = glshim_depth_clears();
+  for (int i = 0; i < 3; i++) {
+    clear_all();
+    triangle(-0.5f, -0.5f, 0.5f, -0.5f, 0.0f, 0.5f, 0.0f, 0, 0, 1);
+    glXSwapBuffers(dpy, 0);
+  }
+  TEST_ASSERT_EQUAL_UINT(before, glshim_depth_clears());
+  glEnable(GL_DEPTH_TEST);
+  TEST_ASSERT_EQUAL_UINT(before + 1, glshim_depth_clears());
+}
+
+/* The skipped clear is only deferred: a hack that clears with the test off and
+ * then enables it sees a cleared depth buffer, as with the stock clear. */
+void test_a_depth_clear_made_with_the_test_off_applies_once_it_is_on(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glDisable(GL_DEPTH_TEST);
+  glClearColor(1, 0, 0, 0);
+  clear_all();
+  triangle(-0.5f, -0.5f, 0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0, 0, 1);
+  clear_all();
+  glEnable(GL_DEPTH_TEST);
   triangle(-0.5f, -0.5f, 0.5f, -0.5f, 0.0f, 0.5f, 0.5f, 0, 1, 0);
   glXSwapBuffers(dpy, 0);
   TEST_ASSERT_EQUAL_HEX16(rgb565(0, 255, 0), cv.px[(SIZE / 2) * SIZE + SIZE / 2]);
@@ -904,6 +1020,9 @@ int main(void) {
   RUN_TEST(test_clear_writes_canvas_byte_order);
   RUN_TEST(test_the_first_list_name_is_not_zero);
   RUN_TEST(test_perspective_and_lookat_put_a_point_where_the_maths_says);
+  RUN_TEST(test_ortho_puts_a_point_where_the_maths_says);
+  RUN_TEST(test_ortho_maps_depth_so_the_nearer_triangle_wins);
+  RUN_TEST(test_ortho_clips_at_the_near_and_far_planes);
   RUN_TEST(test_materiali_sets_the_shininess_tinygl_uses);
   RUN_TEST(test_a_region_clear_still_leaves_the_whole_canvas_clear);
   RUN_TEST(test_a_line_drawn_in_any_direction_is_cleared_again);
@@ -911,6 +1030,8 @@ int main(void) {
   RUN_TEST(test_the_first_clear_after_opening_clears_over_whatever_was_there);
   RUN_TEST(test_a_new_clear_colour_clears_everything);
   RUN_TEST(test_stale_depth_does_not_hide_the_next_frame);
+  RUN_TEST(test_a_depth_clear_does_nothing_while_the_depth_test_is_off);
+  RUN_TEST(test_a_depth_clear_made_with_the_test_off_applies_once_it_is_on);
   RUN_TEST(test_a_clear_rewrites_only_the_region_that_was_drawn);
   RUN_TEST(test_the_swap_marks_only_the_old_and_new_boxes_dirty);
   RUN_TEST(test_a_one_value_light_model_is_not_over_read);

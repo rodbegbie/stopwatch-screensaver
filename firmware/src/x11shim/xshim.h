@@ -42,6 +42,9 @@ typedef struct XshimGC {
   struct XshimPixmap *clip;
   int clip_x, clip_y;
   int line_width, cap_style, join_style;
+  /* GXcopy, GXor or GXxor as the hack set it. The shim's own drawing always
+   * copies; a wrapper that draws into bit planes reads this. */
+  int function;
   /* 0 draws opaque. 1 to 31 is the weight out of 32 given to this GC's colour
    * when a wide line or circle (stroke.c) is blended over the canvas. */
   int alpha;
@@ -105,6 +108,14 @@ typedef struct {
 } XSegment;
 
 typedef unsigned long KeySym;
+/* The values X uses. No key event ever arrives, so a hack only compares
+ * against them. */
+#define XK_Left 0xFF51
+#define XK_Up 0xFF52
+#define XK_Right 0xFF53
+#define XK_Down 0xFF54
+#define XK_Prior 0xFF55
+#define XK_Next 0xFF56
 
 /* The device has no keyboard: nothing makes one, and XLookupString finds no
  * characters in it. The type exists so a hack's key handler compiles. */
@@ -182,6 +193,7 @@ enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
 #define Convex 2
 #define GXcopy 0x3
 #define GXxor 0x6
+#define GXor 0x7
 #define ButtonPress 4
 #define Expose 12
 #define DoRed 1
@@ -231,7 +243,8 @@ int XFreeGC(Display *, GC);
 /* The display xshim_open_display made most recently and has not closed. */
 Display *xshim_current_display(void);
 int XSetForeground(Display *, GC, unsigned long pixel);
-/* Accepted and ignored: drawing is always GXcopy (see XGCValues). */
+/* Remembered in the GC's `function`, but the shim's own drawing is always
+ * GXcopy (see XGCValues). */
 int XSetFunction(Display *, GC, int function);
 /* A GC may draw with alpha under jwxyz; here it is accepted and ignored. */
 int jwxyz_XSetAlphaAllowed(Display *, GC, Bool allowed);

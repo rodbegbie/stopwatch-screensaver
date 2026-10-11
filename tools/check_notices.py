@@ -16,6 +16,7 @@ NOTICE_PHRASES = (
     "permission to use, copy, modify, distribute, and sell this software",
     "permission is hereby granted, free of charge",
     "permission to use, copy, modify, and distribute this software",
+    "may be copied, modified, or used as long as this copyright is retained",
 )
 
 

@@ -110,6 +110,32 @@ static const char *const kUnknownPleasuresOverrides[] = {
 XLOCKMORE_HACK_SYNCED(unknownpleasures, "UnknownPleasures",
                       kUnknownPleasuresOverrides);
 
+extern const HackEntry cwaves_hack;
+
+extern const HackEntry vermiculate_hack;
+
+extern const HackEntry cynosure_hack;
+
+extern const HackEntry moire_hack;
+
+extern const HackEntry moire2_hack;
+
+/* Hextrail draws every hexagon it has built, so its step grows from 19 ms to
+ * a ceiling and it restarts. The grid is count * 2 hexagons square, and a
+ * smaller count means fewer, larger ones over the same area. Mean fps over a
+ * 150 s capture: 5.7 at upstream's 20 (step up to 293 ms), 9.1 at 10 and 12.7
+ * at 6; in single precision with the depth clear skipped, 15.3 at 6 (10.8 at
+ * the worst). -DHEXTRAIL_COUNT=<n> changes it. */
+#ifndef HEXTRAIL_COUNT
+#define HEXTRAIL_COUNT 6
+#endif
+#define HEXTRAIL_STR2(x) #x
+#define HEXTRAIL_STR(x) HEXTRAIL_STR2(x)
+static const char *const kHexTrailOverrides[] = {
+    "*ncolors: 64", "*cycles: 0", "*delay: 10000",
+    "*count: " HEXTRAIL_STR(HEXTRAIL_COUNT), NULL};
+XLOCKMORE_HACK_WITH(hextrail, "HexTrail", kHexTrailOverrides);
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -162,5 +188,11 @@ const HackEntry *const g_hacks[] = {
     &fireworkx_hack,
     &starfish_hack,
     &goop_hack,
-    &loop_hack};
+    &loop_hack,
+    &cwaves_hack,
+    &vermiculate_hack,
+    &cynosure_hack,
+    &moire_hack,
+    &moire2_hack,
+    &hextrail_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);
