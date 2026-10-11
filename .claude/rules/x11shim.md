@@ -101,3 +101,16 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   Setting `alpha` takes a wrapper, as in `hacks/deluxe_opaque.c`.
 - Don't declare `xrealloc` or `xmalloc` in the shim: cloudlife defines its own
   static `xrealloc`, which would clash.
+- `XGetImage` and `XPutImage` (`ximage.c`) move 32-bit ZPixmap images (the raw
+  RGB565 value in each) to and from the window or a colour pixmap; a bitmap
+  format, `None` or an empty region gives NULL. XMatrix flips its glyph sheets
+  through them. Overrunning a row's right edge wraps onto the next row without
+  AddressSanitizer seeing it, so a clip test must look at that next row.
+- `image_data_to_pixmap` accepts a NULL width, height or mask pointer (XMatrix
+  passes no mask, and a NULL mask used to crash it on start); with no mask
+  pointer no mask is made.
+- `XClearWindow` clears to the colour `XSetWindowBackground` last set
+  (default 0). No key events ever arrive, so `XLookupString` finds no
+  characters, and an Xt timer (`X11/Intrinsic.h`) is never made.
+- The shim still draws nothing into a depth-1 pixmap and ignores a GC's
+  function. Halo handles both inside its own wrapper (`halo_planes.h`).

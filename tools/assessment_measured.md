@@ -1,6 +1,6 @@
 ## Measured on the device
 
-Fifty-three hacks have been run so far (default settings, 466×466 canvas
+Fifty-seven hacks have been run so far (default settings, 466×466 canvas
 pushed to the display every frame, canvas held in PSRAM). The firmware times
 each frame in three parts, averaged over 5 seconds: **step** is the hack's own
 draw call, **push** is sending the canvas to the display, and **wait** is what
@@ -78,6 +78,16 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | UnknownPleasures | 5.0-5.2 | 162-169 ms | 32.3-37.1 ms | 0 ms | about 0.93 MB |
 | UnknownPleasures (first flash: aliased lines, additive quads) | 3.6-3.8 | 226-237 ms | 32.3-48.3 ms | 0 ms | about 0.93 MB |
 | UnknownPleasures (20 rows of 50 points, final code; not registered) | 7.4-7.6 | 90-92 ms | 41.6-43.0 ms | 0 ms | 6.27 MB free, with the QR overlay's buffers |
+| Hexadrop (as copied, double) | 2.2-2.6 | 377-442 ms | 32.5 ms | 0 ms | none measurable |
+| Hexadrop (single precision) | 3.0-3.2 | 282-313 ms | 32.5-35.8 ms | 0 ms | none measurable |
+| Hexadrop (float convex fill) | 9.0-9.2 | 76-79 ms | 32.5 ms | 0 ms | none measurable |
+| Hexadrop (registered: two-pixel stores) | 10.2 | 64.3-65.6 ms | 32.5 ms | 0 ms | none measurable |
+| StonerView | 36.2-41.6 | 12.6-15.6 ms | 6.5-9.6 ms | 1.9-4.8 ms | about 0.63 MB |
+| Halo (Seuss mode, registered) | 22.0-25.6 | 16.6-23.0 ms | 15.9-16.5 ms | 5.5-5.6 ms | about 40 KB |
+| Halo (Ramp mode, registered) | 16.6-40.8 | 13.8-43.4 ms | 8.2-17.6 ms | 0.8-1.3 ms | about 12 KB |
+| Halo (Ramp mode, 100 ms delay, colour pixmap) | 4.6-15.4 | 35.7-110 ms | 7.9-31.9 ms | 17.6-80.9 ms | about 0.42 MB |
+| Halo (Seuss mode, colour pixmaps) | 5.2-10.2 | 77-172 ms | 15.4-18.9 ms | 4.3-5.8 ms | about 0.85 MB |
+| XMatrix (typed trace, then rain) | 17.6-87.2 | 0.1-23.2 ms | 3.4-32.5 ms | 0-8.2 ms | about 0.47 MB |
 
 Unknown Pleasures' rows are from pinned builds (2026-10-10). The first flash
 had TinyGL's one-pixel lines and its additive blend, so the black quads that
@@ -515,3 +525,15 @@ high because of the name overlay).
   capture, so the 27 KB mask per shape is returned), a restart or lap soak
   with rotation on, and a long run. Heap held at 322,648-323,056 bytes.
   Colour was judged by Rod on the screen.
+
+Hexadrop, StonerView, Halo and XMatrix were measured on pinned builds
+(2026-10-10), one 20-60 second capture each except where a range spans
+several. Hexadrop's step with its pixel writes skipped was 0.1 ms, so its
+cost is the canvas writes into PSRAM, not the maths. Halo's mode is chosen by
+`random()`, a device boot is deterministic, and so every boot picked Ramp;
+the Seuss rows come from a temporary build forcing `*colorMode: seuss`. The
+colour-pixmap rows are the first version, replaced by packed bit planes (the
+Seuss colour-pixmap row's PSRAM is two 434 KB pixmaps). Halo's registered
+build asks for a 10 ms pause between frames (upstream asks for 100 ms). XMatrix
+runs its typed trace first, then the rain, where it is limited by the 466-row
+push. Flurry was not ported, so has no row. Colour and pace were not judged.

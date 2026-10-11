@@ -81,3 +81,31 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   `vendor/`, with a `__attribute__((constructor))` that calls
   `srandom(atoi(getenv("SEED")))`. Each boot on the device picks a new mode
   too, so measure each mode from separate boots.
+- Hexadrop (`hexadrop_single.c`) runs at about 10 fps, under the 15 fps bar.
+  Splitting its step on the device showed the maths and the edge walk cost
+  0.1 ms and all the rest is canvas writes: about 860 KB of 16-bit stores
+  into the PSRAM canvas a frame. Single precision, a float convex fill and
+  two-pixel stores took it from 2.4 to 10.2 fps with pixel-identical frames.
+  More needs a shared canvas change or rasterising in row bands.
+- Halo (`halo_direct.c`, `halo_planes.h`, `halo_circles.h`) draws whole circles
+  into 1-bit pixmaps and XORs two of them. Its pixmaps are packed bit planes
+  (27 KB each), not colour pixmaps: 434 KB colour stand-ins made Seuss mode
+  (three runs in four) 5-9 fps, because window-sized circles are millions of
+  PSRAM writes, and a float circle fill alone changed nothing. A device boot
+  is deterministic, so every boot picked Ramp mode and hid that: force
+  `*colorMode: seuss` temporarily to measure the other mode. It overrides
+  `*delay` to 10 ms (upstream asks for 100 ms), so the circles grow faster.
+- StonerView's seven files are built as one unit by `stonerview_gl.c`.
+  Upstream never frees its oscillator list ("how do we free this?"), so the
+  wrapper frees it through the `next` links before upstream's release.
+- XMatrix needs `matrix_glyphs.py` (a `pre:` script in every env), which
+  converts four PNGs from `vendor/` into blobs in the build directory: they
+  are never committed (1.5 MB of C text each for the large sheets). It
+  starts with a typed "trace" sequence, then rain; `*matrixFont: small`
+  gives 46 columns instead of 23. Its text modes read no text: the
+  `textclient.h` stand-in never opens a source, and Xt timers never fire.
+- Flurry is not ported. It draws 3,600 blended, textured quads a frame and
+  needs `glAlphaFunc`, `glRectd`, `gluBuild2DMipmaps` and luminance-alpha
+  textures, none in TinyGL here. With `gl_budget.py`'s per-vertex and
+  per-pixel costs that is well under 1 fps (arithmetic, not a measurement:
+  the tool cannot read a multi-file hack).
