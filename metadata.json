@@ -1,0 +1,39 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4P7EQ2QMRE2Y1EWD68W9X52",
+  "strategy": "manual-commit",
+  "branch": "feature/flying-toasters-design",
+  "checkpoints_count": 5,
+  "files_touched": [
+    "AGENTS.md",
+    "docs/superpowers/specs/2026-10-11-flying-toasters-design.md",
+    "firmware/src/hacks/ad_flyingtoasters/ad_flyingtoasters.c",
+    "firmware/src/hacks/ad_flyingtoasters/ad_sprites.c",
+    "firmware/src/hacks/ad_flyingtoasters/ad_sprites.h",
+    "firmware/test/test_ad_flyingtoasters/test_ad_flyingtoasters.c",
+    "firmware/test/test_hacks/test_hacks.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 386,
+    "cache_creation_tokens": 407702,
+    "cache_read_tokens": 53152384,
+    "output_tokens": 158934,
+    "api_call_count": 193,
+    "subagent_tokens": {
+      "input_tokens": 94,
+      "cache_creation_tokens": 253778,
+      "cache_read_tokens": 3509408,
+      "output_tokens": 4041,
+      "api_call_count": 47
+    }
+  }
+}

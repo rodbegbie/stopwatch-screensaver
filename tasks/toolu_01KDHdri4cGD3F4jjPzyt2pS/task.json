@@ -1,0 +1,18 @@
+{
+  "tool_use_id": "toolu_01KDHdri4cGD3F4jjPzyt2pS",
+  "agent_id": "a3f25bbcfb99646f0",
+  "subagent_type": "general-purpose",
+  "task_description": "Final fix wave for ad-flyingtoasters",
+  "files": [
+    ".superpowers/sdd/2026-10-11-ad-flyingtoasters/final-fix-report.md"
+  ],
+  "token_usage": {
+    "input_tokens": 76,
+    "cache_creation_tokens": 196879,
+    "cache_read_tokens": 2867742,
+    "output_tokens": 588,
+    "api_call_count": 38
+  },
+  "started_at": "2026-10-11T11:48:54.651024-07:00",
+  "completed_at": "2026-10-11T12:09:01.359876-07:00"
+}
