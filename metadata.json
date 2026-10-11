@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4M7VZMNY965J9JJC708TDCD",
+  "strategy": "manual-commit",
+  "branch": "feature/port-unknownpleasures",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "AGENTS.md",
+    "firmware/src/hacks/registry.c",
+    "firmware/src/main.cpp",
+    "firmware/src/runner/hack_entry.h",
+    "firmware/src/runner/te_sync.c",
+    "firmware/src/runner/te_sync.h",
+    "firmware/test/test_glshim/test_glshim.c",
+    "firmware/test/test_te_sync/test_te_sync.c",
+    "tools/assessment_measured.md",
+    "tools/tests/test_tinygl_patch.py",
+    "tools/tinygl_patch.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1092,
+    "cache_creation_tokens": 1053213,
+    "cache_read_tokens": 254310773,
+    "output_tokens": 576417,
+    "api_call_count": 546
+  }
+}
