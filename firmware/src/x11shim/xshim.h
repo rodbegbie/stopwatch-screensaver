@@ -184,6 +184,9 @@ enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
  * pixmap pointer, so everything that names the window must use this. */
 #define XSHIM_WINDOW ((Window)1)
 #define RootWindowOfScreen(screen) ((void)(screen), XSHIM_WINDOW)
+/* There is one screen and it is true colour: 65,536 colours, none writable. */
+#define DefaultScreenOfDisplay(dpy) ((void)(dpy), (Screen *)0)
+#define CellsOfScreen(screen) ((void)(screen), 65536)
 #define PointerMotionMask (1L << 6)
 /* Events never arrive, so selecting them does nothing. */
 int XSelectInput(Display *, Window, long mask);
@@ -325,6 +328,10 @@ int XSync(Display *, Bool discard);
 
 Status XParseColor(Display *, Colormap, const char *spec, XColor *);
 Status XAllocColor(Display *, Colormap, XColor *);
+/* Fills in red, green and blue from c->pixel, as XAllocColor made it: the
+ * channels are scaled up from RGB565, so 5 and 6 bit values come back as
+ * multiples of 0x0842 and 0x0410 and not the colour that was asked for. */
+int XQueryColor(Display *, Colormap, XColor *);
 int XFreeColors(Display *, Colormap, unsigned long *pixels, int n,
                 unsigned long planes);
 

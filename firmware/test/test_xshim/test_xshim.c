@@ -19,6 +19,7 @@
 #include "x11shim/stroke.h"
 #include "X11/Intrinsic.h"
 #include "textclient.h"
+#include "hsv.h"
 #include "x11shim/xshim.h"
 #include "ximage-loader.h"
 
@@ -2479,6 +2480,45 @@ void test_the_timer_stand_ins_never_fire_and_can_be_cancelled(void) {
   XtRemoveTimeOut(id);
 }
 
+void test_rgb_to_hsv_inverts_hsv_to_rgb(void) {
+  unsigned short r, g, b;
+  int h = -1;
+  double sat = -1, val = -1;
+  hsv_to_rgb(120, 1.0, 1.0, &r, &g, &b);
+  rgb_to_hsv(r, g, b, &h, &sat, &val);
+  TEST_ASSERT_EQUAL_INT(120, h);
+  TEST_ASSERT_TRUE(sat > 0.99 && val > 0.99);
+  rgb_to_hsv(0x8000, 0x8000, 0x8000, &h, &sat, &val);
+  TEST_ASSERT_TRUE(sat < 0.01);
+}
+
+void test_query_color_recovers_the_colour_alloc_color_made(void) {
+  XColor red = {0};
+  red.red = 0xFFFF;
+  XAllocColor(dpy, 1, &red);
+  XColor q = {0};
+  q.pixel = red.pixel;
+  TEST_ASSERT_TRUE(XQueryColor(dpy, 1, &q) != 0);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, q.red);
+  TEST_ASSERT_EQUAL_HEX16(0, q.green);
+  TEST_ASSERT_EQUAL_HEX16(0, q.blue);
+  XColor odd = {0};
+  odd.red = 0x1234;
+  odd.green = 0x9ABC;
+  odd.blue = 0x5678;
+  XAllocColor(dpy, 1, &odd);
+  XColor again = {0};
+  again.pixel = odd.pixel;
+  XQueryColor(dpy, 1, &again);
+  XAllocColor(dpy, 1, &again);
+  TEST_ASSERT_EQUAL_HEX64(odd.pixel, again.pixel);
+}
+
+void test_the_screen_is_a_colour_display_with_no_writable_cells(void) {
+  TEST_ASSERT_TRUE(CellsOfScreen(DefaultScreenOfDisplay(dpy)) > 2);
+  TEST_ASSERT_FALSE(has_writable_cells(NULL, NULL));
+}
+
 void test_create_image_refuses_depths_and_sizes_it_cannot_hold(void) {
   TEST_ASSERT_NULL(XCreateImage(dpy, NULL, 8, ZPixmap, 0, NULL, 4, 4, 8, 0));
   TEST_ASSERT_NULL(XCreateImage(dpy, NULL, 32, ZPixmap, 0, NULL, 0, 4, 32, 0));
@@ -2557,6 +2597,9 @@ int main(void) {
   RUN_TEST(test_the_device_has_no_keyboard_so_lookup_string_finds_nothing);
   RUN_TEST(test_the_timer_stand_ins_never_fire_and_can_be_cancelled);
   RUN_TEST(test_there_is_never_a_text_source);
+  RUN_TEST(test_rgb_to_hsv_inverts_hsv_to_rgb);
+  RUN_TEST(test_query_color_recovers_the_colour_alloc_color_made);
+  RUN_TEST(test_the_screen_is_a_colour_display_with_no_writable_cells);
   RUN_TEST(test_create_image_refuses_depths_and_sizes_it_cannot_hold);
   RUN_TEST(test_file_to_ximage_has_no_decoder_and_returns_null);
   RUN_TEST(test_ease_in_out_sine_runs_from_0_to_1_through_one_half);

@@ -25,6 +25,9 @@ void make_smooth_colormap(Screen *, Visual *, Colormap, XColor *colors,
 void make_uniform_colormap(Screen *, Visual *, Colormap, XColor *colors,
                            int *ncolorsP, Bool allocate_p, Bool *writable_pP,
                            Bool verbose_p);
+/* The display is true colour: no colour cell can be rewritten, so a hack takes
+ * its colour-cycling path that allocates a fresh colour each time. */
+Bool has_writable_cells(Screen *, Visual *);
 /* Nothing to release: colours are plain RGB565 values, not shared cells. */
 void free_colors(Screen *, Colormap, XColor *colors, int ncolors);
 

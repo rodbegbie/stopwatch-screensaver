@@ -312,6 +312,17 @@ Status XAllocColor(Display *dpy, Colormap cmap, XColor *c) {
   return 1;
 }
 
+int XQueryColor(Display *dpy, Colormap cmap, XColor *c) {
+  (void)dpy;
+  (void)cmap;
+  const uint16_t p = px_swap((uint16_t)c->pixel);
+  c->red = (unsigned short)(((p >> 11) & 0x1F) * 65535 / 31);
+  c->green = (unsigned short)(((p >> 5) & 0x3F) * 65535 / 63);
+  c->blue = (unsigned short)((p & 0x1F) * 65535 / 31);
+  c->flags = DoRed | DoGreen | DoBlue;
+  return 1;
+}
+
 int XFreeColors(Display *dpy, Colormap cmap, unsigned long *pixels, int n,
                 unsigned long planes) {
   (void)dpy;
