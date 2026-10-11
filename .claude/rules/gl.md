@@ -233,6 +233,9 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   against 30 ms of direct fill), Hypnowheel 476 to 528 ms. It was reverted
   (`feature/43-banded-renderer` history). Faster fill needs fewer cycles a
   pixel or fewer pixels, not other memory.
+- Every `Replace` anchor in `tinygl_patch.py` must be upstream text: the
+  anchor tests delete it from the unpatched source. To add next to text an
+  earlier patch inserted, extend that patch's replacement instead.
 - Resolving a merge conflict in `tools/tinygl_patch.py`: the conflict region
   can span the ends of `REPLACEMENTS`, `LATE_REPLACEMENTS` and `HOT_FUNCTIONS`,
   so keeping both sides can put an entry in the wrong tuple (a `Replace` among

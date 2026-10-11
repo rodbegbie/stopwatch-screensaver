@@ -115,7 +115,10 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
   tools/ab_flash.py --hack Gears --seconds 60 --rounds 2 --out <dir>
   "a=-DGL_PROFILE" "b=-DGL_PROFILE -DFOO"` builds each variant pinned, flashes
   them in turn and tabulates the windows. It flashes: run it only with Rod's
-  go-ahead.
+  go-ahead. It builds each hack's variants from the working tree when that
+  hack's turn starts, so leave `src/` and `tools/tinygl_patch.py` alone until
+  the last hack has built. It compares flag variants of one tree: to A/B a
+  change, put it behind a temporary `-D` switch (as `-DPUSH_NO_DISC` does).
 - `cc -O1 -fstack-usage -c src/hacks/<n>/<n>.c` (with `-Isrc
   -Isrc/x11shim/include -Isrc/xs_support -DXSHIM_NATIVE -DSTANDALONE`) lists
   stack frames; keep each well under the 16 KB loop stack.
@@ -311,6 +314,8 @@ ones below apply everywhere.
   scratchpad script (as the loop-of-mutations gotcha says) and `assert old in
   text` first. Shell quoting doubles the backslashes, nothing changes, and the
   passing run looks like a surviving mutant.
+- Unity marks a failing test `[FAILED]` at the end of its line, not `:FAIL`. A
+  mutation script that greps for `:FAIL` reports every mutant as surviving.
 - `ruff check tools` already reports about 17 findings on `main` (e.g. an
   unused `noqa: E402` in `test_mutate.py`): run `ruff check` and
   `ruff format --check` on the files you touched, not the directory.
