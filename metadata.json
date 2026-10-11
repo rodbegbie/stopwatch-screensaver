@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4MS4BZ8V5FYZZ02C122VQMS",
+  "strategy": "manual-commit",
+  "branch": "feature/port-batch-goop-loop-starfish-qix-hypnowheel-fireworkx",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/test/test_hacks/test_hacks.c",
+    "tools/flash_and_capture.sh",
+    "tools/mutate.py",
+    "tools/serial_capture.py",
+    "tools/tests/test_mutate.py",
+    "tools/tests/test_wire_hack.py",
+    "tools/wire_hack.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1190,
+    "cache_creation_tokens": 829936,
+    "cache_read_tokens": 266273243,
+    "output_tokens": 492880,
+    "api_call_count": 596
+  }
+}
