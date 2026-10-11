@@ -75,6 +75,9 @@ static const char *const kStonerViewOverrides[] = {"*ncolors: 64", "*cycles: 0",
                                                    "*count: 1", "*delay: 10000",
                                                    NULL};
 XLOCKMORE_HACK_WITH(stonerview, "StonerView", kStonerViewOverrides);
+static const char *const kHypnowheelOverrides[] = {"*ncolors: 64", "*cycles: 0",
+                                                   "*delay: 10000", NULL};
+XLOCKMORE_HACK_WITH(hypnowheel, "Hypnowheel", kHypnowheelOverrides);
 XLOCKMORE_HACK(forest, "Forest");
 XLOCKMORE_HACK(laser, "Laser");
 XLOCKMORE_HACK(lissie, "Lissie");
@@ -162,5 +165,6 @@ const HackEntry *const g_hacks[] = {
     &fireworkx_hack,
     &starfish_hack,
     &goop_hack,
-    &loop_hack};
+    &loop_hack,
+    &hypnowheel_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);

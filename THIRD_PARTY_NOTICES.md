@@ -104,6 +104,7 @@ implied warranty.
 | `firmware/src/hacks/goop/goop.c` | Copyright (c) 1997-2008 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/loop/loop.c` | Copyright (c) 1996 by David Bagley | xlock permission notice (below) |
 | `firmware/src/hacks/loop/automata.h` | Copyright (c) 1995 by David Bagley | xlock permission notice (below) |
+| `firmware/src/hacks/hypnowheel/hypnowheel.c` | Copyright (c) 2008 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.c` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.h` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/normals.c` | Copyright (c) 2002-2004 Jamie Zawinski | jwz permission notice (above) |
