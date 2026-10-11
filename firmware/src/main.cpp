@@ -99,8 +99,124 @@ static Overlay overlay;
 static Rotation rotation;
 static uint32_t frames;
 static uint32_t statsAt;
-static uint32_t stepUs, pushUs, waitUs, rowsPushed;
+static uint32_t stepUs, pushUs, syncUs, waitUs, rowsPushed;
+static uint32_t lastSyncUs; /* the TE wait of the latest present() */
 static PushRow pushRows[kSize];
+
+/* The panel's tearing-effect line (OLED_TE, GPIO 38) pulses once a refresh, 60
+ * times a second. A full push takes 32 ms: 20.6 ms copying into M5GFX's
+ * framebuffer, then 11.7 ms flushing that to the panel. Started at a random
+ * moment, the flush overlaps the panel's scan, so for one refresh the top of
+ * the screen shows one picture and the rest the other, and a thin line that
+ * moved a few pixels can lie in the gap and vanish for a frame. A hack with
+ * HackEntry::sync_to_refresh starts every push kTeSyncOffsetUs after the TE
+ * rising edge instead (see runner/te_sync.h).
+ *
+ * The offset came from filming a sweep of eight offsets across one refresh at
+ * 120 fps and counting lines missing across the screen. 3.2 to 9.5 ms after the
+ * edge had none in 39 updates; 15.8 and 1.1 ms had a seam, about 5 ms either
+ * side of the pulse. 7.4 ms is the middle of the clean 12 ms. It holds for a
+ * full-frame push, of which the copy is 20.6 ms: a push of another size moves
+ * the flush, and the offset would have to be found again. */
+#include <esp_timer.h>
+extern "C" {
+#include "runner/te_sync.h"
+}
+static const int kPinTE = 38;
+static const uint32_t kTeSyncOffsetUs = 7400;
+static const uint32_t kTeTimeoutUs = 100000;
+static TeSync teSync;
+
+#ifdef TE_DIAG
+/* Build with -DTE_DIAG to log, every few seconds, the TE period and where in
+ * the cycle each full push starts and flushes. */
+static const int kTeRing = 512;
+static volatile uint32_t teAt[kTeRing];
+static volatile uint8_t teLevel[kTeRing];
+static volatile uint32_t teHead;
+static const int kPushLog = 64;
+static uint32_t pushStart[kPushLog], pushFlush[kPushLog], pushEnd[kPushLog];
+static int pushCount;
+static uint32_t flushBeganUs;
+static uint32_t teReportedHead;
+#endif
+
+static void IRAM_ATTR teIsr() {
+  const uint32_t now = (uint32_t)esp_timer_get_time();
+  const int level = gpio_get_level((gpio_num_t)kPinTE);
+  te_sync_edge(&teSync, now, level);
+#ifdef TE_DIAG
+  uint32_t i = teHead;
+  teAt[i % kTeRing] = now;
+  teLevel[i % kTeRing] = (uint8_t)level;
+  teHead = i + 1;
+#endif
+}
+
+static void teInit() {
+  te_sync_init(&teSync, kTeSyncOffsetUs, kTeTimeoutUs);
+  pinMode(kPinTE, INPUT);
+  attachInterrupt(kPinTE, teIsr, CHANGE);
+}
+
+#ifdef TE_DIAG
+struct TeStat {
+  uint32_t sum, min, max;
+  int n;
+};
+static void teAdd(TeStat *s, uint32_t v) {
+  if (!s->n || v < s->min) s->min = v;
+  if (!s->n || v > s->max) s->max = v;
+  s->sum += v;
+  s->n++;
+}
+static void teShow(const char *name, const TeStat *s) {
+  Serial.printf(" %s mean=%u min=%u max=%u", name,
+                s->n ? (unsigned)(s->sum / s->n) : 0u, (unsigned)s->min,
+                (unsigned)s->max);
+}
+
+/* Time since the latest rising edge at or before t, if there was one. */
+static bool teSinceRise(const uint32_t *rise, int nr, uint32_t t, uint32_t *out) {
+  bool found = false;
+  for (int i = 0; i < nr; i++)
+    if ((int32_t)(rise[i] - t) <= 0) {
+      *out = t - rise[i];
+      found = true;
+    }
+  return found;
+}
+
+static void teReport() {
+  uint32_t head = teHead;
+  uint32_t n = head - teReportedHead;
+  if (n > (uint32_t)kTeRing) n = kTeRing;
+  static uint32_t rise[kTeRing];
+  int nr = 0;
+  TeStat period = {}, startAt = {}, flushAt = {}, flushLen = {}, copyLen = {};
+  for (uint32_t k = head - n; k != head; k++)
+    if (teLevel[k % kTeRing]) rise[nr++] = teAt[k % kTeRing];
+  for (int i = 1; i < nr; i++) teAdd(&period, rise[i] - rise[i - 1]);
+  for (int p = 0; p < pushCount; p++) {
+    uint32_t v;
+    if (teSinceRise(rise, nr, pushStart[p], &v)) teAdd(&startAt, v);
+    if (teSinceRise(rise, nr, pushFlush[p], &v)) teAdd(&flushAt, v);
+    teAdd(&flushLen, pushEnd[p] - pushFlush[p]);
+    teAdd(&copyLen, pushFlush[p] - pushStart[p]);
+  }
+  Serial.printf("te rises=%d period_us", nr);
+  Serial.printf(" mean=%u", period.n ? (unsigned)(period.sum / period.n) : 0u);
+  Serial.printf(" | pushes=%d", pushCount);
+  teShow("start_after_rise_us", &startAt);
+  teShow("flush_after_rise_us", &flushAt);
+  teShow("copy_us", &copyLen);
+  teShow("flush_us", &flushLen);
+  Serial.printf(" synced_period_us=%u off_us=%u\n",
+                (unsigned)te_sync_period_us(&teSync), (unsigned)teSync.offset_us);
+  teReportedHead = head;
+  pushCount = 0;
+}
+#endif
 
 static void halt(const char *msg) {
   Serial.println(msg);
@@ -112,23 +228,25 @@ static void halt(const char *msg) {
 }
 
 static void resetStats() {
-  frames = stepUs = pushUs = waitUs = rowsPushed = 0;
+  frames = stepUs = pushUs = syncUs = waitUs = rowsPushed = 0;
   statsAt = millis();
 }
 
-/* step/push/wait are mean milliseconds per frame spent in the hack, in
- * pushImage, and waiting out what is left of the hack's requested delay after
- * the push (including button polling). rows is the mean number of canvas rows
+/* step/push/sync/wait are mean milliseconds per frame spent in the hack, in
+ * pushImage, waiting for the TE edge before a synced push (not part of push),
+ * and waiting out what is left of the hack's requested delay after the push
+ * (including button polling). rows is the mean number of canvas rows
  * sent to the display per frame (466 is a full push), counting overlay redraws
  * made while waiting. */
 static void printStats(const char *tag) {
   float n = frames ? (float)frames : 1.0f;
   Serial.printf(
-      "%s %s fps=%.1f step=%.1fms push=%.1fms wait=%.1fms rows=%.0f heap=%u "
+      "%s %s fps=%.1f step=%.1fms push=%.1fms sync=%.1fms wait=%.1fms rows=%.0f heap=%u "
       "psram=%u\n",
       tag, g_hacks[runner_index(runner)]->name,
       frames * 1000.0f / kStatsEveryMs, stepUs / n / 1000.0f,
-      pushUs / n / 1000.0f, waitUs / n / 1000.0f, rowsPushed / n,
+      pushUs / n / 1000.0f, syncUs / n / 1000.0f, waitUs / n / 1000.0f,
+      rowsPushed / n,
       (unsigned)ESP.getFreeHeap(),
       (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
 }
@@ -233,12 +351,26 @@ static void unstamp(Patch *p) {
 /* Whole rows are sent inside one startWrite: each call then costs about 5 us
  * instead of 16. */
 static void sinkBegin(void *) { M5.Display.startWrite(); }
-static void sinkEnd(void *) { M5.Display.endWrite(); }
+static void sinkEnd(void *) {
+#ifdef TE_DIAG
+  flushBeganUs = (uint32_t)esp_timer_get_time();
+#endif
+  M5.Display.endWrite();
+}
 static void sinkRow(void *, int y, int x0, int x1) {
   M5.Display.pushImage(x0, y, x1 - x0 + 1, 1, canvas.px + y * kSize + x0);
 }
 static void sinkAll(void *) {
+#ifdef TE_DIAG
+  /* An outer transaction holds the flush to the panel until endWrite, so the
+   * copy into M5GFX's framebuffer and the flush can be timed apart. */
+  M5.Display.startWrite();
   M5.Display.pushImage(0, 0, kSize, kSize, canvas.px);
+  flushBeganUs = (uint32_t)esp_timer_get_time();
+  M5.Display.endWrite();
+#else
+  M5.Display.pushImage(0, 0, kSize, kSize, canvas.px);
+#endif
 }
 static const PushSink pushSink = {nullptr, sinkBegin, sinkRow, sinkAll, sinkEnd};
 
@@ -260,7 +392,27 @@ static void present() {
     stampText(&infoPatch, text, kSize / 2, kFpsY, &fonts::DejaVu18);
   }
   overlay_drawn(&overlay, now);
-  rowsPushed += push_present(&canvas, pushRows, &pushSink);
+  lastSyncUs = 0;
+  if (g_hacks[runner_index(runner)]->sync_to_refresh) {
+    /* After the overlay is stamped, so stamping does not move the start. */
+    const uint32_t syncWaitUs =
+        te_sync_wait_us(&teSync, (uint32_t)esp_timer_get_time());
+    if (syncWaitUs) delayMicroseconds(syncWaitUs);
+    lastSyncUs = syncWaitUs;
+  }
+#ifdef TE_DIAG
+  uint32_t pushT0 = (uint32_t)esp_timer_get_time();
+#endif
+  int pushedRows = push_present(&canvas, pushRows, &pushSink);
+  rowsPushed += pushedRows;
+#ifdef TE_DIAG
+  if (pushedRows > 300 && pushCount < kPushLog) {
+    pushStart[pushCount] = pushT0;
+    pushFlush[pushCount] = flushBeganUs;
+    pushEnd[pushCount] = (uint32_t)esp_timer_get_time();
+    pushCount++;
+  }
+#endif
   unstamp(&infoPatch);
   unstamp(&namePatch);
 }
@@ -334,6 +486,7 @@ void setup() {
   M5.begin(cfg);
   Serial.begin(115200);
   M5.Display.setSwapBytes(false);
+  teInit();
 
   button_latch_init(&latchA, kButtonSettleMs);
   button_latch_init(&latchB, kButtonSettleMs);
@@ -377,7 +530,8 @@ void loop() {
   frames++;
   overlay_frame(&overlay, millis());
   stepUs += t1 - t0;
-  pushUs += t2 - t1;
+  pushUs += t2 - t1 - lastSyncUs;
+  syncUs += lastSyncUs;
 
   /* Only the push counts against the delay. A hack's delay is the pause after
    * it draws, so a hack that asks for a one-second hold must still get it
@@ -402,6 +556,9 @@ void loop() {
 
   if (millis() - statsAt >= kStatsEveryMs) {
     printStats("run");
+#ifdef TE_DIAG
+    teReport();
+#endif
     resetStats();
   }
 }

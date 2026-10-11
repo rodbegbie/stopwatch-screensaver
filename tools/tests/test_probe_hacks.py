@@ -143,3 +143,28 @@ def test_a_hack_that_calls_something_the_shim_lacks_does_not_link():
 def test_a_hack_that_does_not_compile_is_reported():
     result = ph.probe("squiral", SQUIRAL.read_text() + "\nthis is not C;\n", ROOT)
     assert "does not compile" in result["error"]
+
+
+def test_registry_with_overrides_lists_them_for_an_xlockmore_hack():
+    out = ph.registry_source(
+        "Gears", "gears", xlockmore=True, overrides=["*ncolors: 64", "*delay: 10000"]
+    )
+    assert '"*ncolors: 64", "*delay: 10000", NULL' in out
+    assert 'XLOCKMORE_HACK_WITH(gears, "Gears", kProbeOverrides);' in out
+
+
+def test_registry_overrides_are_escaped_for_c():
+    out = ph.registry_source("A", "a", xlockmore=True, overrides=['*name: "q"\\n'])
+    assert '"*name: \\"q\\"\\\\n"' in out
+
+
+def test_registry_without_overrides_is_unchanged():
+    assert ph.registry_source("A", "a", xlockmore=True) == ph.registry_source(
+        "A", "a", xlockmore=True, overrides=[]
+    )
+    assert "kProbeOverrides" not in ph.registry_source("A", "a", xlockmore=True)
+
+
+def test_overrides_need_an_xlockmore_hack():
+    with pytest.raises(ph.ProbeError, match="xlockmore"):
+        ph.registry_source("Pyro", "pyro", xlockmore=False, overrides=["*a: 1"])

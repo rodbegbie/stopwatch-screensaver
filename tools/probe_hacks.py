@@ -41,16 +41,17 @@ MACOS_UNDEFINED = re.compile(r'^\s*"_([^"]+)", referenced from', re.MULTILINE)
 GNU_UNDEFINED = re.compile(r"undefined reference to `([^']+)'")
 FIRST_ERROR = re.compile(r"^.*?\berror: .+$", re.MULTILINE)
 
-# The same macro registry.c uses for a hack built on xlockmore.h, which defines
+# The same macros registry.c uses for a hack built on xlockmore.h, which defines
 # a function table rather than a HackEntry.
 REGISTRY_HEAD = """\
 #include "hacks/registry.h"
 
-#define XLOCKMORE_HACK(NAME, CLASS)                                      \\
+#define XLOCKMORE_HACK_WITH(NAME, CLASS, OVERRIDES)                      \\
   extern struct xscreensaver_function_table NAME##_xscreensaver_function_table; \\
   static const HackEntry NAME##_hack = {                                 \\
       CLASS, NULL, NULL, NULL, NULL,                                     \\
-      &NAME##_xscreensaver_function_table, NULL}
+      &NAME##_xscreensaver_function_table, OVERRIDES}
+#define XLOCKMORE_HACK(NAME, CLASS) XLOCKMORE_HACK_WITH(NAME, CLASS, NULL)
 """
 
 
@@ -87,8 +88,24 @@ def module_entry(source: str) -> tuple[str, str]:
     return class_name, name
 
 
-def registry_source(class_name: str, prefix: str, xlockmore: bool) -> str:
-    if xlockmore:
+def c_string(text: str) -> str:
+    return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def registry_source(
+    class_name: str, prefix: str, xlockmore: bool, overrides: list[str] = ()
+) -> str:
+    """The probe's registry. `overrides` are resource lines such as
+    "*count: 40", which beat the hack's own defaults as a HackEntry's do."""
+    if overrides and not xlockmore:
+        raise ProbeError("overrides need an xlockmore hack")
+    if overrides:
+        lines = ", ".join(c_string(line) for line in overrides)
+        declare = (
+            f"static const char *const kProbeOverrides[] = {{{lines}, NULL}};\n"
+            f'XLOCKMORE_HACK_WITH({prefix}, "{class_name}", kProbeOverrides);\n'
+        )
+    elif xlockmore:
         declare = f'XLOCKMORE_HACK({prefix}, "{class_name}");\n'
     else:
         declare = f"extern const HackEntry {prefix}_hack;\n"

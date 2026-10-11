@@ -1,3 +1,4 @@
+#include <math.h>
 #include <sanitizer/allocator_interface.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -6,6 +7,7 @@
 
 #include "GL/gl.h"
 #include "core/canvas.h"
+#include "fps.h"
 #include "glshim/glshim.h"
 #include "x11shim/xshim.h"
 #include "zbuffer.h"
@@ -440,8 +442,461 @@ void test_the_swap_marks_only_the_old_and_new_boxes_dirty(void) {
                             "a row between the two boxes was marked");
 }
 
+void test_line_width_is_accepted_and_changes_nothing(void) {
+  open_flat_red_scene();
+  take_reference_and_clear();
+
+  draw_triangle_immediately();
+  glLineWidth(4);
+  TEST_ASSERT_EQUAL_MEMORY(reference, cv.px, sizeof reference);
+  draw_triangle_immediately();
+  TEST_ASSERT_EQUAL_MEMORY(reference, cv.px, sizeof reference);
+}
+
+static void compile_a_quad_strip_into(GLuint list) {
+  glNewList(list, GL_COMPILE);
+  glBegin(GL_QUAD_STRIP);
+  for (int i = 0; i < 100; i++) {
+    glVertex3f(i / 100.0f, 0, 0.5f);
+    glVertex3f(i / 100.0f, 0, 0);
+  }
+  glEnd();
+  glEndList();
+}
+
+/* UnknownPleasures rebuilds one row's lists every tick under the same names.
+ * TinyGL must free the old contents, or the board runs out of PSRAM. */
+void test_recompiling_a_list_under_the_same_name_does_not_grow_memory(void) {
+  open_flat_red_scene();
+  GLuint list = glGenLists(1);
+  TEST_ASSERT_NOT_EQUAL_UINT(0, list);
+  compile_a_quad_strip_into(list);
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  for (int i = 0; i < 300; i++) compile_a_quad_strip_into(list);
+  const size_t after = __sanitizer_get_current_allocated_bytes();
+  TEST_ASSERT_TRUE_MESSAGE(after <= before + 4096, "memory grew");
+}
+
+/* Antialiased lines. The brightness of a pixel is its green channel (0 to 63,
+ * white is 63). Positions are in clip space, where one pixel is 2 / SIZE. */
+#define PIXEL_NDC (2.0f / SIZE)
+
+static void open_line_scene(int smooth) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glViewport(0, 0, SIZE, SIZE);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  glDisable(GL_LIGHTING);
+  glDisable(GL_DEPTH_TEST);
+  glColor3f(1, 1, 1);
+  if (smooth)
+    glEnable(GL_LINE_SMOOTH);
+  else
+    glDisable(GL_LINE_SMOOTH);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+static int green_at(int x, int y) { return (px_swap(cv.px[y * SIZE + x]) >> 5) & 63; }
+
+/* Total brightness, and its centroid along the row (0) or column (1) axis. */
+static void measure_line(int along_columns, double *total, double *centroid) {
+  double sum = 0, moment = 0;
+  for (int y = 0; y < SIZE; y++)
+    for (int x = 0; x < SIZE; x++) {
+      const int g = green_at(x, y);
+      sum += g;
+      moment += g * (along_columns ? x : y);
+    }
+  *total = sum;
+  *centroid = sum > 0 ? moment / sum : -1;
+}
+
+static void draw_line(float x0, float y0, float x1, float y1) {
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glBegin(GL_LINES);
+  glVertex3f(x0, y0, 0);
+  glVertex3f(x1, y1, 0);
+  glEnd();
+}
+
+/* Moving a line a quarter of a pixel at a time must move it a quarter of a
+ * pixel at a time, with the same total brightness. Without smoothing it moves
+ * a whole pixel, once, somewhere in the sweep. */
+static void check_a_line_moves_smoothly(int vertical) {
+  double first_total = 0, last_centroid = 0, direction = 0;
+  for (int k = 0; k <= 12; k++) {
+    const float at = 0.1f + k * 0.25f * PIXEL_NDC;
+    if (vertical)
+      draw_line(at, -0.8f, at, 0.8f);
+    else
+      draw_line(-0.8f, at, 0.8f, at);
+    double total, centroid;
+    measure_line(vertical, &total, &centroid);
+    if (k == 0) {
+      first_total = total;
+      TEST_ASSERT_TRUE(total > 0);
+    } else {
+      TEST_ASSERT_FLOAT_WITHIN(0.04f * first_total, first_total, total);
+      const double step = centroid - last_centroid;
+      if (direction == 0) direction = step > 0 ? 1 : -1;
+      TEST_ASSERT_FLOAT_WITHIN(0.07f, 0.25f, (float)(direction * step));
+    }
+    last_centroid = centroid;
+  }
+}
+
+void test_a_smooth_horizontal_line_moves_a_quarter_pixel_at_a_time(void) {
+  open_line_scene(1);
+  check_a_line_moves_smoothly(0);
+}
+
+void test_a_smooth_vertical_line_moves_a_quarter_pixel_at_a_time(void) {
+  open_line_scene(1);
+  check_a_line_moves_smoothly(1);
+}
+
+void test_a_line_without_smoothing_still_moves_a_whole_pixel_at_a_time(void) {
+  open_line_scene(0);
+  double first = 0, jumps = 0, last = 0, total;
+  for (int k = 0; k <= 12; k++) {
+    draw_line(-0.8f, 0.1f + k * 0.25f * PIXEL_NDC, 0.8f, 0.1f + k * 0.25f * PIXEL_NDC);
+    double centroid;
+    measure_line(0, &total, &centroid);
+    if (k == 0) first = centroid;
+    else if (centroid != last) jumps += 1;
+    last = centroid;
+  }
+  TEST_ASSERT_TRUE_MESSAGE(jumps >= 1 && jumps <= 4, "expected a few whole-pixel jumps");
+  TEST_ASSERT_TRUE(last != first);
+}
+
+/* A shallow slope has a different pixel run in every column. Each column of
+ * a smooth line adds up to about one full pixel of brightness. */
+void test_a_smooth_sloped_line_has_one_pixel_of_brightness_a_column(void) {
+  open_line_scene(1);
+  const float slopes[] = {0.0f, 0.05f, 0.2f, 0.7f};
+  for (int s = 0; s < 4; s++) {
+    draw_line(-0.8f, 0.13f, 0.8f, 0.13f + slopes[s]);
+    double total, centroid;
+    measure_line(0, &total, &centroid);
+    const double columns = 1.6 / PIXEL_NDC;
+    const double length = sqrt(1.0 + pow(slopes[s] / 1.6, 2));
+    TEST_ASSERT_FLOAT_WITHIN((float)(0.08 * columns * 63 * length),
+                             (float)(columns * 63 * length), (float)total);
+  }
+}
+
+/* A line two depths apart from a triangle is hidden by it in one order and
+ * hides it in the other, whether or not it is smoothed. */
+static int line_shows_over_triangle(float z_line, float z_triangle, int smooth) {
+  open_line_scene(smooth);
+  glEnable(GL_DEPTH_TEST);
+  glColor3f(1, 0, 0);
+  glBegin(GL_TRIANGLES);
+  glVertex3f(-1, -1, z_triangle);
+  glVertex3f(1, -1, z_triangle);
+  glVertex3f(0, 1, z_triangle);
+  glEnd();
+  glColor3f(1, 1, 1);
+  glBegin(GL_LINES);
+  glVertex3f(-0.5f, 0.0f, z_line);
+  glVertex3f(0.5f, 0.0f, z_line);
+  glEnd();
+  int shows = 0;
+  for (int x = 0; x < SIZE; x++)
+    for (int y = 0; y < SIZE; y++) shows += green_at(x, y) > 40;
+  return shows > 20;
+}
+
+void test_a_smooth_line_obeys_the_depth_test(void) {
+  for (int smooth = 0; smooth <= 1; smooth++) {
+    const int in_front = line_shows_over_triangle(-0.5f, 0.5f, smooth);
+    glshim_close();
+    const int behind = line_shows_over_triangle(0.5f, -0.5f, smooth);
+    glshim_close();
+    TEST_ASSERT_TRUE_MESSAGE(in_front != behind, "depth order made no difference");
+  }
+  const int off_front = line_shows_over_triangle(-0.5f, 0.5f, 0);
+  glshim_close();
+  const int on_front = line_shows_over_triangle(-0.5f, 0.5f, 1);
+  TEST_ASSERT_EQUAL_INT(off_front, on_front);
+}
+
+/* A line a tenth of a pixel inside an edge spills half a pixel of coverage
+ * outside it. An unclipped column write wraps to the other side of the next
+ * row, still inside the buffer, so check that side stays black; the top and
+ * bottom spills fall outside the buffer, where AddressSanitizer sees them. */
+static int lit_in_column(int x) {
+  int n = 0;
+  for (int y = 0; y < SIZE; y++) n += cv.px[y * SIZE + x] != 0;
+  return n;
+}
+
+static int lit_in_row(int y) {
+  int n = 0;
+  for (int x = 0; x < SIZE; x++) n += cv.px[y * SIZE + x] != 0;
+  return n;
+}
+
+void test_a_smooth_line_at_the_canvas_edge_stays_inside_it(void) {
+  open_line_scene(1);
+  const float e = 1.0f - 0.1f * PIXEL_NDC;
+  draw_line(e, -1.2f, e, 1.2f);
+  TEST_ASSERT_TRUE(lit_in_column(SIZE - 1) > 0);
+  TEST_ASSERT_EQUAL_INT(0, lit_in_column(0));
+  draw_line(-e, -1.2f, -e, 1.2f);
+  TEST_ASSERT_TRUE(lit_in_column(0) > 0);
+  TEST_ASSERT_EQUAL_INT(0, lit_in_column(SIZE - 1));
+  draw_line(-1.2f, e, 1.2f, e);
+  TEST_ASSERT_TRUE((lit_in_row(0) > 0) != (lit_in_row(SIZE - 1) > 0));
+  draw_line(-1.2f, -e, 1.2f, -e);
+  TEST_ASSERT_TRUE((lit_in_row(0) > 0) != (lit_in_row(SIZE - 1) > 0));
+  draw_line(-1.2f, -1.2f, 1.2f, 1.2f);
+  draw_line(-e, -e, e, e);
+  TEST_ASSERT_TRUE(glshim_is_open());
+}
+
+/* The clipper keeps a line inside the view volume, so only a viewport larger
+ * than the canvas can carry one past its right or bottom edge. A column past
+ * the right edge wraps to the left of the next row, still inside the buffer. */
+void test_a_smooth_line_in_an_oversized_viewport_stays_inside_the_canvas(void) {
+  open_line_scene(1);
+  glViewport(0, 0, 2 * SIZE, 2 * SIZE);
+  const float y = 1.0f - 21.0f / (2 * SIZE - 0.5f); /* the middle of row 10 */
+  draw_line(-1.0f, y, 1.0f, y);
+  TEST_ASSERT_EQUAL_INT(SIZE, lit_in_row(10));
+  TEST_ASSERT_EQUAL_INT(0, lit_in_row(11));
+  const float x = 21.0f / (2 * SIZE - 0.5f) - 1.0f;
+  draw_line(x, -1.0f, x, 1.0f);
+  TEST_ASSERT_EQUAL_INT(SIZE, lit_in_column(10));
+  TEST_ASSERT_EQUAL_INT(0, lit_in_column(11));
+}
+
+static void a_line_is_the_same_after_asking_for_a_wide_one(int smooth) {
+  open_line_scene(smooth);
+  draw_line(-0.8f, 0.123f, 0.8f, 0.4f);
+  uint16_t narrow[SIZE * SIZE];
+  memcpy(narrow, cv.px, sizeof narrow);
+  glLineWidth(4);
+  draw_line(-0.8f, 0.123f, 0.8f, 0.4f);
+  TEST_ASSERT_EQUAL_MEMORY(narrow, cv.px, sizeof narrow);
+  glshim_close();
+}
+
+void test_line_width_changes_neither_a_smooth_nor_a_plain_line(void) {
+  a_line_is_the_same_after_asking_for_a_wide_one(1);
+  a_line_is_the_same_after_asking_for_a_wide_one(0);
+}
+
+void test_smoothing_can_be_switched_off_again(void) {
+  open_line_scene(0);
+  draw_line(-0.8f, 0.123f, 0.8f, 0.123f);
+  uint16_t plain[SIZE * SIZE];
+  memcpy(plain, cv.px, sizeof plain);
+  glEnable(GL_LINE_SMOOTH);
+  glDisable(GL_LINE_SMOOTH);
+  draw_line(-0.8f, 0.123f, 0.8f, 0.123f);
+  TEST_ASSERT_EQUAL_MEMORY(plain, cv.px, sizeof plain);
+}
+
+/* Fills. TinyGL carries no alpha, so SRC_ALPHA / ONE_MINUS_SRC_ALPHA is what a
+ * hack gets with alpha 1: an opaque fill. TinyGL's own blend added the colours,
+ * decoding our byte-swapped pixels as if they were not swapped. */
+static void fill_everything_with(float r, float g, float b, float z) {
+  glColor3f(r, g, b);
+  glBegin(GL_TRIANGLES);
+  glVertex3f(-1, -1, z);
+  glVertex3f(3, -1, z);
+  glVertex3f(-1, 3, z);
+  glEnd();
+}
+
+static uint16_t centre_pixel(void) { return cv.px[(SIZE / 2) * SIZE + SIZE / 2]; }
+
+void test_a_fill_blended_with_source_alpha_is_opaque(void) {
+  open_line_scene(0);
+  fill_everything_with(0.5f, 0.5f, 0.5f, 0);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  fill_everything_with(0, 0, 1, 0);
+  TEST_ASSERT_EQUAL_HEX16(rgb565(0, 0, 255), centre_pixel());
+}
+
+void test_blending_set_up_in_the_other_order_is_opaque_too(void) {
+  open_line_scene(0);
+  fill_everything_with(0.5f, 0.5f, 0.5f, 0);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glEnable(GL_BLEND);
+  fill_everything_with(1, 0, 0, 0);
+  TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), centre_pixel());
+  glDisable(GL_BLEND);
+  fill_everything_with(0, 1, 0, 0);
+  TEST_ASSERT_EQUAL_HEX16(rgb565(0, 255, 0), centre_pixel());
+}
+
+/* Polygon offset. A second fill at exactly the same depth wins a tie, since
+ * TinyGL's test is >=. With the offset enabled it is pushed back and loses. */
+static uint16_t second_fill_behind_the_first(int enable, float factor, float units,
+                                             float z_slope, float back) {
+  open_line_scene(0);
+  glEnable(GL_DEPTH_TEST);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  for (int pass = 0; pass < 2; pass++) {
+    if (pass == 1) {
+      glPolygonOffset(factor, units);
+      if (enable) glEnable(GL_POLYGON_OFFSET_FILL);
+    }
+    glColor3f(pass ? 1.0f : 0.0f, pass ? 0.0f : 1.0f, 0);
+    glBegin(GL_TRIANGLES);
+    const float z = pass ? back : 0.0f;
+    glVertex3f(-1, -1, -z_slope + z);
+    glVertex3f(3, -1, z_slope * 3 + z);
+    glVertex3f(-1, 3, -z_slope + z);
+    glEnd();
+  }
+  const uint16_t result = centre_pixel();
+  glshim_close();
+  return result;
+}
+
+static uint16_t second_fill_over_the_first(int enable, float factor, float units,
+                                           float z_slope) {
+  return second_fill_behind_the_first(enable, factor, units, z_slope, 0.0f);
+}
+
+void test_a_coplanar_fill_wins_the_depth_tie_without_an_offset(void) {
+  TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), second_fill_over_the_first(0, 1, 1, 0));
+  TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), second_fill_over_the_first(0, 1, 1, 0.5f));
+}
+
+void test_a_positive_offset_pushes_a_fill_back_behind_its_twin(void) {
+  TEST_ASSERT_EQUAL_HEX16(rgb565(0, 255, 0), second_fill_over_the_first(1, 0, 1, 0));
+}
+
+void test_the_offset_factor_scales_with_the_slope_of_the_fill(void) {
+  TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), second_fill_over_the_first(1, 0, 0, 0.5f));
+  TEST_ASSERT_EQUAL_HEX16(rgb565(0, 255, 0), second_fill_over_the_first(1, 1, 0, 0.5f));
+}
+
+void test_a_negative_offset_pulls_a_fill_in_front_of_one_just_ahead_of_it(void) {
+  const float back = 0.002f;
+  TEST_ASSERT_EQUAL_HEX16(rgb565(0, 255, 0), second_fill_behind_the_first(0, -1, -1, 0.5f, back));
+  TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), second_fill_behind_the_first(1, -1, -1, 0.5f, back));
+  const float one_step_back = 0.00004f; /* a little over one 16-bit depth step */
+  TEST_ASSERT_EQUAL_HEX16(rgb565(0, 255, 0), second_fill_behind_the_first(0, 0, -1, 0.0f, one_step_back));
+  TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), second_fill_behind_the_first(1, 0, -1, 0.0f, one_step_back));
+}
+
+/* Depth is 16 bits. An offset that carries a fill past either end of the range
+ * must stop at the end, not wrap round to the other. */
+static uint16_t offset_fill_over_a_fill_at_zero(float second_z, float units) {
+  open_line_scene(0);
+  glEnable(GL_DEPTH_TEST);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  fill_everything_with(0, 1, 0, 0.0f);
+  glPolygonOffset(0, units);
+  glEnable(GL_POLYGON_OFFSET_FILL);
+  fill_everything_with(1, 0, 0, second_z);
+  glDisable(GL_POLYGON_OFFSET_FILL);
+  fill_everything_with(0, 0, 1, 0.0f); /* beats a depth that wrapped round */
+  const uint16_t result = centre_pixel();
+  glshim_close();
+  return result;
+}
+
+void test_an_offset_cannot_wrap_a_fill_past_the_far_plane(void) {
+  TEST_ASSERT_EQUAL_HEX16(rgb565(0, 0, 255), offset_fill_over_a_fill_at_zero(0.999999f, 1));
+}
+
+void test_an_offset_cannot_wrap_a_fill_past_the_near_plane(void) {
+  TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), offset_fill_over_a_fill_at_zero(-0.999999f, -1));
+}
+
+void test_an_enormous_offset_pushes_back_instead_of_overflowing(void) {
+  TEST_ASSERT_EQUAL_HEX16(rgb565(0, 255, 0), second_fill_over_the_first(1, 0, 1e9f, 0));
+  TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), second_fill_over_the_first(1, 0, -1e9f, 0));
+}
+
+void test_a_zero_offset_leaves_the_tie_to_the_later_fill(void) {
+  TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), second_fill_over_the_first(1, 0, 0, 0));
+}
+
+/* A line on the edge of its own opaque polygon, as in Unknown Pleasures: each
+ * row is a smooth line drawn over the top edge of a black quad on a plane that
+ * tilts away from the viewer, with the offset the hack asks for. TinyGL snaps
+ * the quad's vertices to whole pixels, so as the pair drifts the quad's depth
+ * at the line's pixels moves by up to a pixel's worth of slope, and the quad
+ * ate parts of its line. */
+static double line_brightness_on_its_quad(float shift, float tilt) {
+  open_line_scene(1);
+  glEnable(GL_DEPTH_TEST);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glEnable(GL_POLYGON_OFFSET_FILL);
+  glPolygonOffset(0.5f, 0.5f);
+  const float top = 0.1f + shift, depth = 0.3f;
+  glColor3f(1, 1, 1);
+  glBegin(GL_LINE_STRIP);
+  glVertex3f(-0.7f, top, depth);
+  glVertex3f(0.7f, top, depth);
+  glEnd();
+  glColor3f(0, 0, 0);
+  glBegin(GL_QUAD_STRIP);
+  glVertex3f(-0.7f, top, depth);
+  glVertex3f(-0.7f, top - 0.4f, depth - 0.4f * tilt);
+  glVertex3f(0.7f, top, depth);
+  glVertex3f(0.7f, top - 0.4f, depth - 0.4f * tilt);
+  glEnd();
+  double total, centroid;
+  measure_line(0, &total, &centroid);
+  glshim_close();
+  return total;
+}
+
+void test_a_smooth_line_is_not_eaten_by_its_own_polygon_as_they_drift(void) {
+  const float tilts[] = {0.5f, 1.0f, 2.0f};
+  for (int t = 0; t < 3; t++) {
+    double best = 0, worst = 1e30;
+    for (int k = 0; k < 16; k++) {
+      const double b = line_brightness_on_its_quad(k * 0.0625f * PIXEL_NDC, tilts[t]);
+      if (b > best) best = b;
+      if (b < worst) worst = b;
+    }
+    TEST_ASSERT_TRUE_MESSAGE(best > 0, "nothing drawn");
+    TEST_ASSERT_TRUE_MESSAGE(worst >= 0.98 * best, "the polygon ate part of the line");
+  }
+}
+
+void test_the_device_is_never_turned(void) {
+  TEST_ASSERT_TRUE(current_device_rotation() == 0.0);
+}
+
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_the_device_is_never_turned);
+  RUN_TEST(test_a_smooth_horizontal_line_moves_a_quarter_pixel_at_a_time);
+  RUN_TEST(test_a_smooth_vertical_line_moves_a_quarter_pixel_at_a_time);
+  RUN_TEST(test_a_line_without_smoothing_still_moves_a_whole_pixel_at_a_time);
+  RUN_TEST(test_a_smooth_sloped_line_has_one_pixel_of_brightness_a_column);
+  RUN_TEST(test_a_smooth_line_obeys_the_depth_test);
+  RUN_TEST(test_a_smooth_line_at_the_canvas_edge_stays_inside_it);
+  RUN_TEST(test_a_smooth_line_in_an_oversized_viewport_stays_inside_the_canvas);
+  RUN_TEST(test_line_width_changes_neither_a_smooth_nor_a_plain_line);
+  RUN_TEST(test_smoothing_can_be_switched_off_again);
+  RUN_TEST(test_a_fill_blended_with_source_alpha_is_opaque);
+  RUN_TEST(test_blending_set_up_in_the_other_order_is_opaque_too);
+  RUN_TEST(test_a_coplanar_fill_wins_the_depth_tie_without_an_offset);
+  RUN_TEST(test_a_positive_offset_pushes_a_fill_back_behind_its_twin);
+  RUN_TEST(test_the_offset_factor_scales_with_the_slope_of_the_fill);
+  RUN_TEST(test_a_negative_offset_pulls_a_fill_in_front_of_one_just_ahead_of_it);
+  RUN_TEST(test_an_offset_cannot_wrap_a_fill_past_the_far_plane);
+  RUN_TEST(test_an_offset_cannot_wrap_a_fill_past_the_near_plane);
+  RUN_TEST(test_an_enormous_offset_pushes_back_instead_of_overflowing);
+  RUN_TEST(test_a_zero_offset_leaves_the_tie_to_the_later_fill);
+  RUN_TEST(test_a_smooth_line_is_not_eaten_by_its_own_polygon_as_they_drift);
+  RUN_TEST(test_recompiling_a_list_under_the_same_name_does_not_grow_memory);
+  RUN_TEST(test_line_width_is_accepted_and_changes_nothing);
   RUN_TEST(test_draw_arrays_honours_a_byte_stride);
   RUN_TEST(test_a_display_list_keeps_the_arrays_it_recorded);
   RUN_TEST(test_a_new_context_starts_with_no_client_arrays_enabled);

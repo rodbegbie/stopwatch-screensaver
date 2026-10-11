@@ -132,3 +132,48 @@ def test_the_line_box_is_ordered_before_its_margin_is_added(patched):
     line = line[: line.index("}\n\telse") if "}\n\telse" in line else 600]
     assert "p1->zp.x < p2->zp.x ? p1->zp.x : p2->zp.x" in line
     assert "p1->zp.x - 1" not in line
+
+
+def test_both_viewport_transforms_keep_the_fractional_position(patched):
+    """Smooth lines need where a vertex really is, not the pixel it truncates
+    to. A transform that forgets it leaves fx and fy stale."""
+    for path in ("src/clip.c", "src/vertex.c"):
+        source = patched[path]
+        assert "v->zp.fx = v->pc.X * winv" in source, path
+        assert "v->zp.fy = v->pc.Y * winv" in source, path
+    assert "GLfloat fx,fy;" in patched["include/zbuffer.h"]
+
+
+def test_gl_line_smooth_switches_smooth_lines_in_both_line_routines(patched):
+    assert "case GL_LINE_SMOOTH:" in patched["src/misc.c"]
+    assert "c->zb->line_smooth = 0;" in patched["src/init.c"]
+    assert "GLint line_smooth;" in patched["include/zbuffer.h"]
+    zline = patched["src/zline.c"]
+    assert "if (zb->line_smooth && ZB_line_aa(zb, p1, p2, 1)) return;" in zline
+    assert "if (zb->line_smooth && ZB_line_aa(zb, p1, p2, 0)) return;" in zline
+
+
+def test_a_smooth_line_stays_inside_the_dirty_rectangle_margin(patched):
+    """A smooth line shares each step between the two nearest rows or columns,
+    so it reaches one pixel past its endpoints' truncated box: exactly the
+    margin the dirty rectangle adds."""
+    clip = patched["src/clip.c"]
+    assert "glshim_note_box(lx - 1, ly - 1, hx + 1, hy + 1);" in clip
+
+
+def test_filled_triangles_apply_polygon_offset_and_treat_alpha_one_as_opaque(patched):
+    """TinyGL records glPolygonOffset and nothing reads it, and its blend adds
+    colours and decodes our byte-swapped pixels wrongly."""
+    clip = patched["src/clip.c"]
+    wrapper = clip[clip.index("void gl_draw_triangle_fill(") :]
+    wrapper = wrapper[: wrapper.index("gl_draw_triangle_fill_plain(GLVertex* p0")]
+    assert "c->offset_states & TGL_OFFSET_FILL" in wrapper
+    assert "c->offset_factor * slope + c->offset_units" in wrapper
+    assert "shift += shift < 0.0f ? -snap : snap;" in wrapper
+    assert "if (shift > 536870912.0f) shift = 536870912.0f;" in wrapper
+    assert "if (shift < -536870912.0f) shift = -536870912.0f;" in wrapper
+    assert "snap = (c->offset_factor != 0.0f || c->offset_units != 0.0f)" in wrapper
+    assert "z0 - bias > zmax ? zmax" in wrapper
+    assert "p0->zp.z = z0;" in wrapper
+    assert "GL_SRC_ALPHA" in wrapper and "GL_ONE_MINUS_SRC_ALPHA" in wrapper
+    assert "c->zb->enable_blend = blend;" in wrapper

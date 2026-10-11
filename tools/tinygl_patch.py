@@ -21,6 +21,11 @@ What the patches do, and why:
 - A dirty rectangle: TinyGL reports the box around everything it draws to
   `src/glshim/glshim.c`, which clears only the box drawn since the last clear
   and marks only that box (and the one it replaced) for the display push.
+- Smooth lines: `glEnable(GL_LINE_SMOOTH)` is honoured. Vertices keep their
+  fractional position (`zp.fx`, `zp.fy`), and a line is drawn with Wu's
+  algorithm, blended over what is there.
+- Filled triangles honour polygon offset, and treat `SRC_ALPHA,
+  ONE_MINUS_SRC_ALPHA` as opaque (TinyGL has no alpha).
 - Single precision: the S3's FPU does only `float`, so `double` maths is
   software. Decimal literals get an `f` suffix (`float_literals.py`) and
   `sqrt`, `pow`, `sin`, `cos` and `floor` map to their `f` versions.
@@ -98,7 +103,227 @@ DIRTY_LINE = """void gl_draw_line(GLVertex* p1, GLVertex* p2) {
 	}
 """
 
+# TinyGL snaps every vertex to a whole pixel before it draws a line, so a line
+# that moves a little jumps a whole pixel somewhere along its length. The
+# vertex transforms now keep the fractional position (zp.fx, zp.fy), and when a
+# hack enables GL_LINE_SMOOTH the line is drawn with Wu's algorithm: each step
+# along the major axis shares one pixel of brightness between the two nearest
+# pixels across it, blended over what is already there.
+AA_LINE = """#include <math.h>
+
+#if TGL_FEATURE_RENDER_BITS == 16
+static GLint zb_aa_floor(GLfloat f) {
+	GLint i = (GLint)f;
+	return ((GLfloat)i > f) ? i - 1 : i;
+}
+
+static void zb_aa_plot(ZBuffer* zb, GLint x, GLint y, GLint z, GLint cover, GLint use_z, GLint sr, GLint sg, GLint sb) {
+	GLushort* pz;
+	PIXEL* pp;
+	GLint zz, v, dr, dg, db;
+	if (cover <= 0 || x < 0 || y < 0 || x >= zb->xsize || y >= zb->ysize) return;
+	if (cover > 256) cover = 256;
+	pz = zb->zbuf + (y * zb->xsize + x);
+	zz = z >> ZB_POINT_Z_FRAC_BITS;
+	if (use_z && zb->depth_test && zz < (GLint)*pz) return;
+	pp = (PIXEL*)((GLbyte*)zb->pbuf + zb->linesize * y + x * PSZB);
+	v = TGL_SWAP16(*pp);
+	dr = (v >> 11) & 31;
+	dg = (v >> 5) & 63;
+	db = v & 31;
+	dr = (sr * cover + dr * (256 - cover) + 128) >> 8;
+	dg = (sg * cover + dg * (256 - cover) + 128) >> 8;
+	db = (sb * cover + db * (256 - cover) + 128) >> 8;
+	*pp = TGL_SWAP16((dr << 11) | (dg << 5) | db);
+	if (use_z && zb->depth_write) *pz = zz;
+}
+
+/* Returns 0 for a line it cannot draw (colour interpolated along it, or a
+ * vertex whose fractional position was not recorded), which the caller then
+ * draws plain. */
+static GLint ZB_line_aa(ZBuffer* zb, ZBufferPoint* p1, ZBufferPoint* p2, GLint use_z) {
+	GLfloat x0 = p1->fx, y0 = p1->fy, x1 = p2->fx, y1 = p2->fy;
+	GLfloat z0 = (GLfloat)p1->z, dz = (GLfloat)(p2->z - p1->z);
+	GLfloat dx, dy, grad, zinc, pos, z, scale, tmp;
+	GLint colour, v, sr, sg, sb, steep, i, i0, i1, row, hi, lo;
+
+	colour = RGB_TO_PIXEL(p1->r, p1->g, p1->b);
+	if (RGB_TO_PIXEL(p2->r, p2->g, p2->b) != colour) return 0;
+	if (fabsf(x0 - (GLfloat)p1->x) >= 1.0f || fabsf(y0 - (GLfloat)p1->y) >= 1.0f) return 0;
+	if (fabsf(x1 - (GLfloat)p2->x) >= 1.0f || fabsf(y1 - (GLfloat)p2->y) >= 1.0f) return 0;
+	v = TGL_SWAP16(colour);
+	sr = (v >> 11) & 31;
+	sg = (v >> 5) & 63;
+	sb = v & 31;
+
+	steep = fabsf(y1 - y0) > fabsf(x1 - x0);
+	if (steep) {
+		tmp = x0; x0 = y0; y0 = tmp;
+		tmp = x1; x1 = y1; y1 = tmp;
+	}
+	if (x1 < x0) {
+		tmp = x0; x0 = x1; x1 = tmp;
+		tmp = y0; y0 = y1; y1 = tmp;
+		z0 = (GLfloat)p2->z;
+		dz = -dz;
+	}
+	dx = x1 - x0;
+	dy = y1 - y0;
+	grad = 0.0f;
+	zinc = 0.0f;
+	scale = 1.0f;
+	i0 = zb_aa_floor(x0 - 0.5f) + 1;
+	i1 = zb_aa_floor(x1 - 0.5f);
+	if (i1 < i0 || dx < 1e-4f) {
+		/* shorter than the gap between two pixel centres: its midpoint's pixel */
+		i0 = i1 = zb_aa_floor((x0 + x1) * 0.5f);
+		pos = (y0 + y1) * 0.5f - 0.5f;
+		z = z0 + dz * 0.5f;
+	} else {
+		grad = dy / dx;
+		zinc = dz / dx;
+		scale = sqrtf(1.0f + grad * grad);
+		pos = y0 + ((GLfloat)i0 + 0.5f - x0) * grad - 0.5f;
+		z = z0 + ((GLfloat)i0 + 0.5f - x0) * zinc;
+	}
+	/* The brightness of a pixel is its share of a one pixel wide line. */
+	for (i = i0; i <= i1; i++) {
+		row = zb_aa_floor(pos);
+		hi = (GLint)((pos - (GLfloat)row) * 256.0f * scale + 0.5f);
+		lo = (GLint)((1.0f - (pos - (GLfloat)row)) * 256.0f * scale + 0.5f);
+		if (steep) {
+			zb_aa_plot(zb, row, i, (GLint)z, lo, use_z, sr, sg, sb);
+			zb_aa_plot(zb, row + 1, i, (GLint)z, hi, use_z, sr, sg, sb);
+		} else {
+			zb_aa_plot(zb, i, row, (GLint)z, lo, use_z, sr, sg, sb);
+			zb_aa_plot(zb, i, row + 1, (GLint)z, hi, use_z, sr, sg, sb);
+		}
+		pos += grad;
+		z += zinc;
+	}
+	return 1;
+}
+#else
+static GLint ZB_line_aa(ZBuffer* zb, ZBufferPoint* p1, ZBufferPoint* p2, GLint use_z) {
+	(void)zb; (void)p1; (void)p2; (void)use_z;
+	return 0;
+}
+#endif
+
+"""
+
+# Two things a hack asks of filled triangles that TinyGL stores but ignores.
+#
+# Polygon offset: glPolygonOffset and GL_POLYGON_OFFSET_FILL are recorded and
+# nothing reads them, so a line drawn on the edge of its own filled polygon
+# fights it for the depth test. The offset is factor * the polygon's steepest
+# depth slope + units * the smallest depth step, pushed away from the viewer.
+# The rasteriser also snaps a polygon's vertices to whole pixels, so its depth
+# at a pixel can be wrong by a pixel's slope in each direction, which the
+# hack's own numbers assume away: when an offset is asked for, that margin
+# (|dz/dx| + |dz/dy|) is added. Without it the polygon still erased a few
+# percent of its own line, a different few each frame, which flickered.
+#
+# Alpha: TinyGL has no alpha, which is what GL's SRC_ALPHA / ONE_MINUS_SRC_ALPHA
+# calls an alpha of 1, an opaque fill. Its own blend adds the colours, and reads
+# our byte-swapped pixels as if they were not swapped.
+FILL_TRIANGLE = """#include <math.h>
+static void gl_draw_triangle_fill_plain(GLVertex* p0, GLVertex* p1, GLVertex* p2);
+
+void gl_draw_triangle_fill(GLVertex* p0, GLVertex* p1, GLVertex* p2) {
+	GLContext* c = gl_get_context();
+	GLint blend = c->zb->enable_blend;
+	GLint bias = 0;
+	if (blend && c->zb->sfactor == GL_SRC_ALPHA && c->zb->dfactor == GL_ONE_MINUS_SRC_ALPHA)
+		c->zb->enable_blend = 0;
+	if (c->offset_states & TGL_OFFSET_FILL) {
+		GLfloat ax = (GLfloat)(p1->zp.x - p0->zp.x), ay = (GLfloat)(p1->zp.y - p0->zp.y), az = (GLfloat)(p1->zp.z - p0->zp.z);
+		GLfloat bx = (GLfloat)(p2->zp.x - p0->zp.x), by = (GLfloat)(p2->zp.y - p0->zp.y), bz = (GLfloat)(p2->zp.z - p0->zp.z);
+		GLfloat det = ax * by - ay * bx;
+		GLfloat slope = 0.0f, snap = 0.0f;
+		if (det != 0.0f) {
+			GLfloat dzdx = fabsf((az * by - ay * bz) / det);
+			GLfloat dzdy = fabsf((ax * bz - az * bx) / det);
+			slope = dzdx > dzdy ? dzdx : dzdy;
+			snap = (c->offset_factor != 0.0f || c->offset_units != 0.0f) ? dzdx + dzdy : 0.0f;
+		}
+		GLfloat shift = c->offset_factor * slope + c->offset_units * (GLfloat)(1 << ZB_POINT_Z_FRAC_BITS);
+		shift += shift < 0.0f ? -snap : snap;
+		if (shift > 536870912.0f) shift = 536870912.0f;
+		if (shift < -536870912.0f) shift = -536870912.0f;
+		bias = (GLint)shift;
+	}
+	GLint z0 = p0->zp.z, z1 = p1->zp.z, z2 = p2->zp.z;
+	if (bias) {
+		const GLint zmax = (1 << (ZB_Z_BITS + ZB_POINT_Z_FRAC_BITS)) - 1;
+		p0->zp.z = z0 - bias < 0 ? 0 : (z0 - bias > zmax ? zmax : z0 - bias);
+		p1->zp.z = z1 - bias < 0 ? 0 : (z1 - bias > zmax ? zmax : z1 - bias);
+		p2->zp.z = z2 - bias < 0 ? 0 : (z2 - bias > zmax ? zmax : z2 - bias);
+	}
+	gl_draw_triangle_fill_plain(p0, p1, p2);
+	p0->zp.z = z0;
+	p1->zp.z = z1;
+	p2->zp.z = z2;
+	c->zb->enable_blend = blend;
+}
+
+static void gl_draw_triangle_fill_plain(GLVertex* p0, GLVertex* p1, GLVertex* p2) {
+"""
+
 REPLACEMENTS: tuple[Replace, ...] = (
+    Replace(
+        "src/clip.c",
+        "void gl_draw_triangle_fill(GLVertex* p0, GLVertex* p1, GLVertex* p2) { \n",
+        FILL_TRIANGLE,
+    ),
+    Replace(
+        "include/zbuffer.h",
+        "    GLint depth_write;\n",
+        "    GLint depth_write;\n    GLint line_smooth; /* GL_LINE_SMOOTH */\n",
+    ),
+    Replace(
+        "include/zbuffer.h",
+        "  GLint x,y,z;     /* integer coordinates in the zbuffer */\n",
+        "  GLint x,y,z;     /* integer coordinates in the zbuffer */\n"
+        "  GLfloat fx,fy;   /* x and y before they were truncated */\n",
+    ),
+    Replace(
+        "src/clip.c",
+        "v->zp.y = (GLint)(v->pc.Y * winv * c->viewport.scale.Y + c->viewport.trans.Y);\n",
+        "v->zp.y = (GLint)(v->pc.Y * winv * c->viewport.scale.Y + c->viewport.trans.Y);\n"
+        "\t\tv->zp.fx = v->pc.X * winv * c->viewport.scale.X + c->viewport.trans.X;\n"
+        "\t\tv->zp.fy = v->pc.Y * winv * c->viewport.scale.Y + c->viewport.trans.Y;\n",
+    ),
+    Replace(
+        "src/vertex.c",
+        "v->zp.y = (GLint)(v->pc.Y * winv * c->viewport.scale.Y + c->viewport.trans.Y);\n",
+        "v->zp.y = (GLint)(v->pc.Y * winv * c->viewport.scale.Y + c->viewport.trans.Y);\n"
+        "\t\tv->zp.fx = v->pc.X * winv * c->viewport.scale.X + c->viewport.trans.X;\n"
+        "\t\tv->zp.fy = v->pc.Y * winv * c->viewport.scale.Y + c->viewport.trans.Y;\n",
+    ),
+    Replace(
+        "src/init.c",
+        "\tc->zb->depth_write = 1;\n",
+        "\tc->zb->depth_write = 1;\n\tc->zb->line_smooth = 0;\n",
+    ),
+    Replace(
+        "src/misc.c",
+        "\tcase GL_POLYGON_STIPPLE:\n",
+        "\tcase GL_LINE_SMOOTH:\n\t\tc->zb->line_smooth = v;\n\t\tbreak;\n\tcase GL_POLYGON_STIPPLE:\n",
+    ),
+    Replace(
+        "src/zline.c",
+        "void ZB_line_z(ZBuffer* zb, ZBufferPoint* p1, ZBufferPoint* p2) {\n",
+        AA_LINE
+        + "void ZB_line_z(ZBuffer* zb, ZBufferPoint* p1, ZBufferPoint* p2) {\n"
+        "\tif (zb->line_smooth && ZB_line_aa(zb, p1, p2, 1)) return;\n",
+    ),
+    Replace(
+        "src/zline.c",
+        "void ZB_line(ZBuffer* zb, ZBufferPoint* p1, ZBufferPoint* p2) {\n",
+        "void ZB_line(ZBuffer* zb, ZBufferPoint* p1, ZBufferPoint* p2) {\n"
+        "\tif (zb->line_smooth && ZB_line_aa(zb, p1, p2, 0)) return;\n",
+    ),
     Replace(
         "include/zfeatures.h",
         "#define TGL_FEATURE_CUSTOM_MALLOC 0",

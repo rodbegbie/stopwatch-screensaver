@@ -304,6 +304,8 @@ int glIsEnabled(GLint cap) {
   return 0;
 }
 
+void glLineWidth(GLfloat width) { (void)width; }
+
 void gluPerspective(GLdouble fovy, GLdouble aspect, GLdouble znear,
                     GLdouble zfar) {
   const float top = (float)znear * tanf((float)fovy * 3.14159265f / 360.0f);

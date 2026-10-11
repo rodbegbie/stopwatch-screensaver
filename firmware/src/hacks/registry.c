@@ -1,12 +1,17 @@
 #include "hacks/registry.h"
 
 /* A hack built on xlockmore.h defines a function table, not a HackEntry. */
-#define XLOCKMORE_HACK_WITH(NAME, CLASS, OVERRIDES)                      \
+#define XLOCKMORE_HACK_FULL(NAME, CLASS, OVERRIDES, SYNC)                \
   extern struct xscreensaver_function_table NAME##_xscreensaver_function_table; \
   static const HackEntry NAME##_hack = {                                 \
       CLASS, NULL, NULL, NULL, NULL,                                     \
-      &NAME##_xscreensaver_function_table, OVERRIDES}
+      &NAME##_xscreensaver_function_table, OVERRIDES, SYNC}
+#define XLOCKMORE_HACK_WITH(NAME, CLASS, OVERRIDES) \
+  XLOCKMORE_HACK_FULL(NAME, CLASS, OVERRIDES, 0)
 #define XLOCKMORE_HACK(NAME, CLASS) XLOCKMORE_HACK_WITH(NAME, CLASS, NULL)
+/* Pushes start at a fixed point in the panel's refresh (see HackEntry). */
+#define XLOCKMORE_HACK_SYNCED(NAME, CLASS, OVERRIDES) \
+  XLOCKMORE_HACK_FULL(NAME, CLASS, OVERRIDES, 1)
 
 /* Galaxy's `count: -5` picks 2-5 galaxies, and each star is pulled by every
  * galaxy. -3 caps it at 3. Counts of -2 or above skip the hack's cleanup on
@@ -81,6 +86,14 @@ extern const HackEntry interaggregate_hack;
 extern const HackEntry lmorph_hack;
 extern const HackEntry wormhole_hack;
 extern const HackEntry truchet_hack;
+/* The xlockmore framework reads ncolors and cycles, which the hack does not
+ * define. The override cuts its own 30 ms pause to 10 ms, as for Gears. Its
+ * thin lines move a few pixels a frame, so a seam between the old and the
+ * new picture made lines vanish for a frame: it asks for synced pushes. */
+static const char *const kUnknownPleasuresOverrides[] = {
+    "*ncolors: 64", "*cycles: 0", "*delay: 10000", NULL};
+XLOCKMORE_HACK_SYNCED(unknownpleasures, "UnknownPleasures",
+                      kUnknownPleasuresOverrides);
 
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
@@ -124,5 +137,6 @@ const HackEntry *const g_hacks[] = {
     &interaggregate_hack,
     &lmorph_hack,
     &wormhole_hack,
-    &truchet_hack};
+    &truchet_hack,
+    &unknownpleasures_hack};
 const int g_hack_count = sizeof(g_hacks) / sizeof(g_hacks[0]);

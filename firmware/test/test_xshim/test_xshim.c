@@ -3,10 +3,13 @@
 #include <sanitizer/allocator_interface.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <unity.h>
 
 #include "colors.h"
 #include "core/canvas.h"
+#include "doubletime.h"
+#include "easing.h"
 #include "erase.h"
 #include "fps.h"
 #include "alpha.h"
@@ -246,6 +249,48 @@ void test_overrides_beat_the_hacks_own_defaults(void) {
   TEST_ASSERT_EQUAL_INT(20000, get_integer_resource(dpy, "delay", "Usecs"));
   xshim_set_overrides(NULL);
   TEST_ASSERT_EQUAL_INT(-5, get_integer_resource(dpy, "count", "Int"));
+}
+
+/* xlockmore.c puts "<Class>.foreground: white" in a hack's defaults. */
+void test_a_class_prefixed_default_is_found(void) {
+  static const char *const own[] = {"UnknownPleasures.foreground: white",
+                                    "*count: 80", NULL};
+  xshim_set_defaults(own);
+  TEST_ASSERT_EQUAL_HEX(0xFFFF,
+                        get_pixel_resource(dpy, 1, "foreground", "Foreground"));
+  char *s = get_string_resource(dpy, "foreground", "Foreground");
+  TEST_ASSERT_NOT_NULL(s);
+  TEST_ASSERT_EQUAL_STRING("white", s);
+  free(s);
+  TEST_ASSERT_EQUAL_INT(80, get_integer_resource(dpy, "count", "Int"));
+}
+
+/* xlockmore.c lists "<Class>.background: black" before the hack's own
+ * "*background: white" (Substrate), and the hack's own line must win. */
+void test_a_plain_default_beats_a_class_prefixed_one_listed_earlier(void) {
+  static const char *const own[] = {"Substrate.background: black",
+                                    "*background: white", NULL};
+  xshim_set_defaults(own);
+  TEST_ASSERT_EQUAL_HEX(0xFFFF,
+                        get_pixel_resource(dpy, 1, "background", "Background"));
+  TEST_ASSERT_EQUAL_HEX(0xFFFF, xshim_background_pixel());
+}
+
+void test_an_override_beats_a_class_prefixed_default(void) {
+  static const char *const own[] = {"Cls.foreground: white", NULL};
+  static const char *const over[] = {"*foreground: black", NULL};
+  xshim_set_defaults(own);
+  xshim_set_overrides(over);
+  TEST_ASSERT_EQUAL_HEX(0x0000,
+                        get_pixel_resource(dpy, 1, "foreground", "Foreground"));
+  xshim_set_overrides(NULL);
+}
+
+void test_a_class_prefix_does_not_match_a_longer_or_different_name(void) {
+  static const char *const own[] = {"Cls.foregroundish: white",
+                                    "Cls.xforeground: white", NULL};
+  xshim_set_defaults(own);
+  TEST_ASSERT_NULL(get_string_resource(dpy, "foreground", "Foreground"));
 }
 
 void test_progclass_is_set(void) {
@@ -2187,8 +2232,138 @@ void test_release_hook_runs_once_with_the_display_and_is_then_cleared(void) {
   TEST_ASSERT_EQUAL_PTR(dpy, hook_arg);
 }
 
+void test_create_image_fills_in_geometry_and_computes_the_row_size(void) {
+  XImage *im = XCreateImage(dpy, NULL, 32, ZPixmap, 0, NULL, 7, 3, 32, 0);
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_INT(7, im->width);
+  TEST_ASSERT_EQUAL_INT(3, im->height);
+  TEST_ASSERT_EQUAL_INT(32, im->depth);
+  TEST_ASSERT_EQUAL_INT(32, im->bits_per_pixel);
+  TEST_ASSERT_EQUAL_INT(28, im->bytes_per_line);
+  TEST_ASSERT_NULL(im->data);
+  XDestroyImage(im);
+}
+
+void test_create_image_keeps_a_row_size_the_caller_gave(void) {
+  XImage *im = XCreateImage(dpy, NULL, 32, ZPixmap, 0, NULL, 7, 3, 32, 64);
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_INT(64, im->bytes_per_line);
+  XDestroyImage(im);
+}
+
+void test_image_pixels_round_trip_through_a_caller_allocated_buffer(void) {
+  XImage *im = XCreateImage(dpy, NULL, 32, ZPixmap, 0, NULL, 4, 2, 32, 0);
+  TEST_ASSERT_NOT_NULL(im);
+  im->data = malloc((size_t)im->height * im->bytes_per_line);
+  TEST_ASSERT_NOT_NULL(im->data);
+  memset(im->data, 0, (size_t)im->height * im->bytes_per_line);
+  XPutPixel(im, 3, 1, 0xFF123456UL);
+  XPutPixel(im, 0, 0, 0x00000001UL);
+  TEST_ASSERT_EQUAL_HEX64(0xFF123456UL, XGetPixel(im, 3, 1));
+  TEST_ASSERT_EQUAL_HEX64(0x00000001UL, XGetPixel(im, 0, 0));
+  TEST_ASSERT_EQUAL_HEX64(0UL, XGetPixel(im, 1, 0));
+  XDestroyImage(im);
+}
+
+void test_image_pixel_outside_the_image_reads_zero_and_writes_nothing(void) {
+  XImage *im = XCreateImage(dpy, NULL, 32, ZPixmap, 0, NULL, 2, 2, 32, 0);
+  TEST_ASSERT_NOT_NULL(im);
+  im->data = calloc((size_t)im->height, (size_t)im->bytes_per_line);
+  TEST_ASSERT_NOT_NULL(im->data);
+  XPutPixel(im, 2, 0, 0xFFFFFFFFUL);
+  XPutPixel(im, 0, 2, 0xFFFFFFFFUL);
+  XPutPixel(im, -1, 0, 0xFFFFFFFFUL);
+  TEST_ASSERT_EQUAL_HEX64(0UL, XGetPixel(im, 2, 0));
+  TEST_ASSERT_EQUAL_HEX64(0UL, XGetPixel(im, 0, -1));
+  for (int i = 0; i < im->height * im->bytes_per_line; i++)
+    TEST_ASSERT_EQUAL_UINT8(0, (uint8_t)im->data[i]);
+  XDestroyImage(im);
+}
+
+void test_get_pixel_on_an_image_without_data_reads_zero(void) {
+  XImage *im = XCreateImage(dpy, NULL, 32, ZPixmap, 0, NULL, 2, 2, 32, 0);
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_HEX64(0UL, XGetPixel(im, 0, 0));
+  XPutPixel(im, 0, 0, 1UL);
+  XDestroyImage(im);
+}
+
+void test_create_image_refuses_depths_and_sizes_it_cannot_hold(void) {
+  TEST_ASSERT_NULL(XCreateImage(dpy, NULL, 8, ZPixmap, 0, NULL, 4, 4, 8, 0));
+  TEST_ASSERT_NULL(XCreateImage(dpy, NULL, 32, ZPixmap, 0, NULL, 0, 4, 32, 0));
+  TEST_ASSERT_NULL(XCreateImage(dpy, NULL, 32, ZPixmap, 0, NULL, 4, 0, 32, 0));
+  TEST_ASSERT_NULL(
+      XCreateImage(dpy, NULL, 32, ZPixmap, 0, NULL, INT_MAX, 4, 32, 0));
+}
+
+void test_file_to_ximage_has_no_decoder_and_returns_null(void) {
+  TEST_ASSERT_NULL(file_to_ximage(dpy, NULL, "/no/such/mask.png"));
+}
+
+void test_ease_in_out_sine_runs_from_0_to_1_through_one_half(void) {
+  TEST_ASSERT_FLOAT_WITHIN(2e-6f, 0.0f, (float)ease(EASE_IN_OUT_SINE, 0.0));
+  TEST_ASSERT_FLOAT_WITHIN(2e-6f, 0.5f, (float)ease(EASE_IN_OUT_SINE, 0.5));
+  TEST_ASSERT_FLOAT_WITHIN(2e-6f, 1.0f, (float)ease(EASE_IN_OUT_SINE, 1.0));
+  TEST_ASSERT_FLOAT_WITHIN(2e-6f, 0.146447f, (float)ease(EASE_IN_OUT_SINE, 0.25));
+  TEST_ASSERT_FLOAT_WITHIN(2e-6f, 0.853553f, (float)ease(EASE_IN_OUT_SINE, 0.75));
+}
+
+void test_ease_in_out_sine_does_not_clamp_past_the_end(void) {
+  /* unknownpleasures passes height * 1.5; upstream does not clamp, so 1.5
+   * lands on 0.5 and the shim must match. */
+  TEST_ASSERT_FLOAT_WITHIN(2e-6f, 0.5f, (float)ease(EASE_IN_OUT_SINE, 1.5));
+}
+
+void test_ease_in_sine_and_out_sine_are_the_two_halves(void) {
+  TEST_ASSERT_FLOAT_WITHIN(2e-6f, 0.0f, (float)ease(EASE_IN_SINE, 0.0));
+  TEST_ASSERT_FLOAT_WITHIN(2e-6f, 1.0f, (float)ease(EASE_IN_SINE, 1.0));
+  TEST_ASSERT_FLOAT_WITHIN(2e-6f, 0.292893f, (float)ease(EASE_IN_SINE, 0.5));
+  TEST_ASSERT_FLOAT_WITHIN(2e-6f, 0.0f, (float)ease(EASE_OUT_SINE, 0.0));
+  TEST_ASSERT_FLOAT_WITHIN(2e-6f, 1.0f, (float)ease(EASE_OUT_SINE, 1.0));
+  TEST_ASSERT_FLOAT_WITHIN(2e-6f, 0.707107f, (float)ease(EASE_OUT_SINE, 0.5));
+}
+
+void test_ease_none_returns_its_input(void) {
+  TEST_ASSERT_TRUE(ease(EASE_NONE, 0.3) == 0.3);
+  TEST_ASSERT_TRUE(ease(EASE_NONE, 7.0) == 7.0);
+}
+
+static double fake_now;
+static double fake_clock(void) { return fake_now += 0.25; }
+
+void test_a_replacement_clock_is_used_until_it_is_cleared(void) {
+  fake_now = 100.0;
+  xshim_set_clock(fake_clock);
+  TEST_ASSERT_TRUE(double_time() == 100.25);
+  TEST_ASSERT_TRUE(double_time() == 100.5);
+  xshim_set_clock(NULL);
+  TEST_ASSERT_TRUE_MESSAGE(double_time() > 1e9, "real clock not restored");
+}
+
+void test_double_time_is_wall_clock_seconds_and_moves_forward(void) {
+  double a = double_time();
+  usleep(20000);
+  double b = double_time();
+  TEST_ASSERT_TRUE_MESSAGE(a > 1e9, "not seconds since the epoch");
+  TEST_ASSERT_TRUE_MESSAGE(b - a >= 0.015, "did not advance by the sleep");
+  TEST_ASSERT_TRUE_MESSAGE(b - a < 1.0, "advanced by far more than the sleep");
+}
+
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_create_image_fills_in_geometry_and_computes_the_row_size);
+  RUN_TEST(test_create_image_keeps_a_row_size_the_caller_gave);
+  RUN_TEST(test_image_pixels_round_trip_through_a_caller_allocated_buffer);
+  RUN_TEST(test_image_pixel_outside_the_image_reads_zero_and_writes_nothing);
+  RUN_TEST(test_get_pixel_on_an_image_without_data_reads_zero);
+  RUN_TEST(test_create_image_refuses_depths_and_sizes_it_cannot_hold);
+  RUN_TEST(test_file_to_ximage_has_no_decoder_and_returns_null);
+  RUN_TEST(test_ease_in_out_sine_runs_from_0_to_1_through_one_half);
+  RUN_TEST(test_ease_in_out_sine_does_not_clamp_past_the_end);
+  RUN_TEST(test_ease_in_sine_and_out_sine_are_the_two_halves);
+  RUN_TEST(test_ease_none_returns_its_input);
+  RUN_TEST(test_double_time_is_wall_clock_seconds_and_moves_forward);
+  RUN_TEST(test_a_replacement_clock_is_used_until_it_is_cleared);
   RUN_TEST(test_release_hook_runs_once_with_the_display_and_is_then_cleared);
   RUN_TEST(test_image_data_to_pixmap_makes_a_colour_pixmap_and_a_mask);
   RUN_TEST(test_image_data_to_pixmap_rejects_a_blob_that_is_not_ours);
@@ -2236,6 +2411,10 @@ int main(void) {
   RUN_TEST(test_xrectangle_type_exists);
   RUN_TEST(test_progname_is_set);
   RUN_TEST(test_overrides_beat_the_hacks_own_defaults);
+  RUN_TEST(test_a_class_prefixed_default_is_found);
+  RUN_TEST(test_a_plain_default_beats_a_class_prefixed_one_listed_earlier);
+  RUN_TEST(test_an_override_beats_a_class_prefixed_default);
+  RUN_TEST(test_a_class_prefix_does_not_match_a_longer_or_different_name);
   RUN_TEST(test_progclass_is_set);
   RUN_TEST(test_framework_resources_fall_back_to_builtin_defaults);
   RUN_TEST(test_hack_defaults_beat_the_builtin_fallbacks);

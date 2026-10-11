@@ -24,16 +24,32 @@ static const struct {
     {"both3d", "magenta"}, {"none3d", "black"}, {"size", "0"},
 };
 
-/* Finds "<.|*>name:<ws>value" in a NULL-terminated list, or returns NULL. */
+/* The value of "<name>:<ws>value" if `s` is that line, else NULL. */
+static const char *value_if_named(const char *s, const char *name, size_t len) {
+  if (strncmp(s, name, len) != 0 || s[len] != ':') return NULL;
+  s += len + 1;
+  while (*s && isspace((unsigned char)*s)) s++;
+  return s;
+}
+
+/* Finds "<.|*>name:<ws>value" in a NULL-terminated list, or returns NULL.
+ * Failing that, finds "<Class>.name:<ws>value", which xlockmore.c adds for
+ * foreground and background. It comes second because it is listed before the
+ * hack's own lines, and Substrate's "*background: white" must beat it. */
 static const char *find_in(const char *const *list, const char *name) {
   size_t len = strlen(name);
   for (const char *const *p = list; p && *p; p++) {
     const char *s = *p;
     if (*s == '.' || *s == '*') s++;
-    if (strncmp(s, name, len) != 0 || s[len] != ':') continue;
-    s += len + 1;
-    while (*s && isspace((unsigned char)*s)) s++;
-    return s;
+    const char *v = value_if_named(s, name, len);
+    if (v) return v;
+  }
+  for (const char *const *p = list; p && *p; p++) {
+    const char *dot = strchr(*p, '.');
+    const char *colon = strchr(*p, ':');
+    if (!dot || dot == *p || !colon || dot > colon || **p == '*') continue;
+    const char *v = value_if_named(dot + 1, name, len);
+    if (v) return v;
   }
   return NULL;
 }

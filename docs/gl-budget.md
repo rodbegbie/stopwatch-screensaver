@@ -5,13 +5,20 @@ TinyGL, and predicts the device frame time. It was built to choose between two
 candidates for the next GL port (issue #45) without flashing either.
 
 ```text
-uv run tools/gl_budget.py [--frames N] [--seeds a,b,c] name[:seed] ...
+uv run tools/gl_budget.py [--frames N] [--seeds a,b,c]
+    [--override '*name: value' ...] name[:seed] ...
 ```
 
 Gears is read from `firmware/src/hacks/gears/`; any other name from
 `vendor/xscreensaver-6.16/hacks/glx/` (git-ignored, never copied into the
 repo). A hack that does not build is reported with its first error, and the
 exit status is 1.
+
+`--override` gives the hack a resource line that beats its own defaults, as an
+entry in `registry.c`'s override list does on the device. Repeat it for more.
+It applies to every hack named, so run hacks with different overrides
+separately. Use it to try a registry override (`--override '*count: 40'`)
+before committing to it, or to supply one a hack needs to start.
 
 ## What it counts
 
@@ -91,9 +98,11 @@ want to see on the board.
 
 ## Accuracy against the device
 
-Gears, Morph3D and CubicGrid have all now run on the board. The predictions
-below were committed to this document before each port was flashed. Measured
-is step plus push, the quantity the model predicts.
+Gears, Morph3D, CubicGrid and Unknown Pleasures have all now run on the
+board. The predictions below were committed before each port was flashed
+(Unknown Pleasures' in its commit message). Measured is step plus push, the
+quantity the model predicts, with the wait for the panel's TE pulse left out.
+Error is measured against predicted.
 
 | Scene | Predicted | Measured | Error |
 | --- | --- | --- | --- |
@@ -103,6 +112,10 @@ is step plus push, the quantity the model predicts.
 | Morph3D, 2,300 vertices (not in the first survey) | none | 84 ms | |
 | CubicGrid, 27,000 points | 165 ms | 170 to 180 ms | +3% to +9% |
 | CubicGrid, 8,000 points | 89 ms | 80 to 88 ms | -10% to -1% |
+| Unknown Pleasures, 40 rows of 100 points, as first flashed | 251 ms | 267 ms | +6% |
+| Unknown Pleasures, 20 rows of 50 points, as first flashed | 197 ms | 186 ms | -6% |
+| Unknown Pleasures, 40 rows, after the fixes | 251 ms (same counts) | 197 ms | -22% |
+| Unknown Pleasures, 20 rows, after the fixes, on a later main | 197 ms (same counts) | about 124 ms | -37% |
 
 - **Good to about 10 percent for Gears and CubicGrid; Morph3D was 11 to 20
   percent too optimistic** (see the correction below), until the model charged
@@ -126,6 +139,18 @@ is step plus push, the quantity the model predicts.
   45, 65, 81 and 102 inferred. Its tiny triangles and CubicGrid's wide points
   have not shown up as errors, and CubicGrid's two sizes imply about
   4.7 microseconds a point against the model's 4.
+- **Unknown Pleasures: within 6 percent as flashed, and 22 to 37 percent too
+  slow once the quads were fixed.** The first flash put 12,000 vertices, about
+  5,600 triangles and 257,000 filled pixels on the board at 267 and 186 ms
+  against 251 and 197. The scene then turned out to be wrong: TinyGL's blend
+  macro adds colours and ignores alpha, so the black quads hid nothing, and
+  the macro runs a `switch` chain on every pixel it draws. With the quads
+  opaque the step fell from 234 to 165 ms even though smooth lines were added.
+  That is at least 70 ms over 257,000 pixels, about 0.27 us a pixel. The model
+  has no blend term; its fill cost behaves like the cost of a blended or lit
+  pixel, which is why the blended scene matched. **A flat, unblended scene
+  will come in under the prediction.** Smooth lines and polygon offset are not
+  in the model either, and their cost was small beside that.
 - **Use it for ranking and go or no-go, with a margin of 10 percent.** A
   prediction within 10 percent of a frame-rate threshold needs the board to
   settle it. Add each new GL port's measured step to the table and refit
@@ -166,6 +191,38 @@ under the prediction. Free PSRAM was 0.49 MB below Morph3D's. Two points on
 the same hack, 27,000 points at 170 to 180 ms and 8,000 at 80 to 88 ms, give
 about 4.7 us a point, close to the model's 4 us a vertex; the points are
 cheap, as the model assumed.
+
+## Device check: Unknown Pleasures
+
+Flashed on 2026-10-10 at its defaults (80 requested rows halved to 40 on the
+466 px canvas, 100 points a row): 3.6 to 3.8 fps, a step of 226 to 237 ms and
+a push of 32.3 ms. It looked lovely and flickered. What that cost to find, in
+the order it was found, because each fix hid the next problem:
+
+1. **Flat stretches of lines hopped a row at a time as the picture drifted.**
+   TinyGL snaps vertices to whole pixels before it draws. The patch now keeps
+   the fractional position and draws `GL_LINE_SMOOTH` lines with Wu's
+   algorithm. A first guess at the cause (the lines losing depth ties to
+   their own quads) was wrong, and an experiment meant to test it could not
+   have shown anything, because blending made every quad invisible.
+2. **Blending and polygon offset did not work.** The blend macro adds colours,
+   ignores alpha, and decodes our byte-swapped pixels wrongly, so smooth (grey)
+   lines came out speckled and peaks hid nothing; `glPolygonOffset` was stored
+   and never read. Opaque fills and a real offset (with a margin for vertex
+   snapping) made it look like the album cover, and cut the step from 234 to
+   165 ms.
+3. **Lines vanished for a frame where the panel's scan met the push.** The
+   push was not synchronised with the panel's refresh. The panel's TE line is
+   on GPIO 38; `HackEntry::sync_to_refresh` starts the push 7.4 ms after it
+   rises. A filmed sweep of eight offsets at 120 fps found none vanished at
+   3.2 to 9.5 ms in 39 updates, and a seam at 1.1 and 15.8 ms.
+
+The final code runs at 5.0 to 5.2 fps (step 162 to 169 ms), and a film of it
+showed no vanished line in 49 updates (and none in 49 settled frames used as a
+control). What remains is a dip in brightness of about 14 percent for 25 ms
+at each push, which TE sync does not touch (issue #68). The model's accuracy
+on this hack is in the table above, and the notes that matter for the next GL
+port are in `.claude/rules/gl.md` and `.claude/rules/device-display.md`.
 
 ## Where a frame goes (CubicGrid profile)
 

@@ -72,6 +72,10 @@ void glMateriali(GLint face, GLint pname, GLint value);
 void glPixelStorei(GLint pname, GLint param);
 /* The only caller asks about GL_TEXTURE_2D, which no hack here enables. */
 int glIsEnabled(GLint cap);
+/* TinyGL has this commented out and always draws lines one pixel wide, which
+ * is the width a hack asks for on a canvas under 640 pixels. Accepted and
+ * ignored. */
+void glLineWidth(GLfloat width);
 
 /* TinyGL defines these but its header does not declare them. */
 void glVertex3f(GLfloat x, GLfloat y, GLfloat z);

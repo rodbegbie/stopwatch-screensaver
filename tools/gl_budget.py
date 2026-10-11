@@ -256,10 +256,12 @@ def measure(
     frames: int = 300,
     seed: int = 1,
     cc: str = "cc",
+    overrides: list[str] = (),
 ) -> dict:
     """Builds the hack with USE_GL against the shim and the instrumented
     TinyGL, runs it, and returns {"counts": FrameCounts, "host_ms": float,
-    "frames": int} or {"error": str}."""
+    "frames": int} or {"error": str}. `overrides` are resource lines
+    ("*count: 40") that beat the hack's own defaults."""
     try:
         class_name, prefix = probe_hacks.module_entry(source)
         with tempfile.TemporaryDirectory() as tmp_name:
@@ -270,7 +272,10 @@ def measure(
             registry = tmp / "probe_registry.c"
             registry.write_text(
                 probe_hacks.registry_source(
-                    class_name, prefix, bool(probe_hacks.XLOCKMORE.search(source))
+                    class_name,
+                    prefix,
+                    bool(probe_hacks.XLOCKMORE.search(source)),
+                    overrides,
                 )
             )
             program = tmp / "gl_budget"
@@ -399,6 +404,15 @@ def parse_arguments(argv: list[str]) -> argparse.Namespace:
     )
     parser.add_argument("--frames", type=int, default=300)
     parser.add_argument(
+        "--override",
+        dest="overrides",
+        action="append",
+        default=[],
+        metavar="'*name: value'",
+        help="a resource line that beats the hack's defaults, as a registry "
+        "override does on the device; repeat for more, applies to every hack named",
+    )
+    parser.add_argument(
         "--seeds",
         default=",".join(map(str, DEFAULT_SEEDS)),
         help="comma-separated seeds tried for each hack without its own",
@@ -427,7 +441,14 @@ def main(argv: list[str]) -> int:
             rows += [{"name": name, "seed": seed, "error": str(err)} for seed in seeds]
             continue
         for seed in seeds:
-            result = measure(name, source, root, frames=args.frames, seed=seed)
+            result = measure(
+                name,
+                source,
+                root,
+                frames=args.frames,
+                seed=seed,
+                overrides=args.overrides,
+            )
             rows.append({"name": name, "seed": seed, **result})
     print(render_report(rows), end="")
     return 1 if any("error" in row for row in rows) else 0
