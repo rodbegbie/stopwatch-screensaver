@@ -3,8 +3,12 @@
   "checkpoint_id": "01M4P20BK4R4N7A06YZMSWV6QV",
   "strategy": "manual-commit",
   "branch": "feature/flying-toasters-design",
-  "checkpoints_count": 3,
-  "files_touched": null,
+  "checkpoints_count": 4,
+  "files_touched": [
+    "firmware/src/hacks/ad_flyingtoasters/ad_sprites.c",
+    "firmware/src/hacks/ad_flyingtoasters/ad_sprites.h",
+    "firmware/test/test_ad_flyingtoasters/test_ad_flyingtoasters.c"
+  ],
   "sessions": [
     {
       "metadata": "/0/metadata.json",
@@ -12,14 +16,21 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": "/0/prompt.txt"
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 16,
-    "cache_creation_tokens": 12044,
-    "cache_read_tokens": 2653120,
-    "output_tokens": 4469,
-    "api_call_count": 8,
+    "input_tokens": 38,
+    "cache_creation_tokens": 30523,
+    "cache_read_tokens": 7693428,
+    "output_tokens": 17213,
+    "api_call_count": 19,
     "subagent_tokens": {
       "input_tokens": 30,
       "cache_creation_tokens": 126522,
