@@ -90,11 +90,11 @@ The shim's `double_time()` (`x11shim/doubletime.c`) reads the wall clock and
 already has an override, `xshim_set_clock`. The host tests and the `dump`
 program never sleep for a hack's returned delay, so on the wall clock a
 wipe would not end inside a 3000-frame run, and pinned hashes would depend on
-host speed. The eraser therefore reads its own clock hook, defaulting to
-`double_time()`. `test_hacks` and `dump` install a virtual one that advances
-by the delay each `runner_step` returns, as a real run would. A separate hook,
-rather than `xshim_set_clock`, so that no other hack's use of `double_time`
-changes under test. This is my call.
+host speed. `test_hacks` already installs a fake clock through
+`xshim_set_clock` that moves 1/30 s a reading, so the eraser reads
+`double_time()` and is deterministic there. `dump` installs no clock, so it
+gets the same fake one. This is my call, and it replaces my first idea of a
+separate eraser clock hook, which the existing fake clock made unnecessary.
 
 ### Effects
 
@@ -176,8 +176,8 @@ drop that effect rather than slow the wipe.
 - Four effects, about one second, random pick (from the issue).
 - Time-based progress, so a slow frame cannot stretch the wipe, started on
   the second call so the dwell is not counted.
-- A separate eraser clock hook with a virtual clock in `test_hacks` and
-  `dump`.
+- The eraser reads `double_time()`; `dump` gets the fake clock that
+  `test_hacks` already uses.
 - No clipping to the round panel.
 - Cleanup through the display and the runner's `stop()`, because the six
   non-freeing hacks cannot be edited.
