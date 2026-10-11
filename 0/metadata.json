@@ -1,0 +1,77 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4NYEK35YGXQTA26W8P5FSNG",
+  "session_id": "52b5f480-1b35-4f9b-b546-dbc5c1aff2c6",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-11T16:59:02.010388Z",
+  "branch": "feature/43-banded-renderer",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [],
+  "agent": "Claude Code",
+  "model": "claude-opus-5-5",
+  "turn_id": "2def62d30305",
+  "checkpoint_transcript_start": 76,
+  "transcript_lines_at_start": 76,
+  "compact_transcript_start": 7,
+  "token_usage": {
+    "input_tokens": 52,
+    "cache_creation_tokens": 73191,
+    "cache_read_tokens": 2632692,
+    "output_tokens": 24808,
+    "api_call_count": 26,
+    "subagent_tokens": {
+      "input_tokens": 12,
+      "cache_creation_tokens": 78423,
+      "cache_read_tokens": 310805,
+      "output_tokens": 924,
+      "api_call_count": 6
+    }
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_011fe7Ftxi9dW82Wu9scxvei",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:brainstorming"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "2def62d30305",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 36,
+        "end": 37,
+        "entry_ids": [
+          "8f4bee43-9398-4483-a94f-2184953716a9"
+        ],
+        "tool_use_id": "toolu_011fe7Ftxi9dW82Wu9scxvei"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_011fe7Ftxi9dW82Wu9scxvei"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:brainstorming",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
