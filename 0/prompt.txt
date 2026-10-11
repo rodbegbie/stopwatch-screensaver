@@ -1,0 +1,97 @@
+<task-notification>
+<task-id>b7gab66ls</task-id>
+<tool-use-id>toolu_01A3EnU5fqbs48aQteGLFiNm</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f04fec39-e104-4ef0-877f-22bf8e9a22c5/tasks/b7gab66ls.output</output-file>
+<status>completed</status>
+<summary>Background command "Final full native suite on finished branch" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>b8manjnjh</task-id>
+<tool-use-id>toolu_01STzxsF7R9oRXjChC7GCgv1</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f04fec39-e104-4ef0-877f-22bf8e9a22c5/tasks/b8manjnjh.output</output-file>
+<status>completed</status>
+<summary>Monitor "Final suite result" stream ended</summary>
+<event>test/test_xshim/test_xshim.c:2536: test_mirroring_each_glyph_column_block_through_get_and_put_image	[PASSED]
+================ 459 test cases: 459 succeeded in 00:04:55.278 ================
+[exited with code 0]</event>
+If this event is something the user would act on now, send a PushNotification. Routine or benign output doesn't need one.
+</task-notification>
+
+---
+
+Halo: looks great.  Nice and colourful.  Speed is good
+XMatrix: Is it possible to skip the initial connecting phase?  The rain section looks amazing.
+Hexadrop: Actually looks fine.  The fps isn't really noticable.
+Stonerview: Great.  No flicker.
+
+There is a new bug though: After you've seen Hexadrop, the Pyro screen saver doesn't have a black background any more. It's a solid colour.  I think something from Hexadrop is leaking into it.
+
+---
+
+<task-notification>
+<task-id>bup90th3h</task-id>
+<tool-use-id>toolu_019VptQgfGiJuHmNn6mn6S9n</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f04fec39-e104-4ef0-877f-22bf8e9a22c5/tasks/bup90th3h.output</output-file>
+<status>completed</status>
+<summary>Monitor "Expect new test to fail" stream ended</summary>
+<event>static long count_pixels(uint16_t colour) {
+long n = 0;
+for (long i = 0; i &lt; (long)cv.w * cv.h; i++) n += cv.px[i] == colour;
+return n;
+}
+/* Real screenhack.c paints the window in the hack's background colour before</event>
+If this event is something the user would act on now, send a PushNotification. Routine or benign output doesn't need one.
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bqma1w99s</task-id>
+<tool-use-id>toolu_0159Ej7Toe5RNgX4JTTbe4KN</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f04fec39-e104-4ef0-877f-22bf8e9a22c5/tasks/bqma1w99s.output</output-file>
+<status>completed</status>
+<summary>Background command "test_hacks, expect the new test to fail" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>b74qh6ojj</task-id>
+<tool-use-id>toolu_01XRfCCV5rBpsNAvL7ysDvUX</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f04fec39-e104-4ef0-877f-22bf8e9a22c5/tasks/b74qh6ojj.output</output-file>
+<status>completed</status>
+<summary>Monitor "test_hacks real result" stream ended</summary>
+<event>test/test_hacks/test_hacks.c:148: test_a_window_background_does_not_outlive_the_hack_that_set_it: Expected TRUE Was FALSE	[FAILED]
+============ 57 test cases: 1 failed, 55 succeeded in 00:02:11.137 ============</event>
+If this event is something the user would act on now, send a PushNotification. Routine or benign output doesn't need one.
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bb1yh9k57</task-id>
+<tool-use-id>toolu_01FMdvhoF7e52gJHvxiyY8i2</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f04fec39-e104-4ef0-877f-22bf8e9a22c5/tasks/bb1yh9k57.output</output-file>
+<status>completed</status>
+<summary>Background command "test_hacks to repin XMatrix and check bg fix" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bo505qixr</task-id>
+<tool-use-id>toolu_017hqZNKMwe5M3FcQrar45Eb</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f04fec39-e104-4ef0-877f-22bf8e9a22c5/tasks/bo505qixr.output</output-file>
+<status>completed</status>
+<summary>Monitor "Repin result" stream ended</summary>
+<event>test/test_hacks/test_hacks.c:456: test_frames_of_every_hack_but_maze_match_main: Expected 1 Was 11176542174793057163. XMatrix	[FAILED]
+============ 57 test cases: 1 failed, 55 succeeded in 00:02:09.980 ============</event>
+If this event is something the user would act on now, send a PushNotification. Routine or benign output doesn't need one.
+</task-notification>
+
+---
+
+Great. Can confirm that XMatrix went straight to the rain, and the Pyro background was black after Hexadrop.
