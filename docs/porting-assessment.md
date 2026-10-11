@@ -34,8 +34,8 @@ it with `uv run tools/score_hacks.py`.
 | S | 2D, and the unmodified source compiles against the shim | 4 |
 | M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 17 |
 | L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 65 |
-| XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 134 |
-| Ported | Already running on the device, so no rating | 63 |
+| XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 135 |
+| Ported | Already running on the device, so no rating | 62 |
 
 ## Speed
 
@@ -187,13 +187,15 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Fireworkx (as copied, double) | 2.0-2.6 | 367-587 ms | 32.4-36.0 ms | 0 ms | about 3.1 MB |
 | Fireworkx (single precision, float frand) | 2.8 | 327-348 ms | 32.4 ms | 0 ms | about 3.1 MB |
 | Fireworkx (scale 2) | 7.6-7.8 | 96-99 ms | 32.5 ms | 0 ms | about 0.8 MB |
-| Fireworkx (scale 3, registered) | 10.6-11.2 | 56-62 ms | 32.5-32.6 ms | 0 ms | about 0.35 MB |
+| Fireworkx (scale 3, upstream's constants) | 10.6-11.2 | 56-62 ms | 32.5-32.6 ms | 0 ms | about 0.35 MB |
+| Fireworkx (scale 3, lengths scaled, 2 shells of 120 sparks, registered) | 12.4-12.6 | 45.8-47.1 ms | 32.5 ms | 0 ms | about 0.33 MB |
 | Fireworkx (scale 4) | 11.8-12.6 | 46-51 ms | 32.6 ms | 0 ms | about 0.2 MB |
 | Starfish (as copied) | 8.2-9.2 | 76-87 ms | 32.6-35.5 ms | 0 ms | none measurable |
 | Starfish (registered: float polygon fill) | 19.0-19.2 | 18.6-19.0 ms | 32.5 ms | 0 ms | none measurable |
 | Goop (as copied, opaque layers) | 7.0-7.4 | 103-109 ms | 32.4 ms | 0 ms | about 0.75 MB |
 | Goop (opaque layers, `GOOP_ALPHA=32`) | 14.4-14.6 | 35.1-35.6 ms | 32.5-32.6 ms | 0 ms | about 0.3 MB |
-| Goop (translucent layers, registered) | 11.0-11.4 | 54-57 ms | 32.5 ms | 0 ms | about 0.3 MB |
+| Goop (translucent layers, full clear) | 11.0-11.4 | 54-57 ms | 32.5 ms | 0 ms | about 0.3 MB |
+| Goop (translucent, packed blend, partial erase, registered) | 14.6-15.2 | 44.7-46.9 ms | 19.8-21.3 ms | 0 ms | about 0.3 MB |
 | Loop (as copied, 100 ms delay) | 8.6-9.0 | 3.5-6.9 ms | 1.1-5.1 ms | 101-110 ms | about 1 MB |
 | Loop (registered, 50 ms delay) | 15.4-16.8 | 4.5-10.4 ms | 1.5-3.7 ms | 52-54 ms | about 1 MB |
 | Hypnowheel | 1.4 | 720 ms | 32.6 ms | 0 ms | about 0.64 MB |
@@ -667,6 +669,16 @@ blended pixel fill (about 70 percent of the step) from its per-triangle setup.
 Qix's internal heap read about 43 KB low while it ran, which was its leaked
 segment arrays (fixed). Colour and pace were not judged.
 
+Fireworkx's registered row scales the lengths it works in (spark speed,
+gravity, the flash light's reach, the velocity jitter) by the width it renders
+at over the 1024 it is tuned for, throws 120 sparks a shell instead of 500, and
+fires two of its four shells (`tools/fireworkx_patch.py`; the build flags are
+`FIREWORKX_PIXCOUNT` and `FIREWORKX_SHELLS`): at a third of its size upstream's
+constants made every burst fill the picture and the glow blur saturate to
+white. Goop's registered row blends all three colour channels with one
+multiply (`float_polygon.h`) and clears only where last frame's blobs were
+(`span_erase.h`), which also shrinks its push.
+
 ## Suggested order for shim stage 2
 
 Shim gaps across 2D hacks, ranked so gaps that block hacks
@@ -690,9 +702,9 @@ needing few additions come first.
 | Hack | Kind | Effort | Speed | Ported | Shim gaps | Flags | LOC |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | celtic | 2d | S | high (1.2 ms) | ❌ | - | - | 1141 |
-| cwaves | 2d | S | high (0.73 ms) | - | - | - | 219 |
-| greynetic | 2d | S | medium (0.017 ms) | - | - | - | 297 |
-| halftone | 2d | S | high (0.67 ms) | ❌ | - | pixmaps | 413 |
+| cwaves | 2d | S | high (0.7 ms) | - | - | - | 219 |
+| greynetic | 2d | S | medium (0.016 ms) | - | - | - | 297 |
+| halftone | 2d | S | high (0.66 ms) | ❌ | - | pixmaps | 413 |
 | abstractile | 2d | M | - | - | `make_color_loop`, `make_color_ramp` | - | 1625 |
 | ant | 2d | M | - | - | `NUMSTIPPLES`, `automata.h`, `hexagonUnit`, `triangleUnit` | - | 1351 |
 | attraction | 2d | M | - | - | `make_color_ramp` | - | 1115 |
@@ -847,6 +859,7 @@ needing few additions come first.
 | hopffibration | gl | XL | - | - | - | - | 3580 |
 | hydrostat | gl | XL | - | - | - | - | 796 |
 | hypertorus | gl | XL | - | - | - | float-heavy | 2150 |
+| hypnowheel | gl | XL | - | ❌ | - | - | 335 |
 | jigglypuff | gl | XL | - | - | - | - | 1125 |
 | jigsaw | gl | XL | - | - | - | - | 1512 |
 | juggler3d | gl | XL | - | - | - | float-heavy | 3023 |
@@ -968,7 +981,6 @@ needing few additions come first.
 | xmatrix | 2d | - | - | ✅ | `images/gen/matrix1_png.h`, `images/gen/matrix1b_png.h`, `images/gen/matrix2_png.h`, `images/gen/matrix2b_png.h`, `matrix1_png`, `matrix1b_png`, `matrix2_png`, `matrix2b_png` | pixmaps, readback | 1915 |
 | cubicgrid | gl | - | - | ✅ | - | - | 322 |
 | gears | gl | - | 65-330 ms measured | ✅ | - | - | 953 |
-| hypnowheel | gl | - | 720 ms measured | ✅ | - | - | 335 |
 | morph3d | gl | - | 48-86 ms measured | ✅ | - | - | 841 |
 | stonerview | gl | - | 12.6-15.6 ms measured | ✅ | - | - | 156 |
 | unknownpleasures | gl | - | 162-169 ms measured | ✅ | - | readback | 736 |
@@ -978,6 +990,7 @@ needing few additions come first.
 - **celtic**: shelved at 1.2 fps and 300 KB of heap, see issue #37
 - **flurry**: needs GL TinyGL lacks, est. under 1 fps, issue #70
 - **halftone**: 5 fps; the shim's ellipse fill is 80% of it, issue #57
+- **hypnowheel**: 1.4 fps, blended pixel fill; Rod dropped it, issue #73
 
 ## Excluded files
 
