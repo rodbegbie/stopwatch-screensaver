@@ -574,6 +574,26 @@ void test_make_color_ramp_blends_saturation_and_value_too(void) {
   TEST_ASSERT_TRUE(colors[4].green > 0x2000 && colors[4].green < 0x6000);
 }
 
+void test_a_gc_remembers_its_function_but_draws_copy(void) {
+  XGCValues v = {0};
+  GC plain = XCreateGC(dpy, win, 0, &v);
+  TEST_ASSERT_EQUAL_INT(GXcopy, plain->function);
+  v.function = GXor;
+  GC ored = XCreateGC(dpy, win, GCFunction, &v);
+  TEST_ASSERT_EQUAL_INT(GXor, ored->function);
+  XSetFunction(dpy, ored, GXxor);
+  TEST_ASSERT_EQUAL_INT(GXxor, ored->function);
+  v.function = GXcopy;
+  XChangeGC(dpy, ored, GCFunction, &v);
+  TEST_ASSERT_EQUAL_INT(GXcopy, ored->function);
+  XSetFunction(dpy, ored, GXor);
+  XSetForeground(dpy, ored, 0x1234);
+  XFillRectangle(dpy, win, ored, 2, 2, 2, 2);
+  TEST_ASSERT_EQUAL_HEX(0x1234, at(2, 2));
+  XFreeGC(dpy, plain);
+  XFreeGC(dpy, ored);
+}
+
 void test_visual_depth_is_sixteen(void) {
   TEST_ASSERT_EQUAL_INT(16, visual_depth(NULL, NULL));
 }
@@ -3046,6 +3066,7 @@ int main(void) {
   RUN_TEST(test_make_color_ramp_takes_the_short_way_round_the_hue_wheel);
   RUN_TEST(test_make_color_ramp_takes_the_short_way_backwards_too);
   RUN_TEST(test_make_color_ramp_blends_saturation_and_value_too);
+  RUN_TEST(test_a_gc_remembers_its_function_but_draws_copy);
   RUN_TEST(test_visual_depth_is_sixteen);
   RUN_TEST(test_xshm_image_is_a_16_bit_image_put_where_asked);
   RUN_TEST(test_xshm_image_taller_than_the_window_edge_is_clipped);

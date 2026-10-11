@@ -109,6 +109,7 @@ implied warranty.
 | `firmware/src/hacks/vermiculate/vermiculate.c` | Copyright (C) 2001 Tyler Pierce | jwz permission notice (above) |
 | `firmware/src/hacks/cynosure/cynosure.c` | Copyright 1996 ozymandias G desiderata; ported by Jamie Zawinski 1997 | ogd notice (see "ozymandias G desiderata notice (Cynosure)" below) |
 | `firmware/src/hacks/moire/moire.c` | Copyright (c) 1997-2013 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/moire2/moire2.c` | Copyright (c) 1997-2013 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.c` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.h` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/normals.c` | Copyright (c) 2002-2004 Jamie Zawinski | jwz permission notice (above) |
