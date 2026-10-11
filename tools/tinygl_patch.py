@@ -592,6 +592,47 @@ REPLACEMENTS: tuple[Replace, ...] = (
         "void glopEnableDisable(GLParam* p) {\n\tGLContext* c = gl_get_context();\n"
         "\tGL_SHADE_FLUSH();\n",
     ),
+    # Bands (issue #43): a held frame replays each primitive into a ZBuffer
+    # only a band of rows tall, its y moved up by the band's first row, so the
+    # rasterisers draw only rows 0 to ysize - 1 whatever the points say.
+    Replace(
+        "src/ztriangle.h",
+        "\tZBufferPoint *pr1, *pr2, *l1, *l2; \n",
+        "\tZBufferPoint *pr1, *pr2, *l1, *l2; \n\tGLint band_y = p0->y;\n",
+    ),
+    Replace(
+        "src/ztriangle.h",
+        "\t\t\tnb_lines--;\n#ifndef DRAW_LINE\n",
+        "\t\t\tnb_lines--;\n\t\t\tif (band_y >= zb->ysize)\n\t\t\t\treturn;\n"
+        "\t\t\tif (band_y >= 0)\n#ifndef DRAW_LINE\n",
+    ),
+    Replace(
+        "src/ztriangle.h",
+        "\t\t\tpp1 += zb->xsize;\n",
+        "\t\t\tpp1 += zb->xsize;\n\t\t\tband_y++;\n",
+    ),
+    Replace(
+        "src/zline.h",
+        "if (ZCMP(zz, *pz)) {",
+        "if (ZB_IN_BAND(zb, pp) && ZCMP(zz, *pz)) {",
+    ),
+    Replace(
+        "src/zline.h",
+        "#define PUTPIXEL() RGBPIXEL\n",
+        "#define PUTPIXEL() do { if (ZB_IN_BAND(zb, pp)) { RGBPIXEL; } } while (0)\n",
+    ),
+    Replace(
+        "src/zline.h",
+        "\tGLint n, dx, dy, sx, pp_inc_1, pp_inc_2;\n",
+        "\tGLint n, dx, dy, sx, pp_inc_1, pp_inc_2;\n"
+        "#ifndef ZB_IN_BAND\n#define ZB_IN_BAND(zb, pp) ((pp) >= (PIXEL*)(zb)->pbuf && "
+        "(GLbyte*)(pp) < (GLbyte*)(zb)->pbuf + (zb)->ysize * (zb)->linesize)\n#endif\n",
+    ),
+    Replace(
+        "src/zline.c",
+        "\tif (zbps == 1) {\n",
+        "\tif (zbps == 1) {\n\t\tif (p->y < 0 || p->y >= zb->ysize)\n\t\t\treturn;\n",
+    ),
 )
 
 # Anchors that earlier patches wrote (the dirty-rectangle hooks and the

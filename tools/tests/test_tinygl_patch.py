@@ -286,3 +286,16 @@ def test_lazy_lighting_defers_the_eye_normal_but_keeps_the_original(patched):
     assert "#ifdef GL_LAZY_SHADE\n\t\tv->normal.X = c->current_normal.X;" in vertex
     assert tp.NORMAL_TRANSFORM in vertex
     assert "gl_eye_normal(v, &n);\n\tgl_shade_vertex(v);" in patched["src/light.c"]
+
+
+def test_rasterisers_stay_inside_a_band(patched):
+    triangle = patched["src/ztriangle.h"]
+    assert "GLint band_y = p0->y;" in triangle
+    assert "if (band_y >= zb->ysize)\n\t\t\t\treturn;" in triangle
+    assert "if (band_y >= 0)\n#ifndef DRAW_LINE" in triangle
+    assert "band_y++;" in triangle
+    line = patched["src/zline.h"]
+    assert "define ZB_IN_BAND(zb, pp)" in line
+    assert "if (ZB_IN_BAND(zb, pp) && ZCMP(zz, *pz))" in line
+    assert "if (ZB_IN_BAND(zb, pp)) { RGBPIXEL; }" in line
+    assert "if (p->y < 0 || p->y >= zb->ysize)" in patched["src/zline.c"]
