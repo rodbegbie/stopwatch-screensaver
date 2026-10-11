@@ -1359,8 +1359,86 @@ void test_the_disc_spans_go_with_the_context(void) {
   TEST_ASSERT_NULL(glshim_span_x1);
 }
 
+static void flat_view(void) {
+  glViewport(0, 0, SIZE, SIZE);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  glDisable(GL_LIGHTING);
+}
+
+void test_disc_fill_leaves_the_corners_alone(void) {
+  TEST_ASSERT_EQUAL_INT(0, canvas_set_disc(&cv, malloc));
+  canvas_clear(&cv, SENTINEL);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  flat_view();
+  glColor3f(1, 0, 0);
+  glBegin(GL_TRIANGLES);
+  glVertex3f(-1, -1, 0);
+  glVertex3f(1, -1, 0);
+  glVertex3f(1, 1, 0);
+  glVertex3f(-1, -1, 0);
+  glVertex3f(1, 1, 0);
+  glVertex3f(-1, 1, 0);
+  glEnd();
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, cv.px[0]);
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, cv.px[SIZE - 1]);
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, cv.px[(SIZE - 1) * SIZE]);
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, cv.px[SIZE * SIZE - 1]);
+  assert_disc_is(rgb565(255, 0, 0));
+}
+
+/* Two smooth, depth-tested triangles over the top left corner, where the disc
+ * cuts every scanline short on the left: clipping must start each scanline
+ * with the depth and colour it would have had, so inside the disc the frame
+ * matches one drawn without a disc. */
+static void two_triangles_in_the_corner(void) {
+  flat_view();
+  glEnable(GL_DEPTH_TEST);
+  glClearColor(0, 0, 0, 0);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glBegin(GL_TRIANGLES);
+  glColor3f(1, 0, 0);
+  glVertex3f(-1, 1, -0.6f);
+  glColor3f(0, 1, 0);
+  glVertex3f(0.3f, 1, 0.8f);
+  glColor3f(0, 0, 1);
+  glVertex3f(-1, -0.3f, 0.8f);
+  glColor3f(1, 1, 0);
+  glVertex3f(-1, 0.9f, 0.1f);
+  glColor3f(0, 1, 1);
+  glVertex3f(0.2f, 0.9f, 0.1f);
+  glColor3f(1, 0, 1);
+  glVertex3f(-1, -0.2f, 0.1f);
+  glEnd();
+}
+
+void test_disc_clipped_triangle_matches_the_unclipped_one_inside(void) {
+  uint16_t plain[SIZE * SIZE];
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  two_triangles_in_the_corner();
+  memcpy(plain, cv.px, sizeof plain);
+  TEST_ASSERT_EQUAL_INT(0, canvas_set_disc(&cv, malloc));
+  canvas_clear(&cv, SENTINEL);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  two_triangles_in_the_corner();
+  int checked = 0;
+  for (int y = 0; y < SIZE; y++) {
+    int x0, x1;
+    if (!canvas_visible_span(&cv, y, &x0, &x1)) continue;
+    for (int x = x0; x <= x1; x++, checked++)
+      TEST_ASSERT_EQUAL_HEX16(plain[y * SIZE + x], cv.px[y * SIZE + x]);
+  }
+  TEST_ASSERT_EQUAL_HEX16(SENTINEL, cv.px[0]);
+  TEST_ASSERT_NOT_EQUAL(0, plain[0]); /* the triangles do reach the corner */
+  TEST_ASSERT_TRUE(checked > SIZE * SIZE / 2);
+}
+
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_disc_fill_leaves_the_corners_alone);
+  RUN_TEST(test_disc_clipped_triangle_matches_the_unclipped_one_inside);
   RUN_TEST(test_no_disc_clear_is_unchanged);
   RUN_TEST(test_disc_clear_leaves_the_corners_alone);
   RUN_TEST(test_disc_depth_clear_is_clipped_too);
