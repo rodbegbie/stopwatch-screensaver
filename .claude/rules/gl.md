@@ -162,6 +162,19 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   the margin: `p1.x - 1` to `p2.x + 1` shrinks a right-to-left line's box.
   `tools/gl_budget.py` gets its boxes from `glshim_box_observer` so it cannot
   drift from the firmware's rule.
+- The round panel (issue #77): when the canvas has a disc, `glshim_open`
+  exports its spans at TinyGL's size (`glshim_span_x0/x1`; at scale 2 a pixel
+  counts if any of its 2 by 2 block does). `glClear` (colour and depth) and the
+  scale-2 swap skip the corners, and `tinygl_patch.py` cuts each fill scanline
+  to the span, advancing depth and colour to the new first pixel. The clip is
+  decided once per triangle: the disc is convex, so a triangle with every vertex
+  inside needs none. Checking every scanline cost Gears 3.2 ms a frame though it
+  never reaches the corners; per triangle it costs 0.46 ms (58.27 to 58.73).
+  HexTrail went from 48.62 to 45.32 ms, CubicGrid's clear from 12.3 to 10.0 ms.
+  Textured fills (their own `DRAW_LINE`), lines and points are not clipped.
+  Host test canvases have no disc, so pinned hashes are unchanged;
+  `test_push_present` replays every hack on a disc canvas and compares only the
+  disc. `gl_budget.py` counts fill without a disc, so it overstates corner fill.
 - `glDrawPixels` keeps its data pointer in a 4-byte `GLParam`, so it cannot draw
   on a 64-bit host (fine on the 32-bit board); it has a patch-level test only.
 - A hack's own `*delay` is a pause after each frame and the loop credits only the
