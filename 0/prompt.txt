@@ -1,0 +1,35 @@
+Unknown Pleasures and Hypnowheel are the GL hacks we've worked on that I'd most like to see run faster.
+
+---
+
+Yes, please do.
+
+---
+
+Oh, and pipes.  It would be good to see if that can be improved.  I think the code from our investigation of it is still on a branch somewhere.
+
+---
+
+Issue 73 was also related to Hypnowheel performance, so might offer some ideas.  Pixel-identical isn't important. Small differences are fine.
+
+---
+
+Would there be a downside to it being the one path?
+
+---
+
+<task-notification>
+<task-id>bs28z2sqx</task-id>
+<tool-use-id>toolu_01M2BmmEuezqUEbiCCn8jdtL</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/6133968b-782a-4c24-bf62-d71759b14157/tasks/bs28z2sqx.output</output-file>
+<status>completed</status>
+<summary>Background command "Run the full host suite on the merged branch" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Yes, one path with the fallback sounds right
+
+---
+
+Hard to say -- it's more a "i know it when I see it" think when it's running on the device.
