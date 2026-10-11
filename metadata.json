@@ -3,7 +3,7 @@
   "checkpoint_id": "01M4P939MAJ47WQ3AXRERSR0Q7",
   "strategy": "manual-commit",
   "branch": "feature/77-round-screen-corners",
-  "checkpoints_count": 1,
+  "checkpoints_count": 6,
   "files_touched": [
     "firmware/src/main.cpp",
     "firmware/test/test_canvas/test_canvas.c"
@@ -15,6 +15,20 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
-  ]
+  ],
+  "token_usage": {
+    "input_tokens": 26,
+    "cache_creation_tokens": 19057,
+    "cache_read_tokens": 2755579,
+    "output_tokens": 7348,
+    "api_call_count": 13
+  }
 }
