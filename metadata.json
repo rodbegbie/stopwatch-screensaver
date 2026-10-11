@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4PM6BKGMZZF8686RVHKSP0N",
+  "strategy": "manual-commit",
+  "branch": "wip/56-stroker-seam",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "firmware/test/test_xshim/test_xshim.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 26,
+    "cache_creation_tokens": 9372,
+    "cache_read_tokens": 6410426,
+    "output_tokens": 11546,
+    "api_call_count": 13
+  }
+}
