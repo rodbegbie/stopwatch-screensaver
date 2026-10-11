@@ -60,6 +60,13 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
 - TinyGL leaves specular lighting off (`zEnableSpecular = 0`) unless the
   application calls `glSetEnableSpecular(1)`, so Gears has no highlights
   and `glMateriali` is invisible without it. Enabling it costs speed (#43).
+- TinyGL is built without `GL_POLYGON` (`TGL_FEATURE_GL_POLYGON 0`), which
+  also compiles out `GL_LINE_LOOP`: both draw nothing. StonerView's square
+  outlines and Unknown Pleasures' rim loop have never been drawn on the board.
+  Such a primitive used to keep counting vertices, and the fifth overwrote the
+  matrices and colours after `c->vertex` (Pipes' `buildlwo.c` crashed the
+  host); `tinygl_patch.py` now holds it at the first slot. Check a new hack
+  for both.
 - TinyGL lacks `glTexGeni`, `glFog*` and `glInterleavedArrays` (#46). The
   header declares `glFog*` and the `GL_SPHERE_MAP` enum; the library defines
   neither.

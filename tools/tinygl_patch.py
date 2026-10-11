@@ -624,6 +624,15 @@ REPLACEMENTS: tuple[Replace, ...] = (
         "#define TGL_BLEND_FUNC_RGB(rr, gg, bb, dest){ if (tgl_adds) { (dest) = glshim_add565((dest), "
         "RGB_TO_PIXEL((rr), (gg), (bb))); } else\t",
     ),
+    # Built without GL_POLYGON (which also drops GL_LINE_LOOP), an unhandled
+    # primitive draws nothing but kept counting vertices, and the fifth was
+    # written past c->vertex over the matrices and colours after it.
+    Replace(
+        "src/vertex.c",
+        "#else\n\tdefault:\n\t\tbreak;\n#endif\n\t}\n\n\tc->vertex_n = n;",
+        "#else\n\tdefault:\n\t\tn = 0; /* draws nothing; must not run past c->vertex */\n"
+        "\t\tbreak;\n#endif\n\t}\n\n\tc->vertex_n = n;",
+    ),
 )
 
 # Anchors that earlier patches wrote (the dirty-rectangle hooks and the
