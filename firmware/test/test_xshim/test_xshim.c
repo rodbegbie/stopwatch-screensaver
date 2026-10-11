@@ -17,6 +17,7 @@
 #include "utils.h"
 #include "x11shim/arc.h"
 #include "x11shim/stroke.h"
+#include "X11/Intrinsic.h"
 #include "x11shim/xshim.h"
 #include "ximage-loader.h"
 
@@ -2304,6 +2305,140 @@ void test_get_pixel_on_an_image_without_data_reads_zero(void) {
   XDestroyImage(im);
 }
 
+static void plot(Drawable d, int x, int y, unsigned long pixel) {
+  XGCValues v = {0};
+  GC gc = XCreateGC(dpy, d, 0, &v);
+  XSetForeground(dpy, gc, pixel);
+  XDrawPoint(dpy, d, gc, x, y);
+  XFreeGC(dpy, gc);
+}
+
+void test_get_image_copies_a_pixmap_region_as_32_bit_pixels(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 4, 4, 16);
+  plot(p, 1, 1, 0xABCD);
+  plot(p, 2, 2, 0x1234);
+  XImage *im = XGetImage(dpy, p, 1, 1, 2, 2, ~0UL, ZPixmap);
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_INT(2, im->width);
+  TEST_ASSERT_EQUAL_INT(2, im->height);
+  TEST_ASSERT_EQUAL_INT(32, im->bits_per_pixel);
+  TEST_ASSERT_EQUAL_HEX64(0xABCD, XGetPixel(im, 0, 0));
+  TEST_ASSERT_EQUAL_HEX64(0, XGetPixel(im, 1, 0));
+  TEST_ASSERT_EQUAL_HEX64(0x1234, XGetPixel(im, 1, 1));
+  XDestroyImage(im);
+  XFreePixmap(dpy, p);
+}
+
+void test_get_image_from_the_window_reads_the_canvas(void) {
+  plot(win, 5, 6, 0x07E0);
+  XImage *im = XGetImage(dpy, win, 4, 5, 3, 3, ~0UL, ZPixmap);
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_HEX64(0x07E0, XGetPixel(im, 1, 1));
+  XDestroyImage(im);
+}
+
+void test_get_image_refuses_a_bitmap_format_none_and_an_empty_region(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 4, 4, 16);
+  TEST_ASSERT_NULL(XGetImage(dpy, p, 0, 0, 2, 2, ~0UL, XYPixmap));
+  TEST_ASSERT_NULL(XGetImage(dpy, None, 0, 0, 2, 2, ~0UL, ZPixmap));
+  TEST_ASSERT_NULL(XGetImage(dpy, p, 0, 0, 0, 2, ~0UL, ZPixmap));
+  XFreePixmap(dpy, p);
+}
+
+void test_get_image_reads_zero_where_the_region_hangs_off_the_drawable(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 4, 4, 16);
+  plot(p, 0, 0, 0x00FF);
+  plot(p, 3, 3, 0x0F0F);
+  XImage *im = XGetImage(dpy, p, -1, -1, 6, 6, ~0UL, ZPixmap);
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_HEX64(0, XGetPixel(im, 0, 0));
+  TEST_ASSERT_EQUAL_HEX64(0x00FF, XGetPixel(im, 1, 1));
+  TEST_ASSERT_EQUAL_HEX64(0x0F0F, XGetPixel(im, 4, 4));
+  TEST_ASSERT_EQUAL_HEX64(0, XGetPixel(im, 5, 5));
+  XDestroyImage(im);
+  XFreePixmap(dpy, p);
+}
+
+void test_put_image_writes_the_low_16_bits_into_a_pixmap(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 4, 4, 16);
+  XImage *im = XCreateImage(dpy, NULL, 24, ZPixmap, 0, NULL, 2, 2, 32, 0);
+  im->data = (char *)calloc(2, (size_t)im->bytes_per_line);
+  XPutPixel(im, 0, 0, 0x1ABCD);
+  XPutPixel(im, 1, 1, 0x4321);
+  XGCValues v = {0};
+  GC gc = XCreateGC(dpy, p, 0, &v);
+  XPutImage(dpy, p, gc, im, 0, 0, 1, 2, 2, 2);
+  XImage *back = XGetImage(dpy, p, 0, 0, 4, 4, ~0UL, ZPixmap);
+  TEST_ASSERT_EQUAL_HEX64(0xABCD, XGetPixel(back, 1, 2));
+  TEST_ASSERT_EQUAL_HEX64(0x4321, XGetPixel(back, 2, 3));
+  TEST_ASSERT_EQUAL_HEX64(0, XGetPixel(back, 0, 0));
+  XDestroyImage(back);
+  XDestroyImage(im);
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+}
+
+void test_put_image_on_the_window_clips_and_marks_the_rows_dirty(void) {
+  canvas_clear_dirty(&cv);
+  XImage *im = XCreateImage(dpy, NULL, 24, ZPixmap, 0, NULL, 4, 4, 32, 0);
+  im->data = (char *)calloc(4, (size_t)im->bytes_per_line);
+  for (int y = 0; y < 4; y++)
+    for (int x = 0; x < 4; x++) XPutPixel(im, x, y, 0x0100 + y * 4 + x);
+  XGCValues v = {0};
+  GC gc = XCreateGC(dpy, win, 0, &v);
+  XPutImage(dpy, win, gc, im, 0, 0, 14, 14, 4, 4);
+  TEST_ASSERT_EQUAL_HEX(0x0100, at(14, 14));
+  TEST_ASSERT_EQUAL_HEX(0x0105, at(15, 15));
+  int x0, x1;
+  TEST_ASSERT_TRUE(canvas_dirty_row(&cv, 15, &x0, &x1));
+  TEST_ASSERT_EQUAL_INT(14, x0);
+  TEST_ASSERT_EQUAL_INT(15, x1);
+  XPutImage(dpy, win, gc, im, 0, 0, -10, -10, 4, 4);
+  XPutImage(dpy, win, gc, im, 3, 3, 100, 100, 50, 50);
+  XFreeGC(dpy, gc);
+  XDestroyImage(im);
+}
+
+void test_mirroring_each_glyph_column_block_through_get_and_put_image(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 4, 1, 16);
+  for (int x = 0; x < 4; x++) plot(p, x, 0, 0x10 + x);
+  XImage *im = XGetImage(dpy, p, 0, 0, 4, 1, ~0UL, ZPixmap);
+  unsigned long row[2];
+  for (int blk = 0; blk < 2; blk++) {
+    for (int i = 0; i < 2; i++) row[i] = XGetPixel(im, blk * 2 + i, 0);
+    for (int i = 0; i < 2; i++) XPutPixel(im, blk * 2 + i, 0, row[1 - i]);
+  }
+  XGCValues v = {0};
+  GC gc = XCreateGC(dpy, p, 0, &v);
+  XPutImage(dpy, p, gc, im, 0, 0, 0, 0, 4, 1);
+  XImage *back = XGetImage(dpy, p, 0, 0, 4, 1, ~0UL, ZPixmap);
+  TEST_ASSERT_EQUAL_HEX64(0x11, XGetPixel(back, 0, 0));
+  TEST_ASSERT_EQUAL_HEX64(0x10, XGetPixel(back, 1, 0));
+  TEST_ASSERT_EQUAL_HEX64(0x13, XGetPixel(back, 2, 0));
+  TEST_ASSERT_EQUAL_HEX64(0x12, XGetPixel(back, 3, 0));
+  XDestroyImage(back);
+  XDestroyImage(im);
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+}
+
+void test_the_device_has_no_keyboard_so_lookup_string_finds_nothing(void) {
+  XEvent e = {0};
+  e.type = KeyPress;
+  char c = 'x';
+  KeySym ks = 99;
+  TEST_ASSERT_EQUAL_INT(0, XLookupString(&e.xkey, &c, 1, &ks, 0));
+  TEST_ASSERT_EQUAL_HEX64(0, ks);
+  TEST_ASSERT_EQUAL_INT('x', c);
+}
+
+void test_the_timer_stand_ins_never_fire_and_can_be_cancelled(void) {
+  XtAppContext app = XtDisplayToApplicationContext(dpy);
+  XtIntervalId id = XtAppAddTimeOut(app, 333, NULL, NULL);
+  TEST_ASSERT_EQUAL_HEX64(0, id);
+  XtRemoveTimeOut(id);
+}
+
 void test_create_image_refuses_depths_and_sizes_it_cannot_hold(void) {
   TEST_ASSERT_NULL(XCreateImage(dpy, NULL, 8, ZPixmap, 0, NULL, 4, 4, 8, 0));
   TEST_ASSERT_NULL(XCreateImage(dpy, NULL, 32, ZPixmap, 0, NULL, 0, 4, 32, 0));
@@ -2372,6 +2507,15 @@ int main(void) {
   RUN_TEST(test_image_pixels_round_trip_through_a_caller_allocated_buffer);
   RUN_TEST(test_image_pixel_outside_the_image_reads_zero_and_writes_nothing);
   RUN_TEST(test_get_pixel_on_an_image_without_data_reads_zero);
+  RUN_TEST(test_get_image_copies_a_pixmap_region_as_32_bit_pixels);
+  RUN_TEST(test_get_image_from_the_window_reads_the_canvas);
+  RUN_TEST(test_get_image_refuses_a_bitmap_format_none_and_an_empty_region);
+  RUN_TEST(test_get_image_reads_zero_where_the_region_hangs_off_the_drawable);
+  RUN_TEST(test_put_image_writes_the_low_16_bits_into_a_pixmap);
+  RUN_TEST(test_put_image_on_the_window_clips_and_marks_the_rows_dirty);
+  RUN_TEST(test_mirroring_each_glyph_column_block_through_get_and_put_image);
+  RUN_TEST(test_the_device_has_no_keyboard_so_lookup_string_finds_nothing);
+  RUN_TEST(test_the_timer_stand_ins_never_fire_and_can_be_cancelled);
   RUN_TEST(test_create_image_refuses_depths_and_sizes_it_cannot_hold);
   RUN_TEST(test_file_to_ximage_has_no_decoder_and_returns_null);
   RUN_TEST(test_ease_in_out_sine_runs_from_0_to_1_through_one_half);

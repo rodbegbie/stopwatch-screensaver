@@ -97,11 +97,22 @@ typedef struct {
   short x1, y1, x2, y2;
 } XSegment;
 
+typedef unsigned long KeySym;
+
+/* The device has no keyboard: nothing makes one, and XLookupString finds no
+ * characters in it. The type exists so a hack's key handler compiles. */
+typedef struct {
+  int type;
+  unsigned int state;
+  unsigned int keycode;
+} XKeyEvent;
+
 typedef union {
   int type;
   struct {
     int type;
   } xany;
+  XKeyEvent xkey;
   struct {
     int type;
     unsigned int button;
@@ -115,6 +126,7 @@ typedef union {
   } xmotion;
 } XEvent;
 
+#define KeyPress 2
 #define ButtonPress 4
 #define ButtonRelease 5
 #define MotionNotify 6
@@ -270,6 +282,7 @@ int XCopyPlane(Display *, Drawable src, Drawable dst, GC, int src_x,
 /* An XImage is a block of pixels in the hack's own memory; nothing draws it.
  * Only 32-bit ZPixmap images exist, which is all the hacks that use one (a
  * mask scaled down from a loaded picture) ask for. */
+#define XYPixmap 1
 #define ZPixmap 2
 typedef struct XImage {
   int width, height;
@@ -291,6 +304,21 @@ XImage *XCreateImage(Display *, Visual *, unsigned int depth, int format,
 unsigned long XGetPixel(XImage *, int x, int y);
 int XPutPixel(XImage *, int x, int y, unsigned long pixel);
 int XDestroyImage(XImage *);
+
+/* Copies a region of the window or a colour pixmap into a new image of
+ * 32-bit pixels holding the raw RGB565 value. Only ZPixmap; a bitmap format,
+ * None, or an empty region returns NULL. Pixels outside the drawable read 0.
+ * The caller frees it with XDestroyImage. plane_mask is ignored. */
+XImage *XGetImage(Display *, Drawable, int x, int y, unsigned int w,
+                  unsigned int h, unsigned long plane_mask, int format);
+/* Writes the low 16 bits of each pixel of the image region onto the window or
+ * a colour pixmap, clipped to both. The GC (and its clip mask) is ignored. */
+int XPutImage(Display *, Drawable, GC, XImage *, int src_x, int src_y,
+              int dst_x, int dst_y, unsigned int w, unsigned int h);
+
+/* Always finds no characters (see XKeyEvent) and sets *keysym to 0. */
+int XLookupString(XKeyEvent *, char *buffer, int bytes, KeySym *keysym,
+                  void *status);
 
 /* Drawing is synchronous, so there is nothing to wait for. */
 int XSync(Display *, Bool discard);
