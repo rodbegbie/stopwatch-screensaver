@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4NVBBG7CA42D4NSYFT1CQ4Q",
+  "strategy": "manual-commit",
+  "branch": "feature/43-gl-speed-experiments",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "firmware/src/glshim/glshim_prof.h",
+    "firmware/test/test_glshim/test_glshim.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 50,
+    "cache_creation_tokens": 29481,
+    "cache_read_tokens": 3957730,
+    "output_tokens": 11843,
+    "api_call_count": 25
+  }
+}

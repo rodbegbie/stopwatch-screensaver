@@ -1,0 +1,1 @@
+Yes to all four, let's design the banded renderer.  (Also, open a PR for the fix/tinygl-unhandled-primitive fix)
