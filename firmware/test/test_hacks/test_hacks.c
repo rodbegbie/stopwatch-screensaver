@@ -1156,6 +1156,34 @@ void test_blit_clips_at_every_edge(void) {
   xshim_close_display(dpy);
 }
 
+/* The runner waits the returned delay after the push, so the hack subtracts
+ * the time its own step took to keep to 30 steps a second. */
+static double step_cost;
+static int step_reads;
+static double step_clock(void) {
+  return fake_now + (step_reads++ % 2 ? step_cost : 0.0);
+}
+
+static unsigned long toasters_delay_with_step_taking(double seconds) {
+  const HackEntry *e = g_hacks[index_of("ad-flyingtoasters")];
+  Display *dpy = xshim_open_display(&cv);
+  void *st = e->init(dpy, XSHIM_WINDOW);
+  TEST_ASSERT_NOT_NULL(st);
+  step_cost = seconds;
+  step_reads = 0;
+  xshim_set_clock(step_clock);
+  const unsigned long delay = e->draw(dpy, XSHIM_WINDOW, st);
+  xshim_set_clock(NULL);
+  e->free(dpy, XSHIM_WINDOW, st);
+  xshim_close_display(dpy);
+  return delay;
+}
+
+void test_toasters_delay_is_a_thirtieth_of_a_second_less_the_step(void) {
+  TEST_ASSERT_UINT_WITHIN(1, 23333, toasters_delay_with_step_taking(0.010));
+  TEST_ASSERT_EQUAL_UINT(0, toasters_delay_with_step_taking(0.040));
+}
+
 /* Each start builds five sprite images and frees them at stop. */
 void test_restart_does_not_leak(void) {
   const int hack = index_of("ad-flyingtoasters");
@@ -1240,6 +1268,7 @@ int main(void) {
   RUN_TEST(test_hextrail_stops_do_not_leak);
 #ifdef HAVE_AFTER_DARK_TOASTERS
   RUN_TEST(test_blit_clips_at_every_edge);
+  RUN_TEST(test_toasters_delay_is_a_thirtieth_of_a_second_less_the_step);
   RUN_TEST(test_restart_does_not_leak);
 #endif
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);

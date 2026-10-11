@@ -13,6 +13,7 @@
 
 #include "after_dark/toaster_sprites.h"
 #include "core/canvas.h"
+#include "doubletime.h"
 #include "hacks/ad_flyingtoasters/ad_sim.h"
 #include "hacks/ad_flyingtoasters/ad_sprites.h"
 #include "runner/hack_entry.h"
@@ -129,8 +130,12 @@ static unsigned long ad_flyingtoasters_draw(Display *dpy, Window window, void *c
   (void)dpy;
   (void)window;
   State *st = closure;
+  const double started = double_time();
   if (st) ad_sim_step(&st->sim, blit, st);
-  return 33333;
+  /* The runner waits this long after the push and counts only the push
+   * against it, so subtract the step to hold 30 steps a second. */
+  const long left = 33333 - (long)((double_time() - started) * 1e6);
+  return left > 0 ? (unsigned long)left : 0;
 }
 
 static void ad_flyingtoasters_free(Display *dpy, Window window, void *closure) {
