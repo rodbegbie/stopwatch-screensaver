@@ -3,8 +3,10 @@
   "checkpoint_id": "01M4P7ZHQYD57QEDBZ0N9ACWE2",
   "strategy": "manual-commit",
   "branch": "feature/77-round-screen-corners",
-  "checkpoints_count": 2,
-  "files_touched": null,
+  "checkpoints_count": 7,
+  "files_touched": [
+    "docs/superpowers/specs/2026-10-11-round-screen-corners-design.md"
+  ],
   "sessions": [
     {
       "metadata": "/0/metadata.json",
@@ -12,13 +14,27 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 4,
-    "cache_creation_tokens": 1015,
-    "cache_read_tokens": 931397,
-    "output_tokens": 872,
-    "api_call_count": 2
+    "input_tokens": 54,
+    "cache_creation_tokens": 90738,
+    "cache_read_tokens": 3204564,
+    "output_tokens": 14172,
+    "api_call_count": 27,
+    "subagent_tokens": {
+      "input_tokens": 22,
+      "cache_creation_tokens": 78150,
+      "cache_read_tokens": 649898,
+      "output_tokens": 197,
+      "api_call_count": 11
+    }
   }
 }
