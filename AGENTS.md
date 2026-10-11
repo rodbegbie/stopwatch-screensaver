@@ -86,6 +86,9 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
 - `cc -O1 -fstack-usage -c src/hacks/<n>/<n>.c` (with `-Isrc
   -Isrc/x11shim/include -Isrc/xs_support -DXSHIM_NATIVE -DSTANDALONE`) lists
   stack frames; keep each well under the 16 KB loop stack.
+- To review or mutation-check another branch without touching the checkout,
+  read files with `git show origin/<branch>:<path>` and run tests in a
+  `git archive` export in the scratchpad, with `vendor/` symlinked.
 
 From the repo root:
 
@@ -128,7 +131,10 @@ Set `NO_COLOR=1` on `pio` output you parse.
   Counting distinct colours could not see a consistent byte swap (a swap maps
   colours one to one): pin a hash of the frame instead, taken from a build you
   trust, and call `srandom(1)` first, because `random()` carries over between
-  tests.
+  tests. AddressSanitizer sees only writes past either end of a buffer: an x
+  overflow on an inner canvas row wraps into the next row unseen, so a clip
+  test must assert pixels, not just survive (`test_glshim`'s edge test missed
+  the right and bottom guards).
 - Changing what every hack sees (the runner, a default, a shared helper) is not
   filling a shim gap: ask Rod first.
 - Verify a delegated port yourself: `cmp` the hack, run the full suite, build

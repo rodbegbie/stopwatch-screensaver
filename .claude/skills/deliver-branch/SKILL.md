@@ -38,6 +38,10 @@ Moved verbatim from AGENTS.md.
   Bot reviews can lag about 20 minutes. `N` is the trail number (PR #12 was
   trail 6), not the PR number. For a false positive or upstream behaviour in a
   byte-identical hack, use `entire trail finding dismiss N <id> -m "<reason>"`.
+- To file your own review's findings: `entire trail finding add --trail N
+  --client-id <key> --severity high|medium|low --file <path> --start-line A
+  --end-line B -m "<body>"` (no title flag; the client id makes a re-run safe).
+  Open the body by saying an agent filed it for Rod.
 - In a worktree session create the trail with a one-line `--body`, then set the
   real body with `gh pr edit N --body-file` (keep the trail-link block), and
   check `closingIssuesReferences` with `gh pr view N --json` (it can lag a
