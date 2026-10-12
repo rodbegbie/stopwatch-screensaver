@@ -124,7 +124,6 @@ void test_registry_lists_hacks_in_order(void) {
                                          "BinaryRing",
                                          "GraphStat",
                                          "EtruscanVenus",
-                                         "BlockTube",
 #ifdef HAVE_AFTER_DARK_TOASTERS
                                          "ad-flyingtoasters",
 #endif
@@ -495,7 +494,6 @@ static const uint64_t kBaseline[] = {
     0x7ebd7eb4bca2728bull, /* BinaryRing: taken after looking at the frames (24-bit path, single precision, pixels straight to the window) */
     0x72caf5a8963dd1e9ull, /* GraphStat: taken after looking at the frames (8x8 bitmap titles) */
     0xd38b37194b632481ull, /* EtruscanVenus: taken after looking at the frames (single precision, 48 by 32, half resolution) */
-    0x7ece6975586f8589ull, /* BlockTube: taken after looking at the frames (400 blocks, half resolution, fog per block) */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -1313,10 +1311,6 @@ void test_etruscanvenus_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("EtruscanVenus", 1);
 }
 
-void test_blocktube_stops_do_not_leak(void) {
-  check_restarts_and_stops_do_not_leak("BlockTube", 1);
-}
-
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -1404,7 +1398,6 @@ int main(void) {
   RUN_TEST(test_binaryring_stops_do_not_leak);
   RUN_TEST(test_graphstat_stops_do_not_leak);
   RUN_TEST(test_etruscanvenus_stops_do_not_leak);
-  RUN_TEST(test_blocktube_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);

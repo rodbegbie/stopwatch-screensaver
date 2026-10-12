@@ -172,11 +172,6 @@ XLOCKMORE_HACK(graphstat, "GraphStat");
 
 XLOCKMORE_HACK(etruscanvenus, "EtruscanVenus");
 
-/* Upstream waits 40 ms between frames, and each frame moves the blocks a fixed
- * step, so at the board's frame rate the wait only slows the tunnel down. */
-static const char *const kBlockTubeOverrides[] = {"*delay: 10000", NULL};
-XLOCKMORE_HACK_WITH(blocktube, "BlockTube", kBlockTubeOverrides);
-
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -246,7 +241,6 @@ const HackEntry *const g_hacks[] = {
     &binaryring_hack,
     &graphstat_hack,
     &etruscanvenus_hack,
-    &blocktube_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif

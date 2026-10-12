@@ -278,9 +278,12 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   `-DETRUSCANVENUS_NUMU`, `-DETRUSCANVENUS_NUMV` and `-DETRUSCANVENUS_FULL`
   try others. Its modes differ: those that fill the screen are fill-bound.
   `curlicue.h` is copied from `vendor/` at build time (`vendor_data.py`).
-- BlockTube (`blocktube_single_gl.c`) draws 400 blocks
+- BlockTube was dropped after Rod saw it (too slow, and not much going on);
+  its source, notices row, `blocktube_single_gl.c` and its build steps
+  stay, the wrapper out of the build filter. It drew 400 blocks
   (`tools/blocktube_patch.py`, upstream's 1,000) at half resolution with a
-  10 ms delay; fog is applied per block from the modelview's z when the hack
+  10 ms delay (`"*delay: 10000"` in its registry entry, now gone);
+  fog is applied per block from the modelview's z when the hack
   sets the block's colour, and a block the fog hides is not drawn. There is
   no sphere map, so each face shows the whole texture. Its texture is
   converted from `vendor/` at build time (`gl_textures.py`). It also filters

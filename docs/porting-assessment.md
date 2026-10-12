@@ -34,8 +34,8 @@ it with `uv run tools/score_hacks.py`.
 | S | 2D, and the unmodified source compiles against the shim | 16 |
 | M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 12 |
 | L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 45 |
-| XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 131 |
-| Ported | Already running on the device, so no rating | 79 |
+| XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 132 |
+| Ported | Already running on the device, so no rating | 78 |
 
 ## Speed
 
@@ -277,9 +277,15 @@ grid as thin full-height quads (fill 35 ms for about 3,400 triangles) and a
 10 ms clear. EtruscanVenus's step depends on its mode: the ones that fill the
 screen are fill-bound, and the rest is its own surface maths and about 16,000
 GL calls a frame. Its first two rows were read with `-DGL_PROFILE`, as were the
-first three BlockTube rows. Fireworkx shares `lowrez_put.h`, so its row is
+first three BlockTube rows. Rod dropped BlockTube after seeing it (too slow,
+and not much going on), so its rows are the measured record of a hack that
+is not in the rotation. Fireworkx shares `lowrez_put.h`, so its row is
 after this batch's change to the helper (12.4-12.6 fps before, with
-pixel-identical frames).
+pixel-identical frames). A soak of the whole registry at `-DROTATE_SECONDS=5` (five
+laps, 408 changes) had no reset, panic or stack canary; each new hack read the
+same free PSRAM on every visit, and free heap fell by the same 40 to 570 bytes
+a lap for every hack, all of it between Gears and Morph3D (Gears' known
+upstream leak).
 
 CWaves' cosines were 4 ms of a 61 ms step in single precision; the rest was
 233 two-pixel-wide column fills, each store on a different cache line of the
@@ -874,19 +880,19 @@ needing few additions come first.
 
 | Hack | Kind | Effort | Speed | Ported | Shim gaps | Flags | LOC |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| abstractile | 2d | S | high (0.054 ms) | - | - | - | 1625 |
-| attraction | 2d | S | medium (0.02 ms) | - | - | - | 1115 |
-| binaryhorizon | 2d | S | high (1.7 ms) | - | - | pixmaps, readback | 624 |
-| bouboule | 2d | S | high (0.07 ms) | - | - | xor | 860 |
-| ccurve | 2d | S | high (0.54 ms) | - | - | pixmaps | 872 |
+| abstractile | 2d | S | medium (0.047 ms) | - | - | - | 1625 |
+| attraction | 2d | S | medium (0.016 ms) | - | - | - | 1115 |
+| binaryhorizon | 2d | S | high (1.8 ms) | - | - | pixmaps, readback | 624 |
+| bouboule | 2d | S | high (0.066 ms) | - | - | xor | 860 |
+| ccurve | 2d | S | high (0.55 ms) | - | - | pixmaps | 872 |
 | decayscreen | 2d | S | low (0.0022 ms) | - | - | pixmaps | 392 |
-| flow | 2d | S | high (0.92 ms) | - | - | pixmaps | 1216 |
+| flow | 2d | S | high (0.93 ms) | - | - | pixmaps | 1216 |
 | greynetic | 2d | S | medium (0.016 ms) | - | - | - | 297 |
-| halftone | 2d | S | high (0.66 ms) | ❌ | - | pixmaps | 413 |
-| marbling | 2d | S | high (11 ms) | - | - | - | 635 |
+| halftone | 2d | S | high (0.67 ms) | ❌ | - | pixmaps | 413 |
+| marbling | 2d | S | high (12 ms) | - | - | - | 635 |
 | nerverot | 2d | S | high (0.37 ms) | - | - | pixmaps, float-heavy | 1367 |
 | popsquares | 2d | S | high (0.13 ms) | - | - | pixmaps | 310 |
-| rocks | 2d | S | medium (0.026 ms) | - | - | pixmaps | 562 |
+| rocks | 2d | S | medium (0.027 ms) | - | - | pixmaps | 562 |
 | rotzoomer | 2d | S | crashed on the host | - | - | pixmaps, readback | 601 |
 | twang | 2d | S | crashed on the host | - | - | pixmaps, readback | 791 |
 | wander | 2d | S | medium (0.033 ms) | - | - | pixmaps | 284 |
@@ -955,6 +961,7 @@ needing few additions come first.
 | b_lockglue | gl | XL | - | - | - | - | 240 |
 | beats | gl | XL | - | - | - | - | 439 |
 | blinkbox | gl | XL | - | - | - | - | 615 |
+| blocktube | gl | XL | - | ❌ | - | - | 454 |
 | boing | gl | XL | - | ❌ | - | float-heavy | 666 |
 | bouncingcow | gl | XL | - | - | - | - | 649 |
 | boxed | gl | XL | - | - | - | - | 1361 |
@@ -1148,7 +1155,6 @@ needing few additions come first.
 | pacman | 2d | - | 1.3-1.9 ms measured | ✅ | `BLUE`, `GHOSTS`, `GHOST_DANGER`, `JAILHEIGHT`, `LEVHEIGHT`, `LEVWIDTH`, `MAXGDIR`, `MAXGFLASH`, `MAXGWAG`, `MAXMOUTH`, `MINGRIDSIZE`, `MINSIZE`, `NOWHERE`, `NUM_BONUS_DOTS`, `PAC_DEATH_FRAMES`, `START`, `XDrawString`, `XLoadQueryFont`, `chasing`, `error: expected expression`, `error: invalid application of 'sizeof' to an incomplete type 'argtype[]'`, `ghoststruct`, `goingin`, `goingout`, `hiding`, `images/gen/pacman_png.h`, `inbox`, `pacman.h`, `pacman_ai.h`, `pacman_bonus_dot_eaten`, `pacman_bonus_dot_pos`, `pacman_createnewlevel`, `pacman_eat_bonus_dot`, `pacman_ghost_update`, `pacman_is_bonus_dot`, `pacman_level.h`, `pacman_png`, `pacman_trackmouse`, `pacman_update`, `pacmangamestruct`, `pp`, `ps_chasing`, `ps_dieing`, `ps_eating` | pixmaps, text, clipmask | 1479 |
 | shadebobs | 2d | - | 2-2.3 ms measured | ✅ | `XFree`, `XListPixmapFormats` | readback | 474 |
 | xmatrix | 2d | - | - | ✅ | `images/gen/matrix1_png.h`, `images/gen/matrix1b_png.h`, `images/gen/matrix2_png.h`, `images/gen/matrix2b_png.h`, `matrix1_png`, `matrix1b_png`, `matrix2_png`, `matrix2b_png` | pixmaps, readback | 1915 |
-| blocktube | gl | - | 71.6-80.4 ms measured | ✅ | - | - | 454 |
 | cubicgrid | gl | - | - | ✅ | - | - | 322 |
 | etruscanvenus | gl | - | 53.2-78.6 ms measured | ✅ | - | - | 2761 |
 | gears | gl | - | 65-330 ms measured | ✅ | - | - | 953 |
@@ -1160,6 +1166,7 @@ needing few additions come first.
 
 ## Failed ports
 
+- **blocktube**: 8.8-10 fps at 400 blocks, half size; Rod dropped it (slow, little going on)
 - **boing**: 8.3 fps and plain on a small screen; Rod dropped it, scanlines cost 83 ms
 - **flurry**: needs GL TinyGL lacks, est. under 1 fps, issue #70
 - **halftone**: 5 fps; the shim's ellipse fill is 80% of it, issue #57

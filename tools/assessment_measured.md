@@ -182,7 +182,9 @@ grid as thin full-height quads (fill 35 ms for about 3,400 triangles) and a
 10 ms clear. EtruscanVenus's step depends on its mode: the ones that fill the
 screen are fill-bound, and the rest is its own surface maths and about 16,000
 GL calls a frame. Its first two rows were read with `-DGL_PROFILE`, as were the
-first three BlockTube rows. Fireworkx shares `lowrez_put.h`, so its row is
+first three BlockTube rows. Rod dropped BlockTube after seeing it (too slow,
+and not much going on), so its rows are the measured record of a hack that
+is not in the rotation. Fireworkx shares `lowrez_put.h`, so its row is
 after this batch's change to the helper (12.4-12.6 fps before, with
 pixel-identical frames). A soak of the whole registry at `-DROTATE_SECONDS=5` (five
 laps, 408 changes) had no reset, panic or stack canary; each new hack read the
