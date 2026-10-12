@@ -130,8 +130,9 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
 
 From the repo root:
 
-- `uv run --with pytest --with pillow pytest tools/tests` (without Pillow the
-  logo converter's tests are skipped, not run)
+- `uv run pytest tools/tests` (pytest, Pillow and machfs come from the dev
+  group in `pyproject.toml`; without Pillow the logo converter's tests are
+  skipped, not run)
 - `uv run tools/check_notices.py`
 - `uv run tools/score_hacks.py` regenerates `docs/porting-assessment.md`. It
   also builds each unported S hack with the shim and runs it on the host for the
@@ -369,11 +370,20 @@ ones below apply everywhere.
   `grep -o '&[a-z0-9_]*_hack' | wc -l`.
 - `gh issue view N` prints nothing in this repo: read issues with
   `gh api repos/rodbegbie/stopwatch-screensaver/issues/N --jq '.title,.body'`.
-- `uvx pre-commit run --all-files` runs ruff, `ty`, markdownlint and gitleaks,
-  and all pass on `main`. `ty` ignores `unresolved-reference` in
+- `uvx pre-commit run --all-files` runs ruff, `ty`, markdownlint, gitleaks,
+  `uv-lock`, `validate-pyproject` and `uv-sync`, and all pass on `main`.
+  `uv sync` is exact: `platformio` is pinned in the dev group because anything
+  missing from `pyproject.toml` is uninstalled from `.venv`. Add a tool the
+  build needs there too. `uv-sync` runs only on post-checkout, post-merge and
+  post-rewrite (`uvx pre-commit install` once per clone). Those hooks print
+  "No .pre-commit-config.yaml file was found" when you switch to a branch from
+  before the config, and the merge that triggered one failed once: rerun it.
+  `ty` ignores `unresolved-reference` in
   `firmware/*.py` (`ty.toml`): SCons injects `Import` and `env` at build time.
   `tools/assessment_measured.md.in` is a fragment that `score_hacks.py` splices
   into the assessment, so it is not named `.md`.
+- `ty` 0.0.24 does not narrow `str | None` after `sys.exit(...)`; write
+  `raise SystemExit(...)` for a guard (`shutil.which("uv")` in `firmware/*.py`).
 - When a hack's colours look suspect, dump the same index and frame count
   from the current build and from `git stash` of the wrapper, and look at both
   side by side. Interaggregate's blend bug showed as rainbow confetti against
