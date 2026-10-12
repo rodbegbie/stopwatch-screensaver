@@ -195,3 +195,16 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   includes `visual.h` and `grabclient.h`, as upstream's does.
 - `tools/wire_hack.py` puts a new hack before the After Dark toasters'
   `#ifdef` in the registry, the expected list and `kBaseline`.
+- Added for the 2026-10-12 second batch, each test-first: `XClearArea` (the
+  window background, clipped; a width or height of 0 runs to the window's
+  edge; Worm), `XMaxRequestSize` (65535, so Lisa batches about 32,000 points a
+  call) and the `LineOnOffDash` and `LineDoubleDash` constants (accepted;
+  lines still draw solid; Penrose uses them only in its monochrome path). The
+  scorer's gap list was wrong for Triangle (`free_colors` and
+  `make_smooth_colormap` exist; its xlockmore include chain just does not
+  reach `colors.h`, so `hacks/triangle_colors.c` includes `screenhack.h`
+  first) and XRaySwarm (`initTime` is the hack's own, behind
+  `HAVE_GETTIMEOFDAY`, which upstream takes from `config.h`:
+  `hacks/xrayswarm_time.c` defines it). Putting `colors.h` in the shim's
+  `screenhackI.h` would have fixed Triangle for all but changes what every
+  xlockmore hack sees, so it is Rod's call.

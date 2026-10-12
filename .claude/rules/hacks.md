@@ -297,3 +297,20 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   about 71,000 vertices a cube, three cubes by default. Floppy's model is
   26,340 vertices (about 630 KB of floats, which would not fit beside the
   current firmware in the 3 MB app partition).
+- Rocks and DecayScreen were wired, looked at and dropped in the 2026-10-12
+  second batch (`failed_ports.txt`; sources and notices rows stay). Rocks draws
+  every rock bigger than 3 pixels with `XCopyPlane` from depth-1 pixmaps it
+  fills with `XFillPolygon`, and the shim draws nothing into a bitmap: only
+  the far dots show, so a 3,000-frame dump looked nearly black. Fixing it
+  wants bit planes as Halo has. DecayScreen smears an image from
+  `load_image_async_simple`, which finishes with nothing, so it stays black.
+  Both were host-only findings from a frame dump: look at later frames
+  (3,000) as well as 400 before pinning, and read what the hack draws with.
+- Abstractile holds about 6.1 MB of PSRAM while it runs (the free PSRAM read
+  883 KB), so it leaves little for anything else: it stops and restarts clean
+  in the leak test, but watch it in a rotation soak. Lisa takes 87 ms a step
+  as copied (9.6 fps) and 52 ms in single precision (`lisa_single.c`, 14.3
+  fps) with frames that look the same but hash differently. Worm's worms are
+  one pixel wide and there are only a few on a 466 pixel screen: plain, for
+  Rod to judge. XRaySwarm's host frames are white bugs and trails; whether
+  that is its default look or a colour-table gap in the shim is unchecked.

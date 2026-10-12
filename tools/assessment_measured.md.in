@@ -157,6 +157,26 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | BlockTube (500 blocks) | 8.0-9.0 | 83.9-94.0 ms | 26.4-32.8 ms | 0 ms | about 0.87 MB |
 | BlockTube | 8.8-10.0 | 71.6-80.4 ms | 28.0-33.0 ms | 0 ms | about 0.86 MB |
 | Fireworkx (after `lowrez_put.h`'s int loop) | 13.8-14.0 | 41.7-44.3 ms | 29.0 ms | 0 ms | about 0.34 MB |
+| Abstractile | 20.6-32.2 | 2.4-11.1 ms | 5.3-11.2 ms | 21.2-43.5 ms | about 6.1 MB |
+| Attraction | 59.0-59.2 | 5.6 ms | 3.2-3.7 ms | 7.6-8.1 ms | none measurable |
+| Greynetic | 75.0-76.4 | 1.8-2.0 ms | 4.9-5.2 ms | 6.1-6.3 ms | none measurable |
+| Wander | 37.6 | 4.4 ms | 0.4-0.6 ms | 21.8-21.9 ms | none measurable |
+| PopSquares | 22.6 | 15.3 ms | 27.9 ms | 0.0 ms | none measurable |
+| Lisa (as copied) | 9.6 | 87.5 ms | 12.6-13.3 ms | 5.7 ms | none measurable |
+| Lisa | 14.2-14.4 | 51.9-52.5 ms | 12.7-14.2 ms | 4.2-5.7 ms | none measurable |
+| Penrose | 77.4-89.6 | 0.0-0.9 ms | 0.1-1.0 ms | 10.9-11.7 ms | none measurable |
+| Worm | 51.6 | 0.3 ms | 1.3-1.4 ms | 17.7 ms | about 164 KB |
+| Triangle | 57.4-67.0 | 3.6-6.0 ms | 0.9-2.1 ms | 9.3-10.4 ms | about 145 KB |
+| XRaySwarm | 22.8-23.0 | 21.2-21.6 ms | 0.9-2.8 ms | 19.4-21.6 ms | about 59 KB |
+
+The rows from Abstractile to XRaySwarm are the batch of 2026-10-12 (Abstractile,
+Attraction, Greynetic, Wander, PopSquares, Lisa, Penrose, Worm, Triangle and
+XRaySwarm), each from a pinned build with rotation off, read for 45 s (the
+first window dropped) with Rod's go-ahead to flash. "Extra PSRAM" is the drop
+from 6,989,667 bytes; good to about 10 KB. Abstractile holds about 6.1 MB
+while it runs, leaving under 1 MB of PSRAM. Lisa is registered in single
+precision (`lisa_single.c`): 9.6 fps as copied, 14.3 after. Rocks and
+DecayScreen were tried and dropped (see `failed_ports.txt`).
 
 The seven rows from CWaves to HexTrail are the CWaves, Vermiculate, Cynosure,
 Moire, Moire2, Boing and HexTrail batch (2026-10-11), each from a pinned build
