@@ -184,7 +184,11 @@ screen are fill-bound, and the rest is its own surface maths and about 16,000
 GL calls a frame. Its first two rows were read with `-DGL_PROFILE`, as were the
 first three BlockTube rows. Fireworkx shares `lowrez_put.h`, so its row is
 after this batch's change to the helper (12.4-12.6 fps before, with
-pixel-identical frames).
+pixel-identical frames). A soak of the whole registry at `-DROTATE_SECONDS=5` (five
+laps, 408 changes) had no reset, panic or stack canary; each new hack read the
+same free PSRAM on every visit, and free heap fell by the same 40 to 570 bytes
+a lap for every hack, all of it between Gears and Morph3D (Gears' known
+upstream leak).
 
 CWaves' cosines were 4 ms of a 61 ms step in single precision; the rest was
 233 two-pixel-wide column fills, each store on a different cache line of the
