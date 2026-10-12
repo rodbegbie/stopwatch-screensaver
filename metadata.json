@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4PT0Q0KFQWXNH797YS2YZBQ",
+  "strategy": "manual-commit",
+  "branch": "worktree-issue-86-eraser",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "AGENTS.md",
+    "firmware/src/x11shim/stroke.c",
+    "firmware/test/test_hacks/test_hacks.c",
+    "firmware/test/test_xshim/test_xshim.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 264,
+    "cache_creation_tokens": 278830,
+    "cache_read_tokens": 27184478,
+    "output_tokens": 114046,
+    "api_call_count": 132,
+    "subagent_tokens": {
+      "input_tokens": 192,
+      "cache_creation_tokens": 50554,
+      "cache_read_tokens": 717810,
+      "output_tokens": 26,
+      "api_call_count": 6
+    }
+  }
+}
