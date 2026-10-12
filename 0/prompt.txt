@@ -1,0 +1,17 @@
+Let's do Issue #32 and randomize pacman a bit!
+
+---
+
+Currently the Pacman level is framed within the boundaries of the circle.
+
+---
+
+Yeah, I think this all sounds good.  Go ahead.
+
+---
+
+I'm going out for a couple of hours. Make as much progress as you can without me, and I'll check in around 10pm.
+
+---
+
+Oh and FYI, The board won't be connected while I'm out.  I'm taking it with me.

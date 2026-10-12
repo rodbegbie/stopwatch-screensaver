@@ -1,0 +1,114 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4PX26H9VXD0F2QKBG0FP7RZ",
+  "session_id": "f2f379f3-1e0d-4cd9-ac23-06f14dd0d538",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-12T01:54:02.824148Z",
+  "branch": "feature/32-pacman-level-pool",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "firmware/src/hacks/pacman/pacman_pool.h",
+    "tools/pacman_levels.py",
+    "tools/tests/test_pacman_levels.py"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "83517edfa630",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 46,
+    "cache_creation_tokens": 93649,
+    "cache_read_tokens": 2280011,
+    "output_tokens": 19099,
+    "api_call_count": 23
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_012CQybtowPpdT2qvuYaXNyV",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:brainstorming"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "83517edfa630",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 35,
+        "end": 36,
+        "entry_ids": [
+          "f555ff11-0a01-4803-afde-ed73433b0f6f"
+        ],
+        "tool_use_id": "toolu_012CQybtowPpdT2qvuYaXNyV"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_012CQybtowPpdT2qvuYaXNyV"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:brainstorming",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-10-12T01:54:02.807288Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 1175,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 1175,
+    "total_lines_changed": 1175,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 398,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".private-journal/2026-10-07/19-59-30-000000-79f41e20.md": 8,
+        ".private-journal/2026-10-07/22-51-53-000000-2f0b9ece.md": 8,
+        ".private-journal/2026-10-08/07-50-07-000000-0110d472.md": 8,
+        ".private-journal/2026-10-08/15-15-15-000000-4004028d.md": 19,
+        ".private-journal/2026-10-08/15-45-25-000000-61b97d2d.md": 8,
+        ".private-journal/2026-10-08/17-26-54-000000-98ba9899.md": 12,
+        ".private-journal/2026-10-09/00-21-50-000000-1de20801.md": 8,
+        ".private-journal/2026-10-09/12-29-59-000000-8e4c6857.md": 16,
+        ".private-journal/2026-10-09/15-14-18-000000-357340fa.md": 8,
+        ".private-journal/2026-10-09/20-40-34-000000-16250e9e.md": 8,
+        ".private-journal/2026-10-09/23-14-53-000000-38a6b176.md": 8,
+        ".private-journal/2026-10-10/00-39-42-000000-64095098.md": 8,
+        ".private-journal/2026-10-10/06-35-48-000000-d0ecd666.md": 8,
+        ".private-journal/2026-10-10/08-14-59-000000-d35e8085.md": 8,
+        ".private-journal/2026-10-10/13-26-22-000000-2fbe913b.md": 8,
+        ".private-journal/2026-10-10/14-12-27-000000-d7ee8c7f.md": 8,
+        ".private-journal/2026-10-10/16-50-32-000000-e5b073a3.md": 12,
+        ".private-journal/2026-10-10/18-22-56-000000-72f01b1c.md": 8,
+        ".private-journal/2026-10-10/21-06-23-000000-62ec9202.md": 16,
+        ".private-journal/2026-10-10/22-30-43-000000-105e6a83.md": 12,
+        ".private-journal/2026-10-11/00-20-59-000000-ffdf8de5.md": 8,
+        ".private-journal/2026-10-11/01-52-21-000000-5b254987.md": 8,
+        ".private-journal/2026-10-11/08-53-41-000000-674129e6.md": 8,
+        ".private-journal/2026-10-11/12-19-47-000000-0cccce6d.md": 20,
+        ".private-journal/2026-10-11/13-49-40-000000-0d5fd679.md": 8,
+        ".private-journal/2026-10-11/14-59-10-000000-fd0bbae4.md": 8,
+        ".private-journal/2026-10-11/17-50-24-000000-97b529eb.md": 20,
+        ".private-journal/2026-10-11/18-48-18-000000-5fd8296b.md": 8,
+        "tools/tests/test_pacman_levels.py": 111
+      }
+    }
+  ]
+}
