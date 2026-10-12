@@ -27,3 +27,11 @@ List them as failed, flash it, and open the PR
 ---
 
 /address-findings
+
+---
+
+/claude-md-management:revise-claude-md
+
+---
+
+File an issue for serial_capture.py, and commit these changes on main. Thanks bud
