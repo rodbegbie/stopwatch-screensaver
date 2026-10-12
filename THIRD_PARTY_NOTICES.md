@@ -114,6 +114,7 @@ implied warranty.
 | `firmware/src/hacks/hextrail/hextrail.c` | Copyright (c) 2022 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/eruption/eruption.c` | Copyright (c) 2002-2003 W.P. van Paassen | jwz permission notice (above) |
 | `firmware/src/hacks/kumppa/kumppa.c` | Copyright (C) Teemu Suutari, 1998 | X Consortium permission notice (below) |
+| `firmware/src/hacks/shadebobs/shadebobs.c` | Copyright (c) 1999 Shane Smit | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.c` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.h` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/normals.c` | Copyright (c) 2002-2004 Jamie Zawinski | jwz permission notice (above) |
