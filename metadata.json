@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4RPJ42B53X1FRKN7DQAKXJX",
+  "strategy": "manual-commit",
+  "branch": "feature/batch5-s-m-hacks",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "firmware/src/x11shim/pixmap.c",
+    "firmware/src/x11shim/xshim.c",
+    "firmware/test/test_xshim/test_xshim.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 230,
+    "cache_creation_tokens": 173464,
+    "cache_read_tokens": 35059398,
+    "output_tokens": 102502,
+    "api_call_count": 115
+  }
+}
