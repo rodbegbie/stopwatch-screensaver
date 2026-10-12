@@ -545,6 +545,91 @@ void test_texfont_steps_along_a_line_and_down_a_new_one(void) {
   free_texture_font(f);
 }
 
+/* TinyGL takes only three-component GL_RGB textures and exits on anything
+ * else. Etruscan Venus uploads a luminance texture and BlockTube an RGBA one,
+ * so the upload converts them to RGB first. */
+static uint16_t textured_centre(GLint components, GLenum format, const GLubyte *texel, int bpp) {
+  GLubyte *img = malloc((size_t)4 * 4 * (size_t)bpp);
+  for (int i = 0; i < 16; i++) memcpy(img + i * bpp, texel, (size_t)bpp);
+  open_flat_red_scene();
+  glColor3f(1, 1, 1);
+  GLuint tex;
+  glGenTextures(1, &tex);
+  glBindTexture(GL_TEXTURE_2D, tex);
+  glTexImage2D(GL_TEXTURE_2D, 0, components, 4, 4, 0, format, GL_UNSIGNED_BYTE, img);
+  free(img);
+  glEnable(GL_TEXTURE_2D);
+  glBegin(GL_QUADS);
+  glTexCoord2f(0, 0);
+  glVertex3f(-0.9f, -0.9f, 0);
+  glTexCoord2f(1, 0);
+  glVertex3f(0.9f, -0.9f, 0);
+  glTexCoord2f(1, 1);
+  glVertex3f(0.9f, 0.9f, 0);
+  glTexCoord2f(0, 1);
+  glVertex3f(-0.9f, 0.9f, 0);
+  glEnd();
+  glDisable(GL_TEXTURE_2D);
+  glDeleteTextures(1, &tex);
+  return centre();
+}
+
+/* TinyGL modulates a texel by the vertex colour in fixed point, which can lose
+ * a step of a channel. */
+static void assert_close_to(uint8_t r, uint8_t g, uint8_t b, uint16_t got) {
+  const uint16_t want = px_swap(rgb565(r, g, b)), have = px_swap(got);
+  TEST_ASSERT_INT_WITHIN(1, want >> 11, have >> 11);
+  TEST_ASSERT_INT_WITHIN(1, (want >> 5) & 63, (have >> 5) & 63);
+  TEST_ASSERT_INT_WITHIN(1, want & 31, have & 31);
+}
+
+void test_an_rgb_texture_shows_its_colour(void) {
+  const GLubyte green[3] = {0, 255, 0};
+  assert_close_to(0, 255, 0, textured_centre(3, GL_RGB, green, 3));
+}
+
+void test_an_rgba_texture_is_drawn_as_its_rgb(void) {
+  const GLubyte blue[4] = {0, 0, 255, 128};
+  assert_close_to(0, 0, 255, textured_centre(GL_RGBA, GL_RGBA, blue, 4));
+}
+
+void test_a_luminance_texture_is_drawn_as_grey(void) {
+  const GLubyte grey[1] = {0x80};
+  assert_close_to(0x80, 0x80, 0x80, textured_centre(GL_LUMINANCE, GL_LUMINANCE, grey, 1));
+}
+
+/* A green texture stays green after uploads it cannot convert. */
+void test_a_texture_of_a_type_it_cannot_convert_is_ignored(void) {
+  static const GLubyte green[4 * 4 * 3] = {[1] = 255, [4] = 255, [7] = 255, [10] = 255,
+                                           [13] = 255, [16] = 255, [19] = 255, [22] = 255,
+                                           [25] = 255, [28] = 255, [31] = 255, [34] = 255,
+                                           [37] = 255, [40] = 255, [43] = 255, [46] = 255};
+  static GLubyte white[4 * 4 * 4 * 4];
+  memset(white, 0xFF, sizeof white);
+  open_flat_red_scene();
+  glColor3f(1, 1, 1);
+  GLuint tex;
+  glGenTextures(1, &tex);
+  glBindTexture(GL_TEXTURE_2D, tex);
+  glTexImage2D(GL_TEXTURE_2D, 0, 3, 4, 4, 0, GL_RGB, GL_UNSIGNED_BYTE, green);
+  glTexImage2D(GL_TEXTURE_2D, 0, 3, 4, 4, 0, GL_RGB, GL_FLOAT, white);
+  glTexImage2D(GL_TEXTURE_2D, 0, 3, 4, 4, 0, GL_ALPHA, GL_UNSIGNED_BYTE, white);
+  glEnable(GL_TEXTURE_2D);
+  glBegin(GL_QUADS);
+  glTexCoord2f(0, 0);
+  glVertex3f(-0.9f, -0.9f, 0);
+  glTexCoord2f(1, 0);
+  glVertex3f(0.9f, -0.9f, 0);
+  glTexCoord2f(1, 1);
+  glVertex3f(0.9f, 0.9f, 0);
+  glTexCoord2f(0, 1);
+  glVertex3f(-0.9f, 0.9f, 0);
+  glEnd();
+  glDisable(GL_TEXTURE_2D);
+  glDeleteTextures(1, &tex);
+  assert_close_to(0, 255, 0, centre());
+}
+
 /* Dirty rectangle: TinyGL tracks the box around what it draws, glClear clears
  * only the box drawn since the last clear, and the swap marks only the old and
  * new boxes for the push. These pin that it changes nothing visible. */
@@ -1755,6 +1840,10 @@ int main(void) {
   RUN_TEST(test_interleaved_colours_colour_each_vertex_and_honour_a_stride);
   RUN_TEST(test_interleaved_normals_reach_the_lighting);
   RUN_TEST(test_an_interleaved_format_it_does_not_handle_turns_the_arrays_off);
+  RUN_TEST(test_an_rgb_texture_shows_its_colour);
+  RUN_TEST(test_an_rgba_texture_is_drawn_as_its_rgb);
+  RUN_TEST(test_a_luminance_texture_is_drawn_as_grey);
+  RUN_TEST(test_a_texture_of_a_type_it_cannot_convert_is_ignored);
   RUN_TEST(test_texfont_metrics_follow_the_point_size);
   RUN_TEST(test_texfont_needs_its_resource);
   RUN_TEST(test_texfont_draws_a_glyph_at_the_origin_of_the_transform);

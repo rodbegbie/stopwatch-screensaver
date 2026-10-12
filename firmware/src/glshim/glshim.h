@@ -89,6 +89,16 @@ void glshim_InterleavedArrays(GLenum format, GLsizei stride, const GLvoid *point
 #define glDisableClientState glshim_DisableClientState
 #define glDrawArrays glshim_DrawArrays
 
+/* TinyGL takes only three-component GL_RGB, GL_UNSIGNED_BYTE textures and
+ * exits on anything else. This converts GL_RGBA (alpha dropped), GL_LUMINANCE
+ * and GL_LUMINANCE_ALPHA bytes to RGB first, and ignores any other format or
+ * type. Not for use inside a display list: TinyGL would keep a pointer to the
+ * converted copy, which is freed on return. */
+void glshim_TexImage2D(GLint target, GLint level, GLint components, GLint width,
+                       GLint height, GLint border, GLint format, GLint type,
+                       const void *pixels);
+#define glTexImage2D glshim_TexImage2D
+
 void glMateriali(GLint face, GLint pname, GLint value);
 /* TinyGL has this commented out. Pixel unpacking only matters for texture
  * upload, which no hack here does, so it is accepted and ignored. */

@@ -532,6 +532,33 @@ void gluLookAt(GLdouble eyex, GLdouble eyey, GLdouble eyez, GLdouble cx,
 
 void glshim_set_render_scale(int scale) { g_next_scale = scale == 2 ? 2 : 1; }
 
+#undef glTexImage2D
+void glshim_TexImage2D(GLint target, GLint level, GLint components, GLint width,
+                       GLint height, GLint border, GLint format, GLint type,
+                       const void *pixels) {
+  (void)components;
+  int bytes;
+  switch (format) {
+    case GL_RGB: bytes = 3; break;
+    case GL_RGBA: bytes = 4; break;
+    case GL_LUMINANCE: bytes = 1; break;
+    case GL_LUMINANCE_ALPHA: bytes = 2; break;
+    default: return;
+  }
+  if (type != GL_UNSIGNED_BYTE || width <= 0 || height <= 0 || !pixels) return;
+  const size_t n = (size_t)width * (size_t)height;
+  GLubyte *rgb = malloc(n * 3);
+  if (!rgb) return;
+  const GLubyte *in = pixels;
+  for (size_t i = 0; i < n; i++, in += bytes) {
+    rgb[3 * i + 0] = in[0];
+    rgb[3 * i + 1] = bytes >= 3 ? in[1] : in[0];
+    rgb[3 * i + 2] = bytes >= 3 ? in[2] : in[0];
+  }
+  glTexImage2D(target, level, 3, width, height, border, GL_RGB, GL_UNSIGNED_BYTE, rgb);
+  free(rgb);
+}
+
 #undef glViewport
 void glshim_Viewport(GLint x, GLint y, GLint w, GLint h) {
   glViewport(x / g_scale, y / g_scale, w / g_scale, h / g_scale);
