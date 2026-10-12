@@ -1,4 +1,8 @@
-/* Builds the unmodified binaryring.c, told the display is 24 bits deep.
+/* Builds the unmodified binaryring.c, told the display is 24 bits deep, in
+ * single precision (the ESP32-S3's FPU is single-precision only, so `double`
+ * maths runs in software) and with its decimal literals made floats at build
+ * time (tools/float_literals.py, and tools/binaryring_patch.py for the
+ * exponent literal in frand1).
  *
  * The hack blends each anti-aliased hit into its own buffer of pixel values
  * at an alpha of 0.15 times the coverage. In its 16-bit path a hit adds less
@@ -7,7 +11,9 @@
  * as on most X displays) the hits accumulate, so the wrapper gives it that
  * depth and packs each pixel to the canvas's byte-swapped RGB565 as it goes
  * into the XImage. */
+#include <math.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "screenhack.h"
 
@@ -20,4 +26,8 @@ static int binaryring_put_pixel(XImage *im, int x, int y, unsigned long c) {
 #define XPutPixel binaryring_put_pixel
 #define visual_depth(screen, visual) 24
 
-#include "binaryring/binaryring.c"
+#include "hacks/single_precision.h"
+#undef M_PI
+#define M_PI 3.14159265358979323846f
+
+#include "binaryring_floatlit.c"
