@@ -29,6 +29,12 @@ Pixmap image_data_to_pixmap(Display *, Window, const unsigned char *data,
                             unsigned long size, int *width_ret,
                             int *height_ret, Pixmap *mask_ret);
 
+/* The image as a 32-bit XImage of RGBA bytes (alpha 255 where the mask is set,
+ * 0 where not), upside down, row 0 being the bottom, as upstream gives it for
+ * glTexImage2D. NULL for a bad blob or no memory; free it with XDestroyImage. */
+XImage *image_data_to_ximage(Display *, Visual *, const unsigned char *data,
+                             unsigned long size);
+
 /* Upstream reads an image file. The device has no filesystem for hacks and no
  * decoder, so this always returns NULL, and a hack that loads an optional
  * picture carries on without one. */

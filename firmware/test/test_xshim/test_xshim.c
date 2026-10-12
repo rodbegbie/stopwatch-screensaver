@@ -898,6 +898,48 @@ static Pixmap load_image(Pixmap *mask) {
   return image_data_to_pixmap(dpy, win, blob, sizeof(blob), &w, &h, mask);
 }
 
+/* GL hacks load textures as RGBA bytes, upside down (row 0 is the bottom), as
+ * upstream's image_data_to_ximage gives them. Alpha comes from the mask. */
+static const unsigned char *rgba_at(const XImage *im, int x, int y) {
+  return (const unsigned char *)im->data + (size_t)y * (size_t)im->bytes_per_line + 4 * (size_t)x;
+}
+
+void test_image_data_to_ximage_gives_rgba_bytes_bottom_row_first(void) {
+  fill_blob();
+  XImage *im = image_data_to_ximage(dpy, NULL, blob, sizeof(blob));
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_INT(BLOB_W, im->width);
+  TEST_ASSERT_EQUAL_INT(BLOB_H, im->height);
+  TEST_ASSERT_EQUAL_INT(32, im->bits_per_pixel);
+  TEST_ASSERT_EQUAL_INT(4 * BLOB_W, im->bytes_per_line);
+  /* Source (1, 2) is 0x1009: red 2, green 0, blue 9; its mask row is clear. */
+  const unsigned char want_a[4] = {0x10, 0x00, 0x4A, 0x00};
+  TEST_ASSERT_EQUAL_HEX8_ARRAY(want_a, rgba_at(im, 1, 0), 4);
+  /* Source (0, 0) is 0x1000 and masked in. */
+  const unsigned char want_b[4] = {0x10, 0x00, 0x00, 0xFF};
+  TEST_ASSERT_EQUAL_HEX8_ARRAY(want_b, rgba_at(im, 0, 2), 4);
+  /* Source (2, 1): 0x1006, green 0, mask row 1 has column 2. */
+  const unsigned char want_c[4] = {0x10, 0x00, 0x31, 0xFF};
+  TEST_ASSERT_EQUAL_HEX8_ARRAY(want_c, rgba_at(im, 2, 1), 4);
+  /* Source (1, 1): mask clear. */
+  TEST_ASSERT_EQUAL_HEX8(0x00, rgba_at(im, 1, 1)[3]);
+  XDestroyImage(im);
+  /* Green has six bits: 32 of 63 is 0x82. */
+  blob[8 + 2 * 3] = 0x00;
+  blob[9 + 2 * 3] = 0x04;
+  im = image_data_to_ximage(dpy, NULL, blob, sizeof(blob));
+  const unsigned char want_d[4] = {0x00, 0x82, 0x00, 0xFF};
+  TEST_ASSERT_EQUAL_HEX8_ARRAY(want_d, rgba_at(im, 3, 2), 4);
+  XDestroyImage(im);
+}
+
+void test_image_data_to_ximage_refuses_a_bad_blob(void) {
+  fill_blob();
+  TEST_ASSERT_NULL(image_data_to_ximage(dpy, NULL, blob, sizeof(blob) - 1));
+  blob[0] = 'X';
+  TEST_ASSERT_NULL(image_data_to_ximage(dpy, NULL, blob, sizeof(blob)));
+}
+
 static GC new_gc(unsigned long fg, unsigned long bg) {
   GC gc = XCreateGC(dpy, win, 0, NULL);
   XSetForeground(dpy, gc, fg);
@@ -3527,6 +3569,8 @@ int main(void) {
   RUN_TEST(test_copy_area_from_the_window_clips_at_every_edge);
   RUN_TEST(test_copy_area_from_the_window_marks_the_rows_it_wrote);
   RUN_TEST(test_copy_area_from_the_window_into_a_pixmap_and_back);
+  RUN_TEST(test_image_data_to_ximage_gives_rgba_bytes_bottom_row_first);
+  RUN_TEST(test_image_data_to_ximage_refuses_a_bad_blob);
   RUN_TEST(test_copy_area_into_a_colour_pixmap_then_out_to_the_canvas);
   RUN_TEST(test_copy_area_into_a_bitmap_copies_bits);
   RUN_TEST(test_copy_area_between_different_depths_does_nothing);

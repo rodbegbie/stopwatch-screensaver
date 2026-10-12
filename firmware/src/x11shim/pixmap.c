@@ -114,6 +114,38 @@ Pixmap image_data_to_pixmap(Display *dpy, Window win, const unsigned char *data,
   return (Pixmap)(uintptr_t)colour;
 }
 
+static unsigned expand(unsigned v, unsigned bits) {
+  return bits == 5 ? (v << 3) | (v >> 2) : (v << 2) | (v >> 4);
+}
+
+XImage *image_data_to_ximage(Display *dpy, Visual *visual, const unsigned char *data,
+                             unsigned long size) {
+  if (size < 8 || memcmp(data, "565M", 4) != 0) return NULL;
+  const unsigned w = le16(data + 4), h = le16(data + 6);
+  const uint64_t pixel_bytes = (uint64_t)w * h * 2;
+  const unsigned stride = (w + 7) / 8;
+  if (w == 0 || h == 0 || size != 8 + pixel_bytes + (uint64_t)stride * h) return NULL;
+  XImage *im = XCreateImage(dpy, visual, 32, ZPixmap, 0, NULL, w, h, 32, (int)(4 * w));
+  if (!im) return NULL;
+  im->data = (char *)malloc((size_t)4 * w * h);
+  if (!im->data) {
+    XDestroyImage(im);
+    return NULL;
+  }
+  const unsigned char *mask = data + 8 + pixel_bytes;
+  for (unsigned y = 0; y < h; y++) {
+    unsigned char *out = (unsigned char *)im->data + (size_t)(h - 1 - y) * 4 * w;
+    for (unsigned x = 0; x < w; x++, out += 4) {
+      const unsigned v = le16(data + 8 + 2 * ((size_t)y * w + x));
+      out[0] = (unsigned char)expand(v >> 11, 5);
+      out[1] = (unsigned char)expand((v >> 5) & 63, 6);
+      out[2] = (unsigned char)expand(v & 31, 5);
+      out[3] = (mask[y * stride + x / 8] >> (7 - x % 8)) & 1 ? 255 : 0;
+    }
+  }
+  return im;
+}
+
 int XFreePixmap(Display *dpy, Pixmap p) {
   struct XshimPixmap *pm = pixmap_of(p);
   if (pm) untrack(dpy, pm);
