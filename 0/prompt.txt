@@ -1,0 +1,9 @@
+Let's work through a bunch of the current "S" and "M" screensavers.  There's currently 28 or so, so maybe pick 10 and try implementing them and see how we go.  You have permission to reflash the device throughout the process.
+
+---
+
+/claude-md-management:revise-claude-md
+
+---
+
+Apply all three
