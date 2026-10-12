@@ -122,6 +122,18 @@ implied warranty.
 | `firmware/src/hacks/graphstat/graphstat.c` | Copyright (c) 2026 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/etruscanvenus/etruscanvenus.c` | Copyright (c) 2019-2026 Carsten Steger | xlock permission notice (below) |
 | `firmware/src/hacks/blocktube/blocktube.c` | Copyright (c) 2003 Lars Damerow | jwz permission notice (above) |
+| `firmware/src/hacks/abstractile/abstractile.c` | Copyright (c) 2004-2009 Steve Sundstrom | jwz permission notice (above) |
+| `firmware/src/hacks/attraction/attraction.c` | Copyright (c) 1992-2013 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/greynetic/greynetic.c` | Copyright (c) 1992-2008 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/wander/wander.c` | Rick Campbell, 1998 | jwz permission notice (above) |
+| `firmware/src/hacks/decayscreen/decayscreen.c` | Copyright (c) 1992-2018 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/popsquares/popsquares.c` | Copyright (c) 2003 Levi Burton | jwz permission notice (above) |
+| `firmware/src/hacks/rocks/rocks.c` | Copyright (c) 1992-2013 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/lisa/lisa.c` | Copyright (c) 1997, 2006 Caleb Cullen | xlock permission notice (below) |
+| `firmware/src/hacks/penrose/penrose.c` | Copyright (c) 1996 Timo Korvola | xlock permission notice (below) |
+| `firmware/src/hacks/worm/worm.c` | Copyright (c) 1991 Patrick J. Naughton | xlock permission notice (below) |
+| `firmware/src/hacks/triangle/triangle.c` | Copyright (c) 1995 Tobias Gloth | xlock permission notice (below) |
+| `firmware/src/hacks/xrayswarm/xrayswarm.c` | Copyright (c) 2000 Chris Leger | X Consortium permission notice (below) |
 | `firmware/src/xs_support/glx/involute.c` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.h` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/normals.c` | Copyright (c) 2002-2004 Jamie Zawinski | jwz permission notice (above) |
@@ -254,11 +266,11 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-### X Consortium permission notice (Kumppa)
+### X Consortium permission notice (Kumppa and XRaySwarm)
 
-`kumppa.c` carries the X Consortium's form of the MIT licence under its
-author's copyright line, not jwz's notice. It is reproduced here as it appears
-in the file:
+`kumppa.c` and `xrayswarm.c` carry the X Consortium's form of the MIT licence
+under their authors' copyright lines, not jwz's notice. It is reproduced here
+as it appears in `kumppa.c`:
 
 ```text
 Copyright (C) Teemu Suutari (temisu@utu.fi) Feb 1998

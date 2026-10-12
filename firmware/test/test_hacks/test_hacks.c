@@ -124,6 +124,16 @@ void test_registry_lists_hacks_in_order(void) {
                                          "BinaryRing",
                                          "GraphStat",
                                          "EtruscanVenus",
+                                         "Abstractile",
+                                         "Attraction",
+                                         "Greynetic",
+                                         "Wander",
+                                         "PopSquares",
+                                         "Lisa",
+                                         "Penrose",
+                                         "Worm",
+                                         "Triangle",
+                                         "XRaySwarm",
 #ifdef HAVE_AFTER_DARK_TOASTERS
                                          "ad-flyingtoasters",
 #endif
@@ -494,6 +504,16 @@ static const uint64_t kBaseline[] = {
     0x7ebd7eb4bca2728bull, /* BinaryRing: taken after looking at the frames (24-bit path, single precision, pixels straight to the window) */
     0x72caf5a8963dd1e9ull, /* GraphStat: taken after looking at the frames (8x8 bitmap titles) */
     0xd38b37194b632481ull, /* EtruscanVenus: taken after looking at the frames (single precision, 48 by 32, half resolution) */
+    0x6f1b52dd4a711f8cull, /* Abstractile: taken after looking at the frames */
+    0x67b7a308203c7b31ull, /* Attraction: taken after looking at the frames */
+    0xfa4b3abc8a5e944dull, /* Greynetic: taken after looking at the frames */
+    0x3f6e072bd26ae0e0ull, /* Wander: taken after looking at the frames */
+    0x7cd3b1092cde1671ull, /* PopSquares: taken after looking at the frames */
+    0x51e07969aaf2cf93ull, /* Lisa: taken after looking at the frames (single precision) */
+    0x6a005a4031889008ull, /* Penrose: taken after looking at the frames */
+    0xdf692e0ac244c161ull, /* Worm: taken after looking at the frames */
+    0x7ac0c7630268c999ull, /* Triangle: taken after looking at the frames */
+    0x990855e2bc899e76ull, /* XRaySwarm: taken after looking at the frames */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -1311,6 +1331,46 @@ void test_etruscanvenus_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("EtruscanVenus", 1);
 }
 
+void test_abstractile_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Abstractile", 0);
+}
+
+void test_attraction_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Attraction", 0);
+}
+
+void test_greynetic_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Greynetic", 0);
+}
+
+void test_wander_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Wander", 0);
+}
+
+void test_popsquares_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("PopSquares", 0);
+}
+
+void test_lisa_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Lisa", 1);
+}
+
+void test_penrose_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Penrose", 1);
+}
+
+void test_worm_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Worm", 1);
+}
+
+void test_triangle_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Triangle", 1);
+}
+
+void test_xrayswarm_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("XRaySwarm", 0);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -1398,6 +1458,16 @@ int main(void) {
   RUN_TEST(test_binaryring_stops_do_not_leak);
   RUN_TEST(test_graphstat_stops_do_not_leak);
   RUN_TEST(test_etruscanvenus_stops_do_not_leak);
+  RUN_TEST(test_abstractile_stops_do_not_leak);
+  RUN_TEST(test_attraction_stops_do_not_leak);
+  RUN_TEST(test_greynetic_stops_do_not_leak);
+  RUN_TEST(test_wander_stops_do_not_leak);
+  RUN_TEST(test_popsquares_stops_do_not_leak);
+  RUN_TEST(test_lisa_stops_do_not_leak);
+  RUN_TEST(test_penrose_stops_do_not_leak);
+  RUN_TEST(test_worm_stops_do_not_leak);
+  RUN_TEST(test_triangle_stops_do_not_leak);
+  RUN_TEST(test_xrayswarm_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
