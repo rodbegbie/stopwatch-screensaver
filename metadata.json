@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4PPNP14NESZ39H4AYB4XGNB",
+  "strategy": "manual-commit",
+  "branch": "worktree-issue-86-eraser",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/test/test_xshim/test_xshim.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 2,
+    "cache_creation_tokens": 1300,
+    "cache_read_tokens": 612976,
+    "output_tokens": 588,
+    "api_call_count": 1
+  }
+}
