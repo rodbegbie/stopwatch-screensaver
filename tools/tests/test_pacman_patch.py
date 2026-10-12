@@ -55,7 +55,7 @@ def test_the_generator_loop_never_runs():
 
 def test_the_pool_header_is_included_after_the_level_header():
     out = pp.patch_pacman_level(SAMPLE)
-    assert '#include "pacman_level.h"\n#include "pacman_pool.h"' in out
+    assert '#include "pacman_level.h"\n#include "hacks/pacman_pool.h"' in out
 
 
 def test_the_fixed_level_branch_is_kept():
@@ -79,7 +79,7 @@ def test_nothing_else_changes():
         if line[0] in "+-" and line[:3] not in ("+++", "---")
     ]
     assert changed == [
-        '+#include "pacman_pool.h"',
+        '+#include "hacks/pacman_pool.h"',
         "-        do {",
         "+        " + POOL_PICK + ";",
         "+        if (0) do {",

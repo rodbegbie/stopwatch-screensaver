@@ -575,7 +575,10 @@ screen: cyan walls, a yellow Pacman, the four ghost colours.
 Two recursions in the hack had to go. The level generator (`creatlevelblock`
 and `nextstep`) recursed up to about 315 KB deep on the host and rebooted the
 board on its first frame (stack canary, loop task, 16 KB). The build now
-patches it out, so Pacman always plays the fixed level. The ghosts' route home
+never calls it: half the levels are still the fixed one, as upstream, and the
+rest come from a pool of 24 levels that the real generator made on the host
+(`tools/pacman_levels.py`), with the cells outside the round display walled off
+(issue #32). The ghosts' route home
 (`recur_back_track`) reaches 453 levels of 48 bytes from some cells, about
 22 KB; the build rewrites it as a loop over a heap stack that visits cells in
 the same order, pinned over 30,000 frames. With a temporary stack gauge in the

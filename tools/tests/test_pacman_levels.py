@@ -11,7 +11,7 @@ import pacman_levels as pl
 
 ROOT = Path(__file__).resolve().parents[2]
 PACMAN_LEVEL_C = ROOT / "firmware" / "src" / "hacks" / "pacman" / "pacman_level.c"
-POOL_HEADER = ROOT / "firmware" / "src" / "hacks" / "pacman" / "pacman_pool.h"
+POOL_HEADER = ROOT / "firmware" / "src" / "hacks" / "pacman_pool.h"
 
 
 def stdlevel() -> list[str]:

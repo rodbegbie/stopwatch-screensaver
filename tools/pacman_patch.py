@@ -14,7 +14,7 @@ loop task has 16 KB, and Pacman reboots the board on its first frame when the
 generator runs.
 
 So the generator branch copies a level from `pacman_pool`
-(pacman_pool.h, made by tools/pacman_levels.py by running the real generator on
+(hacks/pacman_pool.h, made by tools/pacman_levels.py by running the real generator on
 the host) and carries on with upstream's `filllevel`, `frmtlevel` and
 `finishjail`. The odds stay upstream's: half the levels are the fixed one. The
 generator loop stays in the file behind `if (0)`, so its functions are still
@@ -31,8 +31,10 @@ RANDOM_LEVEL_TEST = "if (NRAND (2) == 0) {"
 GENERATOR_LOOP = "        do {\n            clearlevel (level);"
 FIXED_LEVEL_COPY = "memcpy (level, stdlevel, sizeof (lev_t))"
 LEVEL_HEADER_INCLUDE = '#include "pacman_level.h"\n'
-POOL_INCLUDE = '#include "pacman_pool.h"\n'
-POOL_PICK = "        memcpy (level, pacman_pool[NRAND (PACMAN_POOL_SIZE)], sizeof (lev_t));\n"
+POOL_INCLUDE = '#include "hacks/pacman_pool.h"\n'
+POOL_PICK = (
+    "        memcpy (level, pacman_pool[NRAND (PACMAN_POOL_SIZE)], sizeof (lev_t));\n"
+)
 
 
 def patch_pacman_level(source: str) -> str:
@@ -149,7 +151,9 @@ def patch_pacman_ai(source: str) -> str:
     start = source.index(BACK_TRACK_START)
     end = source.find(BACK_TRACK_END, start)
     if end < 0:
-        raise ValueError("find_home no longer follows recur_back_track; has upstream changed?")
+        raise ValueError(
+            "find_home no longer follows recur_back_track; has upstream changed?"
+        )
     original = source[start:end]
     if hashlib.sha256(original.encode()).hexdigest() != BACK_TRACK_SHA256:
         raise ValueError(

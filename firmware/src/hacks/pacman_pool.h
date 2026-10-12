@@ -2,7 +2,9 @@
  *
  * Levels made by upstream's generator (pacman_level.c) on the host, in the
  * form `filllevel` leaves them and `stdlevel` has: walls and dots only, the
- * jail unfinished. Every dot cell is inside the panel's circle. */
+ * jail unfinished. Every dot cell is inside the panel's circle. The levels
+ * are derived from xscreensaver's Pacman generator, (c) 2002 Edwin de Jong:
+ * see THIRD_PARTY_NOTICES.md. */
 #define PACMAN_POOL_SIZE 24
 
 static const lev_t pacman_pool[PACMAN_POOL_SIZE] = {

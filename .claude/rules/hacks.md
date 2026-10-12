@@ -20,11 +20,19 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   `build_src_filter`. A `gridSize` below 7 would overflow the 80 by 80 arrays.
 - Pacman has two build-time patches (`tools/pacman_patch.py`, run by
   `firmware/patch_pacman.py`; wrappers `hacks/pacman_stdlevel.c` and
-  `hacks/pacman_loop_ai.c`): it always plays the fixed level, because the
-  random generator recursed to ~315 KB and boot-looped the board, and the
-  ghosts' route search is a loop (it was 453 levels deep). Each patch checks
-  what it replaces. Its sprite sheet is built from `vendor/` into the build dir
-  by `firmware/pacman_sprites.py` and never committed (3 MB as C text).
+  `hacks/pacman_loop_ai.c`): the random level generator recursed to ~315 KB
+  and boot-looped the board, so a generated level is a copy from
+  `hacks/pacman_pool.h` (24 levels, made on the host by
+  `tools/pacman_levels.py` with the cells outside the round display walled
+  off; the fixed level is still half of them), and the ghosts' route search is
+  a loop (it was 453 levels deep). Re-run the tool after changing its mask or
+  the generator's tile data. Each patch checks what it replaces. The two host
+  pins that follow the game (`kBaseline`'s Pacman and the ghost-route chain)
+  depend on how many `random()` values the level pick takes: re-take the chain
+  with `pacman_loop_ai.c` temporarily including `pacman/pacman_ai.c`, then
+  restore it and check the loop gives the same value. Its sprite sheet is
+  built from `vendor/` into the build dir by `firmware/pacman_sprites.py` and
+  never committed (3 MB as C text).
 - Braid runs at 3-9 fps (0.8-2 before four rounds of work): it redraws every
   segment of the braid each frame to spin the colours. A host profile put its
   disc fill at 6% and the board spent most of its time there, because the Mac

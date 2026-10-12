@@ -15,7 +15,7 @@ anyway is refused.
 
     uv run tools/pacman_levels.py --count 24 --seed 1
 
-writes firmware/src/hacks/pacman/pacman_pool.h.
+writes firmware/src/hacks/pacman_pool.h.
 """
 
 import argparse
@@ -28,7 +28,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 HACKS = ROOT / "firmware" / "src" / "hacks"
-POOL_HEADER = HACKS / "pacman" / "pacman_pool.h"
+POOL_HEADER = HACKS / "pacman_pool.h"
 
 WIDTH = 40
 HEIGHT = 32
@@ -206,7 +206,9 @@ def render_header(levels: list[list[str]]) -> str:
         " *",
         " * Levels made by upstream's generator (pacman_level.c) on the host, in the",
         " * form `filllevel` leaves them and `stdlevel` has: walls and dots only, the",
-        " * jail unfinished. Every dot cell is inside the panel's circle. */",
+        " * jail unfinished. Every dot cell is inside the panel's circle. The levels",
+        " * are derived from xscreensaver's Pacman generator, (c) 2002 Edwin de Jong:",
+        " * see THIRD_PARTY_NOTICES.md. */",
         f"#define PACMAN_POOL_SIZE {len(levels)}",
         "",
         "static const lev_t pacman_pool[PACMAN_POOL_SIZE] = {",
