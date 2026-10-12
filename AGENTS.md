@@ -119,6 +119,8 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
   hack's turn starts, so leave `src/` and `tools/tinygl_patch.py` alone until
   the last hack has built. It compares flag variants of one tree: to A/B a
   change, put it behind a temporary `-D` switch (as `-DPUSH_NO_DISC` does).
+  It takes one `--hack` per run: loop several from a scratchpad script run
+  with `run_in_background`, and `touch` a done file at the end.
 - `cc -O1 -fstack-usage -c src/hacks/<n>/<n>.c` (with `-Isrc
   -Isrc/x11shim/include -Isrc/xs_support -DXSHIM_NATIVE -DSTANDALONE`) lists
   stack frames; keep each well under the 16 KB loop stack.
@@ -234,6 +236,10 @@ ones below apply everywhere.
   `git show HEAD:<path>`, and leave changes you didn't make alone.
 - `pio test` hides `printf` and stderr from tests. To see two values, assert
   `TEST_ASSERT_EQUAL_UINT64(a, b)` temporarily: the failure line prints both.
+- To survey many hacks on the host (flushes per frame, say), add a temporary
+  test that `fopen`s `getenv("SURVEY_OUT")` and writes lines; run
+  `SURVEY_OUT=<file> pio test -e native -f test_push_present`, then
+  `git checkout` the test. `PLATFORMIO_BUILD_FLAGS=-D...` varies a constant.
 - `test_frames_of_every_hack_but_maze_match_main` stops at the first moved
   hash, so the others hide behind it. To list all of them, temporarily append
   `name idx got=0x...` to a buffer and `TEST_FAIL_MESSAGE` it (`TEST_MESSAGE`
@@ -335,12 +341,18 @@ ones below apply everywhere.
 - After a mutation check, `grep` that the change applied: a `sed` that matches
   nothing leaves the tests green and proves nothing. Restore the file and
   confirm with `cmp` or `git diff`.
+- Restoring after a mutation: commit (or copy) the real change first.
+  `git checkout <file>` reverts everything uncommitted in it, fix included.
+  The scratchpad mutation script restores from its in-memory original.
 - Mutating a regex or any pattern with backslashes: write the mutation as a
   scratchpad script (as the loop-of-mutations gotcha says) and `assert old in
   text` first. Shell quoting doubles the backslashes, nothing changes, and the
   passing run looks like a surviving mutant.
 - Unity marks a failing test `[FAILED]` at the end of its line, not `:FAIL`. A
   mutation script that greps for `:FAIL` reports every mutant as surviving.
+- A mutant can die by crash, not assertion: an ASan abort ends the run with
+  "20 test cases: 19 succeeded" (fewer cases than usual, no `[FAILED]`). Read
+  the summary line and treat anything but the full passing count as killed.
 - `ruff check tools` already reports about 17 findings on `main` (e.g. an
   unused `noqa: E402` in `test_mutate.py`): run `ruff check` and
   `ruff format --check` on the files you touched, not the directory.
