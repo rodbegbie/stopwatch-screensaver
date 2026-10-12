@@ -32,6 +32,7 @@ void setUp(void) {
 
 void tearDown(void) {
   xshim_erase_force_effect(-1);
+  xshim_erase_set_gc_factory(NULL);
   xshim_set_clock(NULL);
   xshim_close_display(dpy);
   canvas_free(&cv);
@@ -288,6 +289,30 @@ void test_release_frees_every_live_state_on_the_display(void) {
   xshim_release_erasers(dpy);
 }
 
+static GC no_gc(Display *d, Drawable w, unsigned long mask, XGCValues *v) {
+  (void)d, (void)w, (void)mask, (void)v;
+  return NULL;
+}
+
+void test_a_failed_gc_allocation_clears_at_once_and_leaves_no_state(void) {
+  xshim_erase_set_gc_factory(no_gc);
+  eraser_state *st = erase_window(dpy, XSHIM_WINDOW, NULL);
+  xshim_erase_set_gc_factory(NULL);
+  TEST_ASSERT_NULL(st);
+  TEST_ASSERT_EQUAL_INT(kSize * kSize, count_pixels(0));
+  TEST_ASSERT_NULL(dpy->erasers);
+}
+
+void test_the_circle_reaches_the_top_and_bottom_rows(void) {
+  double start;
+  eraser_state *st = begin_wipe(1, &start);
+  st = step_to(st, start, 0.99);
+  TEST_ASSERT_NOT_NULL(st);
+  TEST_ASSERT_EQUAL_HEX16(0, cv.px[kSize / 2]);
+  TEST_ASSERT_EQUAL_HEX16(0, cv.px[(kSize - 1) * kSize + kSize / 2]);
+  eraser_free(st);
+}
+
 /* tearDown closes the display and checks for leaks. */
 void test_closing_the_display_frees_a_state_still_live(void) {
   TEST_ASSERT_NOT_NULL(erase_window(dpy, XSHIM_WINDOW, NULL));
@@ -295,6 +320,8 @@ void test_closing_the_display_frees_a_state_still_live(void) {
 
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_a_failed_gc_allocation_clears_at_once_and_leaves_no_state);
+  RUN_TEST(test_the_circle_reaches_the_top_and_bottom_rows);
   RUN_TEST(test_effect_count_is_four);
   RUN_TEST(test_cleared_area_grows_and_ends_complete);
   RUN_TEST(test_steps_stay_inside_the_canvas_and_are_quick);

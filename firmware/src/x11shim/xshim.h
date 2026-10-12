@@ -247,6 +247,9 @@ void xshim_release_erasers(Display *dpy);
  * a random one; and how many effects there are. */
 void xshim_erase_force_effect(int index);
 int xshim_erase_effect_count(void);
+/* Test hook: what erase_window calls to make its GC; NULL restores XCreateGC. */
+void xshim_erase_set_gc_factory(GC (*factory)(Display *, Drawable, unsigned long,
+                                              XGCValues *));
 
 GC XCreateGC(Display *, Drawable, unsigned long mask, XGCValues *);
 int XFreeGC(Display *, GC);

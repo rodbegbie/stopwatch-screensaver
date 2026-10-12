@@ -105,6 +105,14 @@ static int g_forced_effect = -1;
 
 void xshim_erase_force_effect(int index) { g_forced_effect = index; }
 
+static GC (*g_gc_factory)(Display *, Drawable, unsigned long,
+                          XGCValues *) = XCreateGC;
+
+void xshim_erase_set_gc_factory(GC (*factory)(Display *, Drawable, unsigned long,
+                                              XGCValues *)) {
+  g_gc_factory = factory ? factory : XCreateGC;
+}
+
 int xshim_erase_effect_count(void) { return EFFECT_COUNT; }
 
 void eraser_free(eraser_state *st) {
@@ -136,7 +144,12 @@ eraser_state *erase_window(Display *dpy, Window w, eraser_state *st) {
                          : (int)(random() % EFFECT_COUNT);
     st->dpy = dpy;
     st->effect = k_effects[pick];
-    st->gc = XCreateGC(dpy, w, 0, NULL);
+    st->gc = g_gc_factory(dpy, w, 0, NULL);
+    if (!st->gc) {
+      free(st);
+      XClearWindow(dpy, w);
+      return NULL;
+    }
     st->next = dpy->erasers;
     dpy->erasers = st;
     return st;
