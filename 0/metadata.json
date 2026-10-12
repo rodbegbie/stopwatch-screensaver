@@ -1,0 +1,141 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4S5HQPFT2FEC9C9KJA34Y9F",
+  "session_id": "78c56561-8b6d-4126-96a7-a71146eca6fb",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-12T23:00:47.726581Z",
+  "branch": "feature/xjack-xft-text",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/src/x11shim/xft.c",
+    "firmware/src/x11shim/xft.h",
+    "firmware/src/x11shim/xft_font.h",
+    "firmware/test/test_xft/test_xft.c"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "4744a3450910",
+  "checkpoint_transcript_start": 621,
+  "transcript_lines_at_start": 621,
+  "compact_transcript_start": 66,
+  "token_usage": {
+    "input_tokens": 16,
+    "cache_creation_tokens": 9080,
+    "cache_read_tokens": 1630174,
+    "output_tokens": 5998,
+    "api_call_count": 8
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01SzM1T3gQxRNgAYiShCnUZa",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "port-hack"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "9f0e04bc1040",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 81,
+        "end": 82,
+        "entry_ids": [
+          "0a6c5ec5-3f74-404f-9add-2362f88b9ee8"
+        ],
+        "tool_use_id": "toolu_01SzM1T3gQxRNgAYiShCnUZa"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01SzM1T3gQxRNgAYiShCnUZa"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: port-hack",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01HgQjEB4XsixkgypyQmMQKt",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "4744a3450910",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 530,
+        "end": 531,
+        "entry_ids": [
+          "05038276-35bd-4a08-a0e5-6f416f056dcd"
+        ],
+        "tool_use_id": "toolu_01HgQjEB4XsixkgypyQmMQKt"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01HgQjEB4XsixkgypyQmMQKt"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "initial_attribution": {
+    "calculated_at": "2026-10-12T23:00:47.694844Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 768,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 768,
+    "total_lines_changed": 768,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 11706,
+      "user_lines_removed": 6,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "THIRD_PARTY_NOTICES.md": 21,
+        "firmware/platformio.ini": 3,
+        "firmware/src/glshim/glx_buildlwo.c": 7,
+        "firmware/src/glshim/glx_pipeobjs.c": 4,
+        "firmware/src/glshim/glx_sphere.c": 3,
+        "firmware/src/glshim/glx_teapot.c": 6,
+        "firmware/src/hacks/pipes/pipes.c": 1207,
+        "firmware/src/hacks/pipes_gl.c": 154,
+        "firmware/src/hacks/registry.c": 10,
+        "firmware/src/xs_support/glx/buildlwo.c": 98,
+        "firmware/src/xs_support/glx/buildlwo.h": 24,
+        "firmware/src/xs_support/glx/pipeobjs.c": 3264,
+        "firmware/src/xs_support/glx/sphere.c": 176,
+        "firmware/src/xs_support/glx/sphere.h": 24,
+        "firmware/src/xs_support/glx/teapot.c": 273,
+        "firmware/src/xs_support/glx/teapot.h": 7,
+        "firmware/src/xs_support/glx/teapot2.h": 6330,
+        "firmware/test/test_hacks/test_hacks.c": 51,
+        "tools/check_notices.py": 15,
+        "tools/tests/test_check_notices.py": 29
+      },
+      "user_removed_per_file": {
+        "THIRD_PARTY_NOTICES.md": 2,
+        "firmware/platformio.ini": 3,
+        "tools/check_notices.py": 1
+      }
+    }
+  ]
+}
