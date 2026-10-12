@@ -156,6 +156,8 @@ extern const HackEntry ad_flyingtoasters_hack;
 
 extern const HackEntry eruption_hack;
 
+extern const HackEntry kumppa_hack;
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -217,6 +219,7 @@ const HackEntry *const g_hacks[] = {
     &hextrail_hack,
     &celtic_hack,
     &eruption_hack,
+    &kumppa_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif

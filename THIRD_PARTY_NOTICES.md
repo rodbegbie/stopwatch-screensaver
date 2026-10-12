@@ -113,6 +113,7 @@ implied warranty.
 | `firmware/src/hacks/boing/boing.c` | Copyright (c) 2005-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/hextrail/hextrail.c` | Copyright (c) 2022 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/eruption/eruption.c` | Copyright (c) 2002-2003 W.P. van Paassen | jwz permission notice (above) |
+| `firmware/src/hacks/kumppa/kumppa.c` | Copyright (C) Teemu Suutari, 1998 | X Consortium permission notice (below) |
 | `firmware/src/xs_support/glx/involute.c` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.h` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/normals.c` | Copyright (c) 2002-2004 Jamie Zawinski | jwz permission notice (above) |
@@ -242,6 +243,40 @@ IN NO EVENT SHALL THE X CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR
 OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
+```
+
+### X Consortium permission notice (Kumppa)
+
+`kumppa.c` carries the X Consortium's form of the MIT licence under its
+author's copyright line, not jwz's notice. It is reproduced here as it appears
+in the file:
+
+```text
+Copyright (C) Teemu Suutari (temisu@utu.fi) Feb 1998
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE X CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+Except as contained in this notice, the name of the X Consortium shall
+not be used in advertising or otherwise to promote the sale, use or
+other dealings in this Software without prior written authorization
+from the X Consortium.
 ```
 
 ### The Maze logo

@@ -116,6 +116,7 @@ void test_registry_lists_hacks_in_order(void) {
                                          "HexTrail",
                                          "Celtic",
                                          "Eruption",
+                                         "Kumppa",
 #ifdef HAVE_AFTER_DARK_TOASTERS
                                          "ad-flyingtoasters",
 #endif
@@ -478,6 +479,7 @@ static const uint64_t kBaseline[] = {
     0x0100bedf6ddf582cull, /* HexTrail: taken after looking at the frames (count 6, single precision) */
     0x91947298c096ed6full, /* Celtic: taken after looking at the frames (single precision, graph sized to the screen, step scale 4); re-taken for the eraser (#86), which moved its frames past the stroker's shared-edge slack (#56) */
     0, /* Eruption: not yet pinned */
+    0, /* Kumppa: not yet pinned */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -1263,6 +1265,10 @@ void test_eruption_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("Eruption", 0);
 }
 
+void test_kumppa_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Kumppa", 0);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -1342,6 +1348,7 @@ int main(void) {
   RUN_TEST(test_restart_does_not_leak);
 #endif
   RUN_TEST(test_eruption_stops_do_not_leak);
+  RUN_TEST(test_kumppa_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
