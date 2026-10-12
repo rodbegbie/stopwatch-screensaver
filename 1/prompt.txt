@@ -1,0 +1,9 @@
+flash the device so I can see it running
+
+---
+
+Can you try 20px? The text is pretty small on the disply
+
+---
+
+Looks good now.  OK, open the PR if you're ready

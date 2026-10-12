@@ -3,7 +3,7 @@
   "checkpoint_id": "01M4S7RHJNTKCG616S1GSNJW0E",
   "strategy": "manual-commit",
   "branch": "feature/xjack-xft-text",
-  "checkpoints_count": 1,
+  "checkpoints_count": 5,
   "files_touched": [
     "firmware/src/hacks/xjack_xft.c"
   ],
@@ -14,13 +14,20 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": ""
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 66,
-    "cache_creation_tokens": 38108,
-    "cache_read_tokens": 7557385,
-    "output_tokens": 23005,
-    "api_call_count": 33
+    "input_tokens": 368,
+    "cache_creation_tokens": 349132,
+    "cache_read_tokens": 41613324,
+    "output_tokens": 153073,
+    "api_call_count": 184
   }
 }
