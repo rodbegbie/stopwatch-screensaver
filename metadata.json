@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4S30Q61994ZSJZ68Q40AA08",
+  "strategy": "manual-commit",
+  "branch": "feature/xjack-xft-text",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/src/x11shim/xft.c",
+    "firmware/src/x11shim/xft.h",
+    "firmware/src/x11shim/xft_font.h",
+    "firmware/test/test_xft/test_xft.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 38,
+    "cache_creation_tokens": 100691,
+    "cache_read_tokens": 1692892,
+    "output_tokens": 8896,
+    "api_call_count": 19
+  }
+}
