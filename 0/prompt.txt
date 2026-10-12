@@ -1,0 +1,1 @@
+Also, now that we have a pyproject file, let's add the https://github.com/astral-sh/uv-pre-commit uv-sync and uv-lock hooks, and https://github.com/abravalheri/validate-pyproject validate-pyproject to the pre-commit hooks.
