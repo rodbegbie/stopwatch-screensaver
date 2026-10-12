@@ -3,9 +3,55 @@
   "checkpoint_id": "01M4RBSXQVDAXSXX3QYBZYRV9E",
   "strategy": "manual-commit",
   "branch": "chore/enable-precommit-lints",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
-    "firmware/patch_float_literals.py"
+    ".pre-commit-config.yaml",
+    "THIRD_PARTY_NOTICES.md",
+    "docs/porting-assessment.md",
+    "firmware/after_dark_sprites.py",
+    "firmware/gl_textures.py",
+    "firmware/graphstat_strings.py",
+    "firmware/logo_override.py",
+    "firmware/matrix_glyphs.py",
+    "firmware/pacman_sprites.py",
+    "firmware/patch_float_literals.py",
+    "firmware/patch_maze.py",
+    "firmware/patch_pacman.py",
+    "firmware/patch_tinygl.py",
+    "pyproject.toml",
+    "tools/ab_flash.py",
+    "tools/after_dark_sprites.py",
+    "tools/fetch_xscreensaver.py",
+    "tools/gl_budget.py",
+    "tools/make_logo_blob.py",
+    "tools/mutate.py",
+    "tools/pacman_levels.py",
+    "tools/probe_hacks.py",
+    "tools/score_hacks.py",
+    "tools/speed_backtest.py",
+    "tools/tests/test_binaryring_patch.py",
+    "tools/tests/test_blocktube_patch.py",
+    "tools/tests/test_check_notices.py",
+    "tools/tests/test_etruscanvenus_patch.py",
+    "tools/tests/test_fetch.py",
+    "tools/tests/test_fireworkx_patch.py",
+    "tools/tests/test_float_literals.py",
+    "tools/tests/test_gl_budget.py",
+    "tools/tests/test_make_logo_blob.py",
+    "tools/tests/test_maze_patch.py",
+    "tools/tests/test_mutate.py",
+    "tools/tests/test_pacman_patch.py",
+    "tools/tests/test_png.py",
+    "tools/tests/test_probe_hacks.py",
+    "tools/tests/test_score.py",
+    "tools/tests/test_speed_backtest.py",
+    "tools/tests/test_text_to_c.py",
+    "tools/tests/test_tinygl_patch.py",
+    "tools/tests/test_wire_hack.py",
+    "tools/tinygl_patch.py",
+    "tools/wire_hack.py",
+    "ty.toml",
+    "uv.lock"
   ],
   "sessions": [
     {
@@ -14,13 +60,20 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": "/0/prompt.txt"
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 886,
-    "cache_creation_tokens": 752787,
-    "cache_read_tokens": 151296923,
-    "output_tokens": 271790,
-    "api_call_count": 443
+    "input_tokens": 986,
+    "cache_creation_tokens": 864692,
+    "cache_read_tokens": 156674219,
+    "output_tokens": 299111,
+    "api_call_count": 493
   }
 }
