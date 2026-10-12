@@ -233,7 +233,8 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   `-DCELTIC_STEP_SCALE=<n>`), which cuts the shadow look-ahead's work and a
   picture's draw calls to 100 / scale. A test bounds a pattern's host bytes
   over 150 starts. Do not shorten `*delay2`: it is a 5 s dwell on the finished
-  picture upstream, and only looks like a pause on black because the shim's
-  `erase_window` clears first (issue #86). When forcing a graph type in a
+  picture upstream. It looked like a pause on black while the shim's
+  `erase_window` cleared first (issue #86); now the first call leaves the
+  picture up and the wipe follows the wait. When forcing a graph type in a
   scratch copy to compare, set the margin for that type too, or the triangle
   comes out too small to fill the screen.

@@ -20,11 +20,14 @@ typedef unsigned long Drawable;
 typedef unsigned long Colormap;
 
 struct XshimPixmap;
+struct eraser_state;
 
 typedef struct XshimDisplay {
   Canvas *canvas;
   /* Every pixmap a hack has made and not freed, newest first. */
   struct XshimPixmap *pixmaps;
+  /* Every eraser state erase_window made and the hack has not freed. */
+  struct eraser_state *erasers;
   /* What XClearWindow paints; XSetWindowBackground sets it. */
   unsigned long window_background;
   /* The display that was current when this one opened, for xshim_current_display. */
@@ -237,6 +240,16 @@ void xshim_release_pixmaps(Display *dpy);
  * told when the hack stops: xshim_release_pixmaps calls it once, with the
  * display, after freeing the pixmaps, and then clears it. */
 void xshim_set_release_hook(void (*hook)(Display *dpy));
+/* Frees every eraser state erase_window made on this display and the hack did
+ * not free, as xshim_release_pixmaps does for pixmaps. */
+void xshim_release_erasers(Display *dpy);
+/* Test hooks for erase_window: pin the wipe to effect `index`, or pass -1 for
+ * a random one; and how many effects there are. */
+void xshim_erase_force_effect(int index);
+int xshim_erase_effect_count(void);
+/* Test hook: what erase_window calls to make its GC; NULL restores XCreateGC. */
+void xshim_erase_set_gc_factory(GC (*factory)(Display *, Drawable, unsigned long,
+                                              XGCValues *));
 
 GC XCreateGC(Display *, Drawable, unsigned long mask, XGCValues *);
 int XFreeGC(Display *, GC);

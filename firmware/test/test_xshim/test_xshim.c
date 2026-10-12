@@ -345,14 +345,29 @@ void test_pixel_resource_names_are_case_insensitive(void) {
   TEST_ASSERT_EQUAL_HEX(px_swap(0xF81F), get_pixel_resource(dpy, 1, "a", "A"));
 }
 
-void test_erase_window_clears_and_reports_done(void) {
+static double erase_now;
+static double erase_clock(void) { return erase_now; }
+
+void test_erase_window_keeps_the_picture_until_the_wipe_ends(void) {
   XGCValues v;
   v.foreground = 0xFFFF;
   GC gc = XCreateGC(dpy, win, GCForeground, &v);
   XFillRectangle(dpy, win, gc, 0, 0, 16, 16);
+  const int drawn = count_set();
+  erase_now = 50.0;
+  xshim_set_clock(erase_clock);
+
   eraser_state *st = erase_window(dpy, win, NULL);
+  TEST_ASSERT_NOT_NULL(st);
+  TEST_ASSERT_EQUAL_INT(drawn, count_set());
+  st = erase_window(dpy, win, st);
+  TEST_ASSERT_NOT_NULL(st);
+  erase_now += 2.0;
+  st = erase_window(dpy, win, st);
   TEST_ASSERT_NULL(st);
   TEST_ASSERT_EQUAL_INT(0, count_set());
+
+  xshim_set_clock(NULL);
   eraser_free(NULL);
   XFreeGC(dpy, gc);
 }
@@ -3174,7 +3189,7 @@ int main(void) {
   RUN_TEST(test_hack_defaults_beat_the_builtin_fallbacks);
   RUN_TEST(test_pixel_resource_x11_colour_names);
   RUN_TEST(test_pixel_resource_names_are_case_insensitive);
-  RUN_TEST(test_erase_window_clears_and_reports_done);
+  RUN_TEST(test_erase_window_keeps_the_picture_until_the_wipe_ends);
   RUN_TEST(test_make_random_colormap_fills_colours_in_rgb565);
   RUN_TEST(test_root_window_of_screen_accepts_null_and_names_the_runner_window);
   RUN_TEST(test_select_input_is_accepted_and_ignored);

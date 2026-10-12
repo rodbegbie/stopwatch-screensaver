@@ -38,6 +38,7 @@ void xshim_close_display(Display *dpy) {
         break;
       }
   }
+  xshim_release_erasers(dpy);
   xshim_release_pixmaps(dpy);
   free(dpy);
 }
