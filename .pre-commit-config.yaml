@@ -26,6 +26,15 @@ repos:
     hooks:
       - id: markdownlint-fix
         exclude: ^(\.claude/skills/m5stack-stopwatch/|\.entire/)
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 2e145a365871c9fef3715d38b9b7393ce4174c85  # frozen: 0.13.0
+    hooks:
+      - id: uv-lock
+      - id: uv-sync
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: 4b2e70d08cb2ccd26d1fba73588de41c7a5d50b7  # frozen: v0.25
+    hooks:
+      - id: validate-pyproject
   - repo: https://github.com/gitleaks/gitleaks
     rev: 2ca41cc1372d1e939a6a879f18cdc19fc1cac1ce  # frozen: v8.30.0
     hooks:
