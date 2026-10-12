@@ -6,6 +6,7 @@
 #include "alpha.h"
 #include "colors.h"
 #include "erase.h"
+#include "grabclient.h"
 #include "hsv.h"
 
 static double frand_unit(void) {
@@ -162,4 +163,14 @@ void allocate_alpha_colors(Screen *screen, Visual *visual, Colormap cmap,
   *nplanesP = 0;
   *plane_masks = NULL;
   if (base_pixelP) *base_pixelP = 0;
+}
+
+async_load_state *load_image_async_simple(async_load_state *state, Screen *screen,
+                                          Window top_level, Drawable target,
+                                          char **filename_ret,
+                                          XRectangle *geometry_ret) {
+  (void)state, (void)screen, (void)top_level, (void)target;
+  if (filename_ret) *filename_ret = NULL;
+  if (geometry_ret) *geometry_ret = (XRectangle){0, 0, 0, 0};
+  return NULL;
 }

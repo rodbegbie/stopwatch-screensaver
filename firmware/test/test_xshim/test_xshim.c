@@ -654,6 +654,20 @@ void test_set_graphics_exposures_is_accepted_and_draws_nothing(void) {
   XFreeGC(dpy, gc);
 }
 
+/* No images to load: Boxfit's optional grab mode finds loading done at once. */
+void test_load_image_async_simple_finishes_at_once_with_nothing(void) {
+  char *name = (char *)"stale";
+  XRectangle geom = {1, 2, 3, 4};
+  TEST_ASSERT_NULL(load_image_async_simple(NULL, NULL, win, win, &name, &geom));
+  TEST_ASSERT_NULL(name);
+  TEST_ASSERT_EQUAL_INT(0, geom.x);
+  TEST_ASSERT_EQUAL_INT(0, geom.y);
+  TEST_ASSERT_EQUAL_INT(0, geom.width);
+  TEST_ASSERT_EQUAL_INT(0, geom.height);
+  TEST_ASSERT_NULL(load_image_async_simple(NULL, NULL, win, win, NULL, NULL));
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+}
+
 void test_the_arrow_and_page_keysyms_have_x_values(void) {
   TEST_ASSERT_EQUAL_HEX(0xFF51, XK_Left);
   TEST_ASSERT_EQUAL_HEX(0xFF52, XK_Up);
@@ -3316,6 +3330,7 @@ int main(void) {
   RUN_TEST(test_make_color_loop_takes_the_short_way_and_blends_value);
   RUN_TEST(test_a_gc_remembers_its_function_but_draws_copy);
   RUN_TEST(test_set_graphics_exposures_is_accepted_and_draws_nothing);
+  RUN_TEST(test_load_image_async_simple_finishes_at_once_with_nothing);
   RUN_TEST(test_the_arrow_and_page_keysyms_have_x_values);
   RUN_TEST(test_visual_depth_is_sixteen);
   RUN_TEST(test_xshm_image_is_a_16_bit_image_put_where_asked);
