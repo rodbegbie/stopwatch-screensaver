@@ -95,6 +95,12 @@ typedef struct {
   short x, y;
 } XPoint;
 
+/* A string's or a glyph's extent: X's layout. */
+typedef struct {
+  short lbearing, rbearing, width, ascent, descent;
+  unsigned short attributes;
+} XCharStruct;
+
 typedef struct {
   short x, y;
   unsigned short width, height;

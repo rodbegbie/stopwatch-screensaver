@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <math.h>
 #include <sanitizer/allocator_interface.h>
 #include <stdint.h>
@@ -10,6 +11,7 @@
 #include "fps.h"
 #include "glshim/glshim.h"
 #include "glshim/glshim_prof.h"
+#include "texfont.h"
 #include "tinygl/src/zgl.h"
 #include "x11shim/xshim.h"
 #include "zbuffer.h"
@@ -451,6 +453,96 @@ void test_an_interleaved_format_it_does_not_handle_turns_the_arrays_off(void) {
   glInterleavedArrays(GL_C4UB_V3F, 0, kNV);
   glDrawArrays(GL_TRIANGLES, 0, 3);
   TEST_ASSERT_EQUAL_INT(0, count_set());
+}
+
+/* Graphstat's titles. The font is TinyGL's 8x8 bitmap font drawn as quads, at
+ * half the point size: 16 points is one pixel a font pixel. */
+static texture_font_data *open_text_scene(const char *font) {
+  const char *const overrides[] = {font, NULL};
+  xshim_set_overrides(overrides);
+  texture_font_data *f = load_texture_font(dpy, (char *)"titleFont");
+  xshim_set_overrides(NULL);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glViewport(0, 0, SIZE, SIZE);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glOrtho(0, SIZE, 0, SIZE, -1, 1);
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  glDisable(GL_LIGHTING);
+  glColor3f(1, 0, 0);
+  return f;
+}
+
+void test_texfont_metrics_follow_the_point_size(void) {
+  texture_font_data *f = open_text_scene("*titleFont: sans-serif 16");
+  XCharStruct e;
+  int ascent, descent;
+  texture_string_metrics(f, "ab\ncde", &e, &ascent, &descent);
+  TEST_ASSERT_EQUAL_INT(24, e.width);
+  TEST_ASSERT_EQUAL_INT(24, e.rbearing);
+  TEST_ASSERT_EQUAL_INT(0, e.lbearing);
+  TEST_ASSERT_EQUAL_INT(7, e.ascent);
+  TEST_ASSERT_EQUAL_INT(9, e.descent);
+  TEST_ASSERT_EQUAL_INT(7, ascent);
+  TEST_ASSERT_EQUAL_INT(1, descent);
+  free_texture_font(f);
+  f = open_text_scene("*titleFont: sans-serif 32");
+  texture_string_metrics(f, "abc", &e, NULL, NULL);
+  TEST_ASSERT_EQUAL_INT(48, e.width);
+  TEST_ASSERT_EQUAL_INT(14, e.ascent);
+  free_texture_font(f);
+}
+
+void test_texfont_needs_its_resource(void) {
+  TEST_ASSERT_NULL(load_texture_font(dpy, (char *)"titleFont"));
+}
+
+/* The box around every lit pixel, in canvas rows (y down). */
+static void lit_box(int *x0, int *y0, int *x1, int *y1) {
+  *x0 = *y0 = SIZE, *x1 = *y1 = -1;
+  for (int y = 0; y < SIZE; y++)
+    for (int x = 0; x < SIZE; x++)
+      if (cv.px[y * SIZE + x]) {
+        if (x < *x0) *x0 = x;
+        if (x > *x1) *x1 = x;
+        if (y < *y0) *y0 = y;
+        if (y > *y1) *y1 = y;
+      }
+}
+
+/* '-' is row 3 of its cell, columns 0 to 5: GL x 10 to 16 and y 23 to 24 with
+ * the origin at (10, 20). TinyGL fills that quad as columns 9 to 15 and both
+ * rows, canvas rows 39 and 40. */
+void test_texfont_draws_a_glyph_at_the_origin_of_the_transform(void) {
+  texture_font_data *f = open_text_scene("*titleFont: sans-serif 16");
+  glTranslatef(10, 20, 0);
+  print_texture_string(f, "-");
+  int x0, y0, x1, y1;
+  lit_box(&x0, &y0, &x1, &y1);
+  TEST_ASSERT_EQUAL_INT(9, x0);
+  TEST_ASSERT_EQUAL_INT(15, x1);
+  TEST_ASSERT_EQUAL_INT(SIZE - 1 - 24, y0);
+  TEST_ASSERT_EQUAL_INT(SIZE - 1 - 23, y1);
+  TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), cv.px[(SIZE - 1 - 23) * SIZE + 12]);
+  free_texture_font(f);
+}
+
+/* The second '-' is a cell (8 pixels) to the right, the third a line (8
+ * pixels) down. */
+void test_texfont_steps_along_a_line_and_down_a_new_one(void) {
+  texture_font_data *f = open_text_scene("*titleFont: sans-serif 16");
+  glTranslatef(10, 30, 0);
+  print_texture_string(f, "--\n-");
+  int x0, y0, x1, y1;
+  lit_box(&x0, &y0, &x1, &y1);
+  TEST_ASSERT_EQUAL_INT(9, x0);
+  TEST_ASSERT_EQUAL_INT(23, x1);
+  TEST_ASSERT_EQUAL_INT(SIZE - 1 - 34, y0);
+  TEST_ASSERT_EQUAL_INT(SIZE - 1 - 25, y1);
+  TEST_ASSERT_EQUAL_HEX16(0, cv.px[(SIZE - 1 - 26) * SIZE + 20]);
+  TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), cv.px[(SIZE - 1 - 33) * SIZE + 20]);
+  free_texture_font(f);
 }
 
 /* Dirty rectangle: TinyGL tracks the box around what it draws, glClear clears
@@ -1663,6 +1755,10 @@ int main(void) {
   RUN_TEST(test_interleaved_colours_colour_each_vertex_and_honour_a_stride);
   RUN_TEST(test_interleaved_normals_reach_the_lighting);
   RUN_TEST(test_an_interleaved_format_it_does_not_handle_turns_the_arrays_off);
+  RUN_TEST(test_texfont_metrics_follow_the_point_size);
+  RUN_TEST(test_texfont_needs_its_resource);
+  RUN_TEST(test_texfont_draws_a_glyph_at_the_origin_of_the_transform);
+  RUN_TEST(test_texfont_steps_along_a_line_and_down_a_new_one);
   RUN_TEST(test_clear_writes_canvas_byte_order);
   RUN_TEST(test_the_first_list_name_is_not_zero);
   RUN_TEST(test_perspective_and_lookat_put_a_point_where_the_maths_says);
