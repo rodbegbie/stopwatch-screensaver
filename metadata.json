@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4QM8T8GN8YAYNG0DE4AEJA3",
+  "strategy": "manual-commit",
+  "branch": "feature/batch4-kumppa-eruption-gl",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/src/hacks/eruption_direct.c",
+    "firmware/src/hacks/lowrez_put.h",
+    "firmware/test/test_lowrez_put/test_lowrez_put.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 66,
+    "cache_creation_tokens": 51800,
+    "cache_read_tokens": 15453433,
+    "output_tokens": 23063,
+    "api_call_count": 33
+  }
+}
