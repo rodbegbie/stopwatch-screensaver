@@ -289,6 +289,16 @@ ones below apply everywhere.
   work. Ignore it and carry on.
 - `esptool` reads of the 16 MB flash need `--baud 921600` (about 3.5 minutes)
   and show no progress when piped.
+- A hack allocates its state on the first `runner_step`, not at
+  `runner_start`: a test that reads a hack's globals (`pacman_games[0]`)
+  before one step gets NULL, and ASan reports a SEGV on a write near address 0.
+- A mutation that keeps the file's size (`if (0)` to `if (1)`), restored in
+  the same second, leaves a stale `.pyc` that the next `pytest` run loads:
+  delete `tools/__pycache__/<module>*.pyc` after a mutation script, then
+  rerun before trusting a failure.
+- `( ... ) &` inside a `run_in_background` Bash call reports "completed" at
+  once, while the job runs on. Have the job write a done file, and wait with a
+  separate background `until [ -f <file> ]; do sleep 15; done`.
 - A background command (`run_in_background`) ignores `cd`, so `source
   tools/env.sh` fails there with exit 127 and "pio not found": give it the
   absolute path (`source /…/tools/env.sh && cd /…/firmware && pio …`).

@@ -87,7 +87,11 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   12 modes) shows the same one in every dump. To see others, build the hack
   alone (`probe_hacks.registry_source` and `shim_sources`) from a copy outside
   `vendor/`, with a `__attribute__((constructor))` that calls
-  `srandom(atoi(getenv("SEED")))`. A device boot is deterministic too (Halo
+  `srandom(atoi(getenv("SEED")))`. Cheaper: drop a temporary
+  `src/hacks/zz_seed_tmp.c` with that constructor, guarded by `SEED` being set
+  (`-e dump` builds every file under `src/`), run
+  `SEED=n .pio/build/dump/program <index> <frames> out.raw`, and delete the
+  file before running the tests. A device boot is deterministic too (Halo
   chose Ramp on five boots in a row), so a hack that picks a mode with
   `random()` always starts the same one: force another with a temporary
   `*mode:` override to measure it. Rotation reaches other modes because the
