@@ -1,0 +1,29 @@
+I'm going to bed.  While I'm away, work on porting the following hacks:
+
+
+
+<pasted_content id="ab66">
+- Kumppa
+- Interference
+- Eruption
+- Binary Ring
+- BLock Tube
+- Box Fit
+- Companion Cube
+- Etruscan Venus
+- Shade Bobs
+- Floppy
+- Graphstat
+- Piecewise
+</pasted_content id="ab66">
+
+
+You have permission to flash the device while I'm away.  Let me know how you get on and what you need my eyes or opinions on in the morning.
+
+---
+
+List them as failed, flash it, and open the PR
+
+---
+
+/address-findings
