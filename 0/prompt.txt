@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bbuuj5dl8</task-id>
+<tool-use-id>toolu_01LwC5nXp7y9gAJYNxJ2VzK6</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/78c56561-8b6d-4126-96a7-a71146eca6fb/tasks/bbuuj5dl8.output</output-file>
+<status>completed</status>
+<summary>Background command "Run test_hacks with Pipes wired in" completed (exit code 0)</summary>
+</task-notification>

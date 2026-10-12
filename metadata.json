@@ -1,0 +1,45 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4S3SNPAX6CXWFVVVVX0CFPX",
+  "strategy": "manual-commit",
+  "branch": "feature/44-pipes",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "THIRD_PARTY_NOTICES.md",
+    "firmware/platformio.ini",
+    "firmware/src/glshim/glx_buildlwo.c",
+    "firmware/src/glshim/glx_pipeobjs.c",
+    "firmware/src/glshim/glx_sphere.c",
+    "firmware/src/glshim/glx_teapot.c",
+    "firmware/src/hacks/pipes/pipes.c",
+    "firmware/src/hacks/pipes_gl.c",
+    "firmware/src/hacks/registry.c",
+    "firmware/src/xs_support/glx/buildlwo.c",
+    "firmware/src/xs_support/glx/buildlwo.h",
+    "firmware/src/xs_support/glx/pipeobjs.c",
+    "firmware/src/xs_support/glx/sphere.c",
+    "firmware/src/xs_support/glx/sphere.h",
+    "firmware/src/xs_support/glx/teapot.c",
+    "firmware/src/xs_support/glx/teapot.h",
+    "firmware/src/xs_support/glx/teapot2.h",
+    "firmware/test/test_hacks/test_hacks.c",
+    "tools/check_notices.py",
+    "tools/tests/test_check_notices.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 82,
+    "cache_creation_tokens": 74029,
+    "cache_read_tokens": 6896106,
+    "output_tokens": 27492,
+    "api_call_count": 41
+  }
+}
