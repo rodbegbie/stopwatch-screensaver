@@ -160,6 +160,10 @@ extern const HackEntry kumppa_hack;
 
 extern const HackEntry shadebobs_hack;
 
+extern const HackEntry piecewise_hack;
+
+extern const HackEntry boxfit_hack;
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -223,6 +227,8 @@ const HackEntry *const g_hacks[] = {
     &eruption_hack,
     &kumppa_hack,
     &shadebobs_hack,
+    &piecewise_hack,
+    &boxfit_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif
