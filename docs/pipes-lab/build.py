@@ -42,7 +42,16 @@ for name in ("sphere.c", "teapot.c", "buildlwo.c", "pipeobjs.c"):
     probe_hacks.registry_source("Pipes", "pipes", True, overrides or ["*delay: 10000"])
 )
 src = ROOT / "firmware/src"
-shim = [str(f) for f in gl_budget.shim_sources(ROOT) if f.name != "gl_budget_main.c"]
+# The lab builds its own copies of Pipes' helpers, so it leaves out the
+# firmware's wrappers for them.
+OWN = {
+    "gl_budget_main.c",
+    "glx_sphere.c",
+    "glx_teapot.c",
+    "glx_buildlwo.c",
+    "glx_pipeobjs.c",
+}
+shim = [str(f) for f in gl_budget.shim_sources(ROOT) if f.name not in OWN]
 flags = (
     list(probe_hacks.BUILD_FLAGS)
     if os.environ.get("ASAN")

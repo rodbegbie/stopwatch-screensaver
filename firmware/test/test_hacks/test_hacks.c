@@ -547,7 +547,7 @@ static const uint64_t kBaseline[] = {
     0x08d32e1f97fcdaf2ull, /* Rocks: taken after looking at the frames (bitmap rock stamps) */
     0, /* DecayScreen: unpinned on purpose, it smears the shim's grab image and has none here (see test_decayscreen_melts_the_grab_image) */
     0xecc578b5f7eb7789ull, /* XJack: taken after looking at the frames, with test_font.h's blocky font */
-    0xa8aea6821a500af3ull, /* Pipes: taken after looking at the frames (fixed camera, incremental, no fade) */
+    0xdaff07126987ac48ull, /* Pipes: taken after looking at the frames (3x150, fixed camera, incremental, no fade) */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -1089,10 +1089,11 @@ void test_pipes_start_and_stop_do_not_leak(void) {
 extern int pipes_full_redraw;
 long pipes_lists_skipped(void);
 
-static void pipes_frame_hashes(uint64_t *out, int frames) {
+static void pipes_frame_hashes(const HackEntry *pipes, uint64_t *out, int frames) {
+  const HackEntry *const hacks[] = {pipes};
   srandom(1);
-  HackRunner *r = runner_create(&cv);
-  runner_start(r, index_of("Pipes"));
+  HackRunner *r = runner_create_with(&cv, hacks, 1);
+  runner_start(r, 0);
   for (int f = 0; f < frames; f++) {
     runner_step(r);
     out[f] = frame_hash();
@@ -1103,21 +1104,45 @@ static void pipes_frame_hashes(uint64_t *out, int frames) {
 /* pipes_gl.c skips the clear and the lists last frame already drew. Every
  * frame must match a full redraw, across several screens (each new screen
  * recompiles the same list names), and the skip must actually happen. */
-void test_pipes_incremental_redraw_matches_a_full_redraw(void) {
-  enum { kFrames = 400 };
-  static uint64_t full[kFrames], incremental[kFrames];
+static void check_pipes_incremental_matches_full(const HackEntry *pipes,
+                                                 int frames, int expect_skips) {
+  enum { kMaxFrames = 400 };
+  static uint64_t full[kMaxFrames], incremental[kMaxFrames];
+  TEST_ASSERT_TRUE(frames <= kMaxFrames);
   pipes_full_redraw = 1;
-  pipes_frame_hashes(full, kFrames);
+  pipes_frame_hashes(pipes, full, frames);
   pipes_full_redraw = 0;
   const long skipped_before = pipes_lists_skipped();
-  pipes_frame_hashes(incremental, kFrames);
-  TEST_ASSERT_TRUE_MESSAGE(pipes_lists_skipped() - skipped_before > 10000,
-                           "the incremental redraw skipped nothing");
-  for (int f = 0; f < kFrames; f++) {
+  pipes_frame_hashes(pipes, incremental, frames);
+  const long skipped = pipes_lists_skipped() - skipped_before;
+  if (expect_skips)
+    TEST_ASSERT_TRUE_MESSAGE(skipped > 10000, "the incremental redraw skipped nothing");
+  else
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, (int)skipped, "skipped under a turning camera");
+  for (int f = 0; f < frames; f++) {
     char msg[32];
     snprintf(msg, sizeof msg, "frame %d", f);
     TEST_ASSERT_EQUAL_UINT64_MESSAGE(full[f], incremental[f], msg);
   }
+}
+
+/* One system of 100 pieces, so 400 frames cross several screens. */
+void test_pipes_incremental_redraw_matches_a_full_redraw(void) {
+  static const char *const small[] = {"*ncolors: 64", "*cycles: 1", "*size: 100",
+                                      "*rotatepipes: False", NULL};
+  HackEntry pipes = *g_hacks[index_of("Pipes")];
+  pipes.overrides = small;
+  check_pipes_incremental_matches_full(&pipes, 400, 1);
+}
+
+/* Upstream's turning camera changes the modelview every frame, so nothing may
+ * be skipped. */
+void test_pipes_incremental_redraw_skips_nothing_when_the_camera_turns(void) {
+  static const char *const turning[] = {"*ncolors: 64", "*cycles: 1", "*size: 100",
+                                        "*rotatepipes: True", NULL};
+  HackEntry pipes = *g_hacks[index_of("Pipes")];
+  pipes.overrides = turning;
+  check_pipes_incremental_matches_full(&pipes, 150, 0);
 }
 
 /* Morph3D builds no display lists and keeps one small struct, so the only
@@ -1571,6 +1596,7 @@ int main(void) {
   RUN_TEST(test_gears_registers_a_shorter_pause);
   RUN_TEST(test_pipes_start_and_stop_do_not_leak);
   RUN_TEST(test_pipes_incremental_redraw_matches_a_full_redraw);
+  RUN_TEST(test_pipes_incremental_redraw_skips_nothing_when_the_camera_turns);
   RUN_TEST(test_morph3d_start_and_stop_do_not_leak);
   RUN_TEST(test_morph3d_registers_a_shorter_pause);
   RUN_TEST(test_cubicgrid_start_and_stop_do_not_leak);
