@@ -1,0 +1,9 @@
+/claude-md-management:revise-claude-md
+
+---
+
+yes, apply all three and commit to main
+
+---
+
+End Session
