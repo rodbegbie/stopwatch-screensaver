@@ -29,6 +29,13 @@ void make_color_ramp(Screen *, Visual *, Colormap, int h1, double s1,
                      double v1, int h2, double s2, double v2, XColor *colors,
                      int *ncolorsP, Bool closed_p, Bool allocate_p,
                      Bool *writable_pP);
+/* A closed loop through three colours: a third of the colours ramps from the
+ * first to the second, a third on to the third, and a third back to the first,
+ * each the short way round the hue wheel. Ours, not xscreensaver's. */
+void make_color_loop(Screen *, Visual *, Colormap, int h1, double s1, double v1,
+                     int h2, double s2, double v2, int h3, double s3, double v3,
+                     XColor *colors, int *ncolorsP, Bool allocate_p,
+                     Bool *writable_pP);
 /* Fully saturated colours with evenly spaced hues. */
 void make_uniform_colormap(Screen *, Visual *, Colormap, XColor *colors,
                            int *ncolorsP, Bool allocate_p, Bool *writable_pP,

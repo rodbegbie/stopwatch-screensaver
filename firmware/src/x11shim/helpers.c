@@ -80,6 +80,30 @@ void make_color_ramp(Screen *screen, Visual *visual, Colormap cmap, int h1,
   }
 }
 
+void make_color_loop(Screen *screen, Visual *visual, Colormap cmap, int h1,
+                     double s1, double v1, int h2, double s2, double v2, int h3,
+                     double s3, double v3, XColor *colors, int *ncolorsP,
+                     Bool allocate_p, Bool *writable_pP) {
+  (void)screen;
+  (void)visual;
+  (void)cmap;
+  (void)allocate_p;
+  if (writable_pP) *writable_pP = False;
+  const int h[4] = {h1, h2, h3, h1};
+  const double s[4] = {s1, s2, s3, s1}, v[4] = {v1, v2, v3, v1};
+  const int n = *ncolorsP;
+  for (int k = 0; k < 3; k++) {
+    const int start = k * n / 3, end = (k + 1) * n / 3;
+    int dh = ((h[k + 1] - h[k]) % 360 + 360) % 360;
+    if (dh > 180) dh -= 360;
+    for (int i = start; i < end; i++) {
+      const double t = (double)(i - start) / (end - start);
+      set_colour(&colors[i], h[k] + dh * t, s[k] + (s[k + 1] - s[k]) * t,
+                 v[k] + (v[k + 1] - v[k]) * t);
+    }
+  }
+}
+
 /* Three anchor colours, one per third of the hue wheel so the loop always
  * goes all the way round, blended forward from each anchor to the next and
  * from the last back to the first. */

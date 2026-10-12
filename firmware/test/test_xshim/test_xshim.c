@@ -590,6 +590,40 @@ void test_make_color_ramp_blends_saturation_and_value_too(void) {
   TEST_ASSERT_TRUE(colors[4].green > 0x2000 && colors[4].green < 0x6000);
 }
 
+/* Piecewise and Interference cycle through a loop of three anchor colours. */
+void test_make_color_loop_passes_each_anchor_in_turn_and_closes(void) {
+  XColor colors[30];
+  memset(colors, 0, sizeof(colors));
+  int n = 30;
+  make_color_loop(NULL, NULL, 1, 0, 1.0, 1.0, 120, 1.0, 1.0, 240, 1.0, 1.0,
+                  colors, &n, True, NULL);
+  TEST_ASSERT_EQUAL_INT(30, n);
+  TEST_ASSERT_TRUE(colors[0].red > 0xF000 && colors[0].green < 0x1000 && colors[0].blue < 0x1000);
+  TEST_ASSERT_TRUE(colors[10].green > 0xF000 && colors[10].red < 0x1000 && colors[10].blue < 0x1000);
+  TEST_ASSERT_TRUE(colors[20].blue > 0xF000 && colors[20].red < 0x1000 && colors[20].green < 0x1000);
+  for (int i = 0; i < n; i++) {
+    const XColor *a = &colors[i], *b = &colors[(i + 1) % n];
+    TEST_ASSERT_TRUE(abs((int)a->red - (int)b->red) < 0x4000);
+    TEST_ASSERT_TRUE(abs((int)a->green - (int)b->green) < 0x4000);
+    TEST_ASSERT_TRUE(abs((int)a->blue - (int)b->blue) < 0x4000);
+    TEST_ASSERT_EQUAL_HEX(rgb565_from16(a->red, a->green, a->blue), a->pixel);
+  }
+}
+
+void test_make_color_loop_takes_the_short_way_and_blends_value(void) {
+  XColor colors[6];
+  memset(colors, 0, sizeof(colors));
+  int n = 6;
+  make_color_loop(NULL, NULL, 1, 350, 1.0, 1.0, 10, 1.0, 0.5, 350, 1.0, 1.0,
+                  colors, &n, True, NULL);
+  for (int i = 0; i < n; i++) {
+    TEST_ASSERT_TRUE(colors[i].green < 0x3000);
+    TEST_ASSERT_TRUE(colors[i].blue < 0x3000);
+  }
+  TEST_ASSERT_UINT16_WITHIN(0x0800, 0x8000, colors[2].red);
+  TEST_ASSERT_TRUE(colors[1].red > 0x9000 && colors[1].red < 0xF000);
+}
+
 void test_a_gc_remembers_its_function_but_draws_copy(void) {
   XGCValues v = {0};
   GC plain = XCreateGC(dpy, win, 0, &v);
@@ -3278,6 +3312,8 @@ int main(void) {
   RUN_TEST(test_make_color_ramp_takes_the_short_way_round_the_hue_wheel);
   RUN_TEST(test_make_color_ramp_takes_the_short_way_backwards_too);
   RUN_TEST(test_make_color_ramp_blends_saturation_and_value_too);
+  RUN_TEST(test_make_color_loop_passes_each_anchor_in_turn_and_closes);
+  RUN_TEST(test_make_color_loop_takes_the_short_way_and_blends_value);
   RUN_TEST(test_a_gc_remembers_its_function_but_draws_copy);
   RUN_TEST(test_set_graphics_exposures_is_accepted_and_draws_nothing);
   RUN_TEST(test_the_arrow_and_page_keysyms_have_x_values);
