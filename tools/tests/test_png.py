@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import rgb565_to_png as rp  # noqa: E402
+import rgb565_to_png as rp
 
 
 def decode_png(data: bytes):
@@ -23,6 +23,7 @@ def decode_png(data: bytes):
             idat += body
         pos += 12 + length
     raw = zlib.decompress(idat)
+    assert size is not None
     w, h = size
     rows = []
     for y in range(h):

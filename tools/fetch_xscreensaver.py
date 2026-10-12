@@ -17,7 +17,9 @@ from pathlib import Path, PurePosixPath
 BASE_URL = "https://www.jwz.org/xscreensaver/"
 DOWNLOAD_PAGE = BASE_URL + "download.html"
 SURVEYED_VERSION = "6.16"
-USER_AGENT = "stopwatch-screensaver-fetch/1.0 (personal project; fetches xscreensaver source)"
+USER_AGENT = (
+    "stopwatch-screensaver-fetch/1.0 (personal project; fetches xscreensaver source)"
+)
 TARBALL_LINK = re.compile(
     r"""href=["']?xscreensaver-(\d+(?:\.\d+)+)\.tar\.gz""", re.IGNORECASE
 )

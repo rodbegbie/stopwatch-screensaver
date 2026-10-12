@@ -5,7 +5,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import mutate as mu  # noqa: E402
+import mutate as mu
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def run(project, mutations):
 
 
 def test_a_mutation_the_tests_notice_is_caught(project):
-    ((old, status, detail),) = run(project, [("VALUE = 1", "VALUE = 2")])
+    ((_old, status, detail),) = run(project, [("VALUE = 1", "VALUE = 2")])
     assert status == "CAUGHT"
     assert "value changed" in detail
 

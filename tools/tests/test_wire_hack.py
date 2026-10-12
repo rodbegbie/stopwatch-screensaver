@@ -5,7 +5,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import wire_hack as wh  # noqa: E402
+import wire_hack as wh
 
 REGISTRY = """\
 extern const HackEntry pyro_hack;

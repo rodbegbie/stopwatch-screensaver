@@ -1,0 +1,8 @@
+[environment]
+extra-paths = ["tools"]
+
+[[overrides]]
+include = ["firmware/*.py"]
+
+[overrides.rules]
+unresolved-reference = "ignore"

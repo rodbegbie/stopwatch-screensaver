@@ -131,7 +131,7 @@ def flash(name: str, flags: str, out: Path, log: Path) -> None:
 
 
 def main(argv: list[str]) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n")[0])
     parser.add_argument("--hack", required=True, help="a name from g_hacks[]")
     parser.add_argument("--seconds", type=float, default=60)
     parser.add_argument("--rounds", type=int, default=2)

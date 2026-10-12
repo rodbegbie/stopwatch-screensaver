@@ -25,8 +25,7 @@ repos:
     rev: 5b5dddc4fb0f83c3ea1fc5616fa63e115dce83e0  # frozen: v0.49.1
     hooks:
       - id: markdownlint-fix
-        exclude: ^\.claude/skills/m5stack-stopwatch/
-        exclude: ^\.entire/
+        exclude: ^(\.claude/skills/m5stack-stopwatch/|\.entire/)
   - repo: https://github.com/gitleaks/gitleaks
     rev: 2ca41cc1372d1e939a6a879f18cdc19fc1cac1ce  # frozen: v8.30.0
     hooks:

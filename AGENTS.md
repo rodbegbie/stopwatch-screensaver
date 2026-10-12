@@ -356,9 +356,6 @@ ones below apply everywhere.
 - A mutant can die by crash, not assertion: an ASan abort ends the run with
   "20 test cases: 19 succeeded" (fewer cases than usual, no `[FAILED]`). Read
   the summary line and treat anything but the full passing count as killed.
-- `ruff check tools` already reports about 17 findings on `main` (e.g. an
-  unused `noqa: E402` in `test_mutate.py`): run `ruff check` and
-  `ruff format --check` on the files you touched, not the directory.
 - To test code inside a wrapped hack (a `static inline` blend, say), give the
   test its own dir and `#define <name>_hack <name>_hack_under_test` before
   `#include "hacks/<name>_direct.c"`: the wrapper exports only that one symbol,
@@ -372,9 +369,11 @@ ones below apply everywhere.
   `grep -o '&[a-z0-9_]*_hack' | wc -l`.
 - `gh issue view N` prints nothing in this repo: read issues with
   `gh api repos/rodbegbie/stopwatch-screensaver/issues/N --jq '.title,.body'`.
-- `markdownlint` already fails on `main` for `THIRD_PARTY_NOTICES.md` (MD034,
-  a bare email) and `tools/assessment_measured.md` (MD041, a fragment): not
-  yours.
+- `uvx pre-commit run --all-files` runs ruff, `ty`, markdownlint and gitleaks,
+  and all pass on `main`. `ty` ignores `unresolved-reference` in
+  `firmware/*.py` (`ty.toml`): SCons injects `Import` and `env` at build time.
+  `tools/assessment_measured.md.in` is a fragment that `score_hacks.py` splices
+  into the assessment, so it is not named `.md`.
 - When a hack's colours look suspect, dump the same index and frame count
   from the current build and from `git stash` of the wrapper, and look at both
   side by side. Interaggregate's blend bug showed as rainbow confetti against

@@ -1166,10 +1166,13 @@ needing few additions come first.
 
 ## Failed ports
 
-- **blocktube**: 8.8-10 fps at 400 blocks, half size; Rod dropped it (slow, little going on)
-- **boing**: 8.3 fps and plain on a small screen; Rod dropped it, scanlines cost 83 ms
+- **blocktube**: 8.8-10 fps at 400 blocks, half size; Rod dropped it (slow,
+  little going on)
+- **boing**: 8.3 fps and plain on a small screen; Rod dropped it, scanlines cost
+  83 ms
 - **companion**: about 71,000 vertices a cube, est. 2-3 fps; Rod dropped it
-- **floppy**: 630 KB model won't fit the 3 MB app partition, est. 5 fps; Rod dropped it
+- **floppy**: 630 KB model won't fit the 3 MB app partition, est. 5 fps; Rod
+  dropped it
 - **flurry**: needs GL TinyGL lacks, est. under 1 fps, issue #70
 - **halftone**: 5 fps; the shim's ellipse fill is 80% of it, issue #57
 - **hypnowheel**: 4.0 fps at half resolution, fill-bound; Rod dropped it, #73

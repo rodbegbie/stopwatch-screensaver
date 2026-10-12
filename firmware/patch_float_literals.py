@@ -9,16 +9,34 @@ Import("env")  # noqa: F821
 
 project = Path(env["PROJECT_DIR"])  # noqa: F821
 sys.path.insert(0, str(project.parent / "tools"))
-import binaryring_patch  # noqa: E402
-import celtic_patch  # noqa: E402
-import etruscanvenus_patch  # noqa: E402
-import float_literals  # noqa: E402
-import fireworkx_patch  # noqa: E402
+import binaryring_patch
+import celtic_patch
+import etruscanvenus_patch
+import fireworkx_patch
+import float_literals
 
 generated = Path(env.subst("$BUILD_DIR")) / "generated"  # noqa: F821
 generated.mkdir(parents=True, exist_ok=True)
 
-for name in ("braid",) + ('euler2d', 'compass', 'fuzzyflakes', 'halftone', 'interaggregate', 'anemone', 'lmorph', 'hexadrop', 'fireworkx', 'starfish', 'goop', 'cwaves', 'hextrail', 'celtic', 'binaryring', 'piecewise', 'etruscanvenus'):
+for name in ("braid",) + (
+    "euler2d",
+    "compass",
+    "fuzzyflakes",
+    "halftone",
+    "interaggregate",
+    "anemone",
+    "lmorph",
+    "hexadrop",
+    "fireworkx",
+    "starfish",
+    "goop",
+    "cwaves",
+    "hextrail",
+    "celtic",
+    "binaryring",
+    "piecewise",
+    "etruscanvenus",
+):
     source = (project / "src" / "hacks" / name / f"{name}.c").read_text()
     if name == "fireworkx":
         source = fireworkx_patch.scale_for_a_small_window(source)

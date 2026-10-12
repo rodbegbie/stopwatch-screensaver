@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import fetch_xscreensaver as fx  # noqa: E402
+import fetch_xscreensaver as fx
 
 FIXTURE = (Path(__file__).parent / "fixtures" / "download.html").read_text()
 
@@ -129,7 +129,7 @@ def _serve_recording_user_agent():
             self.end_headers()
             self.wfile.write(b"ok")
 
-        def log_message(self, *args):
+        def log_message(self, format, *args):
             pass
 
     server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
@@ -146,7 +146,9 @@ def test_requests_send_descriptive_user_agent(tmp_path):
     finally:
         server.shutdown()
     assert len(seen) == 2
-    assert all("Python-urllib" not in ua and "stopwatch-screensaver" in ua for ua in seen)
+    assert all(
+        "Python-urllib" not in ua and "stopwatch-screensaver" in ua for ua in seen
+    )
 
 
 def test_safe_extract_dot_member_is_clean_error(tmp_path):

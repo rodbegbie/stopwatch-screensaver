@@ -67,7 +67,7 @@ def c_header(name: str, blob: bytes, source: str) -> str:
 def main(argv: list[str]) -> int:
     from PIL import Image
 
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n\n")[0])
     parser.add_argument("image")
     parser.add_argument("--name", required=True, help="C array name")
     parser.add_argument("-o", "--output", required=True)

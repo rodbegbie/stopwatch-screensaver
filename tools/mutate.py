@@ -80,7 +80,7 @@ def run_mutations(
 
 
 def main(argv: list[str]) -> int:
-    p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    p = argparse.ArgumentParser(description=(__doc__ or "").split("\n\n")[0])
     p.add_argument("file")
     p.add_argument("mutation", nargs="+", help="'<old>=><new>'")
     p.add_argument("--cmd", default="pio test -e native")

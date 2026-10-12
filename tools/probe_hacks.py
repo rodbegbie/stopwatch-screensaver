@@ -16,6 +16,7 @@ import re
 import statistics
 import subprocess
 import tempfile
+from collections.abc import Sequence
 from pathlib import Path
 
 # Host milliseconds per step. Fitted to the measured hacks in
@@ -68,7 +69,7 @@ class ProbeError(Exception):
 
 
 def parse_measured(text: str) -> dict[str, tuple[float, float]]:
-    """Device step range in ms for each hack in tools/assessment_measured.md."""
+    """Device step range in ms for each hack in tools/assessment_measured.md.in."""
     rows = {}
     for name, lo, hi in MEASURED_ROW.findall(text):
         rows[name.lower()] = (float(lo), float(hi or lo))
@@ -93,7 +94,7 @@ def c_string(text: str) -> str:
 
 
 def registry_source(
-    class_name: str, prefix: str, xlockmore: bool, overrides: list[str] = ()
+    class_name: str, prefix: str, xlockmore: bool, overrides: Sequence[str] = ()
 ) -> str:
     """The probe's registry. `overrides` are resource lines such as
     "*count: 40", which beat the hack's own defaults as a HackEntry's do."""
@@ -164,13 +165,22 @@ def probe(name: str, source: str, root: Path, cc: str = "cc") -> dict:
             program = tmp / "probe"
             src = root / "firmware" / "src"
             cmd = [
-                cc, *BUILD_FLAGS, "-w",
-                "-DSTANDALONE", "-DHAVE_MOBILE", "-DXSHIM_NATIVE",
-                f"-I{src}", f"-I{src / 'x11shim' / 'include'}",
+                cc,
+                *BUILD_FLAGS,
+                "-w",
+                "-DSTANDALONE",
+                "-DHAVE_MOBILE",
+                "-DXSHIM_NATIVE",
+                f"-I{src}",
+                f"-I{src / 'x11shim' / 'include'}",
                 f"-I{src / 'xs_support'}",
-                str(tmp / f"{name}.c"), str(registry),
+                str(tmp / f"{name}.c"),
+                str(registry),
                 *map(str, shim_sources(root)),
-                "-lm", "-lpthread", "-o", str(program),
+                "-lm",
+                "-lpthread",
+                "-o",
+                str(program),
             ]
             build = subprocess.run(cmd, capture_output=True, text=True, check=False)
             if build.returncode != 0:
@@ -184,7 +194,10 @@ def probe(name: str, source: str, root: Path, cc: str = "cc") -> dict:
             for _ in range(RUNS):
                 run = subprocess.run(
                     [str(program), "stats", "0"],
-                    capture_output=True, text=True, timeout=RUN_TIMEOUT_S, check=False,
+                    capture_output=True,
+                    text=True,
+                    timeout=RUN_TIMEOUT_S,
+                    check=False,
                 )
                 if run.returncode != 0:
                     how = (

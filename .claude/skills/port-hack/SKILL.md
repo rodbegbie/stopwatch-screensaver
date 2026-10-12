@@ -67,7 +67,7 @@ can still go: Rod dropped Boing (8.3 fps, "pretty boring on a small screen")
 and asked for HexTrail to be tuned because it fell under 10 fps before the
 rotation moved on. Judge a hack on a 466 px round screen, and by its worst
 window as well as its mean. Record the numbers in
-`tools/assessment_measured.md`, marking anything unmeasured as such.
+`tools/assessment_measured.md.in`, marking anything unmeasured as such.
 
 ## 6. Deliver
 

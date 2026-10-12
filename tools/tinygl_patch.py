@@ -448,8 +448,7 @@ REPLACEMENTS: tuple[Replace, ...] = (
     Replace(
         "src/zline.c",
         "void ZB_line_z(ZBuffer* zb, ZBufferPoint* p1, ZBufferPoint* p2) {\n",
-        AA_LINE
-        + "void ZB_line_z(ZBuffer* zb, ZBufferPoint* p1, ZBufferPoint* p2) {\n"
+        AA_LINE + "void ZB_line_z(ZBuffer* zb, ZBufferPoint* p1, ZBufferPoint* p2) {\n"
         "\tif (zb->line_smooth && ZB_line_aa(zb, p1, p2, 1)) return;\n",
     ),
     Replace(

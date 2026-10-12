@@ -27,14 +27,23 @@ if (
 ):
     uv = shutil.which("uv")
     if not uv:
-        sys.exit("pacman_sprites.py needs uv on PATH to convert pacman.png")
+        raise SystemExit("pacman_sprites.py needs uv on PATH to convert pacman.png")
     header.parent.mkdir(parents=True, exist_ok=True)
     # Written beside the header and renamed, so a killed build never leaves a
     # truncated header that the mtime check above would trust.
     partial = header.with_name(header.name + ".partial")
     partial.unlink(missing_ok=True)
     subprocess.run(
-        [uv, "run", str(converter), str(image), "--name", "pacman_png", "-o", str(partial)],
+        [
+            uv,
+            "run",
+            str(converter),
+            str(image),
+            "--name",
+            "pacman_png",
+            "-o",
+            str(partial),
+        ],
         check=True,
     )
     os.replace(partial, header)

@@ -31,7 +31,9 @@ for name in ("matrix1", "matrix1b", "matrix2", "matrix2b"):
         continue
     uv = shutil.which("uv")
     if not uv:
-        sys.exit("matrix_glyphs.py needs uv on PATH to convert the glyph sheets")
+        raise SystemExit(
+            "matrix_glyphs.py needs uv on PATH to convert the glyph sheets"
+        )
     header.parent.mkdir(parents=True, exist_ok=True)
     # Written beside the header and renamed, so a killed build never leaves a
     # truncated header that the mtime check above would trust.

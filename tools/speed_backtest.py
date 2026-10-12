@@ -2,7 +2,7 @@
 
 Runs each registered hack on the host (the `dump` program's `stats` mode),
 joins the host time to the step measured on the device in
-tools/assessment_measured.md, and writes docs/speed-backtest.md: how well the
+tools/assessment_measured.md.in, and writes docs/speed-backtest.md: how well the
 host time ranked the device step, and what each band turned out to mean.
 
 Run: (cd firmware && pio run -e dump) && uv run tools/speed_backtest.py
@@ -32,6 +32,7 @@ HOLDOUT = frozenset(
     | {"interaggregate", "lmorph", "wormhole", "halftone"}
     | {"truchet", "unknownpleasures"}
 )
+
 
 class BacktestError(Exception):
     pass
@@ -64,9 +65,7 @@ def spearman(a: list[float], b: list[float]) -> float:
     ra, rb = _ranks(a), _ranks(b)
     ma, mb = statistics.fmean(ra), statistics.fmean(rb)
     num = sum((x - ma) * (y - mb) for x, y in zip(ra, rb))
-    den = (
-        sum((x - ma) ** 2 for x in ra) * sum((y - mb) ** 2 for y in rb)
-    ) ** 0.5
+    den = (sum((x - ma) ** 2 for x in ra) * sum((y - mb) ** 2 for y in rb)) ** 0.5
     return num / den if den else 0.0
 
 
@@ -74,7 +73,10 @@ def measure_host(program: Path, index: int) -> float:
     times = []
     for _ in range(RUNS):
         run = subprocess.run(
-            [str(program), "stats", str(index)], capture_output=True, text=True, check=False
+            [str(program), "stats", str(index)],
+            capture_output=True,
+            text=True,
+            check=False,
         )
         if run.returncode != 0:
             raise BacktestError(
@@ -190,14 +192,14 @@ def _slow_and_bands(s: dict) -> str:
     low, med, high = s["bands"]["low"], s["bands"]["medium"], s["bands"]["high"]
     return f"""\
 - The slowest hack in the low band took {_worst(low)} ms on the device
-  ({low['count']} hacks), in the medium band {_worst(med)} ms ({med['count']}
-  hacks) and in the high band {_worst(high)} ms ({high['count']} hacks).
-- Of the {len(s['slow'])} {'hack' if len(s['slow']) == 1 else 'hacks'} with a
+  ({low["count"]} hacks), in the medium band {_worst(med)} ms ({med["count"]}
+  hacks) and in the high band {_worst(high)} ms ({high["count"]} hacks).
+- Of the {len(s["slow"])} {"hack" if len(s["slow"]) == 1 else "hacks"} with a
   device step of {SLOW_DEVICE_MS:g} ms or more, the high band caught
-  {len(s['caught'])}.
-  Missed: {', '.join(s['missed']) or 'none'}.
+  {len(s["caught"])}.
+  Missed: {", ".join(s["missed"]) or "none"}.
 - High band but under {SLOW_DEVICE_MS:g} ms on the device:
-  {_wrapped(', '.join(s['false_high']) or 'none')}.
+  {_wrapped(", ".join(s["false_high"]) or "none")}.
 """
 
 
@@ -230,13 +232,13 @@ The bands were fitted to the {len(fitted)} hacks in this section, so these
 figures are in-sample.
 
 - Host time ranks the device step with a Spearman correlation of
-  {s['spearman']:.2f}.
+  {s["spearman"]:.2f}.
 - Bands (host ms per step): low is under {probe_hacks.LOW_MS}, medium is under
   {probe_hacks.HIGH_MS}, high is {probe_hacks.HIGH_MS} or more.
 {_slow_and_bands(s)}
 {out_of_sample}## Table
 
-Device step is the range measured in `tools/assessment_measured.md`; the ratio
+Device step is the range measured in `tools/assessment_measured.md.in`; the ratio
 uses its midpoint.
 
 {render_table(rows, holdout)}
@@ -268,9 +270,7 @@ def measure_registered(program, names, measured, measure=None):
     lacks that index."""
     measure = measure or measure_host
     return {
-        name: measure(program, i)
-        for i, name in enumerate(names)
-        if name in measured
+        name: measure(program, i) for i, name in enumerate(names) if name in measured
     }
 
 
@@ -280,8 +280,12 @@ def main(argv: list[str], root: Path | None = None) -> int:
     parser.add_argument(
         "--dump", default=str(root / "firmware/.pio/build/dump/program")
     )
-    parser.add_argument("--registry", default=str(root / "firmware/src/hacks/registry.c"))
-    parser.add_argument("--measured", default=str(root / "tools/assessment_measured.md"))
+    parser.add_argument(
+        "--registry", default=str(root / "firmware/src/hacks/registry.c")
+    )
+    parser.add_argument(
+        "--measured", default=str(root / "tools/assessment_measured.md.in")
+    )
     parser.add_argument("--failed-ports", default=str(root / "tools/failed_ports.txt"))
     parser.add_argument("--out", default=str(root / "docs/speed-backtest.md"))
     args = parser.parse_args(argv)

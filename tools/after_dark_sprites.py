@@ -282,7 +282,7 @@ def read_module_fork(volume: bytes) -> bytes:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n")[0])
     parser.add_argument("image", type=Path)
     parser.add_argument("-o", "--output", type=Path, required=True)
     args = parser.parse_args(argv)

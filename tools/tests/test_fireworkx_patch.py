@@ -6,7 +6,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import fireworkx_patch as fp  # noqa: E402
+import fireworkx_patch as fp
 
 ROOT = Path(__file__).resolve().parents[2]
 UPSTREAM = ROOT / "vendor" / "xscreensaver-6.16" / "hacks" / "fireworkx.c"

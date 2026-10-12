@@ -65,8 +65,8 @@ Moved verbatim from AGENTS.md.
   it to continue, then rerun `tools/score_hacks.py` and amend the result in.
 - Two ports in flight both append to `g_hacks[]`, so whichever merges second
   conflicts in `registry.c`, the expected list in `test_hacks.c`,
-  `THIRD_PARTY_NOTICES.md`, `tools/assessment_measured.md` (rows, paragraphs and
-  the hack count) and the three `build_src_filter` lines in `platformio.ini`,
+  `THIRD_PARTY_NOTICES.md`, `tools/assessment_measured.md.in` (rows,
+  paragraphs and the hack count) and the three `build_src_filter` lines in `platformio.ini`,
   as well as the generated assessment. Keep both sides, put the newer hack
   last, and regenerate the assessment. A rebased published branch needs
   `--force-with-lease` (ask Rod), and GitHub can reject that push once too.

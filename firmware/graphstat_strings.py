@@ -9,7 +9,7 @@ Import("env")  # noqa: F821
 
 repo = Path(env["PROJECT_DIR"]).parent  # noqa: F821
 sys.path.insert(0, str(repo / "tools"))
-import text_to_c  # noqa: E402
+import text_to_c
 
 source = repo / "vendor" / "xscreensaver-6.16" / "hacks" / "glx" / "graphstat.txt"
 generated = Path(env.subst("$BUILD_DIR")) / "generated"  # noqa: F821

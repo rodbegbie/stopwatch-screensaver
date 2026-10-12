@@ -19,7 +19,7 @@ hack, and holds a recipe per trap. The steps:
    `pio test -e native -f test_hacks`, convert the "Was N" in the failure line
    with `python3 -c "print(hex(N))"`, and run it again.
 6. Regenerate the assessment and add measurements to
-   `tools/assessment_measured.md`, then re-run the speed backtest: each port
+   `tools/assessment_measured.md.in`, then re-run the speed backtest: each port
    adds a point to the check of the Speed bands, which were fitted to the first
    29 hacks. To make a port a real test, commit its host time and predicted
    range first (`docs/speed-predictions.md` shows the form), flash it as copied,
