@@ -121,6 +121,11 @@ void glOrtho(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top,
 void glDepthFunc(GLint func);
 void glTexEnvf(GLint target, GLint pname, GLfloat param);
 void glTexParameterf(GLint target, GLint pname, GLfloat param);
+/* TinyGL has only the float colour calls. */
+void glColor4ub(GLubyte r, GLubyte g, GLubyte b, GLubyte a);
+/* TinyGL cannot generate texture coordinates (no sphere map): accepted and
+ * ignored, so vertices keep the coordinates the hack gives them. */
+void glTexGeni(GLint coord, GLint pname, GLint param);
 /* OpenGL 1.2's separate specular colour: TinyGL ignores a light model it does
  * not know, so these change nothing. */
 #define GL_LIGHT_MODEL_COLOR_CONTROL 0x81F8

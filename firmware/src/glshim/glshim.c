@@ -457,6 +457,12 @@ void glMateriali(GLint face, GLint pname, GLint value) {
 
 void glDepthFunc(GLint func) { (void)func; }
 
+void glColor4ub(GLubyte r, GLubyte g, GLubyte b, GLubyte a) {
+  glColor4f(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f);
+}
+
+void glTexGeni(GLint coord, GLint pname, GLint param) { (void)coord, (void)pname, (void)param; }
+
 void glTexEnvf(GLint target, GLint pname, GLfloat param) {
   (void)target, (void)pname, (void)param;
 }

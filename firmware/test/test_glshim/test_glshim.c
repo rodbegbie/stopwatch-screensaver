@@ -647,6 +647,29 @@ void test_depth_func_tex_env_and_colour_control_change_nothing(void) {
   TEST_ASSERT_EQUAL_MEMORY(reference, cv.px, sizeof reference);
 }
 
+/* BlockTube colours its blocks with glColor4ub; TinyGL has only the float
+ * forms. */
+void test_color4ub_is_the_colour_over_255(void) {
+  open_flat_red_scene();
+  glColor4ub(0, 255, 0, 255);
+  draw_triangle_immediately();
+  TEST_ASSERT_EQUAL_HEX16(rgb565(0, 255, 0), centre());
+  glColor4ub(0, 0, 0x80, 255);
+  draw_triangle_immediately();
+  TEST_ASSERT_EQUAL_HEX16(rgb565(0, 0, 0x80), centre());
+}
+
+/* BlockTube asks for sphere-mapped texture coordinates. TinyGL cannot make
+ * them, so the call is accepted and the vertices keep their own. */
+void test_tex_gen_is_accepted_and_changes_nothing(void) {
+  open_flat_red_scene();
+  take_reference_and_clear();
+  glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
+  glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
+  draw_triangle_immediately();
+  TEST_ASSERT_EQUAL_MEMORY(reference, cv.px, sizeof reference);
+}
+
 /* Dirty rectangle: TinyGL tracks the box around what it draws, glClear clears
  * only the box drawn since the last clear, and the swap marks only the old and
  * new boxes for the push. These pin that it changes nothing visible. */
@@ -1862,6 +1885,8 @@ int main(void) {
   RUN_TEST(test_a_luminance_texture_is_drawn_as_grey);
   RUN_TEST(test_a_texture_of_a_type_it_cannot_convert_is_ignored);
   RUN_TEST(test_depth_func_tex_env_and_colour_control_change_nothing);
+  RUN_TEST(test_color4ub_is_the_colour_over_255);
+  RUN_TEST(test_tex_gen_is_accepted_and_changes_nothing);
   RUN_TEST(test_texfont_metrics_follow_the_point_size);
   RUN_TEST(test_texfont_needs_its_resource);
   RUN_TEST(test_texfont_draws_a_glyph_at_the_origin_of_the_transform);

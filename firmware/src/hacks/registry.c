@@ -172,6 +172,8 @@ XLOCKMORE_HACK(graphstat, "GraphStat");
 
 XLOCKMORE_HACK(etruscanvenus, "EtruscanVenus");
 
+XLOCKMORE_HACK(blocktube, "BlockTube");
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -241,6 +243,7 @@ const HackEntry *const g_hacks[] = {
     &binaryring_hack,
     &graphstat_hack,
     &etruscanvenus_hack,
+    &blocktube_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif

@@ -121,6 +121,7 @@ implied warranty.
 | `firmware/src/hacks/binaryring/binaryring.c` | Copyright (c) 2006-2014 Emilio Del Tessandoro | jwz permission notice (above) |
 | `firmware/src/hacks/graphstat/graphstat.c` | Copyright (c) 2026 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/etruscanvenus/etruscanvenus.c` | Copyright (c) 2019-2026 Carsten Steger | xlock permission notice (below) |
+| `firmware/src/hacks/blocktube/blocktube.c` | Copyright (c) 2003 Lars Damerow | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.c` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.h` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/normals.c` | Copyright (c) 2002-2004 Jamie Zawinski | jwz permission notice (above) |
