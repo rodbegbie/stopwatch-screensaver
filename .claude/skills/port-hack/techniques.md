@@ -315,9 +315,30 @@ on it. Every earlier hack asks for black or nothing.
 
 ## Skipping a hack
 
-Threads, GL, Xft and shared memory are not worth porting. Record the name and
-the reason in `tools/failed_ports.txt` (`name: reason`); the scorer marks it as
-abandoned.
+Threads and shared memory are not worth porting. Record the name and the
+reason in `tools/failed_ports.txt` (`name: reason`); the scorer marks it as
+abandoned. Xft text used to be on this list; it is not now (see "Xft text").
+
+## Xft text
+
+A hack that draws with Xft (`XftDrawStringUtf8`, `load_xft_font_retry`) needs
+the stand-in in `x11shim/xft.h`. Its font is Special Elite, rasterised at build
+time into pixel-coverage tables (`firmware/font_atlas.py`, which runs
+`tools/make_font_atlas.py` on the TTF in `firmware/assets/fonts/`), and
+`main.cpp` installs it with `xshim_set_font`. Only ASCII has glyphs: anything
+else draws as `?`. The family in a font name is ignored and the baked size
+nearest the number is used, so to change a hack's text size override its font
+resource (XJack's `XJACK_FONT_PX`) and bake the size in `font_atlas.py`.
+
+Our `screenhack.h` does not include `xft.h`, because that would change what
+every hack sees. Build the hack through a wrapper that includes it first
+(`hacks/xjack_xft.c`), and exclude the original from all three
+`build_src_filter` lines. XJack's wrapper shows two things an Xft hack may
+need from `screenhack.c`: the window background set from the `background`
+resource (`XClearWindow` otherwise clears to black), and a reshape after
+init. Tests that run the hack install `test_font.h`'s blocky font, so a
+pinned hash does not follow FreeType; with no font installed the shim gives a
+blank one, so a test that replays every hack does not abort.
 
 ## Worktree setup
 
