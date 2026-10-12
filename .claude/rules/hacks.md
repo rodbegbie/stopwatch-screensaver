@@ -298,14 +298,29 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   26,340 vertices (about 630 KB of floats, which would not fit beside the
   current firmware in the 3 MB app partition).
 - Rocks and DecayScreen were wired, looked at and dropped in the 2026-10-12
-  second batch (`failed_ports.txt`; sources and notices rows stay). Rocks draws
-  every rock bigger than 3 pixels with `XCopyPlane` from depth-1 pixmaps it
-  fills with `XFillPolygon`, and the shim draws nothing into a bitmap: only
-  the far dots show, so a 3,000-frame dump looked nearly black. Fixing it
-  wants bit planes as Halo has. DecayScreen smears an image from
-  `load_image_async_simple`, which finishes with nothing, so it stays black.
-  Both were host-only findings from a frame dump: look at later frames
-  (3,000) as well as 400 before pinning, and read what the hack draws with.
+  second batch, then brought back after Rod asked for the shim to be extended.
+  Rocks stamps every rock bigger than 3 pixels with `XCopyPlane` from a
+  depth-1 pixmap it filled with `XFillPolygon`, and the shim drew nothing into
+  a bitmap, so only the far dots showed (a 3,000-frame dump looked nearly
+  black): `XFillRectangle` and `XFillPolygon` now fill bitmaps. On the board it
+  runs at 17.2 fps against its own 50 ms delay, and holds 2.66 MB of PSRAM and
+  all but 32 KB of the internal heap while it runs (about 180 of its 400
+  bitmaps are under the 4 KB internal limit); a rotation soak that left it for
+  DecayScreen read heap and PSRAM back at their idle values. DecayScreen smears
+  the picture `load_image_async_simple` paints (see `x11shim.md`); without one
+  it stays black. Both were host-only findings from a frame dump: look at later
+  frames (3,000) as well as 400 before pinning, and read what the hack draws
+  with.
+- Penrose (`penrose_short_pause.c`, `tools/penrose_patch.py`) restarts after
+  900 frames (about 10 s at 87 fps) instead of 3,141 once the screen is full
+  and 31,415 after an error it thinks it can recover from, about six minutes
+  at the board's rate with nothing moving. Upstream counts those pauses in
+  frames, tuned for a fast X server, so other devices show the same stall.
+- Triangle's palette is `make_smooth_colormap`, which the shim now builds the
+  way upstream picks it (two to five random colours, any saturation, never
+  black): its first version was always a bright rainbow, and every hack that
+  asks for a smooth map changed colour with the fix (24 pinned hashes moved,
+  all looked at).
 - Abstractile holds about 6.1 MB of PSRAM while it runs (the free PSRAM read
   883 KB), so it leaves little for anything else: it stops and restarts clean
   in the leak test, but watch it in a rotation soak. Lisa takes 87 ms a step

@@ -31,11 +31,11 @@ it with `uv run tools/score_hacks.py`.
 
 | Rating | Meaning | Count |
 | --- | --- | --- |
-| S | 2D, and the unmodified source compiles against the shim | 11 |
+| S | 2D, and the unmodified source compiles against the shim | 9 |
 | M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 7 |
 | L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 45 |
 | XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 132 |
-| Ported | Already running on the device, so no rating | 88 |
+| Ported | Already running on the device, so no rating | 90 |
 
 ## Speed
 
@@ -263,6 +263,8 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Worm | 51.6 | 0.3 ms | 1.3-1.4 ms | 17.7 ms | about 164 KB |
 | Triangle | 57.4-67.0 | 3.6-6.0 ms | 0.9-2.1 ms | 9.3-10.4 ms | about 145 KB |
 | XRaySwarm | 22.8-23.0 | 21.2-21.6 ms | 0.9-2.8 ms | 19.4-21.6 ms | about 59 KB |
+| Rocks | 17.2-17.4 | 2.5-3.2 ms | 3.5-4.7 ms | 50.7-52.0 ms | about 2.66 MB |
+| DecayScreen | 63.6-66.8 | 3.3-3.9 ms | 4.3-5.0 ms | 6.7-7.3 ms | none measurable |
 
 The rows from Abstractile to XRaySwarm are the batch of 2026-10-12 (Abstractile,
 Attraction, Greynetic, Wander, PopSquares, Lisa, Penrose, Worm, Triangle and
@@ -271,7 +273,9 @@ first window dropped) with Rod's go-ahead to flash. "Extra PSRAM" is the drop
 from 6,989,667 bytes; good to about 10 KB. Abstractile holds about 6.1 MB
 while it runs, leaving under 1 MB of PSRAM. Lisa is registered in single
 precision (`lisa_single.c`): 9.6 fps as copied, 14.3 after. Rocks and
-DecayScreen were tried and dropped (see `failed_ports.txt`).
+DecayScreen were added in a second pass, once the shim filled bitmaps and
+painted a picture for a screen grab; Rocks holds 2.66 MB of PSRAM and leaves
+about 32 KB of internal heap while it runs, and gives both back when it stops.
 
 The seven rows from CWaves to HexTrail are the CWaves, Vermiculate, Cynosure,
 Moire, Moire2, Boing and HexTrail batch (2026-10-11), each from a pinned build
@@ -900,15 +904,13 @@ needing few additions come first.
 
 | Hack | Kind | Effort | Speed | Ported | Shim gaps | Flags | LOC |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| binaryhorizon | 2d | S | high (1.8 ms) | - | - | pixmaps, readback | 624 |
-| bouboule | 2d | S | high (0.066 ms) | - | - | xor | 860 |
+| binaryhorizon | 2d | S | high (1.9 ms) | - | - | pixmaps, readback | 624 |
+| bouboule | 2d | S | high (0.052 ms) | - | - | xor | 860 |
 | ccurve | 2d | S | high (0.55 ms) | - | - | pixmaps | 872 |
-| decayscreen | 2d | S | low (0.0025 ms) | ❌ | - | pixmaps | 392 |
-| flow | 2d | S | high (0.92 ms) | - | - | pixmaps | 1216 |
-| halftone | 2d | S | high (0.67 ms) | ❌ | - | pixmaps | 413 |
+| flow | 2d | S | high (0.94 ms) | - | - | pixmaps | 1216 |
+| halftone | 2d | S | high (0.73 ms) | ❌ | - | pixmaps | 413 |
 | marbling | 2d | S | high (12 ms) | - | - | - | 635 |
-| nerverot | 2d | S | high (0.37 ms) | - | - | pixmaps, float-heavy | 1367 |
-| rocks | 2d | S | medium (0.026 ms) | ❌ | - | pixmaps | 562 |
+| nerverot | 2d | S | high (0.77 ms) | - | - | pixmaps, float-heavy | 1367 |
 | rotzoomer | 2d | S | crashed on the host | - | - | pixmaps, readback | 601 |
 | twang | 2d | S | crashed on the host | - | - | pixmaps, readback | 791 |
 | ant | 2d | M | - | - | `NUMSTIPPLES`, `automata.h`, `hexagonUnit`, `triangleUnit` | - | 1351 |
@@ -1109,6 +1111,7 @@ needing few additions come first.
 | coral | 2d | - | 15-25 ms measured | ✅ | - | - | 328 |
 | critical | 2d | - | 0.7 ms measured | ✅ | - | - | 462 |
 | cwaves | 2d | - | 16.1-16.2 ms measured | ✅ | - | - | 219 |
+| decayscreen | 2d | - | 3.3-3.9 ms measured | ✅ | - | pixmaps | 392 |
 | deluxe | 2d | - | 44.6-62.6 ms measured | ✅ | - | pixmaps, float-heavy | 480 |
 | discrete | 2d | - | 149-160 ms measured | ✅ | - | - | 442 |
 | drift | 2d | - | 11-13 ms measured | ✅ | - | - | 674 |
@@ -1147,6 +1150,7 @@ needing few additions come first.
 | popsquares | 2d | - | 15.3 ms measured | ✅ | - | pixmaps | 310 |
 | pyro | 2d | - | 0.8-1.1 ms measured | ✅ | - | - | 373 |
 | qix | 2d | - | 8.8-17.9 ms measured | ✅ | - | - | 642 |
+| rocks | 2d | - | 2.5-3.2 ms measured | ✅ | - | pixmaps | 562 |
 | rorschach | 2d | - | 0.6-1.7 ms measured | ✅ | - | - | 227 |
 | rotor | 2d | - | 0.5 ms measured | ✅ | - | - | 394 |
 | scooter | 2d | - | 19-23.1 ms measured | ✅ | - | - | 975 |
@@ -1191,15 +1195,11 @@ needing few additions come first.
 - **boing**: 8.3 fps and plain on a small screen; Rod dropped it, scanlines cost
   83 ms
 - **companion**: about 71,000 vertices a cube, est. 2-3 fps; Rod dropped it
-- **decayscreen**: smears a grabbed screen image and the shim grabs nothing, so
-  it stays black
 - **floppy**: 630 KB model won't fit the 3 MB app partition, est. 5 fps; Rod
   dropped it
 - **flurry**: needs GL TinyGL lacks, est. under 1 fps, issue #70
 - **halftone**: 5 fps; the shim's ellipse fill is 80% of it, issue #57
 - **hypnowheel**: 4.0 fps at half resolution, fill-bound; Rod dropped it, #73
-- **rocks**: draws its big rocks into depth-1 pixmaps, which the shim leaves
-  blank; only the far dots show
 
 ## Excluded files
 

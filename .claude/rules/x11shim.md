@@ -208,3 +208,29 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   `hacks/xrayswarm_time.c` defines it). Putting `colors.h` in the shim's
   `screenhackI.h` would have fixed Triangle for all but changes what every
   xlockmore hack sees, so it is Rod's call.
+- `XFillRectangle` and `XFillPolygon` fill a depth-1 pixmap now (Rocks): a bit
+  is set where the GC's foreground is odd and cleared where it is even, and the
+  clip mask and the GC's function are ignored. The polygon is even-odd, a pixel
+  being in when its centre is, in float. Other primitives still draw nothing on
+  a bitmap. Halo, Moire2 and Goop keep their own planes or layers and did not
+  move.
+- `xshim_set_grab_image` (`grabclient.h`) gives `load_image_async_simple` a
+  picture to paint over its target the next time a load starts: scaled to cover
+  and cropped evenly at the sides (a 4:3 screenshot on the square screen loses
+  its left and right edges), mask ignored, finishing at once as before. `main.cpp`
+  sets it from the header `firmware/grab_image.py` writes into the build
+  directory: `vendor/grab-image.png` if it exists (Rod's choice is the Windows
+  95 screenshot from guidebookgallery.org, which is Microsoft's, so it stays in
+  git-ignored `vendor/`), or `XS_GRAB_IMAGE=<file>`, and `XS_GRAB_IMAGE=none`
+  builds without. It is stored at up to 466 pixels (a 466 by 350 blob is 340
+  KB of flash: the build went from 2.39 MB to 2.74 MB, 87.0% of the app
+  partition). The host tests set their own picture, so a pin never depends on
+  the local file; `dump` sets it when the header exists. DecayScreen is
+  unpinned for that reason (`test_decayscreen_melts_the_grab_image`). Boxfit's
+  `grab` mode, off by default, would get the picture too.
+- `make_smooth_colormap` follows upstream's behaviour (written from scratch, not
+  copied): two to five random points in hue, saturation and value, repicked if
+  adjacent ones are close or the average is too grey or dark, joined in a closed
+  path with colours spaced by edge length. The first version always spanned the
+  hue wheel at high saturation and value, so Triangle and 23 other pinned hacks
+  were a bright rainbow.
