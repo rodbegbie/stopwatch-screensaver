@@ -250,3 +250,43 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   picture up and the wipe follows the wait. When forcing a graph type in a
   scratch copy to compare, set the margin for that type too, or the triangle
   comes out too small to fill the screen.
+- A full-frame write to the PSRAM canvas costs about 25 ms whatever does it
+  (memcpy, a 2 by 2 blow-up, 32-bit stores). Eruption at half size
+  (`eruption_direct.c`, `lowrez_put.h`, `-DERUPTION_SCALE`) spent 26 ms of a
+  39 ms step putting its image and 13 ms on the fire. `lowrez_put.h` wants
+  ordinary RGB565, so Eruption's palette is swapped at `XAllocColor`.
+  Interference changes every pixel each frame; telling it the window is half
+  the size changes its look (its wave table is in window pixels), so it stays
+  at 10.2 fps.
+- Kumppa rotates its picture with `XCopyArea` from the window onto itself.
+  The fine checkerboard in its trails is the hack's: copies are checked
+  against a read-everything-first reference in every overlap direction.
+- Piecewise (`piecewise_direct.c`) is single precision with `single_frand.h`
+  (67 to 42 ms) and frees each circle's high fringe, which upstream's free
+  forgets (32 blocks a stop; `leaks` named `fringe_add_intersection`).
+- BinaryRing (`binaryring_single.c`) is told the display is 24 bits deep: its
+  16-bit path drops every hit below one 5-bit step, so only green builds up
+  and the picture stays dim. Its pixels go straight to the window as it plots
+  them, and the frame's `XPutImage` into a pixmap and copy back are skipped:
+  the 32-bit image was put a pixel at a time, 130 of a 240 ms step.
+  `tools/binaryring_patch.py` makes `frand1`'s exponent literal a float.
+- GraphStat's word list (`graphstat.h`) is written from `vendor/` at build
+  time (`firmware/graphstat_strings.py`). Its timing is in frames tuned for
+  30 fps, so at 10 fps a picture takes about 36 s instead of 12.
+- EtruscanVenus (`etruscanvenus_single_gl.c`) runs on a 48 by 32 grid
+  (`tools/etruscanvenus_patch.py`, upstream's 192 by 128) at half resolution;
+  `-DETRUSCANVENUS_NUMU`, `-DETRUSCANVENUS_NUMV` and `-DETRUSCANVENUS_FULL`
+  try others. Its modes differ: those that fill the screen are fill-bound.
+  `curlicue.h` is copied from `vendor/` at build time (`vendor_data.py`).
+- BlockTube (`blocktube_single_gl.c`) draws 400 blocks
+  (`tools/blocktube_patch.py`, upstream's 1,000) at half resolution with a
+  10 ms delay; fog is applied per block from the modelview's z when the hack
+  sets the block's colour, and a block the fog hides is not drawn. There is
+  no sphere map, so each face shows the whole texture. Its texture is
+  converted from `vendor/` at build time (`gl_textures.py`). It also filters
+  `glEnable` of fog and texture generation, which TinyGL warns about every
+  frame.
+- Companion Cube and Floppy are not ported (Rod to decide). Each Companion
+  Cube face draws a 9,588-vertex disc: about 71,000 vertices a cube, three
+  cubes by default. Floppy's model is 26,340 vertices (about 630 KB of floats,
+  which would not fit beside the current firmware in the 3 MB app partition).

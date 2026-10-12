@@ -249,3 +249,16 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   divides by the scale, and the swap doubles the dirty box into the canvas.
   Hypnowheel's fill went from 334 to 129 ms (not a quarter: rows and triangles
   still cost). Nothing registered uses it.
+- Added for the 2026-10-12 batch, each test-first: `glInterleavedArrays` for
+  `GL_V3F`, `GL_C3F_V3F` and `GL_N3F_V3F` (what `gllist.c` uses);
+  `glTexImage2D` converting RGBA and luminance bytes to RGB (TinyGL exits on
+  anything but three-component `GL_RGB`); `glColor4ub`; `glTexGeni`,
+  `glDepthFunc` and `glTexEnvf` accepted and ignored; `glTexParameterf`; the
+  OpenGL 1.2 colour-control names; and `texfont.h` (`texfont.c`), which draws
+  TinyGL's public-domain 8x8 font as quads at half the point size.
+- TinyGL fills a quad over [10, 16] by [23, 24] as columns 9 to 15 and both
+  rows: its edges are inclusive, so test text and thin quads by their box,
+  not a pixel count. Its lit textures can lose a step of a channel.
+- TinyGL prints a warning for every `glEnable` it does not know, each time,
+  which on the board goes to the serial log every frame: filter them in the
+  wrapper.

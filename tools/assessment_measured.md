@@ -1,6 +1,6 @@
 ## Measured on the device
 
-Seventy hacks have been run so far (default settings, 466×466 canvas
+Eighty hacks have been run so far (default settings, 466×466 canvas
 pushed to the display every frame, canvas held in PSRAM). The firmware times
 each frame in three parts, averaged over 5 seconds: **step** is the hack's own
 draw call, **push** is sending the canvas to the display, and **wait** is what
@@ -131,6 +131,32 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | HexTrail (count 6, double) | 9.2-36.8, mean 12.7 | 13-76 ms | 11.1-32.5 ms | 0-3 ms | about 0.66 MB |
 | HexTrail (count 6, single precision) | 9.6-38.2, mean 13.0 | 12-71 ms | 11.5-32.5 ms | 0-2 ms | about 0.66 MB |
 | HexTrail | 10.8-50.6, mean 15.3 | 8-59 ms | 6.9-32.5 ms | 0-5 ms | about 0.66 MB |
+| Eruption (as copied) | 9.6-9.8 | 72.5-72.6 ms | 29.0 ms | 0 ms | about 0.70 MB |
+| Eruption (half size, `lowrez_put.h` before its int loop) | 13.6-13.8 | 42.6 ms | 29.2 ms | 0 ms | about 0.21 MB |
+| Eruption | 14.6 | 39.0-39.1 ms | 29.0 ms | 0 ms | about 0.21 MB |
+| Eruption (`-DERUPTION_SCALE=3`) | 18.0 | 25.5 ms | 29.0 ms | 0 ms | about 0.12 MB |
+| Eruption (half size, no put, probe) | 40.8 | 13.4 ms | 0.1 ms | 11.0 ms | about 0.21 MB |
+| Kumppa | 13.4 | 44.5 ms | 29.3 ms | 0 ms | none measurable |
+| ShadeBobs | 73.6-75.4 | 2.0-2.3 ms | 0.7-0.8 ms | 10.5 ms | about 0.43 MB |
+| Piecewise (double) | 9.8-10.4 | 66.0-71.0 ms | 29.3 ms | 0 ms | none measurable |
+| Piecewise (double, no clear, probe) | 12.4-13.2 | 51.2-56.2 ms | 23.2-24.6 ms | 0 ms | none measurable |
+| Piecewise | 13.0-14.0 | 41.2-44.0 ms | 29.3 ms | 0 ms | none measurable |
+| BoxFit | 10.0-25.4 | 9.1-17.0 ms | 5.1-9.2 ms | 24-81 ms | about 37 KB |
+| Interference | 10.2 | 67.9-68.0 ms | 29.0 ms | 2.3 ms | about 0.44 MB |
+| BinaryRing (as copied, 24-bit path) | 2.8-3.2 | 284-335 ms | 29.1 ms | 0 ms | about 2.3 MB |
+| BinaryRing (single precision) | 3.6-4.2 | 210-254 ms | 29.1 ms | 0 ms | about 2.3 MB |
+| BinaryRing (single precision, no image put or copy, probe) | 7.6-15.8 | 52.5-121.4 ms | 0.1-0.2 ms | 11.1 ms | about 2.3 MB |
+| BinaryRing | 7.2-13.8, 13.6 after 20 s | 44.9-113.3 ms | 13.4-27.9 ms | 0-1.5 ms | about 2.3 MB |
+| GraphStat | 10.2-14.6 | 35.0-67.8 ms | 29.1-29.3 ms | 2.1-2.3 ms | about 0.67 MB |
+| EtruscanVenus (64 by 48, full size) | 4.0-7.8 | 100-229 ms | 13.8-29.2 ms | 0-13.4 ms | about 0.93 MB |
+| EtruscanVenus (64 by 48, half size) | 6.4-9.6 | 78-127 ms | 13.6-29.2 ms | 0-13.5 ms | about 0.71 MB |
+| EtruscanVenus | 9.2-12.6 | 53.2-78.6 ms | 15.6-29.2 ms | 0-10.8 ms | about 0.64 MB |
+| BlockTube (as copied, 1,000 blocks, full size) | 3.2-3.4 | 264-285 ms | 29.0 ms | 8.8-12.5 ms | about 1.13 MB |
+| BlockTube (1,000 blocks, half size) | 5.0 | 161.6-164.0 ms | 29.2 ms | 12.2 ms | about 0.92 MB |
+| BlockTube (500 blocks, half size, single precision, `*delay: 40000`) | 7.0-7.4 | 93.9-102.5 ms | 26.1-29.2 ms | 12.2-15.9 ms | about 0.87 MB |
+| BlockTube (500 blocks) | 8.0-9.0 | 83.9-94.0 ms | 26.4-32.8 ms | 0 ms | about 0.87 MB |
+| BlockTube | 8.8-10.0 | 71.6-80.4 ms | 28.0-33.0 ms | 0 ms | about 0.86 MB |
+| Fireworkx (after `lowrez_put.h`'s int loop) | 13.8-14.0 | 41.7-44.3 ms | 29.0 ms | 0 ms | about 0.34 MB |
 
 The seven rows from CWaves to HexTrail are the CWaves, Vermiculate, Cynosure,
 Moire, Moire2, Boing and HexTrail batch (2026-10-11), each from a pinned build
@@ -140,6 +166,25 @@ overlay), so "Extra PSRAM" is the drop from 6,989,667 bytes, which Cynosure
 and Moire read and which allocate almost nothing; treat it as good to about
 10 KB. Free heap was flat in every capture and no stack canary, panic or
 reboot appeared.
+
+The rows from Eruption to BlockTube are the batch of 2026-10-12 (Eruption,
+Kumppa, ShadeBobs, Piecewise, BoxFit, Interference, BinaryRing, GraphStat,
+EtruscanVenus and BlockTube), each from a pinned build with rotation off, read
+for 20 to 60 s with Rod's go-ahead to flash while he was away. "Extra PSRAM"
+is the drop from 6,989,667 bytes, which Kumppa and Piecewise read; good to
+about 10 KB. A full-frame write to the PSRAM canvas costs about 25 ms here:
+Eruption at half size spent 26 ms of its 39 ms step putting the image (each
+pixel written as a 2 by 2 square), against 13 ms for the fire itself.
+BinaryRing's 13.6 fps comes after about 20 s: while the ring is still on the
+screen the step is 98-113 ms. Interference changes every pixel each frame, so
+it pays a full put and a full push. GraphStat's step is TinyGL drawing its
+grid as thin full-height quads (fill 35 ms for about 3,400 triangles) and a
+10 ms clear. EtruscanVenus's step depends on its mode: the ones that fill the
+screen are fill-bound, and the rest is its own surface maths and about 16,000
+GL calls a frame. Its first two rows were read with `-DGL_PROFILE`, as were the
+first three BlockTube rows. Fireworkx shares `lowrez_put.h`, so its row is
+after this batch's change to the helper (12.4-12.6 fps before, with
+pixel-identical frames).
 
 CWaves' cosines were 4 ms of a 61 ms step in single precision; the rest was
 233 two-pixel-wide column fills, each store on a different cache line of the
