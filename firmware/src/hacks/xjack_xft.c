@@ -31,7 +31,7 @@ static void *xjack_init_on_paper(Display *dpy, Window window) {
 /* Upstream's 12 is for a desktop; the panel's pixels are small. The sizes the
  * font was baked at are in firmware/font_atlas.py. */
 #ifndef XJACK_FONT_PX
-#define XJACK_FONT_PX 16
+#define XJACK_FONT_PX 20
 #endif
 #define XJACK_STR_(x) #x
 #define XJACK_STR(x) XJACK_STR_(x)

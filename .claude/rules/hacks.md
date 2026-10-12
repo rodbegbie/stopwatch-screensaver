@@ -336,7 +336,8 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   before its 40 pixel margins, and xscreensaver reshapes it after): the wrapper
   sets the window background and calls `xjack_reshape`, and each has a test
   that fails without it. Upstream's `font2` of 12 is small on a 466 pixel
-  panel, so the wrapper overrides it to 16 (`-DXJACK_FONT_PX=<12|16|20|24>`;
-  20 gives about 28 columns). The margins swing (modes 1 to 4 walk them
-  diagonally on purpose), and the round bezel cuts the corners of the page.
-  Host speed and the look on the panel are unmeasured until it is flashed.
+  panel: Rod found 16 small and 20 good, so the wrapper overrides it to 20
+  (`-DXJACK_FONT_PX=<12|16|20|24>`; about 28 columns). The margins swing
+  (modes 1 to 4 walk them diagonally on purpose), and the round bezel cuts the
+  corners of the page. Rod has seen it on the panel; its fps and heap are
+  unmeasured.
