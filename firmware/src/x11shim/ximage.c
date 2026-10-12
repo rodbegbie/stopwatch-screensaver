@@ -129,10 +129,18 @@ int XPutImage(Display *dpy, Drawable d, GC gc, XImage *im, int src_x,
   const int64_t j1 = min_i64(h, min_i64((int64_t)im->height - src_y,
                                         (int64_t)dst->h - dst_y));
   if (i1 <= i0 || j1 <= j0) return 0;
-  for (int64_t j = j0; j < j1; j++)
-    for (int64_t i = i0; i < i1; i++)
-      dst->px[(dst_y + j) * dst->w + dst_x + i] =
-          xshim_image_pixel(im, (int)(src_x + i), (int)(src_y + j));
+  if (im->bits_per_pixel == 16) {
+    for (int64_t j = j0; j < j1; j++)
+      memcpy(&dst->px[(dst_y + j) * dst->w + dst_x + i0],
+             im->data + (src_y + j) * (int64_t)im->bytes_per_line +
+                 (src_x + i0) * 2,
+             (size_t)(i1 - i0) * sizeof(uint16_t));
+  } else {
+    for (int64_t j = j0; j < j1; j++)
+      for (int64_t i = i0; i < i1; i++)
+        dst->px[(dst_y + j) * dst->w + dst_x + i] =
+            xshim_image_pixel(im, (int)(src_x + i), (int)(src_y + j));
+  }
   canvas_mark_dirty(dst, (int)(dst_x + i0), (int)(dst_y + j0), (int)(i1 - i0),
                     (int)(j1 - j0));
   return 0;

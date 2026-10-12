@@ -2655,6 +2655,44 @@ void test_put_image_clips_at_every_edge_and_copies_the_matching_source_pixels(vo
   XFreeGC(dpy, gc);
 }
 
+/* A padded stride (7 pixels in a 16 byte row) and a source offset, clipped at
+ * the canvas's right and bottom edges: each copied row must start at the
+ * source offset in its own padded row, and stop at the clip. The pixel after
+ * the clip on the same row and the first pixel of the next row stay untouched. */
+void test_put_image_reads_a_padded_16_bit_source_from_its_offset(void) {
+  enum { S = 7, STRIDE_PX = 8, OFF = 2 };
+  GC gc = XCreateGC(dpy, win, 0, NULL);
+  XImage *im = XCreateImage(dpy, NULL, 16, ZPixmap, 0, NULL, S, S, 32, 0);
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_INT(STRIDE_PX * 2, im->bytes_per_line);
+  uint16_t *pixels = malloc((size_t)STRIDE_PX * S * sizeof *pixels);
+  TEST_ASSERT_NOT_NULL(pixels);
+  for (int j = 0; j < S; j++)
+    for (int i = 0; i < STRIDE_PX; i++)
+      pixels[j * STRIDE_PX + i] = (uint16_t)(0x2000 + j * 16 + i);
+  im->data = (char *)pixels;
+
+  const int x = cv.w - 3, y = cv.h - 2;
+  for (long i = 0; i < (long)cv.w * cv.h; i++) cv.px[i] = (uint16_t)(0x8001 + i % 251);
+  XPutImage(dpy, win, gc, im, OFF, OFF - 1, x, y, S - OFF, S - OFF + 1);
+  for (int row = 0; row < cv.h; row++) {
+    for (int col = 0; col < cv.w; col++) {
+      const long i = (long)row * cv.w + col;
+      const int inside = col >= x && row >= y;
+      const uint16_t want = inside ? (uint16_t)(0x2000 + (OFF - 1 + row - y) * 16 +
+                                                (OFF + col - x))
+                                   : (uint16_t)(0x8001 + i % 251);
+      if (cv.px[i] != want) {
+        char msg[60];
+        snprintf(msg, sizeof msg, "pixel (%d, %d)", col, row);
+        TEST_FAIL_MESSAGE(msg);
+      }
+    }
+  }
+  XDestroyImage(im);
+  XFreeGC(dpy, gc);
+}
+
 void test_mirroring_each_glyph_column_block_through_get_and_put_image(void) {
   Pixmap p = XCreatePixmap(dpy, win, 4, 1, 16);
   for (int x = 0; x < 4; x++) plot(p, x, 0, 0x10 + x);
@@ -3096,6 +3134,7 @@ int main(void) {
   RUN_TEST(test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits);
   RUN_TEST(test_put_image_clips_at_every_edge_and_copies_the_matching_source_pixels);
   RUN_TEST(test_put_image_of_a_16_bit_image_copies_canvas_order_pixels_unchanged);
+  RUN_TEST(test_put_image_reads_a_padded_16_bit_source_from_its_offset);
   RUN_TEST(test_an_allocated_colour_keeps_its_pixel_through_a_16_bit_image);
   RUN_TEST(test_the_server_byte_order_is_least_significant_first);
   RUN_TEST(test_a_new_spline_has_zeroed_controls_and_no_points);

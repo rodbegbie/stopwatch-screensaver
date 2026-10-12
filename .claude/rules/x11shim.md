@@ -137,6 +137,10 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   format, `None` or an empty region gives NULL. XMatrix flips its glyph sheets
   through them. Overrunning a row's right edge wraps onto the next row without
   AddressSanitizer seeing it, so a clip test must look at that next row.
+- `XPutImage` copies a 16-bit image a row at a time with `memcpy`; other
+  depths keep the per-pixel loop, since they keep only the low 16 bits (#82).
+  ad-flyingtoasters at 2x: step 29.3 to 6.7 ms, 22.3 to 28.5 fps; at 1x: step
+  15.9 to 3.7 ms. Fireworkx draws its own squares and did not change.
 - `image_data_to_pixmap` accepts a NULL width, height or mask pointer (XMatrix
   passes no mask, and a NULL mask used to crash it on start); with no mask
   pointer no mask is made.
