@@ -610,6 +610,16 @@ void test_a_gc_remembers_its_function_but_draws_copy(void) {
   XFreeGC(dpy, ored);
 }
 
+/* No expose events ever arrive, so a hack's choice about them changes
+ * nothing it draws (Kumppa turns them off on its copying GC). */
+void test_set_graphics_exposures_is_accepted_and_draws_nothing(void) {
+  XGCValues v = {0};
+  GC gc = XCreateGC(dpy, win, 0, &v);
+  TEST_ASSERT_EQUAL_INT(0, XSetGraphicsExposures(dpy, gc, False));
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XFreeGC(dpy, gc);
+}
+
 void test_the_arrow_and_page_keysyms_have_x_values(void) {
   TEST_ASSERT_EQUAL_HEX(0xFF51, XK_Left);
   TEST_ASSERT_EQUAL_HEX(0xFF52, XK_Up);
@@ -3269,6 +3279,7 @@ int main(void) {
   RUN_TEST(test_make_color_ramp_takes_the_short_way_backwards_too);
   RUN_TEST(test_make_color_ramp_blends_saturation_and_value_too);
   RUN_TEST(test_a_gc_remembers_its_function_but_draws_copy);
+  RUN_TEST(test_set_graphics_exposures_is_accepted_and_draws_nothing);
   RUN_TEST(test_the_arrow_and_page_keysyms_have_x_values);
   RUN_TEST(test_visual_depth_is_sixteen);
   RUN_TEST(test_xshm_image_is_a_16_bit_image_put_where_asked);

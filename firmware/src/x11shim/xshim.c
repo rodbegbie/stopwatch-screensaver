@@ -91,6 +91,11 @@ int jwxyz_XSetAlphaAllowed(Display *dpy, GC gc, Bool allowed) {
   return 0;
 }
 
+int XSetGraphicsExposures(Display *dpy, GC gc, Bool on) {
+  (void)dpy, (void)gc, (void)on;
+  return 0;
+}
+
 int XSetFillStyle(Display *dpy, GC gc, int fill_style) {
   (void)dpy, (void)gc, (void)fill_style;
   return 0;

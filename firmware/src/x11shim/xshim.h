@@ -264,6 +264,8 @@ int jwxyz_XSetAlphaAllowed(Display *, GC, Bool allowed);
 /* Honours GCForeground, GCBackground, GCLineWidth, GCCapStyle and
  * GCJoinStyle; the rest of the mask is ignored. */
 int XChangeGC(Display *, GC, unsigned long mask, XGCValues *);
+/* No expose events ever arrive: accepted and ignored. */
+int XSetGraphicsExposures(Display *, GC, Bool);
 /* The fill style is ignored: everything is drawn solid. */
 int XSetFillStyle(Display *, GC, int fill_style);
 /* There is no pointer: reports False, with every output zero. */
