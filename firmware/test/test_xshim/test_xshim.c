@@ -1696,6 +1696,21 @@ void test_stroke_circle_covers_what_the_wide_arc_draws(void) {
   XFreeGC(dpy, gc);
 }
 
+/* Issue #56: the polyline left (57, 31), at radius 80.6, empty. */
+void test_wide_full_arc_fills_every_pixel_in_its_band(void) {
+  use_canvas(200);
+  GC gc = wide_gc(30, CapButt, JoinMiter);
+  XDrawArc(dpy, win, gc, 20, 20, 160, 160, 0, 360 * 64);
+  int gaps = 0;
+  for (int y = 0; y < cv.h; y++)
+    for (int x = 0; x < cv.w; x++) {
+      const float r = hypotf((float)x + 0.5f - 100.0f, (float)y + 0.5f - 100.0f);
+      if (r < 93.0f && r > 67.0f && at(x, y) != 0xFFFF) gaps++;
+    }
+  TEST_ASSERT_EQUAL_INT_MESSAGE(0, gaps, "pixels inside the band are empty");
+  XFreeGC(dpy, gc);
+}
+
 void test_stroke_circle_narrower_than_its_line_is_a_filled_disc(void) {
   use_canvas(64);
   GC gc = wide_gc(30, CapButt, JoinMiter);
@@ -3221,6 +3236,7 @@ int main(void) {
   RUN_TEST(test_draw_arc_wide_uses_the_stroke_code);
   RUN_TEST(test_stroke_circle_fills_the_band_between_its_two_radii);
   RUN_TEST(test_stroke_circle_covers_what_the_wide_arc_draws);
+  RUN_TEST(test_wide_full_arc_fills_every_pixel_in_its_band);
   RUN_TEST(test_stroke_circle_narrower_than_its_line_is_a_filled_disc);
   RUN_TEST(test_stroke_circle_is_clipped_to_the_canvas);
   RUN_TEST(test_wide_line_with_alpha_blends_over_the_canvas);
