@@ -226,6 +226,13 @@ static int clip_to_canvas(const Canvas *c, wide_t margin, double *x1,
   return 1;
 }
 
+/* A pixel centre exactly on an edge that two polygons share (a 45 degree edge
+ * through integer vertices passes through pixel centres) belongs to the one
+ * on its left. Float error of a few millionths in an edge's x can drop it from
+ * both and leave a hole in a wide arc, so a right edge is inclusive to within
+ * this much (issue #56). */
+#define EDGE_SLACK 1e-3f
+
 /* Fills a convex polygon whose vertices are in pixel coordinates, where the
  * pixel at x, y has its centre at x + 0.5, y + 0.5. A pixel is drawn when its
  * centre is inside, the left and top edges excluded and the right and bottom
@@ -252,8 +259,8 @@ static void fill_convex(Canvas *c, const float pts[][2], int n,
       }
     }
     if (xl > xr) continue;
-    fill_box(c, (wide_t)floorf(xl - 0.5f) + 1, y, (wide_t)floorf(xr - 0.5f), y,
-             colour);
+    fill_box(c, (wide_t)floorf(xl - 0.5f) + 1, y,
+             (wide_t)floorf(xr - 0.5f + EDGE_SLACK), y, colour);
   }
 }
 
