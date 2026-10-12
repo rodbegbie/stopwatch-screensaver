@@ -255,7 +255,8 @@ ones below apply everywhere.
   `ExitWorktree keep` names a branch (`worktree-<name>`) that may not exist:
   remove the worktree with `git worktree remove --force <path>` and delete the
   real branch, as separate commands, because a failed `&&` link skips the rest
-  silently. Check `git worktree list` afterwards.
+  silently. Check `git worktree list` afterwards. To delete the merged branch
+  you are standing on, `git switch --detach origin/main` in the worktree first.
   The shell's directory resets after each command and after `ExitWorktree`, so
   use absolute paths (`../.venv/bin/pio` failed from the wrong place and the run
   looked like a test failure). A loop over several mutations is refused as a
@@ -295,6 +296,9 @@ ones below apply everywhere.
   `PLATFORMIO_BUILD_DIR` (the build scripts all use `$BUILD_DIR`).
 - Read `push=` from a hack's second 5 s window on: the name overlay is stamped
   inside the push timing while it shows, so the first window reads high.
+- `heap=` and `psram=` are the reading at the end of a window, not a minimum:
+  a hack with a long pause and nothing held in it (Celtic's 5 s `*delay2`)
+  reads idle in every window. Sample while it works, or read `rotate ->`.
 - Report a hack's lowest `fps=` window as well as its mean. HexTrail's step
   grows over a 65 s cycle: mean 15.3, worst window 10.8, and Rod saw an earlier
   build sag under 10 fps before the rotation moved on. Capture a full cycle and

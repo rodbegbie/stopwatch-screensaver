@@ -76,3 +76,9 @@ Moved verbatim from AGENTS.md.
   evidence in the dismissal. Entire's approvals gate once showed "no reviewers
   have approved" right after a force push, though Rod had approved; his word is
   enough, so say so and go ahead.
+- `entire trail finding list` can show one open "Review verdict ... approve"
+  finding: it is the reviewers' verdict, not a defect. `mergeStateStatus`
+  reads UNSTABLE while the gate runs, and Rod's approval is enough.
+- A shared-code PR (stroker, runner, canvas) can move pins of hacks merged
+  since it branched: merge or rebase onto `main` and rerun the pin loop before
+  judging frames (Celtic joined #89's moved set after #88 landed).

@@ -106,9 +106,21 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   polyline leaves gaps in it. `stroke_circle` (`x11shim/stroke.c`) fills the
   ring in two spans a row. Only Deluxe's wrapper calls it, and it does full
   circles only: Pacman's wall arcs are quarters and Celtic's wide strokes are
-  lines, so they still take the stroker. Issue #56 asks whether the stroker's
-  gaps and overpaint touch them. Changing shared stroke code can move their
-  pinned frames: ask Rod.
+  lines, so they still take the stroker. The polyline's gaps were float
+  rounding, not the joins or the point spacing: a pixel centre exactly on an
+  edge shared by a segment quad and the join wedge at its end (any 45 degree
+  edge through integer vertices) fell out of both, because float32 put the
+  quad's right edge at 57.499996 for 57.5. `fill_convex` now takes a right
+  edge inclusive to within `EDGE_SLACK` (1e-3; 1e-7 fails the test, 1e-5
+  passes), and `test_wide_full_arc_fills_every_pixel_in_its_band` pins it. It
+  moved five pinned frames by 0 to 33 pixels each (Deluxe, Forest, Rotor,
+  Compass, Celtic). Pacman is not affected: its `wallwidth` is 1 at this
+  size, which takes the thin-line path. Celtic's overpaint (about 50 paints a
+  pixel a step on the host, 46% of its line draws zero-length) is still open
+  in #56. Changing shared stroke code can move pinned frames: look at them and
+  ask Rod. The pin test hashes steps 50, 100, 150 and 200 with a fake clock
+  that carries across hacks, so a dump program does not reproduce its frames:
+  write them from the test itself.
 - `XshimGC.alpha` (0 is opaque, 1 to 31 is the weight out of 32) makes the
   wide-line code in `stroke.c` blend over the canvas instead of overwriting it;
   fills, `canvas_line` and the other primitives ignore it. The canvas is

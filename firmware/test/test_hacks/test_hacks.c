@@ -440,17 +440,17 @@ static const uint64_t kBaseline[] = {
     0x41f708d6203d8140ull, /* Gears: taken after looking at the frames */
     0x5a1dd5b30e81a013ull, /* Morph3D: taken after looking at the frames */
     0xc2b1b6b7d671b4c7ull, /* CubicGrid at ticks 20: taken after looking at the frames */
-    0xa4e023f1e9864c48ull, /* Deluxe, translucent, each shape blended once: taken after looking at the frames */
-    0xef553ace7fbfbaf4ull, /* Forest: taken after looking at the frames */
+    0xec0a5a874ba776a3ull, /* Deluxe, translucent, each shape blended once: taken after looking at the frames; re-taken for the stroker's shared-edge slack (#56) */
+    0xc127f54362047502ull, /* Forest: taken after looking at the frames; re-taken for the stroker's shared-edge slack (#56) */
     0x3796f88202299960ull, /* Laser: taken after looking at the frames */
     0xe48eab27f8a1f05bull, /* Lissie: taken after looking at the frames */
-    0x618997512963b7d9ull, /* Rotor: taken after looking at the frames */
+    0x2b087cd03addae3eull, /* Rotor: taken after looking at the frames; re-taken for the stroker's shared-edge slack (#56) */
     0xc76242aaacbe8177ull, /* Scooter: taken after looking at the frames */
     0x9d5e492757aab42bull, /* Grav: taken after looking at the frames */
     0x41f6a76aad432b20ull, /* Euler2D: taken after looking at the frames */
     0x59bf16ddeccecc15ull, /* Anemone: taken after looking at the frames */
     0x1ad9e9fe2718ba88ull, /* Anemotaxis: taken after looking at the frames */
-    0xb7feaf3a248c76f2ull, /* Compass: taken after looking at the frames */
+    0x3441a22a1f12785aull, /* Compass: taken after looking at the frames; re-taken for the stroker's shared-edge slack (#56) */
     0xe94fb924120c76a5ull, /* FuzzyFlakes: taken after looking at the frames */
     0x3cc7ad2eeeea2850ull, /* IFS: taken after looking at the frames */
     0x78c62badb21d8dddull, /* Interaggregate: after looking at the frames, pixels swapped */
@@ -473,7 +473,7 @@ static const uint64_t kBaseline[] = {
     0xcfa8f679f1a10fddull, /* Moire: taken after looking at the frames (single precision) */
     0x32f706208dc0a079ull, /* Moire2: taken after looking at the frames (bit planes) */
     0x0100bedf6ddf582cull, /* HexTrail: taken after looking at the frames (count 6, single precision) */
-    0x91947298c096ed6full, /* Celtic: taken after looking at the frames (single precision, graph sized to the screen, step scale 4); re-pinned for the eraser (#86) */
+    0x91947298c096ed6full, /* Celtic: taken after looking at the frames (single precision, graph sized to the screen, step scale 4); re-taken for the eraser (#86), which moved its frames past the stroker's shared-edge slack (#56) */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
