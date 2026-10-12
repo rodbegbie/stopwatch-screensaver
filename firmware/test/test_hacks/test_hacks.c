@@ -18,6 +18,7 @@
 #include "glshim/glshim.h"
 #include "grabclient.h"
 #include "hacks/registry.h"
+#include "test_font.h"
 #include "runner/hack_runner.h"
 
 static Canvas cv;
@@ -31,8 +32,10 @@ void setUp(void) {
   TEST_ASSERT_EQUAL_INT(0, canvas_init(&cv, 466, 466, malloc));
   fake_now = 1000.0;
   xshim_set_clock(fake_clock);
+  test_font_install();
 }
 void tearDown(void) {
+  xshim_set_font(NULL);
   xshim_set_clock(NULL);
   canvas_free(&cv);
 }
@@ -137,6 +140,7 @@ void test_registry_lists_hacks_in_order(void) {
                                          "XRaySwarm",
                                          "Rocks",
                                          "DecayScreen",
+                                         "XJack",
 #ifdef HAVE_AFTER_DARK_TOASTERS
                                          "ad-flyingtoasters",
 #endif
@@ -541,6 +545,7 @@ static const uint64_t kBaseline[] = {
     0x990855e2bc899e76ull, /* XRaySwarm: taken after looking at the frames */
     0x08d32e1f97fcdaf2ull, /* Rocks: taken after looking at the frames (bitmap rock stamps) */
     0, /* DecayScreen: unpinned on purpose, it smears the shim's grab image and has none here (see test_decayscreen_melts_the_grab_image) */
+    0xecc578b5f7eb7789ull, /* XJack: taken after looking at the frames, with test_font.h's blocky font */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -609,6 +614,45 @@ void test_decayscreen_stays_black_without_a_grab_image(void) {
   TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("DecayScreen")));
   for (int f = 0; f < 50; f++) runner_step(r);
   TEST_ASSERT_EQUAL_INT(1, distinct_colours());
+  runner_destroy(r);
+}
+
+static int pixels_not(uint16_t colour, int y0, int y1) {
+  int n = 0;
+  for (int y = y0; y < y1; y++)
+    for (int x = 0; x < cv.w; x++) n += cv.px[y * cv.w + x] != colour;
+  return n;
+}
+
+/* XJack's page is its `background` resource, which upstream's screenhack.c
+ * also makes the window's background: XJack calls XClearWindow, which the shim
+ * answers with black unless the window background is set (black type on a
+ * black page). The pinned hash alone cannot tell, since a black page hashes
+ * like any other frame. */
+void test_xjack_types_on_cream_paper(void) {
+  const uint16_t paper = rgb565(0xFF, 0xF0, 0xB4);
+  srandom(1);
+  HackRunner *r = runner_create(&cv);
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("XJack")));
+  for (int f = 0; f < 300; f++) runner_step(r);
+  TEST_ASSERT_EQUAL_HEX16(paper, cv.px[2 * cv.w + 2]);
+  TEST_ASSERT_EQUAL_HEX16(paper, cv.px[(cv.h - 3) * cv.w + cv.w - 3]);
+  TEST_ASSERT_TRUE(pixels_not(paper, 0, cv.h) > 100);
+  runner_destroy(r);
+}
+
+/* xjack_init sizes the page before it sets its 40 pixel margins, and a reshape
+ * follows in xscreensaver. Without one the page is 80 pixels too tall: a line
+ * typed at the bottom is clipped by the window and scrolls up half drawn. Past
+ * the first scroll, the bottom of the window must still be blank paper. */
+void test_xjack_keeps_its_lines_inside_the_page(void) {
+  const uint16_t paper = rgb565(0xFF, 0xF0, 0xB4);
+  srandom(1);
+  HackRunner *r = runner_create(&cv);
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("XJack")));
+  for (int f = 0; f < 3000; f++) runner_step(r);
+  TEST_ASSERT_TRUE_MESSAGE(pixels_not(paper, 340, 420) > 100, "never filled the page");
+  TEST_ASSERT_EQUAL_INT(0, pixels_not(paper, 420, cv.h));
   runner_destroy(r);
 }
 
@@ -1433,6 +1477,10 @@ void test_decayscreen_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("DecayScreen", 0);
 }
 
+void test_xjack_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("XJack", 0);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -1453,6 +1501,8 @@ int main(void) {
   RUN_TEST(test_hacks_that_use_the_spline_draw_a_real_picture);
   RUN_TEST(test_decayscreen_melts_the_grab_image);
   RUN_TEST(test_decayscreen_stays_black_without_a_grab_image);
+  RUN_TEST(test_xjack_types_on_cream_paper);
+  RUN_TEST(test_xjack_keeps_its_lines_inside_the_page);
   RUN_TEST(test_loop_picks_squares_or_hexagons_again_at_every_start);
   RUN_TEST(test_write_the_unpinned_hashes_when_asked);
   RUN_TEST(test_loop_keeps_drawing_squares_when_malloc_of_nothing_returns_null);
@@ -1534,6 +1584,7 @@ int main(void) {
   RUN_TEST(test_xrayswarm_stops_do_not_leak);
   RUN_TEST(test_rocks_stops_do_not_leak);
   RUN_TEST(test_decayscreen_stops_do_not_leak);
+  RUN_TEST(test_xjack_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);

@@ -235,3 +235,21 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   path with colours spaced by edge length. The first version always spanned the
   hue wheel at high saturation and value, so Triangle and 23 other pinned hacks
   were a bright rainbow.
+- The Xft stand-in (`xft.h`, `xft.c`, `xft_font.h`; ours) draws 8-bit coverage
+  glyphs, blended over the canvas pixel by pixel (the canvas is byte-swapped
+  565, so each pixel is swapped, weighed in 8-bit channels and packed again),
+  clipped in 64 bits and marked dirty once a glyph. It ignores the GC's clip
+  mask, as Xft does. The glyph data is baked from `assets/fonts/` at 12, 16,
+  20 and 24 pixels (`font_atlas.py`): the tables cost about 57 KB of flash
+  (87.0% of the app partition became 88.8% with XJack), and a size is picked
+  by the number at the end of a font name. `screenhack.h` does not include
+  `xft.h`: a hack gets it through a wrapper (`hacks/xjack_xft.c`). With no
+  font installed a hack gets a blank one (advance, no ink), because XJack
+  `abort()`s on none and `test_pyro` and `test_push_present` run every hack.
+- The runner never sends a hack a reshape, and `XClearWindow` clears to
+  black unless the hack calls `XSetWindowBackground`, where xscreensaver's
+  `screenhack.c` sets the window background from the `background` resource and
+  sends a reshape after init. A hack that depends on either needs a wrapper
+  (XJack's `xjack_init_on_paper`); doing it in the runner would change what
+  every hack sees, so it is Rod's call. Any other registered hack with a
+  light `background` that calls `XClearWindow` may have the same fault.

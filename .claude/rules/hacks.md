@@ -329,3 +329,15 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   one pixel wide and there are only a few on a 466 pixel screen: plain, for
   Rod to judge. XRaySwarm's host frames are white bugs and trails; whether
   that is its default look or a colour-table gap in the shim is unchecked.
+- XJack (`xjack_xft.c`) types "All work and no play makes Jack a dull boy" in
+  Special Elite on cream paper, through the Xft stand-in. Its first host frames
+  were black (it clears the window, and the shim cleared to black) and then
+  half-drawn lines scrolled in from the bottom (`xjack_init` sizes the page
+  before its 40 pixel margins, and xscreensaver reshapes it after): the wrapper
+  sets the window background and calls `xjack_reshape`, and each has a test
+  that fails without it. Upstream's `font2` of 12 is small on a 466 pixel
+  panel: Rod found 16 small and 20 good, so the wrapper overrides it to 20
+  (`-DXJACK_FONT_PX=<12|16|20|24>`; about 28 columns). The margins swing
+  (modes 1 to 4 walk them diagonally on purpose), and the round bezel cuts the
+  corners of the page. Rod has seen it on the panel; its fps and heap are
+  unmeasured.

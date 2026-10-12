@@ -9,6 +9,13 @@
 #include "runner/hack_runner.h"
 #include "grabclient.h"
 
+#include "x11shim/xft_font.h"
+
+#if __has_include("special_elite.h")
+#include "special_elite.h"
+#define HAVE_FONT 1
+#endif
+
 #if __has_include("grab_image.h")
 #include "grab_image.h"
 #define HAVE_GRAB_IMAGE 1
@@ -49,6 +56,9 @@ static int stats_main(int index) {
 }
 
 int main(int argc, char **argv) {
+#ifdef HAVE_FONT
+  xshim_set_font(&special_elite_font);
+#endif
 #ifdef HAVE_GRAB_IMAGE
   xshim_set_grab_image(grab_image_blob, sizeof(grab_image_blob));
 #endif

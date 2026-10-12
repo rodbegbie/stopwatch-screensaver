@@ -33,9 +33,9 @@ it with `uv run tools/score_hacks.py`.
 | --- | --- | --- |
 | S | 2D, and the unmodified source compiles against the shim | 9 |
 | M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 7 |
-| L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 45 |
+| L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 44 |
 | XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 132 |
-| Ported | Already running on the device, so no rating | 90 |
+| Ported | Already running on the device, so no rating | 91 |
 
 ## Speed
 
@@ -904,13 +904,13 @@ needing few additions come first.
 
 | Hack | Kind | Effort | Speed | Ported | Shim gaps | Flags | LOC |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| binaryhorizon | 2d | S | high (1.9 ms) | - | - | pixmaps, readback | 624 |
-| bouboule | 2d | S | high (0.052 ms) | - | - | xor | 860 |
-| ccurve | 2d | S | high (0.55 ms) | - | - | pixmaps | 872 |
-| flow | 2d | S | high (0.94 ms) | - | - | pixmaps | 1216 |
-| halftone | 2d | S | high (0.73 ms) | ❌ | - | pixmaps | 413 |
-| marbling | 2d | S | high (12 ms) | - | - | - | 635 |
-| nerverot | 2d | S | high (0.77 ms) | - | - | pixmaps, float-heavy | 1367 |
+| binaryhorizon | 2d | S | high (1.7 ms) | - | - | pixmaps, readback | 624 |
+| bouboule | 2d | S | high (0.053 ms) | - | - | xor | 860 |
+| ccurve | 2d | S | high (0.54 ms) | - | - | pixmaps | 872 |
+| flow | 2d | S | high (0.93 ms) | - | - | pixmaps | 1216 |
+| halftone | 2d | S | high (0.66 ms) | ❌ | - | pixmaps | 413 |
+| marbling | 2d | S | high (11 ms) | - | - | - | 635 |
+| nerverot | 2d | S | high (0.37 ms) | - | - | pixmaps, float-heavy | 1367 |
 | rotzoomer | 2d | S | crashed on the host | - | - | pixmaps, readback | 601 |
 | twang | 2d | S | crashed on the host | - | - | pixmaps, readback | 791 |
 | ant | 2d | M | - | - | `NUMSTIPPLES`, `automata.h`, `hexagonUnit`, `triangleUnit` | - | 1351 |
@@ -962,7 +962,6 @@ needing few additions come first.
 | whirlygig | 2d | L | - | - | `XDrawString` | pixmaps, text, float-heavy | 741 |
 | xanalogtv | 2d | L | - | - | `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_PIC_LEN`, `ANALOGTV_SCALE`, `ANALOGTV_SIGNAL_LEN`, `ANALOGTV_V`, `ANALOGTV_VIS_LEN`, `ANALOGTV_VIS_START`, `XrmDatabase`, `XrmPutResource`, `XrmValue`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_draw_solid_rel_lcp`, `analogtv_draw_string_centered`, `analogtv_font`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_lcp_to_ntsc`, `analogtv_load_ximage`, `analogtv_make_font`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `analogtv_setup_teletext`, `db`, `file_to_pixmap`, `gethostname`, `images/gen/testcard_bbcf_png.h`, `images/gen/testcard_pm5544_png.h`, `images/gen/testcard_rca_png.h`, `inp`, `input`, `load_image_async`, `rec`, `testcard_bbcf_png`, `testcard_pm5544_png`, `testcard_rca_png`, `value` | pixmaps, readback | 689 |
 | xflame | 2d | L | - | - | `bob_png`, `images/gen/bob_png.h` | readback | 826 |
-| xjack | 2d | L | - | - | `FcChar8`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall`, `screen_number` | pixmaps | 508 |
 | xlyap | 2d | L | - | - | `Cursor`, `X11/cursorfont.h`, `XComposeStatus`, `XPending`, `XStoreColors`, `error: expected expression` | pixmaps | 1939 |
 | zoom | 2d | L | - | - | `error: too few arguments to function call, expected 2, have 1` | pixmaps, readback | 290 |
 | antinspect | gl | XL | - | - | - | - | 696 |
@@ -1178,6 +1177,7 @@ needing few additions come first.
 | loop | 2d | - | - | ✅ | `STIPPLESIZE`, `automata.h`, `hexagonUnit`, `stipples`, `triangleUnit` | - | 1700 |
 | pacman | 2d | - | 1.3-1.9 ms measured | ✅ | `BLUE`, `GHOSTS`, `GHOST_DANGER`, `JAILHEIGHT`, `LEVHEIGHT`, `LEVWIDTH`, `MAXGDIR`, `MAXGFLASH`, `MAXGWAG`, `MAXMOUTH`, `MINGRIDSIZE`, `MINSIZE`, `NOWHERE`, `NUM_BONUS_DOTS`, `PAC_DEATH_FRAMES`, `START`, `XDrawString`, `XLoadQueryFont`, `chasing`, `error: expected expression`, `error: invalid application of 'sizeof' to an incomplete type 'argtype[]'`, `ghoststruct`, `goingin`, `goingout`, `hiding`, `images/gen/pacman_png.h`, `inbox`, `pacman.h`, `pacman_ai.h`, `pacman_bonus_dot_eaten`, `pacman_bonus_dot_pos`, `pacman_createnewlevel`, `pacman_eat_bonus_dot`, `pacman_ghost_update`, `pacman_is_bonus_dot`, `pacman_level.h`, `pacman_png`, `pacman_trackmouse`, `pacman_update`, `pacmangamestruct`, `pp`, `ps_chasing`, `ps_dieing`, `ps_eating` | pixmaps, text, clipmask | 1479 |
 | shadebobs | 2d | - | 2-2.3 ms measured | ✅ | `XFree`, `XListPixmapFormats` | readback | 474 |
+| xjack | 2d | - | - | ✅ | `FcChar8`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall`, `screen_number` | pixmaps | 508 |
 | xmatrix | 2d | - | - | ✅ | `images/gen/matrix1_png.h`, `images/gen/matrix1b_png.h`, `images/gen/matrix2_png.h`, `images/gen/matrix2b_png.h`, `matrix1_png`, `matrix1b_png`, `matrix2_png`, `matrix2b_png` | pixmaps, readback | 1915 |
 | cubicgrid | gl | - | - | ✅ | - | - | 322 |
 | etruscanvenus | gl | - | 53.2-78.6 ms measured | ✅ | - | - | 2761 |
