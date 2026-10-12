@@ -117,6 +117,7 @@ implied warranty.
 | `firmware/src/hacks/shadebobs/shadebobs.c` | Copyright (c) 1999 Shane Smit | jwz permission notice (above) |
 | `firmware/src/hacks/piecewise/piecewise.c` | No copyright line; the header credits Geoffrey Irving (2003) | jwz permission notice (above) |
 | `firmware/src/hacks/boxfit/boxfit.c` | Copyright (c) 2005-2014 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/interference/interference.c` | Copyright (C) 1998 Hannu Mallat | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.c` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.h` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/normals.c` | Copyright (c) 2002-2004 Jamie Zawinski | jwz permission notice (above) |
