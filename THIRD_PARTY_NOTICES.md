@@ -120,12 +120,14 @@ implied warranty.
 | `firmware/src/hacks/interference/interference.c` | Copyright (C) 1998 Hannu Mallat | jwz permission notice (above) |
 | `firmware/src/hacks/binaryring/binaryring.c` | Copyright (c) 2006-2014 Emilio Del Tessandoro | jwz permission notice (above) |
 | `firmware/src/hacks/graphstat/graphstat.c` | Copyright (c) 2026 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/etruscanvenus/etruscanvenus.c` | Copyright (c) 2019-2026 Carsten Steger | xlock permission notice (below) |
 | `firmware/src/xs_support/glx/involute.c` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.h` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/normals.c` | Copyright (c) 2002-2004 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/normals.h` | Copyright (c) 2002-2021 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/tube.c` | Copyright (c) 2001-2012 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/tube.h` | Copyright (c) 2001, 2003, 2007 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/xs_support/glx/glsl-utils.h` | Copyright (c) 2020-2026 Carsten Steger | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/rotator.c` | Copyright (c) 1998-2016 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/rotator.h` | Copyright (c) 1998-2002 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/gltrackball.c` | Copyright © 2002-2026 Jamie Zawinski | jwz permission notice (above) |
@@ -318,6 +320,17 @@ not contain them. `firmware/matrix_glyphs.py` reads them from `vendor/` at
 build time and converts each to the raw blob described in `ximage-loader.h` in
 the build directory. The glyph sheets are not part of the MIT-licensed code in
 this repository.
+
+### Build-time data: Etruscan Venus's texture and Graphstat's words
+
+Etruscan Venus includes `hacks/glx/curlicue.h` from xscreensaver 6.16, a 64
+by 64 texture of a curlicue, and Graphstat includes `graphstat.h`, which
+upstream's build makes from `hacks/glx/graphstat.txt`, its list of words for
+titles. Neither file has licence text of its own, and this repository does not
+contain them: `firmware/vendor_data.py` copies `curlicue.h` from `vendor/` into
+the build directory, and `firmware/graphstat_strings.py` writes `graphstat.h`
+there from `graphstat.txt`. They are not part of the MIT-licensed code in this
+repository.
 
 ### Silicon Graphics notice (trackball)
 

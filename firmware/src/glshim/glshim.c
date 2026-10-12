@@ -455,6 +455,16 @@ void glMateriali(GLint face, GLint pname, GLint value) {
   glMaterialfv(face, pname, v);
 }
 
+void glDepthFunc(GLint func) { (void)func; }
+
+void glTexEnvf(GLint target, GLint pname, GLfloat param) {
+  (void)target, (void)pname, (void)param;
+}
+
+void glTexParameterf(GLint target, GLint pname, GLfloat param) {
+  glTexParameteri(target, pname, (GLint)param);
+}
+
 void glPixelStorei(GLint pname, GLint param) {
   (void)pname;
   (void)param;

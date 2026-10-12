@@ -114,6 +114,19 @@ void glLineWidth(GLfloat width);
 void glOrtho(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top,
              GLdouble znear, GLdouble zfar);
 
+/* TinyGL has these commented out of its header. Its depth test is always
+ * less-than and it always modulates a texture by the vertex colour, so
+ * glDepthFunc and glTexEnvf are accepted and ignored; glTexParameterf passes
+ * the value on to glTexParameteri. */
+void glDepthFunc(GLint func);
+void glTexEnvf(GLint target, GLint pname, GLfloat param);
+void glTexParameterf(GLint target, GLint pname, GLfloat param);
+/* OpenGL 1.2's separate specular colour: TinyGL ignores a light model it does
+ * not know, so these change nothing. */
+#define GL_LIGHT_MODEL_COLOR_CONTROL 0x81F8
+#define GL_SINGLE_COLOR 0x81F9
+#define GL_SEPARATE_SPECULAR_COLOR 0x81FA
+
 /* TinyGL defines these but its header does not declare them. */
 void glVertex3f(GLfloat x, GLfloat y, GLfloat z);
 void glNormal3f(GLfloat x, GLfloat y, GLfloat z);

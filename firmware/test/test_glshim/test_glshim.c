@@ -630,6 +630,23 @@ void test_a_texture_of_a_type_it_cannot_convert_is_ignored(void) {
   assert_close_to(0, 255, 0, centre());
 }
 
+/* Etruscan Venus sets these; TinyGL has a fixed less-than depth test, always
+ * modulates textures, and has no separate specular colour. */
+void test_depth_func_tex_env_and_colour_control_change_nothing(void) {
+  open_flat_red_scene();
+  take_reference_and_clear();
+  glDepthFunc(GL_LESS);
+  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glLightModeli(GL_LIGHT_MODEL_COLOR_CONTROL, GL_SEPARATE_SPECULAR_COLOR);
+  glLightModeli(GL_LIGHT_MODEL_COLOR_CONTROL, GL_SINGLE_COLOR);
+  TEST_ASSERT_EQUAL_HEX(0x81F8, GL_LIGHT_MODEL_COLOR_CONTROL);
+  TEST_ASSERT_EQUAL_HEX(0x81F9, GL_SINGLE_COLOR);
+  TEST_ASSERT_EQUAL_HEX(0x81FA, GL_SEPARATE_SPECULAR_COLOR);
+  draw_triangle_immediately();
+  TEST_ASSERT_EQUAL_MEMORY(reference, cv.px, sizeof reference);
+}
+
 /* Dirty rectangle: TinyGL tracks the box around what it draws, glClear clears
  * only the box drawn since the last clear, and the swap marks only the old and
  * new boxes for the push. These pin that it changes nothing visible. */
@@ -1844,6 +1861,7 @@ int main(void) {
   RUN_TEST(test_an_rgba_texture_is_drawn_as_its_rgb);
   RUN_TEST(test_a_luminance_texture_is_drawn_as_grey);
   RUN_TEST(test_a_texture_of_a_type_it_cannot_convert_is_ignored);
+  RUN_TEST(test_depth_func_tex_env_and_colour_control_change_nothing);
   RUN_TEST(test_texfont_metrics_follow_the_point_size);
   RUN_TEST(test_texfont_needs_its_resource);
   RUN_TEST(test_texfont_draws_a_glyph_at_the_origin_of_the_transform);
