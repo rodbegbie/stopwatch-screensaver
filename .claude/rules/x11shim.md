@@ -219,10 +219,10 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   and cropped evenly at the sides (a 4:3 screenshot on the square screen loses
   its left and right edges), mask ignored, finishing at once as before. `main.cpp`
   sets it from the header `firmware/grab_image.py` writes into the build
-  directory: `vendor/grab-image.png` if it exists (Rod's choice is the Windows
-  95 screenshot from guidebookgallery.org, which is Microsoft's, so it stays in
-  git-ignored `vendor/`), or `XS_GRAB_IMAGE=<file>`, and `XS_GRAB_IMAGE=none`
-  builds without. It is stored at up to 466 pixels (a 466 by 350 blob is 340
+  directory: `firmware/assets/grab-image.png` (Rod's choice: the Windows 95
+  screenshot from guidebookgallery.org, committed at his say-so, with a
+  notices section), or `XS_GRAB_IMAGE=<file>`, and `XS_GRAB_IMAGE=none` builds
+  without. It is stored at up to 466 pixels (a 466 by 350 blob is 340
   KB of flash: the build went from 2.39 MB to 2.74 MB, 87.0% of the app
   partition). The host tests set their own picture, so a pin never depends on
   the local file; `dump` sets it when the header exists. DecayScreen is

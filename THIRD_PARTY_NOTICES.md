@@ -441,3 +441,16 @@ contains the artwork, so do not publish one.
 
 The tool reads the disk with `machfs` (MIT, <https://github.com/elliotnunn/machfs>),
 which `uv` fetches when the tool runs; it is not copied into this repository.
+
+### The Windows 95 screenshot
+
+DecayScreen smears a picture of the screen, which xscreensaver grabs and the
+board cannot. `firmware/assets/grab-image.png` stands in for it: a 640 by 480
+screenshot of the Windows 95 desktop, downloaded from GUIdebook Gallery
+(<https://guidebookgallery.org/pics/gui/desktop/full/win95.png>) and committed
+unchanged. It shows Microsoft's interface and artwork, which are Microsoft's,
+and it is not part of the MIT-licensed code in this repository. This project
+has not checked what terms GUIdebook Gallery offers; it is included at Rod's
+request. `firmware/grab_image.py` converts it to the raw blob described in
+`ximage-loader.h` at build time. To use another picture, set `XS_GRAB_IMAGE`
+to its file, or `none` for no picture.
