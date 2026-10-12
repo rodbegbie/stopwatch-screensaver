@@ -279,8 +279,11 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   try others. Its modes differ: those that fill the screen are fill-bound.
   `curlicue.h` is copied from `vendor/` at build time (`vendor_data.py`).
 - BlockTube was dropped after Rod saw it (too slow, and not much going on);
-  its source, notices row, `blocktube_single_gl.c` and its build steps
-  stay, the wrapper out of the build filter. It drew 400 blocks
+  its source, notices row, `blocktube_single_gl.c`, `gl_textures.py` and
+  `blocktube_patch.py` stay, the wrapper out of the build filter. To bring
+  it back, add `pre:gl_textures.py` to the three `extra_scripts` and
+  `blocktube` (with its `count_the_blocks`) to `patch_float_literals.py`
+  again. It drew 400 blocks
   (`tools/blocktube_patch.py`, upstream's 1,000) at half resolution with a
   10 ms delay (`"*delay: 10000"` in its registry entry, now gone);
   fog is applied per block from the modelview's z when the hack
