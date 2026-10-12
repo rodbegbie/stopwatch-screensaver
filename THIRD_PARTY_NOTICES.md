@@ -134,6 +134,7 @@ implied warranty.
 | `firmware/src/hacks/worm/worm.c` | Copyright (c) 1991 Patrick J. Naughton | xlock permission notice (below) |
 | `firmware/src/hacks/triangle/triangle.c` | Copyright (c) 1995 Tobias Gloth | xlock permission notice (below) |
 | `firmware/src/hacks/xrayswarm/xrayswarm.c` | Copyright (c) 2000 Chris Leger | X Consortium permission notice (below) |
+| `firmware/src/hacks/xjack/xjack.c` | Copyright (c) 1997-2021 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.c` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.h` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/normals.c` | Copyright (c) 2002-2004 Jamie Zawinski | jwz permission notice (above) |
@@ -421,6 +422,19 @@ what runs on the board. It is not the original TinyGL.
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 ```
+
+## Special Elite
+
+XJack's text is drawn in Special Elite, Copyright (c) 2010 by Brian J.
+Bonislawsky DBA Astigmatic (AOETI), available under the Apache License,
+Version 2.0 (<http://www.apache.org/licenses/LICENSE-2.0>). The font file is
+from the Google Fonts repository
+(<https://github.com/google/fonts/tree/main/apache/specialelite>) and is
+committed unchanged in `firmware/assets/fonts/` with its licence text
+(`SpecialElite-LICENSE.txt`). `firmware/font_atlas.py` rasterises it at build
+time, through `tools/make_font_atlas.py`, into pixel coverage tables that the
+firmware contains. Those tables are derived from the font and carry the same
+licence.
 
 ## After Dark's Flying Toasters
 

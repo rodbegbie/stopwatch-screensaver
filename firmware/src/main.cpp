@@ -21,6 +21,9 @@ extern "C" void xshim_set_grab_image(const unsigned char *blob, unsigned long si
 #include "grab_image.h"
 #define HAVE_GRAB_IMAGE 1
 #endif
+#include "x11shim/xft_font.h"
+/* font_atlas.py writes this header into the build directory. */
+#include "special_elite.h"
 #include "lgfx/utility/lgfx_qrcode.h"
 /* The encoder's header defines generic names that clash with the rest of the
  * code. */
@@ -552,6 +555,7 @@ void setup() {
 #ifdef HAVE_GRAB_IMAGE
   xshim_set_grab_image(grab_image_blob, sizeof(grab_image_blob));
 #endif
+  xshim_set_font(&special_elite_font);
   teInit();
 
   button_latch_init(&latchA, kButtonSettleMs);
