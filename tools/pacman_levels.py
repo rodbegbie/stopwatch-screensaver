@@ -228,7 +228,7 @@ def read_header(text: str) -> list[list[str]]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n")[0])
     parser.add_argument("--count", type=int, default=24)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--out", type=Path, default=POOL_HEADER)

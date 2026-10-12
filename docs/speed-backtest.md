@@ -43,7 +43,7 @@ of the figures above and are the real test of them.
 
 ## Table
 
-Device step is the range measured in `tools/assessment_measured.md`; the ratio
+Device step is the range measured in `tools/assessment_measured.md.in`; the ratio
 uses its midpoint.
 
 | Hack | Set | Host ms | Band | Device step ms | Device / host |

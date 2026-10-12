@@ -6,8 +6,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import float_literals as fl  # noqa: E402
-import tinygl_patch as tp  # noqa: E402
+import float_literals as fl
+import tinygl_patch as tp
 
 TINYGL = Path(__file__).resolve().parents[2] / "firmware" / "src" / "tinygl"
 

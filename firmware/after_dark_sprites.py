@@ -39,7 +39,9 @@ else:
     ):
         uv = shutil.which("uv")
         if not uv:
-            sys.exit("after_dark_sprites.py needs uv on PATH to read the disk image")
+            raise SystemExit(
+                "after_dark_sprites.py needs uv on PATH to read the disk image"
+            )
         header.parent.mkdir(parents=True, exist_ok=True)
         result = subprocess.run(
             [uv, "run", str(tool), str(image), "-o", str(header)],

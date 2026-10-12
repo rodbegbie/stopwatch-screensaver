@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import make_logo_blob as mlb  # noqa: E402
+import make_logo_blob as mlb
 
 RED = bytes([255, 0, 0, 255])
 GREEN = bytes([0, 255, 0, 255])
@@ -132,7 +132,9 @@ def test_a_changed_image_does_rewrite_the_header(tmp_path):
 def test_a_missing_image_is_an_error_not_a_silent_fallback(tmp_path):
     pytest.importorskip("PIL.Image")
     with pytest.raises(FileNotFoundError):
-        mlb.main([str(tmp_path / "nope.png"), "--name", "n", "-o", str(tmp_path / "x.h")])
+        mlb.main(
+            [str(tmp_path / "nope.png"), "--name", "n", "-o", str(tmp_path / "x.h")]
+        )
 
 
 def test_command_line_converts_an_image_file(tmp_path):

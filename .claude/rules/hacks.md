@@ -230,7 +230,7 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   wrapper adapts `get_position` and `get_rotation`: the hack passes `double`
   locals' addresses, which a float rename would write eight bytes (as Moire).
 - Celtic (`celtic_single.c`, issue #37) is registered after HexTrail and takes
-  a median step of 32 ms against 832 as copied (`assessment_measured.md`).
+  a median step of 32 ms against 832 as copied (`assessment_measured.md.in`).
   The wrapper is single precision (`rint` and `floor` mapped to float: the
   header maps only some libm calls) and frees the colour table that
   `celtic_init` callocs. `tools/celtic_patch.py` does three things at build

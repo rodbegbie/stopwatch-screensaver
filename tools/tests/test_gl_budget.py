@@ -6,8 +6,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import gl_budget as gb  # noqa: E402
-import tinygl_patch  # noqa: E402
+import gl_budget as gb
+import tinygl_patch
 
 ROOT = Path(__file__).resolve().parents[2]
 needs_cc = pytest.mark.skipif(shutil.which("cc") is None, reason="no C compiler")
@@ -47,7 +47,7 @@ def test_predict_with_nothing_drawn_is_the_fixed_cost():
 
 def test_lighting_is_charged_for_each_enabled_light():
     """Morph3D has two lights; the model's lit cost was measured with one."""
-    model = {
+    model: dict[str, float] = {
         "clear_ms": 0,
         "push_ms": 0,
         "vertex_us": 0,
@@ -67,7 +67,7 @@ def test_lighting_is_charged_for_each_enabled_light():
 
 
 def test_each_term_adds_its_own_cost():
-    model = {
+    model: dict[str, float] = {
         "clear_ms": 0,
         "push_ms": 0,
         "vertex_us": 4,
@@ -203,9 +203,14 @@ def test_hack_path_names_the_missing_vendor_file():
 
 
 def measured_row(**counts) -> dict:
-    values = dict(
-        vertices=1000, lit_vertices=0, triangles=300, lines=0, points=0, pixels=5e4
-    )
+    values = {
+        "vertices": 1000,
+        "lit_vertices": 0,
+        "triangles": 300,
+        "lines": 0,
+        "points": 0,
+        "pixels": 5e4,
+    }
     values.update(counts)
     return {
         "name": "demo",

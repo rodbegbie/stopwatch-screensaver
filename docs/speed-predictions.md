@@ -47,7 +47,7 @@ a result too, and is reported as one.
 
 Each hack was ported unmodified, flashed pinned with the rotation off, and read
 for 180 seconds (29 to 35 five-second windows, the first dropped). The figures
-are in `tools/assessment_measured.md`.
+are in `tools/assessment_measured.md.in`.
 
 | Hack | Host ms | Predicted | Device step, median (range) | Device / host |
 | --- | --- | --- | --- | --- |
@@ -78,7 +78,7 @@ out of the rotation: some of its pictures drew quickly and others barely drew
 anything. Issue #37 then tracked looking for optimisations, and Celtic is
 registered again as `celtic_single.c` (single precision, a graph sized to the
 screen and a larger animation step: a median step of 31.8 ms on the board,
-`tools/assessment_measured.md`). The predictions above are of the hack as
+`tools/assessment_measured.md.in`). The predictions above are of the hack as
 copied and its 832 ms median stands as the verdict; the as-copied row is kept
 in the measured notes under a bracketed name.
 

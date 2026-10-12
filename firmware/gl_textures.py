@@ -31,7 +31,7 @@ for name in ("blocktube",):
         continue
     uv = shutil.which("uv")
     if not uv:
-        sys.exit("gl_textures.py needs uv on PATH to convert the textures")
+        raise SystemExit("gl_textures.py needs uv on PATH to convert the textures")
     header.parent.mkdir(parents=True, exist_ok=True)
     # Written beside the header and renamed, so a killed build never leaves a
     # truncated header that the mtime check above would trust.

@@ -5,7 +5,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import score_hacks as sh  # noqa: E402
+import score_hacks as sh
 
 HEADER = """
 int XCreateGC(Display *, Drawable, unsigned long, XGCValues *);
@@ -18,13 +18,13 @@ PROVIDED = {"XCreateGC", "XFillRectangle", "XDrawLine"}
 
 
 def test_used_calls_ignores_comments_and_strings():
-    src = '''
+    src = """
     /* XGetImage(dpy) in a comment */
     // XCopyArea( here too
     const char *s = "XPutPixel(x)";
     XFillRectangle (dpy, w, gc, 0, 0, 1, 1);
     XDrawLine(dpy, w, gc, 0, 0, 1, 1);
-    '''
+    """
     assert sh.used_calls(src) == {"XFillRectangle", "XDrawLine"}
 
 
@@ -84,7 +84,7 @@ def test_rank_missing_prefers_calls_blocking_nearly_ready_hacks():
         {"kind": "gl", "missing": ["XA"]},
     ]
     ranked = sh.rank_missing(rows, 3)
-    assert [r[0] for r in ranked][0] == "XA"
+    assert ranked[0][0] == "XA"
     assert ranked[0][2] == 2
 
 
@@ -126,10 +126,7 @@ def test_blockers_reports_undeclared_function_type_and_member():
 
 
 def test_blockers_define_standalone_like_the_real_build():
-    src = (
-        "#ifdef STANDALONE\nint standalone_set;\n"
-        '#else\n#include "xlock.h"\n#endif\n'
-    )
+    src = '#ifdef STANDALONE\nint standalone_set;\n#else\n#include "xlock.h"\n#endif\n'
     assert sh.blockers_for("sa", src, SHIM_INCLUDES) == []
 
 
@@ -165,10 +162,7 @@ def test_score_gl_hack_is_XL_and_not_compiled():
 
 
 def test_blockers_anonymous_struct_member_has_clean_name_without_paths():
-    src = (
-        '#include "screenhack.h"\n'
-        "int f(XEvent *e) { return e->xbutton.nosuch; }\n"
-    )
+    src = '#include "screenhack.h"\nint f(XEvent *e) { return e->xbutton.nosuch; }\n'
     got = sh.blockers_for("anon", src, SHIM_INCLUDES)
     assert "XEvent.nosuch" in got
     assert not any("unnamed" in g or "/" in g for g in got)
@@ -191,7 +185,9 @@ def test_scan_excludes_non_hacks_and_reports_them(tmp_path):
     (hacks / "real.c").write_text('XSCREENSAVER_MODULE ("Real", real)\n')
     (hacks / "helper.c").write_text("int helper(void) { return 0; }\n")
     (hacks / "glx" / "model.c").write_text("int model;\n")
-    (hacks / "glx" / "gl_hack.c").write_text('XSCREENSAVER_MODULE ("G", g)\nglBegin(0);\n')
+    (hacks / "glx" / "gl_hack.c").write_text(
+        'XSCREENSAVER_MODULE ("G", g)\nglBegin(0);\n'
+    )
     rows, excluded = sh.scan(tmp_path / "xscreensaver-9.9", set(), SHIM_INCLUDES)
     assert sorted(r["name"] for r in rows) == ["gl_hack", "real"]
     assert excluded == ["helper", "model"]
@@ -256,8 +252,19 @@ def test_main_explicit_vendor_works_without_a_default_one(tmp_path, capsys):
     registry = tmp_path / "registry.c"
     registry.write_text("const HackEntry *const g_hacks[] = {&demo_hack};\n")
     out = tmp_path / "out.md"
-    argv = ["--vendor", str(vendor), "--header", str(header), "--intro", str(intro),
-            "--registry", str(registry), "--out", str(out), "--no-probe"]
+    argv = [
+        "--vendor",
+        str(vendor),
+        "--header",
+        str(header),
+        "--intro",
+        str(intro),
+        "--registry",
+        str(registry),
+        "--out",
+        str(out),
+        "--no-probe",
+    ]
     for d in SHIM_INCLUDES:
         argv += ["--shim-include", str(d)]
     assert sh.main(argv, root=tmp_path) == 0
@@ -271,7 +278,10 @@ def test_main_missing_vendor_is_an_actionable_error(tmp_path, capsys):
 
 def test_table_renders_gaps_as_code_and_escapes_pipes():
     row = sh.score(
-        Path("hacks/a.c"), "int x;", PROVIDED, blockers=["error: unknown type 'Display *'", "a|b"]
+        Path("hacks/a.c"),
+        "int x;",
+        PROVIDED,
+        blockers=["error: unknown type 'Display *'", "a|b"],
     )
     table = sh.render_table([row])
     data_line = table.strip().splitlines()[-1]
@@ -332,16 +342,35 @@ def test_a_registered_name_that_was_not_scanned_is_an_error():
 
 
 def _row(name, effort):
-    return {"name": name, "kind": "2d", "effort": effort, "missing": [], "gaps": [],
-            "flags": [], "loc": 1}
+    return {
+        "name": name,
+        "kind": "2d",
+        "effort": effort,
+        "missing": [],
+        "gaps": [],
+        "flags": [],
+        "loc": 1,
+    }
 
 
 def test_table_sorts_by_effort_size_then_name():
-    rows = [_row("b", "XL"), _row("z", "S"), _row("c", "L"), _row("a", "L"),
-            _row("m", "M"), _row("a2", "S")]
+    rows = [
+        _row("b", "XL"),
+        _row("z", "S"),
+        _row("c", "L"),
+        _row("a", "L"),
+        _row("m", "M"),
+        _row("a2", "S"),
+    ]
     lines = sh.render_table(rows).splitlines()[2:]
     assert [line.split("|")[1].strip() for line in lines] == [
-        "a2", "z", "m", "a", "c", "b"]
+        "a2",
+        "z",
+        "m",
+        "a",
+        "c",
+        "b",
+    ]
 
 
 def test_table_has_a_ported_column_with_ticks_crosses_and_dashes():
@@ -350,7 +379,9 @@ def test_table_has_a_ported_column_with_ticks_crosses_and_dashes():
     header, _, *data = table.splitlines()
     cells = [c.strip() for c in header.strip("|").split("|")]
     col = cells.index("Ported")
-    got = {line.split("|")[1].strip(): line.split("|")[col + 1].strip() for line in data}
+    got = {
+        line.split("|")[1].strip(): line.split("|")[col + 1].strip() for line in data
+    }
     assert got == {"pyro": "\u2705", "maze": "\u274c", "other": "-"}
 
 
@@ -365,11 +396,21 @@ def test_failed_section_lists_each_hack_with_its_reason():
     assert text.endswith("\n") and not text.endswith("\n\n")
 
 
+def test_failed_section_wraps_a_long_reason_within_80_columns():
+    reason = "needs a texture format TinyGL lacks, est. 2-3 fps, " * 3
+    text = sh.render_failed({"maze": reason.strip()})
+    assert max(len(line) for line in text.splitlines()) <= 80
+    bullet = text.split("\n\n", 1)[1]
+    assert " ".join(bullet.split()).removeprefix("- ") == "**maze**: " + reason.strip()
+
+
 def test_main_marks_registered_hacks_as_ported(tmp_path):
     vendor = tmp_path / "ext" / "xscreensaver-9.9"
     (vendor / "hacks").mkdir(parents=True)
     for name in ("demo", "other"):
-        (vendor / "hacks" / f"{name}.c").write_text(f'XSCREENSAVER_MODULE ("{name}", {name})\n')
+        (vendor / "hacks" / f"{name}.c").write_text(
+            f'XSCREENSAVER_MODULE ("{name}", {name})\n'
+        )
     header = tmp_path / "xshim.h"
     header.write_text("int XDrawLine(int);\n")
     intro = tmp_path / "intro.md"
@@ -379,8 +420,21 @@ def test_main_marks_registered_hacks_as_ported(tmp_path):
     failed = tmp_path / "failed.txt"
     failed.write_text("other: would not run\n")
     out = tmp_path / "out.md"
-    argv = ["--vendor", str(vendor), "--header", str(header), "--intro", str(intro),
-            "--registry", str(registry), "--failed-ports", str(failed), "--out", str(out), "--no-probe"]
+    argv = [
+        "--vendor",
+        str(vendor),
+        "--header",
+        str(header),
+        "--intro",
+        str(intro),
+        "--registry",
+        str(registry),
+        "--failed-ports",
+        str(failed),
+        "--out",
+        str(out),
+        "--no-probe",
+    ]
     for d in SHIM_INCLUDES:
         argv += ["--shim-include", str(d)]
     assert sh.main(argv, root=tmp_path) == 0
@@ -398,11 +452,25 @@ def test_main_skips_registered_hacks_with_no_xscreensaver_source(tmp_path):
     intro = tmp_path / "intro.md"
     intro.write_text("# T\n\n{version} {total} {excluded} {n_s} {n_m} {n_l} {n_xl}\n")
     registry = tmp_path / "registry.c"
-    registry.write_text("const HackEntry *const g_hacks[] = {&demo_hack, &ad_flyingtoasters_hack};\n")
+    registry.write_text(
+        "const HackEntry *const g_hacks[] = {&demo_hack, &ad_flyingtoasters_hack};\n"
+    )
     out = tmp_path / "out.md"
-    argv = ["--vendor", str(vendor), "--header", str(header), "--intro", str(intro),
-            "--registry", str(registry), "--failed-ports", str(tmp_path / "none.txt"),
-            "--out", str(out), "--no-probe"]
+    argv = [
+        "--vendor",
+        str(vendor),
+        "--header",
+        str(header),
+        "--intro",
+        str(intro),
+        "--registry",
+        str(registry),
+        "--failed-ports",
+        str(tmp_path / "none.txt"),
+        "--out",
+        str(out),
+        "--no-probe",
+    ]
     for d in SHIM_INCLUDES:
         argv += ["--shim-include", str(d)]
     assert sh.main(argv, root=tmp_path) == 0
@@ -418,10 +486,24 @@ def test_a_misspelt_registry_name_is_still_an_error(tmp_path, capsys):
     intro = tmp_path / "intro.md"
     intro.write_text("# T\n\n{version} {total} {excluded} {n_s} {n_m} {n_l} {n_xl}\n")
     registry = tmp_path / "registry.c"
-    registry.write_text("const HackEntry *const g_hacks[] = {&demo_hack, &dmeo_hack};\n")
-    argv = ["--vendor", str(vendor), "--header", str(header), "--intro", str(intro),
-            "--registry", str(registry), "--failed-ports", str(tmp_path / "none.txt"),
-            "--out", str(tmp_path / "out.md"), "--no-probe"]
+    registry.write_text(
+        "const HackEntry *const g_hacks[] = {&demo_hack, &dmeo_hack};\n"
+    )
+    argv = [
+        "--vendor",
+        str(vendor),
+        "--header",
+        str(header),
+        "--intro",
+        str(intro),
+        "--registry",
+        str(registry),
+        "--failed-ports",
+        str(tmp_path / "none.txt"),
+        "--out",
+        str(tmp_path / "out.md"),
+        "--no-probe",
+    ]
     for d in SHIM_INCLUDES:
         argv += ["--shim-include", str(d)]
     assert sh.main(argv, root=tmp_path) != 0
@@ -441,12 +523,17 @@ def test_main_missing_registry_is_an_actionable_error(tmp_path, capsys):
 def _cells(table):
     header, _, *data = table.splitlines()
     names = [c.strip() for c in header.strip("|").split("|")]
-    return [dict(zip(names, (c.strip() for c in line.strip("|").split("|")))) for line in data]
+    return [
+        dict(zip(names, (c.strip() for c in line.strip("|").split("|"))))
+        for line in data
+    ]
 
 
 def test_a_ported_hack_has_no_effort_rating():
     rows = [_row("pyro", "S"), _row("todo", "S")]
-    got = {c["Hack"]: c["Effort"] for c in _cells(sh.render_table(rows, ported={"pyro"}))}
+    got = {
+        c["Hack"]: c["Effort"] for c in _cells(sh.render_table(rows, ported={"pyro"}))
+    }
     assert got == {"pyro": "-", "todo": "S"}
 
 
@@ -459,14 +546,20 @@ def test_ported_hacks_sort_after_every_unported_one():
 def test_a_failed_hack_keeps_its_effort_rating_and_its_place():
     rows = [_row("maze", "L"), _row("a", "S"), _row("z", "XL")]
     cells = _cells(sh.render_table(rows, failed={"maze"}))
-    assert [(c["Hack"], c["Effort"]) for c in cells] == [("a", "S"), ("maze", "L"), ("z", "XL")]
+    assert [(c["Hack"], c["Effort"]) for c in cells] == [
+        ("a", "S"),
+        ("maze", "L"),
+        ("z", "XL"),
+    ]
 
 
 def test_main_counts_only_unported_hacks_per_rating(tmp_path):
     vendor = tmp_path / "xscreensaver-9.9"
     (vendor / "hacks").mkdir(parents=True)
     for name in ("done", "todo"):
-        (vendor / "hacks" / f"{name}.c").write_text(f'XSCREENSAVER_MODULE ("{name}", {name})\n')
+        (vendor / "hacks" / f"{name}.c").write_text(
+            f'XSCREENSAVER_MODULE ("{name}", {name})\n'
+        )
     header = tmp_path / "xshim.h"
     header.write_text("int XDrawLine(int);\n")
     intro = tmp_path / "intro.md"
@@ -474,8 +567,19 @@ def test_main_counts_only_unported_hacks_per_rating(tmp_path):
     registry = tmp_path / "registry.c"
     registry.write_text("const HackEntry *const g_hacks[] = {&done_hack};\n")
     out = tmp_path / "out.md"
-    argv = ["--vendor", str(vendor), "--header", str(header), "--intro", str(intro),
-            "--registry", str(registry), "--out", str(out), "--no-probe"]
+    argv = [
+        "--vendor",
+        str(vendor),
+        "--header",
+        str(header),
+        "--intro",
+        str(intro),
+        "--registry",
+        str(registry),
+        "--out",
+        str(out),
+        "--no-probe",
+    ]
     for d in SHIM_INCLUDES:
         argv += ["--shim-include", str(d)]
     assert sh.main(argv, root=tmp_path) == 0
@@ -511,7 +615,9 @@ def test_a_ported_hack_shows_the_step_measured_on_the_device():
     rows = [_row("pyro", "S"), _row("maze", "S")]
     cells = _cells(
         sh.render_table(
-            rows, ported={"pyro", "maze"}, measured={"pyro": (0.8, 1.1), "maze": (0.7, 0.7)}
+            rows,
+            ported={"pyro", "maze"},
+            measured={"pyro": (0.8, 1.1), "maze": (0.7, 0.7)},
         )
     )
     assert [c["Speed"] for c in cells] == ["0.7 ms measured", "0.8-1.1 ms measured"]
@@ -523,8 +629,11 @@ def test_a_ported_hack_with_no_measurement_has_a_dash():
 
 def test_only_unported_two_d_hacks_rated_s_are_probed():
     rows = [
-        _row("easy", "S"), _row("medium", "M"), _row("hard", "L"),
-        _row("done", "S"), {**_row("gl", "XL"), "kind": "gl"},
+        _row("easy", "S"),
+        _row("medium", "M"),
+        _row("hard", "L"),
+        _row("done", "S"),
+        {**_row("gl", "XL"), "kind": "gl"},
     ]
     probed = []
 

@@ -5,7 +5,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import etruscanvenus_patch as ep  # noqa: E402
+import etruscanvenus_patch as ep
 
 ROOT = Path(__file__).resolve().parents[2]
 UPSTREAM = ROOT / "vendor" / "xscreensaver-6.16" / "hacks" / "glx" / "etruscanvenus.c"

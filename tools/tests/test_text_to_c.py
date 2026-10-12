@@ -1,16 +1,17 @@
-import codecs
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import text_to_c as tc  # noqa: E402
+import text_to_c as tc
 
 
 def body(header: str) -> bytes:
     start = header.index('"') + 1
     end = header.rindex('"')
-    return codecs.escape_decode(header[start:end])[0]
+    return (
+        header[start:end].encode("latin-1").decode("unicode_escape").encode("latin-1")
+    )
 
 
 def test_the_bytes_come_back_from_the_c_string():

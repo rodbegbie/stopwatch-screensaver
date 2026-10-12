@@ -9,7 +9,7 @@ Import("env")  # noqa: F821
 
 project = Path(env["PROJECT_DIR"])  # noqa: F821
 sys.path.insert(0, str(project.parent / "tools"))
-import pacman_patch  # noqa: E402
+import pacman_patch
 
 generated = Path(env.subst("$BUILD_DIR")) / "generated"  # noqa: F821
 generated.mkdir(parents=True, exist_ok=True)

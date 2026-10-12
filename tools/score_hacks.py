@@ -29,6 +29,8 @@ FLAG_CALLS = {
     "text": {"XDrawString", "XLoadFont", "XLoadQueryFont"},
     "clipmask": {"XSetClipMask"},
 }
+
+
 class ScoreError(Exception):
     pass
 
@@ -103,7 +105,7 @@ def blockers_for(
         run = None
         for _ in range(MAX_HEADER_STUBS):
             try:
-                run = subprocess.run(cmd, capture_output=True, text=True)
+                run = subprocess.run(cmd, capture_output=True, text=True, check=False)
             except FileNotFoundError as err:
                 raise ScoreError(f"compiler not found: {cc}") from err
             missing = MISSING_HEADER.search(run.stderr)
@@ -113,6 +115,7 @@ def blockers_for(
             found.add(header)
             (stubs / header).parent.mkdir(parents=True, exist_ok=True)
             (stubs / header).write_text("")
+    assert run is not None
     stderr = run.stderr
     recognised = [MISSING_HEADER, *(pattern for pattern, _ in ERROR_PATTERNS)]
     for pattern, template in ERROR_PATTERNS:
@@ -214,14 +217,18 @@ def code_cell(text: str) -> str:
     return "`" + text.replace("`", "'").replace("|", "\\|") + "`"
 
 
-def probe_speed(rows: list[dict], ported: set[str], probe_one, workers: int = 4) -> None:
+def probe_speed(
+    rows: list[dict], ported: set[str], probe_one, workers: int = 4
+) -> None:
     """Runs each unported 2D hack rated S on the host and stores the result
     as row["speed"]: {"host_ms": ...} or {"error": ...}. `probe_one(name)` does
     the build and run (see probe_hacks.probe)."""
     todo = [
         r
         for r in rows
-        if r["name"] not in ported and r["kind"] == "2d" and r["effort"] in PROBED_EFFORTS
+        if r["name"] not in ported
+        and r["kind"] == "2d"
+        and r["effort"] in PROBED_EFFORTS
     ]
     with ThreadPoolExecutor(max_workers=workers) as pool:
         for row, result in zip(todo, pool.map(lambda r: probe_one(r["name"]), todo)):
@@ -252,6 +259,7 @@ def render_table(
         "| Hack | Kind | Effort | Speed | Ported | Shim gaps | Flags | LOC |",
         "| --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
+
     def order(r):
         return (r["name"] in ported, EFFORT_ORDER[r["effort"]], r["name"])
 
@@ -272,7 +280,17 @@ def render_failed(failed: dict[str, str]) -> str:
     """The reasons behind the failed marks; nothing at all if none failed."""
     if not failed:
         return ""
-    items = "".join(f"- **{name}**: {failed[name]}\n" for name in sorted(failed))
+    items = "".join(
+        textwrap.fill(
+            f"- **{name}**: {failed[name]}",
+            width=80,
+            subsequent_indent="  ",
+            break_long_words=False,
+            break_on_hyphens=False,
+        )
+        + "\n"
+        for name in sorted(failed)
+    )
     return "\n## Failed ports\n\n" + items
 
 
@@ -328,17 +346,23 @@ def find_vendor(root: Path) -> Path:
 def main(argv: list[str], root: Path | None = None) -> int:
     root = root or Path(__file__).resolve().parent.parent
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--vendor", help="xscreensaver source dir (default: newest in vendor/)")
+    parser.add_argument(
+        "--vendor", help="xscreensaver source dir (default: newest in vendor/)"
+    )
     parser.add_argument("--header", default=str(root / "firmware/src/x11shim/xshim.h"))
     parser.add_argument(
         "--shim-include",
         action="append",
         help="include dir for the shim compile check (default: the firmware's)",
     )
-    parser.add_argument("--registry", default=str(root / "firmware/src/hacks/registry.c"))
+    parser.add_argument(
+        "--registry", default=str(root / "firmware/src/hacks/registry.c")
+    )
     parser.add_argument("--failed-ports", default=str(root / "tools/failed_ports.txt"))
     parser.add_argument("--intro", default=str(root / "tools/assessment_intro.md"))
-    parser.add_argument("--measured", default=str(root / "tools/assessment_measured.md"))
+    parser.add_argument(
+        "--measured", default=str(root / "tools/assessment_measured.md.in")
+    )
     parser.add_argument("--out", default=str(root / "docs/porting-assessment.md"))
     parser.add_argument(
         "--no-probe",
@@ -392,12 +416,16 @@ def run(args: argparse.Namespace, vendor: Path, root: Path) -> int:
         )
     todo = [r for r in rows if r["name"] not in ported]
     counts = {e: sum(r["effort"] == e for r in todo) for e in ("S", "M", "L", "XL")}
-    intro = Path(args.intro).read_text().format(
-        version=version,
-        total=len(rows),
-        n_ported=len(ported),
-        excluded=len(excluded),
-        **{f"n_{k.lower()}": v for k, v in counts.items()},
+    intro = (
+        Path(args.intro)
+        .read_text()
+        .format(
+            version=version,
+            total=len(rows),
+            n_ported=len(ported),
+            excluded=len(excluded),
+            **{f"n_{k.lower()}": v for k, v in counts.items()},
+        )
     )
     measured = Path(args.measured).read_text() if Path(args.measured).exists() else ""
     out = (
@@ -418,7 +446,9 @@ def run(args: argparse.Namespace, vendor: Path, root: Path) -> int:
         + render_excluded(excluded)
     )
     Path(args.out).write_text(out)
-    print(f"wrote {args.out}: {len(rows)} hacks ({len(ported)} ported, {len(excluded)} files excluded), {counts}")
+    print(
+        f"wrote {args.out}: {len(rows)} hacks ({len(ported)} ported, {len(excluded)} files excluded), {counts}"
+    )
     return 0
 
 

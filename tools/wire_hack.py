@@ -136,7 +136,7 @@ def wire(
 
 
 def main(argv: list[str]) -> int:
-    p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    p = argparse.ArgumentParser(description=(__doc__ or "").split("\n\n")[0])
     p.add_argument("name")
     p.add_argument("cls", metavar="Class")
     p.add_argument("copyright", metavar="copyright")

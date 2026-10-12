@@ -6,7 +6,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import probe_hacks as ph  # noqa: E402
+import probe_hacks as ph
 
 ROOT = Path(__file__).resolve().parents[2]
 SQUIRAL = ROOT / "firmware" / "src" / "hacks" / "squiral" / "squiral.c"
@@ -19,7 +19,9 @@ def test_module_entry_reads_the_class_and_prefix():
 
 
 def test_module_entry_ignores_a_commented_out_entry():
-    source = '/* XSCREENSAVER_MODULE ("Old", old) */\nXSCREENSAVER_MODULE ("New", new)\n'
+    source = (
+        '/* XSCREENSAVER_MODULE ("Old", old) */\nXSCREENSAVER_MODULE ("New", new)\n'
+    )
     assert ph.module_entry(source) == ("New", "new")
 
 
@@ -99,8 +101,14 @@ def test_unreadable_stats_output_is_an_error():
 
 @pytest.mark.parametrize(
     "ms, expected",
-    [(0.0, "low"), (0.0149, "low"), (0.015, "medium"), (0.0499, "medium"),
-     (0.05, "high"), (1.6, "high")],
+    [
+        (0.0, "low"),
+        (0.0149, "low"),
+        (0.015, "medium"),
+        (0.0499, "medium"),
+        (0.05, "high"),
+        (1.6, "high"),
+    ],
 )
 def test_bands(ms, expected):
     assert ph.band(ms) == expected
@@ -108,10 +116,10 @@ def test_bands(ms, expected):
 
 def test_undefined_symbols_are_read_from_a_macos_link_error():
     stderr = (
-        'Undefined symbols for architecture arm64:\n'
+        "Undefined symbols for architecture arm64:\n"
         '  "_XFooBar", referenced from:\n      _draw in a.o\n'
         '  "_helper_fn", referenced from:\n      _draw in a.o\n'
-        'ld: symbol(s) not found for architecture arm64\n'
+        "ld: symbol(s) not found for architecture arm64\n"
     )
     assert ph.undefined_symbols(stderr) == ["XFooBar", "helper_fn"]
 
@@ -131,8 +139,10 @@ def test_squiral_is_probed_to_a_small_host_time():
 @needs_cc
 def test_a_hack_that_calls_something_the_shim_lacks_does_not_link():
     source = SQUIRAL.read_text().replace(
-        "XSCREENSAVER_MODULE", "void shim_lacks_this(void);\n"
-        "void keep(void) { shim_lacks_this(); }\nXSCREENSAVER_MODULE", 1
+        "XSCREENSAVER_MODULE",
+        "void shim_lacks_this(void);\n"
+        "void keep(void) { shim_lacks_this(); }\nXSCREENSAVER_MODULE",
+        1,
     )
     result = ph.probe("squiral", source, ROOT)
     assert "does not link" in result["error"]

@@ -36,7 +36,7 @@ else:
         sys.exit(f"XS_LOGO={logo}: no such file ({image})")
     uv = shutil.which("uv")
     if not uv:
-        sys.exit("XS_LOGO needs uv on PATH to convert the image")
+        raise SystemExit("XS_LOGO needs uv on PATH to convert the image")
     subprocess.run(
         [
             uv,

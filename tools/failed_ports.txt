@@ -2,7 +2,7 @@
 # score_hacks.py marks them with a cross in the Ported column and lists the
 # reasons in a "Failed ports" section, so keep each reason short. A hack here
 # may still have its source in firmware/src/hacks/, unregistered, and measured
-# results in tools/assessment_measured.md; speed_backtest.py keeps those in its
+# results in tools/assessment_measured.md.in; speed_backtest.py keeps those in its
 # figures.
 halftone: 5 fps; the shim's ellipse fill is 80% of it, issue #57
 flurry: needs GL TinyGL lacks, est. under 1 fps, issue #70

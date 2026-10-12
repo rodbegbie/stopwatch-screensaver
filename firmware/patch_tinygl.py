@@ -9,7 +9,7 @@ Import("env")  # noqa: F821
 
 project = Path(env["PROJECT_DIR"])  # noqa: F821
 sys.path.insert(0, str(project.parent / "tools"))
-import tinygl_patch  # noqa: E402
+import tinygl_patch
 
 source = project / "src" / "tinygl"
 sources = {

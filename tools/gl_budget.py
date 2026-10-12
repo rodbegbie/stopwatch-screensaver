@@ -14,7 +14,7 @@ import re
 import subprocess
 import sys
 import tempfile
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -257,7 +257,7 @@ def measure(
     frames: int = 300,
     seed: int = 1,
     cc: str = "cc",
-    overrides: list[str] = (),
+    overrides: Sequence[str] = (),
 ) -> dict:
     """Builds the hack with USE_GL against the shim and the instrumented
     TinyGL, runs it, and returns {"counts": FrameCounts, "host_ms": float,
@@ -365,8 +365,10 @@ def note_for(row: dict) -> str:
 
 def render_report(rows: list[dict]) -> str:
     lines = [
-        "| Hack | Seed | Vertices | Lit | Triangles | Lines | Points | Pixels "
-        "| Box % | Clear % | Push % | Predicted ms | Predicted fps | Note |",
+        (
+            "| Hack | Seed | Vertices | Lit | Triangles | Lines | Points | Pixels "
+            "| Box % | Clear % | Push % | Predicted ms | Predicted fps | Note |"
+        ),
         "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for row in rows:

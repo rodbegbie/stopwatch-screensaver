@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import check_notices as cn  # noqa: E402
+import check_notices as cn
 
 JWZ = """/* xscreensaver, Copyright (c) 1992-2008 Jamie Zawinski <jwz@jwz.org>
  *
@@ -64,7 +64,9 @@ def test_naughton_xlock_notice_passes(tmp_path):
  */
 int x;
 """
-    src, md = setup(tmp_path, {"hopalong/hopalong.c": naughton}, "| hopalong.c | x | y |")
+    src, md = setup(
+        tmp_path, {"hopalong/hopalong.c": naughton}, "| hopalong.c | x | y |"
+    )
     assert cn.check(src, md) == []
 
 
@@ -154,9 +156,7 @@ def test_tinygl_without_a_licence_file_is_reported(tmp_path):
 
 def test_tinygl_not_named_in_the_notices_is_reported(tmp_path):
     src, md = tinygl_setup(tmp_path, licence=True, notices="nothing relevant")
-    assert cn.check(src, md) == [
-        "tinygl: not mentioned in THIRD_PARTY_NOTICES.md"
-    ]
+    assert cn.check(src, md) == ["tinygl: not mentioned in THIRD_PARTY_NOTICES.md"]
 
 
 def test_tinygl_with_licence_and_notices_row_is_clean(tmp_path):

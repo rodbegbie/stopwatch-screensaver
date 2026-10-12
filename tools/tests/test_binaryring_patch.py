@@ -5,7 +5,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import binaryring_patch as bp  # noqa: E402
+import binaryring_patch as bp
 
 ROOT = Path(__file__).resolve().parents[2]
 UPSTREAM = ROOT / "vendor" / "xscreensaver-6.16" / "hacks" / "binaryring.c"

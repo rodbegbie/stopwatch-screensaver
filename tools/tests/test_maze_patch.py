@@ -6,7 +6,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import maze_patch as mp  # noqa: E402
+import maze_patch as mp
 
 ROOT = Path(__file__).resolve().parents[2]
 MAZE_C = ROOT / "firmware" / "src" / "hacks" / "maze" / "maze.c"

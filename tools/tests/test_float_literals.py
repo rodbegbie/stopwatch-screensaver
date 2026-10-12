@@ -6,7 +6,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import float_literals as fl  # noqa: E402
+import float_literals as fl
 
 ROOT = Path(__file__).resolve().parents[2]
 BRAID_C = ROOT / "firmware" / "src" / "hacks" / "braid" / "braid.c"
@@ -32,10 +32,7 @@ def test_integers_member_access_and_identifiers_are_left_alone():
 
 
 def test_strings_comments_and_chars_are_left_alone():
-    source = (
-        '"*delay: 1.0 \\n" /* 2.0 */ // 3.0\n'
-        "c = '.'; s = \"a\\\"4.0\"; z = 6.0;"
-    )
+    source = '"*delay: 1.0 \\n" /* 2.0 */ // 3.0\nc = \'.\'; s = "a\\"4.0"; z = 6.0;'
     out = fl.float_literals(source)
     assert '"*delay: 1.0 \\n"' in out
     assert "/* 2.0 */" in out

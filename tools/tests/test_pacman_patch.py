@@ -6,7 +6,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import pacman_patch as pp  # noqa: E402
+import pacman_patch as pp
 
 ROOT = Path(__file__).resolve().parents[2]
 PACMAN_LEVEL_C = ROOT / "firmware" / "src" / "hacks" / "pacman" / "pacman_level.c"

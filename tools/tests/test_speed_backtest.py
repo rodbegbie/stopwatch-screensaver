@@ -6,7 +6,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import speed_backtest as sb  # noqa: E402
+import speed_backtest as sb
 
 REGISTRY = """\
 const HackEntry *const g_hacks[] = {
@@ -80,8 +80,12 @@ def test_a_held_out_hack_is_marked_in_the_table():
 
 def _rows():
     def full(name, host_ms, device, band):
-        return {**row(name, host_ms, device, device), "device_mid": float(device),
-                "band": band, "ratio": device / host_ms}
+        return {
+            **row(name, host_ms, device, device),
+            "device_mid": float(device),
+            "band": band,
+            "ratio": device / host_ms,
+        }
 
     return [
         full("a", 0.001, 1, "low"),
@@ -163,8 +167,8 @@ def test_host_time_is_the_median_of_three_runs(tmp_path):
     counter.write_text("0")
     program = _script(
         tmp_path,
-        f'n=$(cat {counter}); n=$((n+1)); echo $n > {counter}\n'
-        'case $n in 1) v=0.9;; 2) v=0.2;; *) v=0.5;; esac\n'
+        f"n=$(cat {counter}); n=$((n+1)); echo $n > {counter}\n"
+        "case $n in 1) v=0.9;; 2) v=0.2;; *) v=0.5;; esac\n"
         'echo "Fake host_ms=$v"\n',
     )
     assert sb.measure_host(program, 0) == pytest.approx(0.5)
