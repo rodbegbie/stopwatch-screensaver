@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4QHT1F21F96YQ6WGTT4CMV0",
+  "strategy": "manual-commit",
+  "branch": "feature/batch4-kumppa-eruption-gl",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/patch_float_literals.py",
+    "firmware/src/hacks/binaryring_direct.c",
+    "firmware/src/hacks/binaryring_single.c",
+    "tools/binaryring_patch.py",
+    "tools/tests/test_binaryring_patch.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 194,
+    "cache_creation_tokens": 149297,
+    "cache_read_tokens": 26432193,
+    "output_tokens": 51548,
+    "api_call_count": 97
+  }
+}
