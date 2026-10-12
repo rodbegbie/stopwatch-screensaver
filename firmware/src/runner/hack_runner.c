@@ -59,6 +59,7 @@ static void stop(HackRunner *r) {
   callbacks_for(r->hacks[r->index]).free(r->dpy, XSHIM_WINDOW, r->closure);
   /* The display outlives the hack, so release what the hack forgot to free, as
    * an X server does when a client disconnects. */
+  xshim_release_erasers(r->dpy);
   xshim_release_pixmaps(r->dpy);
   r->closure = NULL;
   r->running = 0;

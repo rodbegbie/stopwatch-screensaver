@@ -5,6 +5,7 @@
 #include "core/canvas.h"
 #include "doubletime.h"
 #include "erase.h"
+#include "runner/hack_runner.h"
 #include "x11shim/xshim.h"
 
 enum { kSize = 466 };
@@ -136,8 +137,63 @@ void test_a_step_marks_rows_dirty(void) {
   eraser_free(st);
 }
 
+/* A hack in the style of Coral and Maze: it keeps its eraser in its closure
+ * and never calls eraser_free. */
+static void *leaky_init(Display *d, Window w) {
+  (void)d, (void)w;
+  return calloc(1, sizeof(eraser_state *));
+}
+static unsigned long leaky_draw(Display *d, Window w, void *closure) {
+  eraser_state **st = (eraser_state **)closure;
+  *st = erase_window(d, w, *st);
+  return 1000;
+}
+static void leaky_free(Display *d, Window w, void *closure) {
+  (void)d, (void)w;
+  free(closure);
+}
+
+void test_stopping_mid_wipe_frees_a_state_the_hack_never_frees(void) {
+  static const HackEntry entry = {"Leaky", NULL,       leaky_init, leaky_draw,
+                                  leaky_free, NULL};
+  const HackEntry *const hacks[] = {&entry};
+  HackRunner *r = runner_create_with(&cv, hacks, 1);
+  TEST_ASSERT_NOT_NULL(r);
+  size_t after_warmup = 0;
+  for (int i = 0; i < 55; i++) {
+    TEST_ASSERT_EQUAL_INT(0, runner_start(r, 0));
+    runner_step(r);
+    runner_step(r);
+    if (i == 4) after_warmup = __sanitizer_get_current_allocated_bytes();
+  }
+  TEST_ASSERT_EQUAL_UINT64(after_warmup,
+                           __sanitizer_get_current_allocated_bytes());
+  runner_destroy(r);
+}
+
+void test_eraser_free_then_release_does_not_double_free(void) {
+  eraser_state *st = erase_window(dpy, XSHIM_WINDOW, NULL);
+  eraser_free(st);
+  xshim_release_erasers(dpy);
+}
+
+void test_release_frees_every_live_state_on_the_display(void) {
+  erase_window(dpy, XSHIM_WINDOW, NULL);
+  erase_window(dpy, XSHIM_WINDOW, NULL);
+  xshim_release_erasers(dpy);
+}
+
+/* tearDown closes the display and checks for leaks. */
+void test_closing_the_display_frees_a_state_still_live(void) {
+  TEST_ASSERT_NOT_NULL(erase_window(dpy, XSHIM_WINDOW, NULL));
+}
+
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_closing_the_display_frees_a_state_still_live);
+  RUN_TEST(test_stopping_mid_wipe_frees_a_state_the_hack_never_frees);
+  RUN_TEST(test_eraser_free_then_release_does_not_double_free);
+  RUN_TEST(test_release_frees_every_live_state_on_the_display);
   RUN_TEST(test_first_call_draws_nothing_and_returns_a_state);
   RUN_TEST(test_dwell_is_not_counted);
   RUN_TEST(test_wipe_ends_one_second_after_its_first_step);

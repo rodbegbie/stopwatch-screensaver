@@ -18,6 +18,7 @@ struct eraser_state {
   GC gc;
   int started;
   double start;
+  struct eraser_state *next;
 };
 
 static void venetian_blinds(Display *dpy, Window w, GC gc, double ratio) {
@@ -38,8 +39,18 @@ int xshim_erase_effect_count(void) { return EFFECT_COUNT; }
 
 void eraser_free(eraser_state *st) {
   if (!st) return;
+  for (eraser_state **p = &st->dpy->erasers; *p; p = &(*p)->next) {
+    if (*p == st) {
+      *p = st->next;
+      break;
+    }
+  }
   XFreeGC(st->dpy, st->gc);
   free(st);
+}
+
+void xshim_release_erasers(Display *dpy) {
+  while (dpy->erasers) eraser_free(dpy->erasers);
 }
 
 eraser_state *erase_window(Display *dpy, Window w, eraser_state *st) {
@@ -55,6 +66,8 @@ eraser_state *erase_window(Display *dpy, Window w, eraser_state *st) {
     st->dpy = dpy;
     st->effect = k_effects[pick];
     st->gc = XCreateGC(dpy, w, 0, NULL);
+    st->next = dpy->erasers;
+    dpy->erasers = st;
     return st;
   }
 
