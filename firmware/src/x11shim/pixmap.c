@@ -1,5 +1,6 @@
 #include "x11shim/pixmap.h"
 
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -238,6 +239,76 @@ static void set_bit(struct XshimPixmap *pm, int x, int y, int on) {
   *byte = on ? (uint8_t)(*byte | mask) : (uint8_t)(*byte & ~mask);
 }
 
+/* Sets or clears bits x0 up to x1 (exclusive) of row y, a byte at a time. The
+ * caller has clipped the span to the bitmap. */
+static void set_span(struct XshimPixmap *pm, int y, int x0, int x1, int on) {
+  if (x1 <= x0) return;
+  uint8_t *row = pm->bits + (size_t)y * (size_t)pm->stride;
+  const int first = x0 / 8, last = (x1 - 1) / 8;
+  const uint8_t head = (uint8_t)(0xFF >> (x0 % 8));
+  const uint8_t tail = (uint8_t)(0xFF << (7 - (x1 - 1) % 8));
+  for (int b = first; b <= last; b++) {
+    uint8_t mask = 0xFF;
+    if (b == first) mask &= head;
+    if (b == last) mask &= tail;
+    row[b] = on ? (uint8_t)(row[b] | mask) : (uint8_t)(row[b] & ~mask);
+  }
+}
+
+int xshim_bitmap_fill_rect(Display *dpy, Drawable d, GC gc, int x, int y,
+                           unsigned int w, unsigned int h) {
+  (void)dpy;
+  struct XshimPixmap *pm = pixmap_of(d);
+  if (!pm || pm->depth != 1) return 0;
+  const int64_t x0 = max64(0, x), y0 = max64(0, y);
+  const int64_t x1 = min64(pm->w, (int64_t)x + w), y1 = min64(pm->h, (int64_t)y + h);
+  for (int64_t j = y0; j < y1; j++)
+    set_span(pm, (int)j, (int)x0, (int)x1, (int)(gc->foreground & 1));
+  return 1;
+}
+
+/* Even-odd fill, a pixel being in when its centre is, as the window's fill
+ * does. `xy` is n pairs of absolute coordinates. */
+int xshim_bitmap_fill_polygon(Display *dpy, Drawable d, GC gc, const int *xy,
+                              int n) {
+  (void)dpy;
+  struct XshimPixmap *pm = pixmap_of(d);
+  if (!pm || pm->depth != 1) return 0;
+  float stack[32];
+  float *cross = n <= 32 ? stack : (float *)malloc((size_t)n * sizeof(float));
+  if (!cross) return 1;
+  int ymin = xy[1], ymax = xy[1];
+  for (int i = 1; i < n; i++) {
+    if (xy[2 * i + 1] < ymin) ymin = xy[2 * i + 1];
+    if (xy[2 * i + 1] > ymax) ymax = xy[2 * i + 1];
+  }
+  const int64_t top = max64(0, ymin), bottom = min64(pm->h, (int64_t)ymax);
+  for (int64_t row = top; row < bottom; row++) {
+    const float sample = (float)row + 0.5f;
+    int count = 0;
+    for (int i = 0; i < n; i++) {
+      const int j = (i + 1) % n;
+      const float ya = (float)xy[2 * i + 1], yb = (float)xy[2 * j + 1];
+      if ((sample < ya) == (sample < yb)) continue;
+      const float xa = (float)xy[2 * i], xb = (float)xy[2 * j];
+      const float at = xa + (sample - ya) * (xb - xa) / (yb - ya);
+      int k = count++;
+      while (k > 0 && cross[k - 1] > at) {
+        cross[k] = cross[k - 1];
+        k--;
+      }
+      cross[k] = at;
+    }
+    for (int k = 0; k + 1 < count; k += 2) {
+      const int64_t from = max64(0, (int64_t)ceilf(cross[k] - 0.5f));
+      const int64_t to = min64(pm->w, (int64_t)ceilf(cross[k + 1] - 0.5f));
+      set_span(pm, (int)row, (int)from, (int)to, (int)(gc->foreground & 1));
+    }
+  }
+  if (cross != stack) free(cross);
+  return 1;
+}
+
 Pixmap XCreatePixmapFromBitmapData(Display *dpy, Drawable d, char *data,
                                    unsigned int w, unsigned int h,
                                    unsigned long fg, unsigned long bg,
@@ -353,4 +424,9 @@ int XCopyPlane(Display *dpy, Drawable src, Drawable dst, GC gc, int sx,
 int XSync(Display *dpy, Bool discard) {
   (void)dpy, (void)discard;
   return 0;
+}
+
+long XMaxRequestSize(Display *dpy) {
+  (void)dpy;
+  return 65535;
 }

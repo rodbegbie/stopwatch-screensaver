@@ -172,6 +172,32 @@ XLOCKMORE_HACK(graphstat, "GraphStat");
 
 XLOCKMORE_HACK(etruscanvenus, "EtruscanVenus");
 
+extern const HackEntry abstractile_hack;
+
+extern const HackEntry attraction_hack;
+
+extern const HackEntry greynetic_hack;
+
+extern const HackEntry wander_hack;
+
+
+extern const HackEntry popsquares_hack;
+
+
+XLOCKMORE_HACK(lisa, "Lisa");
+
+XLOCKMORE_HACK(penrose, "Penrose");
+
+XLOCKMORE_HACK(worm, "Worm");
+
+XLOCKMORE_HACK(triangle, "Triangle");
+
+extern const HackEntry xrayswarm_hack;
+
+extern const HackEntry rocks_hack;
+
+extern const HackEntry decayscreen_hack;
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -241,6 +267,18 @@ const HackEntry *const g_hacks[] = {
     &binaryring_hack,
     &graphstat_hack,
     &etruscanvenus_hack,
+    &abstractile_hack,
+    &attraction_hack,
+    &greynetic_hack,
+    &wander_hack,
+    &popsquares_hack,
+    &lisa_hack,
+    &penrose_hack,
+    &worm_hack,
+    &triangle_hack,
+    &xrayswarm_hack,
+    &rocks_hack,
+    &decayscreen_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif

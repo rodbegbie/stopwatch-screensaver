@@ -16,6 +16,7 @@
 #include "hacks/pacman/pacman_level.h"
 #include "hacks/pacman_pool.h"
 #include "glshim/glshim.h"
+#include "grabclient.h"
 #include "hacks/registry.h"
 #include "runner/hack_runner.h"
 
@@ -124,6 +125,18 @@ void test_registry_lists_hacks_in_order(void) {
                                          "BinaryRing",
                                          "GraphStat",
                                          "EtruscanVenus",
+                                         "Abstractile",
+                                         "Attraction",
+                                         "Greynetic",
+                                         "Wander",
+                                         "PopSquares",
+                                         "Lisa",
+                                         "Penrose",
+                                         "Worm",
+                                         "Triangle",
+                                         "XRaySwarm",
+                                         "Rocks",
+                                         "DecayScreen",
 #ifdef HAVE_AFTER_DARK_TOASTERS
                                          "ad-flyingtoasters",
 #endif
@@ -240,6 +253,25 @@ void test_the_runner_releases_pixmaps_a_stopped_hack_left_behind(void) {
   TEST_ASSERT_TRUE_MESSAGE(after < before + 4 * 1024, "pixmaps piled up across restarts");
 }
 
+/* A small picture for the hacks that smear a "screen grab" (DecayScreen): see
+ * test_decayscreen_melts_the_grab_image. */
+#define DECAY_W 8
+#define DECAY_H 8
+static unsigned char decay_blob[8 + 2 * DECAY_W * DECAY_H + DECAY_H];
+
+static void fill_decay_blob(void) {
+  memcpy(decay_blob, "565M", 4);
+  decay_blob[4] = DECAY_W;
+  decay_blob[6] = DECAY_H;
+  for (int y = 0; y < DECAY_H; y++)
+    for (int x = 0; x < DECAY_W; x++) {
+      const unsigned v = ((x * 4 + 3) << 11) | ((y * 8 + 7) << 5) | (x + y + 1);
+      decay_blob[8 + 2 * (y * DECAY_W + x)] = v & 0xFF;
+      decay_blob[9 + 2 * (y * DECAY_W + x)] = v >> 8;
+    }
+  memset(decay_blob + 8 + 2 * DECAY_W * DECAY_H, 0xFF, DECAY_H);
+}
+
 /* Substrate starts on a white canvas, so "20 non-black pixels" was true before
  * it drew anything. A hack that never draws must not pass, whatever colour its
  * background is. */
@@ -255,12 +287,15 @@ void test_a_hack_that_never_draws_on_white_is_not_drawing(void) {
 }
 
 void test_every_hack_draws_something_within_2000_frames(void) {
+  fill_decay_blob();
+  xshim_set_grab_image(decay_blob, sizeof(decay_blob));
   for (int i = 0; i < g_hack_count; i++) {
     HackRunner *r = runner_create(&cv);
     TEST_ASSERT_EQUAL_INT(0, runner_start(r, i));
     TEST_ASSERT_TRUE_MESSAGE(draws_within(r, 2000), g_hacks[i]->name);
     runner_destroy(r);
   }
+  xshim_set_grab_image(NULL, 0);
 }
 
 void test_every_hack_runs_3000_frames_cleanly_with_sane_delays(void) {
@@ -425,28 +460,28 @@ static const uint64_t kBaseline[] = {
     0xc1db63631e6d26ecull, /* Pedal: re-pinned for the eraser (#86) */
     0, /* Coral reads the clock: not deterministic, so not pinned */
     0xdabd390a15578da4ull, /* Squiral */
-    0x19c5b220193ad705ull, /* Critical */
-    0x80bcaaef5d53f475ull, /* CloudLife */
+    0xc73423265e03fc8eull, /* Critical */
+    0x8e607be7fad1b855ull, /* CloudLife */
     0x9fc760a330da4c12ull, /* WhirlWindWarp */
-    0x9ade65fba7afeb1aull, /* Flame */
-    0x29a9c8bcad390b11ull, /* Hopalong */
+    0x42cee3f3b8b3c778ull, /* Flame */
+    0x3809dd8f3972a6b2ull, /* Hopalong */
     0x7cecada4d69a47beull, /* Vines: re-pinned for the eraser (#86) */
     0x81324f88137bfcf1ull, /* Sierpinski: re-pinned for the eraser (#86) */
     0x39d159495623cf2bull, /* FadePlot */
     0x574c61de3bb517afull, /* Thornbird */
-    0xca8ae65ff2d713aeull, /* Spiral */
+    0x7fa47eb9300dc9dull, /* Spiral */
     0x9748fd2017af52e5ull, /* Sphere */
-    0x03e9544d12dae5ddull, /* Discrete */
+    0x1cf92001cbfc23e5ull, /* Discrete */
     0x4815a4e22a59c710ull, /* Galaxy */
-    0x7b230f32b354922bull, /* Drift */
+    0x6026dc7a36bf2a59ull, /* Drift */
     0xe97dd56bf15d2b99ull, /* Lightning */
     0, /* Maze: see test_maze_frame_matches_main */
     0x1472437ef1d9a798ull, /* Blaster */
     0xb90b3ccdac009a41ull, /* Substrate */
     0x08a8895ef4d1943cull, /* Pacman: taken after looking at the frames; re-taken for the level pool (#32), whose pick consumes one random() */
     0x0f7959307446f1c1ull, /* Braid: taken after looking at the frames; re-pinned for the eraser (#86) */
-    0x8ce46510f0e0360cull, /* Mountain: taken after looking at the frames */
-    0xa19684045106b327ull, /* Epicycle: taken after looking at the frames */
+    0xbd090f31b6b23308ull, /* Mountain: taken after looking at the frames */
+    0xb7b3391814dab938ull, /* Epicycle: taken after looking at the frames */
     0xdeb3899d2483b5b7ull, /* Kaleidescope: taken after looking at the frames */
     0x41f708d6203d8140ull, /* Gears: taken after looking at the frames */
     0x5a1dd5b30e81a013ull, /* Morph3D: taken after looking at the frames */
@@ -454,46 +489,58 @@ static const uint64_t kBaseline[] = {
     0xec0a5a874ba776a3ull, /* Deluxe, translucent, each shape blended once: taken after looking at the frames; re-taken for the stroker's shared-edge slack (#56) */
     0xc127f54362047502ull, /* Forest: taken after looking at the frames; re-taken for the stroker's shared-edge slack (#56) */
     0x3796f88202299960ull, /* Laser: taken after looking at the frames */
-    0xe48eab27f8a1f05bull, /* Lissie: taken after looking at the frames */
-    0x2b087cd03addae3eull, /* Rotor: taken after looking at the frames; re-taken for the stroker's shared-edge slack (#56) */
+    0xb3e171e089b403d9ull, /* Lissie: taken after looking at the frames */
+    0x2f2215a50fb19067ull, /* Rotor: taken after looking at the frames; re-taken for the stroker's shared-edge slack (#56) */
     0xc76242aaacbe8177ull, /* Scooter: taken after looking at the frames */
     0x9d5e492757aab42bull, /* Grav: taken after looking at the frames */
-    0x41f6a76aad432b20ull, /* Euler2D: taken after looking at the frames */
-    0x59bf16ddeccecc15ull, /* Anemone: taken after looking at the frames */
+    0xa01edab043867b8full, /* Euler2D: taken after looking at the frames */
+    0x3cb6f3300c8308dull, /* Anemone: taken after looking at the frames */
     0x1ad9e9fe2718ba88ull, /* Anemotaxis: taken after looking at the frames */
     0x3441a22a1f12785aull, /* Compass: taken after looking at the frames; re-taken for the stroker's shared-edge slack (#56) */
     0xe94fb924120c76a5ull, /* FuzzyFlakes: taken after looking at the frames */
-    0x3cc7ad2eeeea2850ull, /* IFS: taken after looking at the frames */
+    0xb150a7b7357aa897ull, /* IFS: taken after looking at the frames */
     0x78c62badb21d8dddull, /* Interaggregate: after looking at the frames, pixels swapped */
     0x7118310d47ee4197ull, /* LMorph: taken after looking at the frames */
     0xe73572fd64eef48full, /* Wormhole: taken after looking at the frames */
     0x7dd7d7130551c261ull, /* Truchet: taken after looking at the frames */
     0x03670369cb12c2deull, /* UnknownPleasures: after looking at the frames, with the fake clock, smooth lines and the offset margin */
-    0x43f9cf84967fee7cull, /* Hexadrop: taken after looking at the frames */
+    0x32dbba1459c7753ull, /* Hexadrop: taken after looking at the frames */
     0xa4895fcbd5d235feull, /* StonerView: taken after looking at the frames (saturating additive blend); re-taken for the square outlines (GL_LINE_LOOP, #80) */
-    0x692e426561735c0dull, /* Halo: taken after looking at the frames, with GCBackground honoured */
+    0x6312d77d82216fc7ull, /* Halo: taken after looking at the frames, with GCBackground honoured */
     0x9b1b0de461b6438bull, /* XMatrix: taken after looking at the frames, trace off */
     0x51a9a94db9bf9128ull, /* Qix: taken after looking at the frames */
     0xa25b9411b50849b8ull, /* Fireworkx: taken after looking at the frames (shells and lengths scaled to the render size) */
     0x77bfaaf3faa1cc64ull, /* Starfish: taken after looking at the frames (spline.h before the float rename) */
     0x5694978ccee06fd6ull, /* Goop: taken after looking at the frames (spline.h before the float rename) */
     0xe79bc5d8b096d29full, /* Loop: taken after looking at the frames (a fresh mode choice per start) */
-    0xf21a07f42e0c50b9ull, /* CWaves: taken after looking at the frames (single precision, one row copied down) */
+    0x95f64d5cefd1e219ull, /* CWaves: taken after looking at the frames (single precision, one row copied down) */
     0x06dba6c7177716ebull, /* Vermiculate: taken after looking at the frames */
-    0x91be49ba88096f62ull, /* Cynosure: taken after looking at the frames */
+    0xb6c5914512535eafull, /* Cynosure: taken after looking at the frames */
     0xcfa8f679f1a10fddull, /* Moire: taken after looking at the frames (single precision) */
-    0x32f706208dc0a079ull, /* Moire2: taken after looking at the frames (bit planes) */
-    0x0100bedf6ddf582cull, /* HexTrail: taken after looking at the frames (count 6, single precision) */
-    0x91947298c096ed6full, /* Celtic: taken after looking at the frames (single precision, graph sized to the screen, step scale 4); re-taken for the eraser (#86), which moved its frames past the stroker's shared-edge slack (#56) */
+    0x862357d5e0c18871ull, /* Moire2: taken after looking at the frames (bit planes) */
+    0xb8ffda69a36d0401ull, /* HexTrail: taken after looking at the frames (count 6, single precision) */
+    0xa28ed907bc2f3c20ull, /* Celtic: taken after looking at the frames (single precision, graph sized to the screen, step scale 4); re-taken for the eraser (#86), which moved its frames past the stroker's shared-edge slack (#56) */
     0x0dad40e48c340ce1ull, /* Eruption: taken after looking at the frames (half size) */
     0xe6027906951dc3f8ull, /* Kumppa: taken after looking at the frames */
     0xf6e24658b84f263full, /* ShadeBobs: taken after looking at the frames */
     0x4898ef61ca0c5048ull, /* Piecewise: taken after looking at the frames (straight on the window, single precision) */
-    0xff886d98e4c5738aull, /* BoxFit: taken after looking at the frames */
+    0x91b14315207169f5ull, /* BoxFit: taken after looking at the frames */
     0xbbe4d8bcc0be9671ull, /* Interference: taken after looking at the frames (on the shim clock) */
     0x7ebd7eb4bca2728bull, /* BinaryRing: taken after looking at the frames (24-bit path, single precision, pixels straight to the window) */
     0x72caf5a8963dd1e9ull, /* GraphStat: taken after looking at the frames (8x8 bitmap titles) */
     0xd38b37194b632481ull, /* EtruscanVenus: taken after looking at the frames (single precision, 48 by 32, half resolution) */
+    0x6f1b52dd4a711f8cull, /* Abstractile: taken after looking at the frames */
+    0x67b7a308203c7b31ull, /* Attraction: taken after looking at the frames */
+    0xfa4b3abc8a5e944dull, /* Greynetic: taken after looking at the frames */
+    0x3f6e072bd26ae0e0ull, /* Wander: taken after looking at the frames */
+    0x7cd3b1092cde1671ull, /* PopSquares: taken after looking at the frames */
+    0x51e07969aaf2cf93ull, /* Lisa: taken after looking at the frames (single precision) */
+    0x6a005a4031889008ull, /* Penrose: taken after looking at the frames */
+    0x75b8e5a49335d676ull, /* Worm: taken after looking at the frames */
+    0xc1085aef5cc71213ull, /* Triangle: taken after looking at the frames */
+    0x990855e2bc899e76ull, /* XRaySwarm: taken after looking at the frames */
+    0x08d32e1f97fcdaf2ull, /* Rocks: taken after looking at the frames (bitmap rock stamps) */
+    0, /* DecayScreen: unpinned on purpose, it smears the shim's grab image and has none here (see test_decayscreen_melts_the_grab_image) */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -536,6 +583,33 @@ void test_hacks_that_use_the_spline_draw_a_real_picture(void) {
     TEST_ASSERT_TRUE_MESSAGE(distinct_colours() >= 8, names[k]);
     runner_destroy(r);
   }
+}
+
+/* DecayScreen smears the picture the shim paints for a "screen grab"
+ * (xshim_set_grab_image). It has none in this process unless a test sets one,
+ * and then stays black, as it did before the shim could grab anything. */
+void test_decayscreen_melts_the_grab_image(void) {
+  fill_decay_blob();
+  xshim_set_grab_image(decay_blob, sizeof(decay_blob));
+  srandom(1);
+  HackRunner *r = runner_create(&cv);
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("DecayScreen")));
+  for (int f = 0; f < 5; f++) runner_step(r);
+  TEST_ASSERT_TRUE(distinct_colours() >= 32);
+  for (int f = 0; f < 300; f++) runner_step(r);
+  TEST_ASSERT_TRUE(distinct_colours() >= 16);
+  runner_destroy(r);
+  xshim_set_grab_image(NULL, 0);
+}
+
+void test_decayscreen_stays_black_without_a_grab_image(void) {
+  xshim_set_grab_image(NULL, 0);
+  srandom(1);
+  HackRunner *r = runner_create(&cv);
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("DecayScreen")));
+  for (int f = 0; f < 50; f++) runner_step(r);
+  TEST_ASSERT_EQUAL_INT(1, distinct_colours());
+  runner_destroy(r);
 }
 
 /* Loop picks squares or hexagons at random when it starts, but upstream keeps
@@ -1311,6 +1385,54 @@ void test_etruscanvenus_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("EtruscanVenus", 1);
 }
 
+void test_abstractile_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Abstractile", 0);
+}
+
+void test_attraction_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Attraction", 0);
+}
+
+void test_greynetic_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Greynetic", 0);
+}
+
+void test_wander_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Wander", 0);
+}
+
+void test_popsquares_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("PopSquares", 0);
+}
+
+void test_lisa_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Lisa", 1);
+}
+
+void test_penrose_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Penrose", 1);
+}
+
+void test_worm_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Worm", 1);
+}
+
+void test_triangle_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Triangle", 1);
+}
+
+void test_xrayswarm_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("XRaySwarm", 0);
+}
+
+void test_rocks_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Rocks", 0);
+}
+
+void test_decayscreen_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("DecayScreen", 0);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -1329,6 +1451,8 @@ int main(void) {
   RUN_TEST(test_substrate_draws_what_it_drew_before_pixels_were_swapped);
   RUN_TEST(test_frames_of_every_hack_but_maze_match_main);
   RUN_TEST(test_hacks_that_use_the_spline_draw_a_real_picture);
+  RUN_TEST(test_decayscreen_melts_the_grab_image);
+  RUN_TEST(test_decayscreen_stays_black_without_a_grab_image);
   RUN_TEST(test_loop_picks_squares_or_hexagons_again_at_every_start);
   RUN_TEST(test_write_the_unpinned_hashes_when_asked);
   RUN_TEST(test_loop_keeps_drawing_squares_when_malloc_of_nothing_returns_null);
@@ -1398,6 +1522,18 @@ int main(void) {
   RUN_TEST(test_binaryring_stops_do_not_leak);
   RUN_TEST(test_graphstat_stops_do_not_leak);
   RUN_TEST(test_etruscanvenus_stops_do_not_leak);
+  RUN_TEST(test_abstractile_stops_do_not_leak);
+  RUN_TEST(test_attraction_stops_do_not_leak);
+  RUN_TEST(test_greynetic_stops_do_not_leak);
+  RUN_TEST(test_wander_stops_do_not_leak);
+  RUN_TEST(test_popsquares_stops_do_not_leak);
+  RUN_TEST(test_lisa_stops_do_not_leak);
+  RUN_TEST(test_penrose_stops_do_not_leak);
+  RUN_TEST(test_worm_stops_do_not_leak);
+  RUN_TEST(test_triangle_stops_do_not_leak);
+  RUN_TEST(test_xrayswarm_stops_do_not_leak);
+  RUN_TEST(test_rocks_stops_do_not_leak);
+  RUN_TEST(test_decayscreen_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);

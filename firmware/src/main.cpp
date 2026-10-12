@@ -14,6 +14,13 @@ extern "C" {
 #include "runner/rotation.h"
 #include "runner/start_pick.h"
 }
+extern "C" void xshim_set_grab_image(const unsigned char *blob, unsigned long size);
+/* grab_image.py writes this header into the build directory unless the build
+ * asks for none (XS_GRAB_IMAGE=none). */
+#if __has_include("grab_image.h")
+#include "grab_image.h"
+#define HAVE_GRAB_IMAGE 1
+#endif
 #include "lgfx/utility/lgfx_qrcode.h"
 /* The encoder's header defines generic names that clash with the rest of the
  * code. */
@@ -542,6 +549,9 @@ void setup() {
   M5.begin(cfg);
   Serial.begin(115200);
   M5.Display.setSwapBytes(false);
+#ifdef HAVE_GRAB_IMAGE
+  xshim_set_grab_image(grab_image_blob, sizeof(grab_image_blob));
+#endif
   teInit();
 
   button_latch_init(&latchA, kButtonSettleMs);

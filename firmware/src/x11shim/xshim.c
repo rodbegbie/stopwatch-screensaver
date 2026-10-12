@@ -143,6 +143,19 @@ int XClearWindow(Display *dpy, Window w) {
   return 0;
 }
 
+int XClearArea(Display *dpy, Window win, int x, int y, unsigned int w,
+               unsigned int h, Bool exposures) {
+  (void)win, (void)exposures;
+  int64_t right = w ? (int64_t)x + w : dpy->canvas->w;
+  int64_t bottom = h ? (int64_t)y + h : dpy->canvas->h;
+  if (right > dpy->canvas->w) right = dpy->canvas->w;
+  if (bottom > dpy->canvas->h) bottom = dpy->canvas->h;
+  if (right <= x || bottom <= y) return 0;
+  canvas_fill_rect(dpy->canvas, x, y, (int)(right - x), (int)(bottom - y),
+                   (uint16_t)dpy->window_background);
+  return 0;
+}
+
 int XSetWindowBackground(Display *dpy, Window w, unsigned long pixel) {
   (void)w;
   dpy->window_background = pixel;
@@ -258,7 +271,10 @@ int XDrawSegments(Display *dpy, Drawable d, GC gc, XSegment *segs, int n) {
 int XFillRectangle(Display *dpy, Drawable d, GC gc, int x, int y,
                    unsigned int w, unsigned int h) {
   Canvas *c = xshim_target(dpy, d);
-  if (!c) return 0;
+  if (!c) {
+    xshim_bitmap_fill_rect(dpy, d, gc, x, y, w, h);
+    return 0;
+  }
   canvas_fill_rect(c, x, y, w > 0x7FFFFFFF ? 0x7FFFFFFF : (int)w,
                    h > 0x7FFFFFFF ? 0x7FFFFFFF : (int)h,
                    (uint16_t)gc->foreground);
@@ -350,7 +366,7 @@ int XFillArcs(Display *dpy, Drawable d, GC gc, XArc *arcs, int n) {
 
 static int fill_polygon(Display *dpy, Drawable d, GC gc, XPoint *pts, int n) {
   Canvas *c = xshim_target(dpy, d);
-  if (!c || n < 3) return 0;
+  if (n < 3) return 0;
   int stack_xy[2 * 64];
   int *xy = stack_xy;
   if (n > 64) {
@@ -361,7 +377,10 @@ static int fill_polygon(Display *dpy, Drawable d, GC gc, XPoint *pts, int n) {
     xy[2 * i] = pts[i].x;
     xy[2 * i + 1] = pts[i].y;
   }
-  canvas_fill_polygon(c, xy, n, (uint16_t)gc->foreground);
+  if (c)
+    canvas_fill_polygon(c, xy, n, (uint16_t)gc->foreground);
+  else
+    xshim_bitmap_fill_polygon(dpy, d, gc, xy, n);
   if (xy != stack_xy) free(xy);
   return 0;
 }

@@ -187,6 +187,8 @@ enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
 #define GCCapStyle (1L << 6)
 #define GCJoinStyle (1L << 7)
 #define LineSolid 0
+#define LineOnOffDash 1 /* accepted; lines still draw solid */
+#define LineDoubleDash 2
 #define CapNotLast 0
 #define CapButt 1
 #define CapRound 2
@@ -283,6 +285,10 @@ int XSetLineAttributes(Display *, GC, unsigned int width, int line_style,
                        int cap_style, int join_style);
 Status XGetWindowAttributes(Display *, Window, XWindowAttributes *);
 int XClearWindow(Display *, Window);
+/* A width or height of 0 runs to the window's edge, as in X. exposures is
+ * ignored: no Expose event is ever sent. */
+int XClearArea(Display *, Window, int x, int y, unsigned int w, unsigned int h,
+               Bool exposures);
 int XSetWindowBackground(Display *, Window, unsigned long pixel);
 int XDrawPoint(Display *, Drawable, GC, int x, int y);
 /* CoordModeOrigin and CoordModePrevious (each point an offset from the one
@@ -397,6 +403,10 @@ int XLookupString(XKeyEvent *, char *buffer, int bytes, KeySym *keysym,
 
 /* Drawing is synchronous, so there is nothing to wait for. */
 int XSync(Display *, Bool discard);
+
+/* In 4-byte units, as a typical X server reports it. Nothing is sent, so the
+ * only reader is a hack sizing its XDrawLines batches. */
+long XMaxRequestSize(Display *);
 
 Status XParseColor(Display *, Colormap, const char *spec, XColor *);
 Status XAllocColor(Display *, Colormap, XColor *);
