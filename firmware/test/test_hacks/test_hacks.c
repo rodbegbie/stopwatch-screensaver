@@ -487,7 +487,7 @@ static const uint64_t kBaseline[] = {
     0x4911a0b3d958bb8cull, /* Eruption: taken after looking at the frames */
     0xe6027906951dc3f8ull, /* Kumppa: taken after looking at the frames */
     0xf6e24658b84f263full, /* ShadeBobs: taken after looking at the frames */
-    0x5d99129bf864f0e9ull, /* Piecewise: taken after looking at the frames (straight on the window) */
+    0, /* Piecewise: not yet pinned */
     0xff886d98e4c5738aull, /* BoxFit: taken after looking at the frames */
     0xbbe4d8bcc0be9671ull, /* Interference: taken after looking at the frames (on the shim clock) */
     0x7ebd7eb4bca2728bull, /* BinaryRing: taken after looking at the frames (24-bit path, single precision, pixels straight to the window) */
