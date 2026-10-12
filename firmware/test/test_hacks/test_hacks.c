@@ -122,6 +122,7 @@ void test_registry_lists_hacks_in_order(void) {
                                          "BoxFit",
                                          "Interference",
                                          "BinaryRing",
+                                         "GraphStat",
 #ifdef HAVE_AFTER_DARK_TOASTERS
                                          "ad-flyingtoasters",
 #endif
@@ -490,6 +491,7 @@ static const uint64_t kBaseline[] = {
     0, /* BoxFit: not yet pinned */
     0, /* Interference: not yet pinned */
     0, /* BinaryRing: not yet pinned */
+    0, /* GraphStat: not yet pinned */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -1299,6 +1301,10 @@ void test_binaryring_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("BinaryRing", 0);
 }
 
+void test_graphstat_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("GraphStat", 1);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -1384,6 +1390,7 @@ int main(void) {
   RUN_TEST(test_boxfit_stops_do_not_leak);
   RUN_TEST(test_interference_stops_do_not_leak);
   RUN_TEST(test_binaryring_stops_do_not_leak);
+  RUN_TEST(test_graphstat_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
