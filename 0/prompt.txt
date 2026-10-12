@@ -1,0 +1,1 @@
+There are a few issues related to the pacman hack. Want to create a worktree and go through them?  Issues 32, 56 and 65.
