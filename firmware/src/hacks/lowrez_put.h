@@ -67,6 +67,13 @@ static int lowrez_put_image(Display *dpy, Drawable d, GC gc, XImage *im,
         for (int64_t i = i0; i < i1; i++, x += (int)S) {
           const uint16_t v = px_swap((uint16_t)(src[2 * i] | (src[2 * i + 1] << 8)));
           const int a = x < ia ? ia : x, b = x + (int)S > ib ? ib : x + (int)S;
+#if LOWREZ_SCALE == 2
+          /* Both pixels of the pair in one 32-bit store when it is aligned. */
+          if (b - a == 2 && !(((uintptr_t)(row + a)) & 3)) {
+            *(uint32_t *)(row + a) = (uint32_t)v | ((uint32_t)v << 16);
+            continue;
+          }
+#endif
           for (int k = a; k < b; k++) row[k] = v;
         }
         first = row;
