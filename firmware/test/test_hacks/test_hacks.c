@@ -407,11 +407,11 @@ static uint64_t hash_after(int index, int frames) {
 static const uint64_t kBaseline[] = {
     0xc09cdcfa9b3be138ull, /* Pyro */
     0x63c3673ca39d844full, /* HyperCube */
-    0xd259e4a8a0989583ull, /* XSpirograph */
+    0xceb9caf334de881eull, /* XSpirograph: re-pinned for the eraser dwell and wipe (#86) */
     0x9b337f3f1305e6d1ull, /* Petri */
-    0x8ae10273e493330dull, /* Helix */
-    0x335fcd65811fe911ull, /* Rorschach */
-    0xa4f79500bd791711ull, /* Pedal */
+    0x0577bf85b67da573ull, /* Helix: re-pinned for the eraser (#86) */
+    0xaeed5737b8ef81e7ull, /* Rorschach: re-pinned for the eraser (#86) */
+    0xc1db63631e6d26ecull, /* Pedal: re-pinned for the eraser (#86) */
     0, /* Coral reads the clock: not deterministic, so not pinned */
     0xdabd390a15578da4ull, /* Squiral */
     0x19c5b220193ad705ull, /* Critical */
@@ -419,8 +419,8 @@ static const uint64_t kBaseline[] = {
     0x9fc760a330da4c12ull, /* WhirlWindWarp */
     0x9ade65fba7afeb1aull, /* Flame */
     0x29a9c8bcad390b11ull, /* Hopalong */
-    0xc85b7a1763d1d294ull, /* Vines */
-    0x3703b4d6790c0143ull, /* Sierpinski */
+    0x7cecada4d69a47beull, /* Vines: re-pinned for the eraser (#86) */
+    0x81324f88137bfcf1ull, /* Sierpinski: re-pinned for the eraser (#86) */
     0x39d159495623cf2bull, /* FadePlot */
     0x574c61de3bb517afull, /* Thornbird */
     0xca8ae65ff2d713aeull, /* Spiral */
@@ -433,7 +433,7 @@ static const uint64_t kBaseline[] = {
     0x1472437ef1d9a798ull, /* Blaster */
     0xb90b3ccdac009a41ull, /* Substrate */
     0x30f53883f531c363ull, /* Pacman: taken on its own branch, after looking at the frames */
-    0x9b6e044ecec355d5ull, /* Braid: taken after looking at the frames */
+    0x0f7959307446f1c1ull, /* Braid: taken after looking at the frames; re-pinned for the eraser (#86) */
     0x8ce46510f0e0360cull, /* Mountain: taken after looking at the frames */
     0xa19684045106b327ull, /* Epicycle: taken after looking at the frames */
     0xdeb3899d2483b5b7ull, /* Kaleidescope: taken after looking at the frames */
@@ -473,7 +473,7 @@ static const uint64_t kBaseline[] = {
     0xcfa8f679f1a10fddull, /* Moire: taken after looking at the frames (single precision) */
     0x32f706208dc0a079ull, /* Moire2: taken after looking at the frames (bit planes) */
     0x0100bedf6ddf582cull, /* HexTrail: taken after looking at the frames (count 6, single precision) */
-    0xd55d5d810361894eull, /* Celtic: taken after looking at the frames (single precision, graph sized to the screen, step scale 4) */
+    0x91947298c096ed6full, /* Celtic: taken after looking at the frames (single precision, graph sized to the screen, step scale 4); re-pinned for the eraser (#86) */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -603,7 +603,7 @@ void test_goop_blends_only_in_its_transparent_mode(void) {
 }
 
 void test_maze_frame_matches_main(void) {
-  TEST_ASSERT_EQUAL_UINT64(0x0693082a4399bc39ull, hash_after(index_of("Maze"), 200));
+  TEST_ASSERT_EQUAL_UINT64(0x4fa5b289a8d67f2bull, hash_after(index_of("Maze"), 200));
 }
 
 /* Pacman restarts its level after the last dot is eaten or the third death,
