@@ -65,7 +65,9 @@ def outside_circle(level: list[str]) -> list[tuple[int, int]]:
 
 
 def _dots(level: list[str]) -> set[tuple[int, int]]:
-    return {(x, y) for y, row in enumerate(level) for x, c in enumerate(row) if c == DOT}
+    return {
+        (x, y) for y, row in enumerate(level) for x, c in enumerate(row) if c == DOT
+    }
 
 
 def problems(level: list[str]) -> list[str]:
@@ -164,11 +166,17 @@ def generate(
     firmware = ROOT / "firmware"
     subprocess.run(
         [
-            "cc", "-O1", "-w", "-DXSHIM_NATIVE", "-DSTANDALONE",
+            "cc",
+            "-O1",
+            "-w",
+            "-DXSHIM_NATIVE",
+            "-DSTANDALONE",
             f"-I{firmware / 'src'}",
             f"-I{firmware / 'src' / 'x11shim' / 'include'}",
             f"-I{firmware / 'src' / 'xs_support'}",
-            str(source), "-o", str(program),
+            str(source),
+            "-o",
+            str(program),
         ],
         check=True,
         capture_output=True,

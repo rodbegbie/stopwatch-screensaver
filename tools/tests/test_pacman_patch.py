@@ -11,13 +11,20 @@ import pacman_patch as pp  # noqa: E402
 ROOT = Path(__file__).resolve().parents[2]
 PACMAN_LEVEL_C = ROOT / "firmware" / "src" / "hacks" / "pacman" / "pacman_level.c"
 
-SAMPLE = """int
+SAMPLE = """#include "pacman.h"
+#include "pacman_level.h"
+
+int
 pacman_createnewlevel (pacmangamestruct *pp)
 {
     if (NRAND (2) == 0) {
+
         do {
+            clearlevel (level);
             nextstep (pp, level, 1, 2, dirvec, 1);
         } while (ret * 100 < (LEVWIDTH * LEVHEIGHT * MINDOTPERC));
+
+        filllevel (level);
     }
     else {
         (void) memcpy (level, stdlevel, sizeof (lev_t));
@@ -26,16 +33,40 @@ pacman_createnewlevel (pacmangamestruct *pp)
 }
 """
 
+POOL_PICK = "memcpy (level, pacman_pool[NRAND (PACMAN_POOL_SIZE)], sizeof (lev_t))"
 
-def test_the_random_branch_is_switched_off():
+
+def test_the_random_branch_picks_from_the_pool():
     out = pp.patch_pacman_level(SAMPLE)
-    assert "if (0) {" in out
-    assert "NRAND (2)" not in out
+    assert POOL_PICK in out
+
+
+def test_the_choice_between_pool_and_fixed_level_is_upstreams():
+    out = pp.patch_pacman_level(SAMPLE)
+    assert "if (NRAND (2) == 0) {" in out
+    assert out.index("NRAND (2) == 0") < out.index(POOL_PICK) < out.index("else {")
+
+
+def test_the_generator_loop_never_runs():
+    out = pp.patch_pacman_level(SAMPLE)
+    assert "if (0) do {" in out
+    assert out.index("if (0) do {") > out.index(POOL_PICK)
+
+
+def test_the_pool_header_is_included_after_the_level_header():
+    out = pp.patch_pacman_level(SAMPLE)
+    assert '#include "pacman_level.h"\n#include "pacman_pool.h"' in out
 
 
 def test_the_fixed_level_branch_is_kept():
     out = pp.patch_pacman_level(SAMPLE)
     assert "memcpy (level, stdlevel, sizeof (lev_t));" in out
+
+
+def test_the_rest_of_the_branch_is_kept():
+    out = pp.patch_pacman_level(SAMPLE)
+    assert "filllevel (level);" in out
+    assert "frmtlevel (pp, level);" in out
 
 
 def test_nothing_else_changes():
@@ -47,17 +78,27 @@ def test_nothing_else_changes():
         )
         if line[0] in "+-" and line[:3] not in ("+++", "---")
     ]
-    assert len(changed) == 2  # one line out, one line in
+    assert changed == [
+        '+#include "pacman_pool.h"',
+        "-        do {",
+        "+        " + POOL_PICK + ";",
+        "+        if (0) do {",
+    ]
 
 
-def test_a_missing_test_is_an_error():
-    with pytest.raises(ValueError, match="NRAND"):
-        pp.patch_pacman_level(SAMPLE.replace("if (NRAND (2) == 0) {", "if (1) {"))
+def test_a_missing_generator_loop_is_an_error():
+    with pytest.raises(ValueError, match="do {"):
+        pp.patch_pacman_level(SAMPLE.replace("clearlevel (level);", "other (level);"))
 
 
-def test_two_matches_are_an_error():
+def test_two_generator_loops_are_an_error():
     with pytest.raises(ValueError, match="found 2"):
         pp.patch_pacman_level(SAMPLE + SAMPLE)
+
+
+def test_a_missing_include_is_an_error():
+    with pytest.raises(ValueError, match="pacman_level.h"):
+        pp.patch_pacman_level(SAMPLE.replace("pacman_level.h", "other.h"))
 
 
 def test_a_missing_fixed_level_branch_is_an_error():
@@ -67,8 +108,8 @@ def test_a_missing_fixed_level_branch_is_an_error():
 
 def test_the_copied_source_patches_cleanly():
     out = pp.patch_pacman_level(PACMAN_LEVEL_C.read_text())
-    assert out.count("if (0) {") >= 1
-    assert "NRAND (2) == 0" not in out
+    assert POOL_PICK in out
+    assert "if (NRAND (2) == 0) {" in out
 
 
 PACMAN_AI_C = ROOT / "firmware" / "src" / "hacks" / "pacman" / "pacman_ai.c"

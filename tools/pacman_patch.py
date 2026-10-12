@@ -1,10 +1,10 @@
 """Patches that keep Pacman inside the board's 16 KB loop-task stack.
 
-1. patch_pacman_level: always use the fixed level (below).
+1. patch_pacman_level: take generated levels from a pool (below).
 2. patch_pacman_ai: turn the ghosts' recursive route search into a loop (end of
    this file).
 
-Make pacman_level.c always use its fixed level.
+Make pacman_level.c pick its generated levels from a pool.
 
 `pacman_createnewlevel` builds half its levels with a random generator
 (`creatlevelblock` and `nextstep`) and copies the fixed `stdlevel` for the
@@ -13,30 +13,54 @@ level in every frame, so a level takes up to about 300 KB of stack. The board's
 loop task has 16 KB, and Pacman reboots the board on its first frame when the
 generator runs.
 
+So the generator branch copies a level from `pacman_pool`
+(pacman_pool.h, made by tools/pacman_levels.py by running the real generator on
+the host) and carries on with upstream's `filllevel`, `frmtlevel` and
+`finishjail`. The odds stay upstream's: half the levels are the fixed one. The
+generator loop stays in the file behind `if (0)`, so its functions are still
+used and compile without warnings.
+
 The copied pacman_level.c stays byte-identical to upstream. The firmware build
 writes a patched copy with `firmware/patch_pacman.py` and compiles that
-instead. The generator is still compiled but never called.
+instead.
 """
 
 import hashlib
 
 RANDOM_LEVEL_TEST = "if (NRAND (2) == 0) {"
+GENERATOR_LOOP = "        do {\n            clearlevel (level);"
 FIXED_LEVEL_COPY = "memcpy (level, stdlevel, sizeof (lev_t))"
-REPLACEMENT = "if (0) { /* patched: the random generator needs ~300 KB of stack */"
+LEVEL_HEADER_INCLUDE = '#include "pacman_level.h"\n'
+POOL_INCLUDE = '#include "pacman_pool.h"\n'
+POOL_PICK = "        memcpy (level, pacman_pool[NRAND (PACMAN_POOL_SIZE)], sizeof (lev_t));\n"
 
 
 def patch_pacman_level(source: str) -> str:
-    found = source.count(RANDOM_LEVEL_TEST)
+    found = source.count(GENERATOR_LOOP)
     if found != 1:
         raise ValueError(
+            f"expected one `do {{` generator loop (in pacman_createnewlevel), "
+            f"found {found}; has upstream changed?"
+        )
+    if source.count(RANDOM_LEVEL_TEST) != 1:
+        raise ValueError(
             f"expected one `{RANDOM_LEVEL_TEST}` (the NRAND choice in "
-            f"pacman_createnewlevel), found {found}; has upstream changed?"
+            "pacman_createnewlevel); has upstream changed?"
         )
     if FIXED_LEVEL_COPY not in source:
         raise ValueError(
             f"`{FIXED_LEVEL_COPY}` (the stdlevel branch) is gone; has upstream changed?"
         )
-    return source.replace(RANDOM_LEVEL_TEST, REPLACEMENT)
+    if source.count(LEVEL_HEADER_INCLUDE) != 1:
+        raise ValueError(
+            'expected one `#include "pacman_level.h"` to put the pool header '
+            "after; has upstream changed?"
+        )
+    source = source.replace(LEVEL_HEADER_INCLUDE, LEVEL_HEADER_INCLUDE + POOL_INCLUDE)
+    return source.replace(
+        GENERATOR_LOOP,
+        POOL_PICK + GENERATOR_LOOP.replace("        do {", "        if (0) do {", 1),
+    )
 
 
 BACK_TRACK_START = "static int\nrecur_back_track ("
