@@ -1,0 +1,1 @@
+I left decisions for Pipes as a comment on the issue.  We'll deal with that in a future session.  Now do your end of session tasks.
