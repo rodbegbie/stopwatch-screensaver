@@ -26,11 +26,17 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   internal heap drained to near zero (Celtic read 1,792 B free) and its data
   in slower PSRAM: compare the log's `psram=` with its idle value for the
   overflow.
-- `erase_window` (`helpers.c`) clears on its first call and returns NULL.
-  Upstream's first call draws nothing and returns a state, so a hack that
-  waits after it (Celtic's 5 s `*delay2`) waits on the finished picture and
-  then a wipe runs. Here the wait is on black and the picture vanishes at once
-  (issue #86).
+- `erase_window` (`erase.c`) follows upstream's contract: the first call draws
+  nothing and returns a state, so a hack that waits after it (Celtic's 5 s
+  `*delay2`) waits on the finished picture. The second call starts a one-second
+  wipe (blinds, circle, fizzle or random lines, picked at random), each later
+  call draws the next step, and the call after the second is up clears the
+  window and returns NULL. Progress comes from `double_time()`, not from the
+  call count, so the wipe lasts a second at any step rate. A test or tool
+  that does not sleep for a hack's delay must install a clock
+  (`xshim_set_clock`), or a wipe never ends. Six hacks never call
+  `eraser_free`, so the display tracks live states and the runner releases
+  them when a hack stops.
 - xlockmore hacks (the 40 that include `xlockmore.h`) need `-DSTANDALONE`,
   which every PlatformIO env and `score_hacks.py` set; without it they
   include `xlock.h` instead. The envs also define `HAVE_MOBILE`, because

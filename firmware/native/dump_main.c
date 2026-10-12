@@ -4,8 +4,15 @@
 #include <time.h>
 
 #include "core/canvas.h"
+#include "doubletime.h"
 #include "hacks/registry.h"
 #include "runner/hack_runner.h"
+
+/* The same clock test_hacks uses (a thirtieth of a second a reading): a dump
+ * does not sleep for a hack's delay, so on the wall clock a timed wipe would
+ * never end, and a frame would depend on host speed. */
+static double fake_now = 1000.0;
+static double fake_clock(void) { return fake_now += 1.0 / 30.0; }
 
 /* Usage: dump <hack-index> <frames> <out.raw>  (466x466 little-endian RGB565)
  *        dump stats <hack-index>  (mean host milliseconds per step, after a
@@ -43,6 +50,7 @@ int main(int argc, char **argv) {
   int index = atoi(argv[1]), frames = atoi(argv[2]);
   Canvas cv;
   if (canvas_init(&cv, 466, 466, malloc) != 0) return 1;
+  xshim_set_clock(fake_clock);
   HackRunner *r = runner_create(&cv);
   if (!r || runner_start(r, index) != 0) {
     fprintf(stderr, "bad hack index %d (have %d)\n", index, g_hack_count);
