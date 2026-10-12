@@ -11,5 +11,3 @@ boing: 8.3 fps and plain on a small screen; Rod dropped it, scanlines cost 83 ms
 blocktube: 8.8-10 fps at 400 blocks, half size; Rod dropped it (slow, little going on)
 companion: about 71,000 vertices a cube, est. 2-3 fps; Rod dropped it
 floppy: 630 KB model won't fit the 3 MB app partition, est. 5 fps; Rod dropped it
-rocks: draws its big rocks into depth-1 pixmaps, which the shim leaves blank; only the far dots show
-decayscreen: smears a grabbed screen image and the shim grabs nothing, so it stays black

@@ -7,6 +7,12 @@
 #include "doubletime.h"
 #include "hacks/registry.h"
 #include "runner/hack_runner.h"
+#include "grabclient.h"
+
+#if __has_include("grab_image.h")
+#include "grab_image.h"
+#define HAVE_GRAB_IMAGE 1
+#endif
 
 /* The same clock test_hacks uses (a thirtieth of a second a reading): a dump
  * does not sleep for a hack's delay, so on the wall clock a timed wipe would
@@ -43,6 +49,9 @@ static int stats_main(int index) {
 }
 
 int main(int argc, char **argv) {
+#ifdef HAVE_GRAB_IMAGE
+  xshim_set_grab_image(grab_image_blob, sizeof(grab_image_blob));
+#endif
   if (argc == 3 && strcmp(argv[1], "stats") == 0) return stats_main(atoi(argv[2]));
   if (argc != 4) {
     fprintf(stderr, "usage: %s <hack-index> <frames> <out.raw>\n", argv[0]);
