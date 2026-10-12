@@ -289,7 +289,8 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   converted from `vendor/` at build time (`gl_textures.py`). It also filters
   `glEnable` of fog and texture generation, which TinyGL warns about every
   frame.
-- Companion Cube and Floppy are not ported (Rod to decide). Each Companion
-  Cube face draws a 9,588-vertex disc: about 71,000 vertices a cube, three
-  cubes by default. Floppy's model is 26,340 vertices (about 630 KB of floats,
-  which would not fit beside the current firmware in the 3 MB app partition).
+- Companion Cube and Floppy are not ported (Rod dropped both, listed in
+  `failed_ports.txt`). Each Companion Cube face draws a 9,588-vertex disc:
+  about 71,000 vertices a cube, three cubes by default. Floppy's model is
+  26,340 vertices (about 630 KB of floats, which would not fit beside the
+  current firmware in the 3 MB app partition).

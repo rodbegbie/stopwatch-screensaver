@@ -880,9 +880,9 @@ needing few additions come first.
 
 | Hack | Kind | Effort | Speed | Ported | Shim gaps | Flags | LOC |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| abstractile | 2d | S | medium (0.047 ms) | - | - | - | 1625 |
-| attraction | 2d | S | medium (0.016 ms) | - | - | - | 1115 |
-| binaryhorizon | 2d | S | high (1.8 ms) | - | - | pixmaps, readback | 624 |
+| abstractile | 2d | S | medium (0.049 ms) | - | - | - | 1625 |
+| attraction | 2d | S | medium (0.017 ms) | - | - | - | 1115 |
+| binaryhorizon | 2d | S | high (1.7 ms) | - | - | pixmaps, readback | 624 |
 | bouboule | 2d | S | high (0.066 ms) | - | - | xor | 860 |
 | ccurve | 2d | S | high (0.55 ms) | - | - | pixmaps | 872 |
 | decayscreen | 2d | S | low (0.0022 ms) | - | - | pixmaps | 392 |
@@ -890,9 +890,9 @@ needing few additions come first.
 | greynetic | 2d | S | medium (0.016 ms) | - | - | - | 297 |
 | halftone | 2d | S | high (0.67 ms) | ❌ | - | pixmaps | 413 |
 | marbling | 2d | S | high (12 ms) | - | - | - | 635 |
-| nerverot | 2d | S | high (0.37 ms) | - | - | pixmaps, float-heavy | 1367 |
+| nerverot | 2d | S | high (0.38 ms) | - | - | pixmaps, float-heavy | 1367 |
 | popsquares | 2d | S | high (0.13 ms) | - | - | pixmaps | 310 |
-| rocks | 2d | S | medium (0.027 ms) | - | - | pixmaps | 562 |
+| rocks | 2d | S | medium (0.026 ms) | - | - | pixmaps | 562 |
 | rotzoomer | 2d | S | crashed on the host | - | - | pixmaps, readback | 601 |
 | twang | 2d | S | crashed on the host | - | - | pixmaps, readback | 791 |
 | wander | 2d | S | medium (0.033 ms) | - | - | pixmaps | 284 |
@@ -970,7 +970,7 @@ needing few additions come first.
 | chompytower | gl | XL | - | - | - | - | 1131 |
 | circuit | gl | XL | - | - | - | - | 2106 |
 | cityflow | gl | XL | - | - | - | - | 561 |
-| companion | gl | XL | - | - | - | - | 605 |
+| companion | gl | XL | - | ❌ | - | - | 605 |
 | covid19 | gl | XL | - | - | - | - | 657 |
 | crackberg | gl | XL | - | - | `XNextEvent`, `XPeekEvent`, `XPending` | float-heavy | 1484 |
 | crumbler | gl | XL | - | - | - | - | 905 |
@@ -994,7 +994,7 @@ needing few additions come first.
 | flipflop | gl | XL | - | - | - | - | 875 |
 | flipscreen3d | gl | XL | - | - | - | - | 524 |
 | fliptext | gl | XL | - | - | - | - | 1005 |
-| floppy | gl | XL | - | - | - | - | 584 |
+| floppy | gl | XL | - | ❌ | - | - | 584 |
 | flurry | gl | XL | - | ❌ | - | - | 550 |
 | flyingtoasters | gl | XL | - | - | - | - | 924 |
 | geodesic | gl | XL | - | - | - | float-heavy | 825 |
@@ -1168,6 +1168,8 @@ needing few additions come first.
 
 - **blocktube**: 8.8-10 fps at 400 blocks, half size; Rod dropped it (slow, little going on)
 - **boing**: 8.3 fps and plain on a small screen; Rod dropped it, scanlines cost 83 ms
+- **companion**: about 71,000 vertices a cube, est. 2-3 fps; Rod dropped it
+- **floppy**: 630 KB model won't fit the 3 MB app partition, est. 5 fps; Rod dropped it
 - **flurry**: needs GL TinyGL lacks, est. under 1 fps, issue #70
 - **halftone**: 5 fps; the shim's ellipse fill is 80% of it, issue #57
 - **hypnowheel**: 4.0 fps at half resolution, fill-bound; Rod dropped it, #73
