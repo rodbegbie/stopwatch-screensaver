@@ -523,6 +523,74 @@ void test_make_smooth_colormap_loops_without_jumps(void) {
   }
 }
 
+static void mean_saturation_and_value(const XColor *c, int n, double *sat,
+                                      double *val) {
+  double s = 0, v = 0;
+  for (int i = 0; i < n; i++) {
+    const double r = c[i].red / 65535.0, g = c[i].green / 65535.0,
+                 b = c[i].blue / 65535.0;
+    const double hi = fmax(r, fmax(g, b)), lo = fmin(r, fmin(g, b));
+    s += hi > 0 ? (hi - lo) / hi : 0;
+    v += hi;
+  }
+  *sat = s / n;
+  *val = v / n;
+}
+
+void test_make_smooth_colormap_is_not_always_a_bright_rainbow(void) {
+  srandom(1);
+  int muted = 0, dark = 0;
+  for (int trial = 0; trial < 200; trial++) {
+    XColor colors[64];
+    int n = 64;
+    Bool writable = False;
+    make_smooth_colormap(NULL, NULL, 1, colors, &n, True, &writable, False);
+    double sat, val;
+    mean_saturation_and_value(colors, n, &sat, &val);
+    TEST_ASSERT_TRUE(sat > 0.15);
+    TEST_ASSERT_TRUE(val > 0.25);
+    if (sat < 0.55) muted++;
+    if (val < 0.6) dark++;
+  }
+  TEST_ASSERT_TRUE(muted >= 20);
+  TEST_ASSERT_TRUE(dark >= 20);
+}
+
+void test_make_smooth_colormap_does_not_always_span_the_hue_wheel(void) {
+  srandom(2);
+  int narrow = 0;
+  for (int trial = 0; trial < 200; trial++) {
+    XColor colors[64];
+    int n = 64;
+    Bool writable = False;
+    make_smooth_colormap(NULL, NULL, 1, colors, &n, True, &writable, False);
+    int reds = 0, greens = 0, blues = 0;
+    for (int i = 0; i < n; i++) {
+      if (colors[i].red > colors[i].green + 0x4000 && colors[i].red > colors[i].blue + 0x4000) reds++;
+      if (colors[i].green > colors[i].red + 0x4000 && colors[i].green > colors[i].blue + 0x4000) greens++;
+      if (colors[i].blue > colors[i].red + 0x4000 && colors[i].blue > colors[i].green + 0x4000) blues++;
+    }
+    if (!reds || !greens || !blues) narrow++;
+  }
+  TEST_ASSERT_TRUE(narrow >= 40);
+}
+
+void test_make_smooth_colormap_sometimes_goes_there_and_back(void) {
+  srandom(3);
+  int mirrored = 0;
+  for (int trial = 0; trial < 200; trial++) {
+    XColor colors[64];
+    int n = 64;
+    Bool writable = False;
+    make_smooth_colormap(NULL, NULL, 1, colors, &n, True, &writable, False);
+    if (colors[5].pixel == colors[59].pixel && colors[17].pixel == colors[47].pixel &&
+        colors[5].pixel != colors[17].pixel)
+      mirrored++;
+  }
+  TEST_ASSERT_TRUE(mirrored >= 30);
+  TEST_ASSERT_TRUE(mirrored <= 100);
+}
+
 void test_make_color_ramp_runs_from_the_first_colour_to_the_second(void) {
   XColor colors[10];
   memset(colors, 0, sizeof(colors));
@@ -657,6 +725,7 @@ void test_set_graphics_exposures_is_accepted_and_draws_nothing(void) {
 
 /* No images to load: Boxfit's optional grab mode finds loading done at once. */
 void test_load_image_async_simple_finishes_at_once_with_nothing(void) {
+  xshim_set_grab_image(NULL, 0);
   char *name = (char *)"stale";
   XRectangle geom = {1, 2, 3, 4};
   TEST_ASSERT_NULL(load_image_async_simple(NULL, NULL, win, win, &name, &geom));
@@ -1018,6 +1087,97 @@ void test_get_geometry_of_the_window_is_the_canvas_and_of_nothing_is_failure(voi
   TEST_ASSERT_FALSE(XGetGeometry(dpy, None, &root, &x, &y, &w, &h, &border, &depth));
 }
 
+/* With a picture set, loading paints it over the whole target and still
+ * finishes at once. The picture is scaled to cover the target and cropped
+ * evenly at the sides, so it keeps its shape. blob is the 4 by 3 image from
+ * fill_blob: on the 16 by 16 window each pixel is 5.33 wide and the picture
+ * 21.33 across, so the left and right 2.67 columns are cropped. */
+void test_load_image_async_simple_paints_the_grab_image_covering_the_target(void) {
+  fill_blob();
+  xshim_set_grab_image(blob, sizeof(blob));
+  TEST_ASSERT_NULL(load_image_async_simple(NULL, NULL, win, win, NULL, NULL));
+  TEST_ASSERT_EQUAL_INT(256, count_set());
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1000), at(0, 0));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1003), at(15, 0));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1008), at(0, 15));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x100B), at(15, 15));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1006), at(8, 6));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1000), at(2, 0));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1001), at(3, 0));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1001), at(7, 4));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1005), at(7, 5));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1002), at(12, 0));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1003), at(13, 0));
+  xshim_set_grab_image(NULL, 0);
+}
+
+/* A 3 wide, 4 high picture is cropped top and bottom instead. Pixel (x, y) is
+ * 0x2000 + 3y + x. */
+void test_load_image_async_simple_crops_a_tall_grab_image_top_and_bottom(void) {
+  static unsigned char tall[8 + 2 * 3 * 4 + 4];
+  memset(tall, 0, sizeof(tall));
+  memcpy(tall, "565M", 4);
+  tall[4] = 3;
+  tall[6] = 4;
+  for (int i = 0; i < 12; i++) {
+    tall[8 + 2 * i] = (0x2000 + i) & 0xFF;
+    tall[9 + 2 * i] = (0x2000 + i) >> 8;
+  }
+  xshim_set_grab_image(tall, sizeof(tall));
+  TEST_ASSERT_NULL(load_image_async_simple(NULL, NULL, win, win, NULL, NULL));
+  TEST_ASSERT_EQUAL_INT(256, count_set());
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x2000), at(0, 0));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x2000), at(0, 2));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x2003), at(0, 3));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x2008), at(15, 12));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x200B), at(15, 13));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x200B), at(15, 15));
+  xshim_set_grab_image(NULL, 0);
+}
+
+void test_load_image_async_simple_paints_a_pixmap_target_and_not_the_window(void) {
+  fill_blob();
+  xshim_set_grab_image(blob, sizeof(blob));
+  Pixmap target = XCreatePixmap(dpy, win, 8, 6, 16);
+  TEST_ASSERT_NULL(load_image_async_simple(NULL, NULL, win, target, NULL, NULL));
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  GC gc = new_gc(0xFFFF, 0);
+  XCopyArea(dpy, target, win, gc, 0, 0, 8, 6, 0, 0);
+  TEST_ASSERT_EQUAL_INT(48, count_set());
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x1000), at(0, 0));
+  TEST_ASSERT_EQUAL_HEX16(px_swap(0x100B), at(7, 5));
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, target);
+  xshim_set_grab_image(NULL, 0);
+}
+
+void test_load_image_async_simple_ignores_a_grab_image_it_cannot_read(void) {
+  fill_blob();
+  xshim_set_grab_image(blob, sizeof(blob) - 1);
+  TEST_ASSERT_NULL(load_image_async_simple(NULL, NULL, win, win, NULL, NULL));
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  xshim_set_grab_image(NULL, 0);
+}
+
+void test_a_load_already_under_way_does_not_paint_again(void) {
+  fill_blob();
+  xshim_set_grab_image(blob, sizeof(blob));
+  async_load_state *under_way = (async_load_state *)(uintptr_t)1;
+  TEST_ASSERT_NULL(load_image_async_simple(under_way, NULL, win, win, NULL, NULL));
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  xshim_set_grab_image(NULL, 0);
+}
+
+void test_loading_a_grab_image_leaves_no_memory_behind(void) {
+  fill_blob();
+  xshim_set_grab_image(blob, sizeof(blob));
+  load_image_async_simple(NULL, NULL, win, win, NULL, NULL);
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  for (int i = 0; i < 20; i++) load_image_async_simple(NULL, NULL, win, win, NULL, NULL);
+  TEST_ASSERT_EQUAL_UINT64(before, __sanitizer_get_current_allocated_bytes());
+  xshim_set_grab_image(NULL, 0);
+}
+
 void test_copy_area_draws_the_image_at_the_destination(void) {
   Pixmap mask = None;
   Pixmap p = load_image(&mask);
@@ -1259,6 +1419,128 @@ void test_clear_area_clips_a_negative_origin_and_a_huge_size(void) {
   TEST_ASSERT_EQUAL_INT(256 - 4 - 4 * 2, count_set());
   TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(11, 14));
   XFreeGC(dpy, gc);
+}
+
+static GC bitmap_gc(Pixmap bitmap, unsigned long bit) {
+  XGCValues v;
+  v.foreground = bit;
+  return XCreateGC(dpy, bitmap, GCForeground, &v);
+}
+
+/* Stamps a bitmap onto the 16 by 16 window in white, so count_set() and at()
+ * show which bits were set. */
+static void stamp_bitmap(Pixmap bitmap) {
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  v.background = 0;
+  GC gc = XCreateGC(dpy, win, GCForeground | GCBackground, &v);
+  XClearWindow(dpy, win);
+  XCopyPlane(dpy, bitmap, win, gc, 0, 0, 16, 16, 0, 0, 1);
+  XFreeGC(dpy, gc);
+}
+
+void test_fill_rectangle_in_a_bitmap_sets_its_bits_and_leaves_the_window(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC gc = bitmap_gc(p, 1);
+  XClearWindow(dpy, win);
+  XFillRectangle(dpy, p, gc, 2, 3, 5, 4);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(20, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(2, 3));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(6, 6));
+  TEST_ASSERT_EQUAL_HEX16(0, at(7, 3));
+  TEST_ASSERT_EQUAL_HEX16(0, at(2, 7));
+  TEST_ASSERT_EQUAL_HEX16(0, at(1, 3));
+  TEST_ASSERT_EQUAL_HEX16(0, at(2, 2));
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+}
+
+void test_fill_rectangle_in_a_bitmap_with_foreground_zero_clears_bits(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC one = bitmap_gc(p, 1), zero = bitmap_gc(p, 0);
+  XFillRectangle(dpy, p, one, 0, 0, 16, 16);
+  XFillRectangle(dpy, p, zero, 4, 4, 3, 3);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(256 - 9, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0, at(5, 5));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(7, 5));
+  XFreeGC(dpy, one);
+  XFreeGC(dpy, zero);
+  XFreePixmap(dpy, p);
+}
+
+void test_fill_rectangle_in_a_bitmap_clips_to_the_bitmap(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC gc = bitmap_gc(p, 1);
+  XFillRectangle(dpy, p, gc, -3, -3, 6, 6);
+  XFillRectangle(dpy, p, gc, 14, 15, 0xFFFFFFFFu, 0xFFFFFFFFu);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(9 + 2, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(2, 2));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(15, 15));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(14, 15));
+  TEST_ASSERT_EQUAL_HEX16(0, at(3, 3));
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+}
+
+void test_fill_polygon_in_a_bitmap_fills_a_triangle_by_pixel_centres(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC gc = bitmap_gc(p, 1);
+  XPoint tri[3] = {{0, 0}, {8, 0}, {0, 8}};
+  XFillPolygon(dpy, p, gc, tri, 3, Convex, CoordModeOrigin);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(28, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(6, 0));
+  TEST_ASSERT_EQUAL_HEX16(0, at(7, 0));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(0, 6));
+  TEST_ASSERT_EQUAL_HEX16(0, at(0, 7));
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+}
+
+void test_fill_polygon_in_a_bitmap_starts_each_row_at_its_left_edge(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC gc = bitmap_gc(p, 1);
+  XPoint tri[3] = {{8, 0}, {8, 8}, {0, 8}};
+  XFillPolygon(dpy, p, gc, tri, 3, Convex, CoordModeOrigin);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(36, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(7, 0));
+  TEST_ASSERT_EQUAL_HEX16(0, at(6, 0));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(0, 7));
+  TEST_ASSERT_EQUAL_HEX16(0, at(0, 6));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(1, 6));
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+}
+
+void test_fill_polygon_in_a_bitmap_leaves_a_notch_empty(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC gc = bitmap_gc(p, 1);
+  XPoint u[8] = {{0, 0}, {8, 0}, {8, 8}, {6, 8}, {6, 2}, {2, 2}, {2, 8}, {0, 8}};
+  XFillPolygon(dpy, p, gc, u, 8, Nonconvex, CoordModeOrigin);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(4, 1));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(1, 5));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(7, 5));
+  TEST_ASSERT_EQUAL_HEX16(0, at(4, 5));
+  TEST_ASSERT_EQUAL_INT(8 * 2 + 2 * 6 * 2, count_set());
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+}
+
+void test_fill_polygon_in_a_bitmap_clips_to_the_bitmap(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC gc = bitmap_gc(p, 1);
+  XPoint big[4] = {{-40, -40}, {60, -40}, {60, 60}, {-40, 60}};
+  XFillPolygon(dpy, p, gc, big, 4, Convex, CoordModeOrigin);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(256, count_set());
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
 }
 
 void test_dashed_line_styles_draw_solid(void) {
@@ -2529,10 +2811,9 @@ void test_drawing_into_a_pixmap_clips_at_the_pixmap_edges(void) {
   XFreeGC(dpy, gc);
 }
 
-void test_primitives_on_a_bitmap_or_none_draw_nothing(void) {
+void test_lines_on_a_bitmap_and_primitives_on_none_draw_nothing(void) {
   GC gc = new_gc(0xF800, 0x001F);
   Pixmap bits = XCreatePixmap(dpy, win, 8, 8, 1);
-  XFillRectangle(dpy, bits, gc, 0, 0, 8, 8);
   XDrawLine(dpy, bits, gc, 0, 0, 7, 7);
   XFillRectangle(dpy, None, gc, 0, 0, 8, 8);
   XDrawLine(dpy, None, gc, 0, 0, 7, 7);
@@ -3498,6 +3779,9 @@ int main(void) {
   RUN_TEST(test_draw_rectangle_outlines_a_w_plus_1_by_h_plus_1_box);
   RUN_TEST(test_make_uniform_colormap_gives_distinct_rgb565_colours);
   RUN_TEST(test_make_smooth_colormap_loops_without_jumps);
+  RUN_TEST(test_make_smooth_colormap_is_not_always_a_bright_rainbow);
+  RUN_TEST(test_make_smooth_colormap_does_not_always_span_the_hue_wheel);
+  RUN_TEST(test_make_smooth_colormap_sometimes_goes_there_and_back);
   RUN_TEST(test_make_color_ramp_runs_from_the_first_colour_to_the_second);
   RUN_TEST(test_make_color_ramp_closed_comes_back_to_the_first_colour);
   RUN_TEST(test_make_color_ramp_takes_the_short_way_round_the_hue_wheel);
@@ -3508,6 +3792,12 @@ int main(void) {
   RUN_TEST(test_a_gc_remembers_its_function_but_draws_copy);
   RUN_TEST(test_set_graphics_exposures_is_accepted_and_draws_nothing);
   RUN_TEST(test_load_image_async_simple_finishes_at_once_with_nothing);
+  RUN_TEST(test_load_image_async_simple_paints_the_grab_image_covering_the_target);
+  RUN_TEST(test_load_image_async_simple_crops_a_tall_grab_image_top_and_bottom);
+  RUN_TEST(test_load_image_async_simple_paints_a_pixmap_target_and_not_the_window);
+  RUN_TEST(test_load_image_async_simple_ignores_a_grab_image_it_cannot_read);
+  RUN_TEST(test_a_load_already_under_way_does_not_paint_again);
+  RUN_TEST(test_loading_a_grab_image_leaves_no_memory_behind);
   RUN_TEST(test_threadpool_runs_each_thread_in_turn_on_the_caller);
   RUN_TEST(test_threadpool_create_failure_undoes_the_threads_it_made);
   RUN_TEST(test_one_core_and_a_pointer_sized_alignment_without_threads);
@@ -3643,7 +3933,7 @@ int main(void) {
   RUN_TEST(test_fill_rectangle_into_a_pixmap_lands_in_the_pixmap);
   RUN_TEST(test_every_primitive_draws_the_same_into_a_pixmap_as_on_the_window);
   RUN_TEST(test_drawing_into_a_pixmap_clips_at_the_pixmap_edges);
-  RUN_TEST(test_primitives_on_a_bitmap_or_none_draw_nothing);
+  RUN_TEST(test_lines_on_a_bitmap_and_primitives_on_none_draw_nothing);
   RUN_TEST(test_copy_plane_into_a_colour_pixmap_lands_in_the_pixmap);
   RUN_TEST(test_root_window_is_the_window_the_shim_draws_on);
   RUN_TEST(test_create_pixmap_wider_than_int16_returns_none);
@@ -3660,6 +3950,13 @@ int main(void) {
   RUN_TEST(test_clear_area_clears_only_its_rectangle_to_the_background);
   RUN_TEST(test_clear_area_of_zero_size_extends_to_the_window_edge);
   RUN_TEST(test_clear_area_clips_a_negative_origin_and_a_huge_size);
+  RUN_TEST(test_fill_rectangle_in_a_bitmap_sets_its_bits_and_leaves_the_window);
+  RUN_TEST(test_fill_rectangle_in_a_bitmap_with_foreground_zero_clears_bits);
+  RUN_TEST(test_fill_rectangle_in_a_bitmap_clips_to_the_bitmap);
+  RUN_TEST(test_fill_polygon_in_a_bitmap_fills_a_triangle_by_pixel_centres);
+  RUN_TEST(test_fill_polygon_in_a_bitmap_starts_each_row_at_its_left_edge);
+  RUN_TEST(test_fill_polygon_in_a_bitmap_leaves_a_notch_empty);
+  RUN_TEST(test_fill_polygon_in_a_bitmap_clips_to_the_bitmap);
   RUN_TEST(test_dashed_line_styles_draw_solid);
   RUN_TEST(test_max_request_size_leaves_room_for_long_polylines);
   RUN_TEST(test_fill_arc_full_still_matches_the_old_ellipse);

@@ -8,6 +8,8 @@
 #include "erase.h"
 #include "grabclient.h"
 #include "hsv.h"
+#include "ximage-loader.h"
+#include "x11shim/pixmap.h"
 
 static double frand_unit(void) {
   return (double)random() / ((double)RAND_MAX + 1.0);
@@ -105,10 +107,28 @@ void make_color_loop(Screen *screen, Visual *visual, Colormap cmap, int h1,
   }
 }
 
-/* Three anchor colours, one per third of the hue wheel so the loop always
- * goes all the way round, blended forward from each anchor to the next and
- * from the last back to the first. */
-#define SMOOTH_ANCHORS 3
+/* A closed path through two to five random colours, as xscreensaver's smooth
+ * colour maps are, so a palette can be muted, dark or cover only part of the
+ * hue wheel. Two points go there and back; more are spaced along the path in
+ * proportion to the length of each edge in hue, saturation and value. Written
+ * for this project; the shape of the choice follows upstream's behaviour. */
+#define SMOOTH_MAX_POINTS 5
+
+static double hue_gap(int a, int b) {
+  double d = fabs((double)(a - b)) / 360.0;
+  return d > 0.5 ? 1.0 - d : d;
+}
+
+static double colour_distance(int h1, double s1, double v1, int h2, double s2,
+                              double v2) {
+  const double dh = hue_gap(h1, h2), ds = s1 - s2, dv = v1 - v2;
+  return sqrt(dh * dh + ds * ds + dv * dv);
+}
+
+static int smooth_point_count(void) {
+  const int n = random() % 20;
+  return n <= 5 ? 2 : n <= 15 ? 3 : n <= 18 ? 4 : 5;
+}
 
 void make_smooth_colormap(Screen *screen, Visual *visual, Colormap cmap,
                           XColor *colors, int *ncolorsP, Bool allocate_p,
@@ -119,20 +139,57 @@ void make_smooth_colormap(Screen *screen, Visual *visual, Colormap cmap,
   (void)allocate_p;
   (void)verbose_p;
   if (writable_pP) *writable_pP = False;
-  double h[SMOOTH_ANCHORS], s[SMOOTH_ANCHORS], v[SMOOTH_ANCHORS];
-  for (int k = 0; k < SMOOTH_ANCHORS; k++) {
-    h[k] = (k + frand_unit()) * 360.0 / SMOOTH_ANCHORS;
-    s[k] = 0.6 + frand_unit() * 0.4;
-    v[k] = 0.75 + frand_unit() * 0.25;
+  const int total = *ncolorsP;
+  if (total <= 0) return;
+  const int npoints = smooth_point_count();
+  int h[SMOOTH_MAX_POINTS];
+  double s[SMOOTH_MAX_POINTS], v[SMOOTH_MAX_POINTS];
+  for (int tries = 0;; tries++) {
+    double total_s = 0, total_v = 0;
+    for (int i = 0; i < npoints; i++) {
+      for (int again = 0; again < 1000; again++) {
+        h[i] = (int)(frand_unit() * 360.0);
+        s[i] = frand_unit();
+        v[i] = 0.2 + frand_unit() * 0.8;
+        if (i == 0) break;
+        const int j = i + 1 == npoints ? 0 : i - 1;
+        if (colour_distance(h[i], s[i], v[i], h[j], s[j], v[j]) >= 0.2) break;
+      }
+      total_s += s[i];
+      total_v += v[i];
+    }
+    if ((total_s / npoints >= 0.2 && total_v / npoints >= 0.3) || tries > 1000)
+      break;
   }
-  for (int i = 0; i < *ncolorsP; i++) {
-    double t = (double)i * SMOOTH_ANCHORS / *ncolorsP;
-    int k = (int)t, next = (k + 1) % SMOOTH_ANCHORS;
-    double f = t - k;
-    double dh = fmod(h[next] - h[k] + 360.0, 360.0);
-    set_colour(&colors[i], h[k] + dh * f, s[k] + (s[next] - s[k]) * f,
-               v[k] + (v[next] - v[k]) * f);
+  if (npoints == 2) {
+    make_color_ramp(NULL, NULL, 0, h[0], s[0], v[0], h[1], s[1], v[1], colors,
+                    ncolorsP, True, True, NULL);
+    return;
   }
+  double edge[SMOOTH_MAX_POINTS], circumference = 0;
+  for (int i = 0; i < npoints; i++) {
+    const int j = (i + 1) % npoints;
+    edge[i] = colour_distance(h[i], s[i], v[i], h[j], s[j], v[j]);
+    circumference += edge[i];
+  }
+  int out = 0;
+  double walked = 0;
+  for (int i = 0; i < npoints; i++) {
+    const int j = (i + 1) % npoints;
+    walked += edge[i];
+    const int end = i + 1 == npoints || circumference <= 0
+                        ? total
+                        : (int)(total * walked / circumference);
+    int dh = ((h[j] - h[i]) % 360 + 360) % 360;
+    if (dh > 180) dh -= 360;
+    const int count = end - out > 0 ? end - out : 1;
+    for (int k = 0; k < count && out < total; k++, out++) {
+      const double t = (double)k / count;
+      set_colour(&colors[out], h[i] + dh * t, s[i] + (s[j] - s[i]) * t,
+                 v[i] + (v[j] - v[i]) * t);
+    }
+  }
+  for (; out < total; out++) colors[out] = colors[out - 1];
 }
 
 void free_colors(Screen *screen, Colormap cmap, XColor *colors, int ncolors) {
@@ -165,12 +222,57 @@ void allocate_alpha_colors(Screen *screen, Visual *visual, Colormap cmap,
   if (base_pixelP) *base_pixelP = 0;
 }
 
+static const unsigned char *g_grab_blob;
+static unsigned long g_grab_size;
+
+void xshim_set_grab_image(const unsigned char *blob, unsigned long size) {
+  g_grab_blob = blob;
+  g_grab_size = blob ? size : 0;
+}
+
+/* Scales the picture to cover the whole target, keeping its shape, and crops
+ * what overhangs evenly on both sides (a 4:3 picture on a square screen loses
+ * its left and right edges). Nearest pixel, a row at a time. The blob's mask
+ * is ignored: a grabbed screen has no holes. */
+static void paint_grab_image(Display *dpy, Window top_level, Drawable target) {
+  Canvas *c = xshim_target(dpy, target);
+  if (!c || c->w <= 0 || c->h <= 0) return;
+  int w = 0, h = 0;
+  Pixmap image = image_data_to_pixmap(dpy, top_level, g_grab_blob, g_grab_size,
+                                      &w, &h, NULL);
+  if (image == None) return;
+  const struct XshimPixmap *pm = (const struct XshimPixmap *)(uintptr_t)image;
+  const float sx = (float)c->w / (float)w, sy = (float)c->h / (float)h;
+  const float scale = sx > sy ? sx : sy;
+  const float left = ((float)c->w - (float)w * scale) / 2.0f;
+  const float top = ((float)c->h - (float)h * scale) / 2.0f;
+  uint16_t *row = (uint16_t *)malloc((size_t)c->w * sizeof(uint16_t));
+  int *column = (int *)malloc((size_t)c->w * sizeof(int));
+  if (row && column) {
+    for (int x = 0; x < c->w; x++) {
+      const int from = (int)floorf(((float)x + 0.5f - left) / scale);
+      column[x] = from < 0 ? 0 : from >= w ? w - 1 : from;
+    }
+    for (int y = 0; y < c->h; y++) {
+      int line = (int)floorf(((float)y + 0.5f - top) / scale);
+      line = line < 0 ? 0 : line >= h ? h - 1 : line;
+      const uint16_t *from = pm->canvas.px + (int64_t)line * w;
+      for (int x = 0; x < c->w; x++) row[x] = from[column[x]];
+      canvas_paste_rect(c, 0, y, c->w, 1, row);
+    }
+  }
+  free(row);
+  free(column);
+  XFreePixmap(dpy, image);
+}
+
 async_load_state *load_image_async_simple(async_load_state *state, Screen *screen,
                                           Window top_level, Drawable target,
                                           char **filename_ret,
                                           XRectangle *geometry_ret) {
-  (void)state, (void)screen, (void)top_level, (void)target;
+  (void)screen;
   if (filename_ret) *filename_ret = NULL;
   if (geometry_ret) *geometry_ret = (XRectangle){0, 0, 0, 0};
+  if (!state && g_grab_blob) paint_grab_image(xshim_current_display(), top_level, target);
   return NULL;
 }
