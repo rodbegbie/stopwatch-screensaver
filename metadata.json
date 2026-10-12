@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4PZ4TE2KDJJ6DJWJ6B7TKX8",
+  "strategy": "manual-commit",
+  "branch": "feature/32-pacman-level-pool",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/porting-assessment.md",
+    "firmware/src/hacks/pacman/pacman_pool.h",
+    "firmware/src/hacks/pacman_pool.h",
+    "firmware/src/hacks/pacman_stdlevel.c",
+    "firmware/test/test_hacks/test_hacks.c",
+    "tools/assessment_measured.md",
+    "tools/pacman_levels.py",
+    "tools/pacman_patch.py",
+    "tools/tests/test_pacman_levels.py",
+    "tools/tests/test_pacman_patch.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 70,
+    "cache_creation_tokens": 45225,
+    "cache_read_tokens": 5892184,
+    "output_tokens": 23206,
+    "api_call_count": 35
+  }
+}

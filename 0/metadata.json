@@ -1,0 +1,211 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4PZ4TE2KDJJ6DJWJ6B7TKX8",
+  "session_id": "f2f379f3-1e0d-4cd9-ac23-06f14dd0d538",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-12T02:30:24.916539Z",
+  "branch": "feature/32-pacman-level-pool",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "docs/porting-assessment.md",
+    "firmware/src/hacks/pacman/pacman_pool.h",
+    "firmware/src/hacks/pacman_pool.h",
+    "firmware/src/hacks/pacman_stdlevel.c",
+    "firmware/test/test_hacks/test_hacks.c",
+    "tools/assessment_measured.md",
+    "tools/pacman_levels.py",
+    "tools/pacman_patch.py",
+    "tools/tests/test_pacman_levels.py",
+    "tools/tests/test_pacman_patch.py"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "cd6fc14b2832",
+  "checkpoint_transcript_start": 392,
+  "transcript_lines_at_start": 392,
+  "compact_transcript_start": 39,
+  "token_usage": {
+    "input_tokens": 70,
+    "cache_creation_tokens": 45225,
+    "cache_read_tokens": 5892184,
+    "output_tokens": 23206,
+    "api_call_count": 35
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_012CQybtowPpdT2qvuYaXNyV",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "superpowers:brainstorming"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "83517edfa630",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 35,
+        "end": 36,
+        "entry_ids": [
+          "f555ff11-0a01-4803-afde-ed73433b0f6f"
+        ],
+        "tool_use_id": "toolu_012CQybtowPpdT2qvuYaXNyV"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_012CQybtowPpdT2qvuYaXNyV"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: superpowers:brainstorming",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01V8L2hUwwMLKxpNJ9s5WtV8",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "cd6fc14b2832",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 629,
+        "end": 630,
+        "entry_ids": [
+          "bc2385ee-90af-4514-91af-59849a239fba"
+        ],
+        "tool_use_id": "toolu_01V8L2hUwwMLKxpNJ9s5WtV8"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01V8L2hUwwMLKxpNJ9s5WtV8"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-10-12T02:30:24.882956Z",
+    "agent_lines": 0,
+    "agent_removed": 2,
+    "human_added": 0,
+    "human_modified": 13,
+    "human_removed": 830,
+    "total_committed": 8,
+    "total_lines_changed": 850,
+    "agent_percentage": 0.2352941176470588,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 1196,
+      "user_lines_removed": 838,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".private-journal/2026-10-07/19-59-30-000000-79f41e20.md": 8,
+        ".private-journal/2026-10-07/22-51-53-000000-2f0b9ece.md": 8,
+        ".private-journal/2026-10-08/07-50-07-000000-0110d472.md": 8,
+        ".private-journal/2026-10-08/15-15-15-000000-4004028d.md": 19,
+        ".private-journal/2026-10-08/15-45-25-000000-61b97d2d.md": 8,
+        ".private-journal/2026-10-08/17-26-54-000000-98ba9899.md": 12,
+        ".private-journal/2026-10-09/00-21-50-000000-1de20801.md": 8,
+        ".private-journal/2026-10-09/12-29-59-000000-8e4c6857.md": 16,
+        ".private-journal/2026-10-09/15-14-18-000000-357340fa.md": 8,
+        ".private-journal/2026-10-09/20-40-34-000000-16250e9e.md": 8,
+        ".private-journal/2026-10-09/23-14-53-000000-38a6b176.md": 8,
+        ".private-journal/2026-10-10/00-39-42-000000-64095098.md": 8,
+        ".private-journal/2026-10-10/06-35-48-000000-d0ecd666.md": 8,
+        ".private-journal/2026-10-10/08-14-59-000000-d35e8085.md": 8,
+        ".private-journal/2026-10-10/13-26-22-000000-2fbe913b.md": 8,
+        ".private-journal/2026-10-10/14-12-27-000000-d7ee8c7f.md": 8,
+        ".private-journal/2026-10-10/16-50-32-000000-e5b073a3.md": 12,
+        ".private-journal/2026-10-10/18-22-56-000000-72f01b1c.md": 8,
+        ".private-journal/2026-10-10/21-06-23-000000-62ec9202.md": 16,
+        ".private-journal/2026-10-10/22-30-43-000000-105e6a83.md": 12,
+        ".private-journal/2026-10-11/00-20-59-000000-ffdf8de5.md": 8,
+        ".private-journal/2026-10-11/01-52-21-000000-5b254987.md": 8,
+        ".private-journal/2026-10-11/08-53-41-000000-674129e6.md": 8,
+        ".private-journal/2026-10-11/12-19-47-000000-0cccce6d.md": 20,
+        ".private-journal/2026-10-11/13-49-40-000000-0d5fd679.md": 8,
+        ".private-journal/2026-10-11/14-59-10-000000-fd0bbae4.md": 8,
+        ".private-journal/2026-10-11/17-50-24-000000-97b529eb.md": 20,
+        ".private-journal/2026-10-11/18-48-18-000000-5fd8296b.md": 8,
+        "firmware/src/hacks/pacman_pool.h": 827,
+        "firmware/src/hacks/pacman_stdlevel.c": 1,
+        "firmware/test/test_hacks/test_hacks.c": 65,
+        "tools/pacman_levels.py": 5,
+        "tools/pacman_patch.py": 8,
+        "tools/tests/test_pacman_levels.py": 1,
+        "tools/tests/test_pacman_patch.py": 2
+      },
+      "user_removed_per_file": {
+        "firmware/src/hacks/pacman/pacman_pool.h": 825,
+        "firmware/src/hacks/pacman_stdlevel.c": 1,
+        "firmware/test/test_hacks/test_hacks.c": 2,
+        "tools/pacman_levels.py": 3,
+        "tools/pacman_patch.py": 4,
+        "tools/tests/test_pacman_levels.py": 1,
+        "tools/tests/test_pacman_patch.py": 2
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 300,
+      "user_lines_removed": 5,
+      "agent_lines_added": 917,
+      "agent_lines_removed": 840,
+      "user_added_per_file": {
+        ".claude/rules/hacks.md": 13,
+        ".private-journal/2026-10-07/19-59-30-000000-79f41e20.md": 8,
+        ".private-journal/2026-10-07/22-51-53-000000-2f0b9ece.md": 8,
+        ".private-journal/2026-10-08/07-50-07-000000-0110d472.md": 8,
+        ".private-journal/2026-10-08/15-15-15-000000-4004028d.md": 19,
+        ".private-journal/2026-10-08/15-45-25-000000-61b97d2d.md": 8,
+        ".private-journal/2026-10-08/17-26-54-000000-98ba9899.md": 12,
+        ".private-journal/2026-10-09/00-21-50-000000-1de20801.md": 8,
+        ".private-journal/2026-10-09/12-29-59-000000-8e4c6857.md": 16,
+        ".private-journal/2026-10-09/15-14-18-000000-357340fa.md": 8,
+        ".private-journal/2026-10-09/20-40-34-000000-16250e9e.md": 8,
+        ".private-journal/2026-10-09/23-14-53-000000-38a6b176.md": 8,
+        ".private-journal/2026-10-10/00-39-42-000000-64095098.md": 8,
+        ".private-journal/2026-10-10/06-35-48-000000-d0ecd666.md": 8,
+        ".private-journal/2026-10-10/08-14-59-000000-d35e8085.md": 8,
+        ".private-journal/2026-10-10/13-26-22-000000-2fbe913b.md": 8,
+        ".private-journal/2026-10-10/14-12-27-000000-d7ee8c7f.md": 8,
+        ".private-journal/2026-10-10/16-50-32-000000-e5b073a3.md": 12,
+        ".private-journal/2026-10-10/18-22-56-000000-72f01b1c.md": 8,
+        ".private-journal/2026-10-10/21-06-23-000000-62ec9202.md": 16,
+        ".private-journal/2026-10-10/22-30-43-000000-105e6a83.md": 12,
+        ".private-journal/2026-10-11/00-20-59-000000-ffdf8de5.md": 8,
+        ".private-journal/2026-10-11/01-52-21-000000-5b254987.md": 8,
+        ".private-journal/2026-10-11/08-53-41-000000-674129e6.md": 8,
+        ".private-journal/2026-10-11/12-19-47-000000-0cccce6d.md": 20,
+        ".private-journal/2026-10-11/13-49-40-000000-0d5fd679.md": 8,
+        ".private-journal/2026-10-11/14-59-10-000000-fd0bbae4.md": 8,
+        ".private-journal/2026-10-11/17-50-24-000000-97b529eb.md": 20,
+        ".private-journal/2026-10-11/18-48-18-000000-5fd8296b.md": 8
+      },
+      "user_removed_per_file": {
+        ".claude/rules/hacks.md": 5
+      }
+    }
+  ]
+}

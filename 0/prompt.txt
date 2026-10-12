@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>b54a0ochf</task-id>
+<tool-use-id>toolu_011tcDKWkdyK8PZrfsbqscFD</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/f2f379f3-1e0d-4cd9-ac23-06f14dd0d538/tasks/b54a0ochf.output</output-file>
+<status>completed</status>
+<summary>Background command "Start full host tests and device build in background" completed (exit code 0)</summary>
+</task-notification>
