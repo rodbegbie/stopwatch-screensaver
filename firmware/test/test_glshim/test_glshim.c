@@ -1288,6 +1288,50 @@ void test_an_unhandled_primitive_never_writes_past_the_vertex_buffer(void) {
   TEST_ASSERT_EQUAL_MEMORY(before, from, n);
 }
 
+/* GL_LINE_LOOP is patched in without GL_POLYGON (issue #80): StonerView
+ * outlines its squares with it and Unknown Pleasures draws its rim. A square
+ * has four edges, so two rows and two columns are long runs of lit pixels; a
+ * loop that forgot the closing edge (last vertex back to the first) has one
+ * column. */
+static int rows_with_a_long_run(void) {
+  int n = 0;
+  for (int y = 0; y < SIZE; y++) n += lit_in_row(y) >= SIZE / 4;
+  return n;
+}
+
+static int columns_with_a_long_run(void) {
+  int n = 0;
+  for (int x = 0; x < SIZE; x++) n += lit_in_column(x) >= SIZE / 4;
+  return n;
+}
+
+void test_a_line_loop_draws_every_edge_including_the_closing_one(void) {
+  open_line_scene(0);
+  glBegin(GL_LINE_LOOP);
+  glVertex3f(-0.5f, -0.5f, 0);
+  glVertex3f(0.5f, -0.5f, 0);
+  glVertex3f(0.5f, 0.5f, 0);
+  glVertex3f(-0.5f, 0.5f, 0);
+  glEnd();
+  TEST_ASSERT_EQUAL_INT(2, rows_with_a_long_run());
+  TEST_ASSERT_EQUAL_INT(2, columns_with_a_long_run());
+}
+
+void test_a_line_loop_starts_afresh_after_each_glEnd(void) {
+  open_line_scene(0);
+  for (int pass = 0; pass < 2; pass++) {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glBegin(GL_LINE_LOOP);
+    glVertex3f(-0.5f, -0.5f, 0);
+    glVertex3f(0.5f, -0.5f, 0);
+    glVertex3f(0.5f, 0.5f, 0);
+    glVertex3f(-0.5f, 0.5f, 0);
+    glEnd();
+    TEST_ASSERT_EQUAL_INT(2, rows_with_a_long_run());
+    TEST_ASSERT_EQUAL_INT(2, columns_with_a_long_run());
+  }
+}
+
 /* The round panel (issue #77): with a disc on the canvas, clears skip the
  * corners nobody sees. */
 #define SENTINEL 0x5A5A
@@ -1488,6 +1532,8 @@ int main(void) {
   RUN_TEST(test_disc_scale_two_clears_every_block_touching_the_disc);
   RUN_TEST(test_the_disc_spans_go_with_the_context);
   RUN_TEST(test_an_unhandled_primitive_never_writes_past_the_vertex_buffer);
+  RUN_TEST(test_a_line_loop_draws_every_edge_including_the_closing_one);
+  RUN_TEST(test_a_line_loop_starts_afresh_after_each_glEnd);
 #ifdef GL_PROFILE
   RUN_TEST(test_the_profile_counts_each_stage_once_per_call);
 #endif

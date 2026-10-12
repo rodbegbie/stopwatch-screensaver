@@ -669,6 +669,22 @@ REPLACEMENTS: tuple[Replace, ...] = (
         "#else\n\tdefault:\n\t\tn = 0; /* draws nothing; must not run past c->vertex */\n"
         "\t\tbreak;\n#endif\n\t}\n\n\tc->vertex_n = n;",
     ),
+    # GL_LINE_LOOP is wanted without GL_POLYGON (issue #80). The vertex case is
+    # the strip's, which keeps the first vertex in slot 2; glEnd closes the loop.
+    Replace(
+        "src/vertex.c",
+        "\tcase GL_LINE_STRIP:\n#if TGL_FEATURE_GL_POLYGON == 1\n\tcase GL_LINE_LOOP:\n#endif\n",
+        "\tcase GL_LINE_STRIP:\n\tcase GL_LINE_LOOP:\n",
+    ),
+    Replace(
+        "src/vertex.c",
+        "#if TGL_FEATURE_GL_POLYGON == 1\n\t\tif (c->begin_type == GL_LINE_LOOP) {\n"
+        "\t\t\tif (c->vertex_cnt >= 3) {\n\t\t\t\tgl_draw_line(&c->vertex[0], &c->vertex[2]);\n"
+        "\t\t\t}\n\t\t} else if (c->begin_type == GL_POLYGON) {\n",
+        "\t\tif (c->begin_type == GL_LINE_LOOP && c->vertex_cnt >= 3) {\n"
+        "\t\t\tgl_draw_line(&c->vertex[0], &c->vertex[2]);\n\t\t}\n"
+        "#if TGL_FEATURE_GL_POLYGON == 1\n\t\tif (c->begin_type == GL_POLYGON) {\n",
+    ),
     # The round panel (issue #77): each scanline of a filled triangle is cut to
     # the span the panel shows, with the depth and colour it would have had at
     # its new first pixel. Only the generic scanline; the textured fills have
