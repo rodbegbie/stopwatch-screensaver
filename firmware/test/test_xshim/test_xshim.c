@@ -15,6 +15,7 @@
 #include "fps.h"
 #include "alpha.h"
 #include "screenhack.h"
+#include "thread_util.h"
 #include "utils.h"
 #include "xshm.h"
 #include "x11shim/arc.h"
@@ -666,6 +667,77 @@ void test_load_image_async_simple_finishes_at_once_with_nothing(void) {
   TEST_ASSERT_EQUAL_INT(0, geom.height);
   TEST_ASSERT_NULL(load_image_async_simple(NULL, NULL, win, win, NULL, NULL));
   TEST_ASSERT_EQUAL_INT(0, count_set());
+}
+
+/* Interference splits its rows over a thread pool. Here the pool runs its
+ * "threads" one after another on the caller, as upstream does without
+ * pthreads. */
+struct pool_owner {
+  int before;
+  struct threadpool pool;
+};
+
+struct pool_thread {
+  unsigned id;
+  struct pool_owner *owner;
+  int *log;
+};
+
+static int g_pool_log[16], g_pool_log_n, g_pool_fail_id = -1;
+
+static int pool_thread_create(void *self_raw, struct threadpool *pool, unsigned id) {
+  struct pool_thread *self = (struct pool_thread *)self_raw;
+  if ((int)id == g_pool_fail_id) return 12;
+  self->id = id;
+  self->owner = GET_PARENT_OBJ(struct pool_owner, pool, pool);
+  g_pool_log[g_pool_log_n++] = 100 + (int)id;
+  return 0;
+}
+
+static void pool_thread_destroy(void *self_raw) {
+  g_pool_log[g_pool_log_n++] = 200 + (int)((struct pool_thread *)self_raw)->id;
+}
+
+static void pool_thread_run(void *self_raw) {
+  struct pool_thread *self = (struct pool_thread *)self_raw;
+  g_pool_log[g_pool_log_n++] = 300 + (int)self->id + self->owner->before;
+}
+
+static const struct threadpool_class kPoolClass = {sizeof(struct pool_thread),
+                                                   pool_thread_create,
+                                                   pool_thread_destroy};
+
+void test_threadpool_runs_each_thread_in_turn_on_the_caller(void) {
+  struct pool_owner owner = {.before = 10};
+  g_pool_log_n = 0;
+  g_pool_fail_id = -1;
+  TEST_ASSERT_EQUAL_INT(0, threadpool_create(&owner.pool, &kPoolClass, dpy, 3));
+  TEST_ASSERT_EQUAL_UINT(3, owner.pool.count);
+  threadpool_run(&owner.pool, pool_thread_run);
+  threadpool_wait(&owner.pool);
+  threadpool_run(&owner.pool, pool_thread_run);
+  threadpool_wait(&owner.pool);
+  threadpool_destroy(&owner.pool);
+  const int want[] = {100, 101, 102, 310, 311, 312, 310, 311, 312, 200, 201, 202};
+  TEST_ASSERT_EQUAL_INT(12, g_pool_log_n);
+  TEST_ASSERT_EQUAL_INT_ARRAY(want, g_pool_log, 12);
+}
+
+void test_threadpool_create_failure_undoes_the_threads_it_made(void) {
+  struct pool_owner owner = {0};
+  g_pool_log_n = 0;
+  g_pool_fail_id = 2;
+  TEST_ASSERT_EQUAL_INT(12, threadpool_create(&owner.pool, &kPoolClass, dpy, 4));
+  g_pool_fail_id = -1;
+  const int want[] = {100, 101, 200, 201};
+  TEST_ASSERT_EQUAL_INT(4, g_pool_log_n);
+  TEST_ASSERT_EQUAL_INT_ARRAY(want, g_pool_log, 4);
+}
+
+void test_one_core_and_a_pointer_sized_alignment_without_threads(void) {
+  TEST_ASSERT_EQUAL_UINT(1, hardware_concurrency(dpy));
+  TEST_ASSERT_EQUAL_UINT(sizeof(void *), thread_memory_alignment(dpy));
+  TEST_ASSERT_EQUAL_INT(16, visual_pixmap_depth(NULL, NULL));
 }
 
 void test_the_arrow_and_page_keysyms_have_x_values(void) {
@@ -3331,6 +3403,9 @@ int main(void) {
   RUN_TEST(test_a_gc_remembers_its_function_but_draws_copy);
   RUN_TEST(test_set_graphics_exposures_is_accepted_and_draws_nothing);
   RUN_TEST(test_load_image_async_simple_finishes_at_once_with_nothing);
+  RUN_TEST(test_threadpool_runs_each_thread_in_turn_on_the_caller);
+  RUN_TEST(test_threadpool_create_failure_undoes_the_threads_it_made);
+  RUN_TEST(test_one_core_and_a_pointer_sized_alignment_without_threads);
   RUN_TEST(test_the_arrow_and_page_keysyms_have_x_values);
   RUN_TEST(test_visual_depth_is_sixteen);
   RUN_TEST(test_xshm_image_is_a_16_bit_image_put_where_asked);
