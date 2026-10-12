@@ -1980,6 +1980,86 @@ void test_create_pixmap_rejects_zero_and_huge_sizes(void) {
   TEST_ASSERT_EQUAL(None, XCreatePixmap(dpy, win, 65535, 65535, 1));
 }
 
+/* Kumppa rotates the picture by copying blocks of the window onto the window,
+ * one pixel over: X copies as if the whole source were read first. */
+static void number_canvas(void) {
+  for (int i = 0; i < cv.w * cv.h; i++) cv.px[i] = (uint16_t)(i + 1);
+}
+
+static void reference_copy(uint16_t *ref, int sx, int sy, int w, int h, int dx,
+                           int dy) {
+  uint16_t before[16 * 16];
+  memcpy(before, cv.px, sizeof before);
+  memcpy(ref, cv.px, sizeof before);
+  for (int j = 0; j < h; j++)
+    for (int i = 0; i < w; i++) {
+      const int x = dx + i, y = dy + j, px = sx + i, py = sy + j;
+      if (x < 0 || y < 0 || x >= 16 || y >= 16) continue;
+      if (px < 0 || py < 0 || px >= 16 || py >= 16) continue;
+      ref[y * 16 + x] = before[py * 16 + px];
+    }
+}
+
+static void check_window_copy(int sx, int sy, int w, int h, int dx, int dy) {
+  uint16_t ref[16 * 16];
+  number_canvas();
+  reference_copy(ref, sx, sy, w, h, dx, dy);
+  GC gc = new_gc(0xFFFF, 0);
+  XCopyArea(dpy, win, win, gc, sx, sy, (unsigned)w, (unsigned)h, dx, dy);
+  XFreeGC(dpy, gc);
+  TEST_ASSERT_EQUAL_HEX16_ARRAY(ref, cv.px, 16 * 16);
+}
+
+void test_copy_area_from_the_window_to_itself_apart(void) {
+  check_window_copy(0, 0, 4, 3, 9, 10);
+}
+
+void test_copy_area_from_the_window_to_itself_overlapping_each_way(void) {
+  check_window_copy(2, 2, 10, 9, 3, 3);
+  check_window_copy(2, 2, 10, 9, 1, 1);
+  check_window_copy(2, 2, 10, 9, 3, 1);
+  check_window_copy(2, 2, 10, 9, 1, 3);
+  check_window_copy(0, 0, 16, 16, 0, 1);
+  check_window_copy(0, 0, 16, 16, 1, 0);
+}
+
+void test_copy_area_from_the_window_clips_at_every_edge(void) {
+  check_window_copy(-3, -2, 8, 8, 12, 11);
+  check_window_copy(10, 11, 9, 9, -4, -5);
+  check_window_copy(0, 0, 0xFFFF, 0xFFFF, 2, 2);
+}
+
+void test_copy_area_from_the_window_marks_the_rows_it_wrote(void) {
+  number_canvas();
+  canvas_clear_dirty(&cv);
+  GC gc = new_gc(0xFFFF, 0);
+  XCopyArea(dpy, win, win, gc, 0, 0, 3, 2, 5, 7);
+  XFreeGC(dpy, gc);
+  int x0, x1;
+  TEST_ASSERT_FALSE(canvas_dirty_row(&cv, 6, &x0, &x1));
+  TEST_ASSERT_TRUE(canvas_dirty_row(&cv, 7, &x0, &x1));
+  TEST_ASSERT_EQUAL_INT(5, x0);
+  TEST_ASSERT_EQUAL_INT(7, x1);
+  TEST_ASSERT_TRUE(canvas_dirty_row(&cv, 8, &x0, &x1));
+  TEST_ASSERT_FALSE(canvas_dirty_row(&cv, 9, &x0, &x1));
+}
+
+void test_copy_area_from_the_window_into_a_pixmap_and_back(void) {
+  number_canvas();
+  uint16_t before[16 * 16];
+  memcpy(before, cv.px, sizeof before);
+  Pixmap p = XCreatePixmap(dpy, win, 4, 4, 16);
+  GC gc = new_gc(0xFFFF, 0);
+  XCopyArea(dpy, win, p, gc, 5, 6, 4, 4, 0, 0);
+  memset(cv.px, 0, sizeof before);
+  XCopyArea(dpy, p, win, gc, 0, 0, 4, 4, 1, 2);
+  TEST_ASSERT_EQUAL_HEX16(before[6 * 16 + 5], at(1, 2));
+  TEST_ASSERT_EQUAL_HEX16(before[9 * 16 + 8], at(4, 5));
+  TEST_ASSERT_EQUAL_INT(16, count_set());
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+}
+
 void test_copy_area_into_a_colour_pixmap_then_out_to_the_canvas(void) {
   Pixmap mask = None;
   Pixmap src = load_image(&mask);
@@ -3305,6 +3385,11 @@ int main(void) {
   RUN_TEST(test_fill_arc_quarter_is_a_pie_slice_including_the_centre);
   RUN_TEST(test_create_pixmap_is_zeroed_and_reports_its_geometry);
   RUN_TEST(test_create_pixmap_rejects_zero_and_huge_sizes);
+  RUN_TEST(test_copy_area_from_the_window_to_itself_apart);
+  RUN_TEST(test_copy_area_from_the_window_to_itself_overlapping_each_way);
+  RUN_TEST(test_copy_area_from_the_window_clips_at_every_edge);
+  RUN_TEST(test_copy_area_from_the_window_marks_the_rows_it_wrote);
+  RUN_TEST(test_copy_area_from_the_window_into_a_pixmap_and_back);
   RUN_TEST(test_copy_area_into_a_colour_pixmap_then_out_to_the_canvas);
   RUN_TEST(test_copy_area_into_a_bitmap_copies_bits);
   RUN_TEST(test_copy_area_between_different_depths_does_nothing);
