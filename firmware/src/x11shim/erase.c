@@ -2,6 +2,7 @@
  * and returns a state, so a hack that waits after it waits on the finished
  * picture; later calls wipe the window away. Written for this project; not
  * derived from xscreensaver's utils/erase.c. */
+#include <stdint.h>
 #include <stdlib.h>
 
 #include "doubletime.h"
@@ -9,8 +10,12 @@
 
 #define ERASE_SECONDS 1.0
 #define BLIND_HEIGHT 32
+#define FIZZLE_BLOCK 16
+#define LINE_COUNT 160
+#define LINE_WIDTH 16
 
-typedef void (*EraseEffect)(Display *dpy, Window w, GC gc, double ratio);
+struct eraser_state;
+typedef void (*EraseEffect)(struct eraser_state *st, Window w, double ratio);
 
 struct eraser_state {
   Display *dpy;
@@ -18,17 +23,82 @@ struct eraser_state {
   GC gc;
   int started;
   double start;
+  int drawn;        /* items an incremental effect has already drawn */
+  uint16_t *order;  /* fizzle: the blocks in the order they clear */
+  int order_count;
   struct eraser_state *next;
 };
 
-static void venetian_blinds(Display *dpy, Window w, GC gc, double ratio) {
+static void venetian_blinds(eraser_state *st, Window w, double ratio) {
+  const Canvas *c = st->dpy->canvas;
   const int band = (int)(ratio * BLIND_HEIGHT + 0.5);
-  for (int y = 0; y < dpy->canvas->h; y += BLIND_HEIGHT)
-    XFillRectangle(dpy, w, gc, 0, y, (unsigned)dpy->canvas->w,
-                   (unsigned)band);
+  for (int y = 0; y < c->h; y += BLIND_HEIGHT)
+    XFillRectangle(st->dpy, w, st->gc, 0, y, (unsigned)c->w, (unsigned)band);
 }
 
-static const EraseEffect k_effects[] = {venetian_blinds};
+static void circle_wipe(eraser_state *st, Window w, double ratio) {
+  const Canvas *c = st->dpy->canvas;
+  const int64_t cx = c->w / 2, cy = c->h / 2;
+  const int64_t corner_sq = cx * cx + cy * cy;
+  int64_t full = 0;
+  while (full * full < corner_sq) full++;
+  const int64_t r = (int64_t)(ratio * (double)full);
+  const int64_t reach = cy > c->h - 1 - cy ? cy : c->h - 1 - cy;
+  int64_t dx = r;
+  for (int64_t dy = 0; dy <= r && dy <= reach; dy++) {
+    while (dx * dx + dy * dy > r * r) dx--;
+    const unsigned width = (unsigned)(2 * dx + 1);
+    XFillRectangle(st->dpy, w, st->gc, (int)(cx - dx), (int)(cy - dy), width, 1);
+    if (dy > 0)
+      XFillRectangle(st->dpy, w, st->gc, (int)(cx - dx), (int)(cy + dy), width,
+                     1);
+  }
+}
+
+static void fizzle(eraser_state *st, Window w, double ratio) {
+  const Canvas *c = st->dpy->canvas;
+  const int cols = (c->w + FIZZLE_BLOCK - 1) / FIZZLE_BLOCK;
+  const int rows = (c->h + FIZZLE_BLOCK - 1) / FIZZLE_BLOCK;
+  if (!st->order) {
+    st->order_count = cols * rows;
+    st->order = (uint16_t *)malloc(sizeof(uint16_t) * (size_t)st->order_count);
+    if (!st->order) {
+      st->order_count = 0;
+      return;
+    }
+    for (int i = 0; i < st->order_count; i++) st->order[i] = (uint16_t)i;
+    for (int i = st->order_count - 1; i > 0; i--) {
+      const int j = (int)(random() % (i + 1));
+      const uint16_t t = st->order[i];
+      st->order[i] = st->order[j];
+      st->order[j] = t;
+    }
+  }
+  const int target = (int)(ratio * st->order_count);
+  for (; st->drawn < target; st->drawn++) {
+    const int b = st->order[st->drawn];
+    XFillRectangle(st->dpy, w, st->gc, (b % cols) * FIZZLE_BLOCK,
+                   (b / cols) * FIZZLE_BLOCK, FIZZLE_BLOCK, FIZZLE_BLOCK);
+  }
+}
+
+static void random_lines(eraser_state *st, Window w, double ratio) {
+  const Canvas *c = st->dpy->canvas;
+  const int target = (int)(ratio * LINE_COUNT);
+  if (st->drawn >= target) return;
+  XSetLineAttributes(st->dpy, st->gc, LINE_WIDTH, 0, 0, 0);
+  for (; st->drawn < target; st->drawn++) {
+    if (random() & 1)
+      XDrawLine(st->dpy, w, st->gc, (int)(random() % c->w), 0,
+                (int)(random() % c->w), c->h - 1);
+    else
+      XDrawLine(st->dpy, w, st->gc, 0, (int)(random() % c->h), c->w - 1,
+                (int)(random() % c->h));
+  }
+}
+
+static const EraseEffect k_effects[] = {venetian_blinds, circle_wipe, fizzle,
+                                        random_lines};
 #define EFFECT_COUNT ((int)(sizeof(k_effects) / sizeof(k_effects[0])))
 
 static int g_forced_effect = -1;
@@ -46,6 +116,7 @@ void eraser_free(eraser_state *st) {
     }
   }
   XFreeGC(st->dpy, st->gc);
+  free(st->order);
   free(st);
 }
 
@@ -85,6 +156,6 @@ eraser_state *erase_window(Display *dpy, Window w, eraser_state *st) {
     return NULL;
   }
   XSetForeground(dpy, st->gc, dpy->window_background);
-  st->effect(dpy, w, st->gc, ratio);
+  st->effect(st, w, ratio);
   return st;
 }

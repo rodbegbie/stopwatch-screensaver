@@ -1,5 +1,7 @@
 #include <sanitizer/allocator_interface.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <time.h>
 #include <unity.h>
 
 #include "core/canvas.h"
@@ -137,6 +139,109 @@ void test_a_step_marks_rows_dirty(void) {
   eraser_free(st);
 }
 
+enum { kEffects = 4 };
+
+/* Starts a wipe and takes its first step, so the clock starts at *start. */
+static eraser_state *begin_wipe(int effect, double *start) {
+  srandom(1);
+  xshim_erase_force_effect(effect);
+  eraser_state *st = erase_window(dpy, XSHIM_WINDOW, NULL);
+  st = erase_window(dpy, XSHIM_WINDOW, st);
+  *start = now;
+  return st;
+}
+
+static eraser_state *step_to(eraser_state *st, double start, double ratio) {
+  now = start + ratio;
+  return erase_window(dpy, XSHIM_WINDOW, st);
+}
+
+static double cleared_fraction(uint16_t background) {
+  return (double)count_pixels(background) / (kSize * kSize);
+}
+
+void test_effect_count_is_four(void) {
+  TEST_ASSERT_EQUAL_INT(kEffects, xshim_erase_effect_count());
+}
+
+void test_cleared_area_grows_and_ends_complete(void) {
+  for (int e = 0; e < kEffects; e++) {
+    canvas_clear(&cv, kPicture);
+    double start;
+    eraser_state *st = begin_wipe(e, &start);
+    double before = 0.0;
+    const double ratios[] = {0.25, 0.5, 0.75};
+    for (int i = 0; i < 3; i++) {
+      st = step_to(st, start, ratios[i]);
+      TEST_ASSERT_NOT_NULL_MESSAGE(st, "wipe ended early");
+      const double now_cleared = cleared_fraction(0);
+      TEST_ASSERT_TRUE_MESSAGE(now_cleared > before, "cleared area did not grow");
+      TEST_ASSERT_TRUE_MESSAGE(now_cleared < 1.0, "wipe finished before its end");
+      before = now_cleared;
+    }
+    TEST_ASSERT_TRUE_MESSAGE(before >= 0.5, "wipe is too slow to clear");
+    st = step_to(st, start, 1.0);
+    TEST_ASSERT_NULL(st);
+    TEST_ASSERT_EQUAL_INT(kSize * kSize, count_pixels(0));
+  }
+}
+
+void test_steps_stay_inside_the_canvas_and_are_quick(void) {
+  for (int e = 0; e < kEffects; e++) {
+    canvas_clear(&cv, kPicture);
+    double start;
+    eraser_state *st = begin_wipe(e, &start);
+    st = step_to(st, start, 0.5);
+    canvas_clear_dirty(&cv);
+
+    struct timespec t0, t1;
+    clock_gettime(CLOCK_MONOTONIC, &t0);
+    st = step_to(st, start, 0.533);
+    clock_gettime(CLOCK_MONOTONIC, &t1);
+    const double ms = (t1.tv_sec - t0.tv_sec) * 1e3 + (t1.tv_nsec - t0.tv_nsec) / 1e6;
+    TEST_ASSERT_TRUE_MESSAGE(ms < 5.0, "a 33 ms step took 5 ms or more on the host");
+
+    int x0, x1;
+    for (int y = 0; y < kSize; y++)
+      if (canvas_dirty_row(&cv, y, &x0, &x1)) {
+        TEST_ASSERT_TRUE(x0 >= 0 && x1 <= kSize - 1 && x0 <= x1);
+      }
+    eraser_free(st);
+  }
+}
+
+void test_effects_use_the_window_background(void) {
+  XSetWindowBackground(dpy, XSHIM_WINDOW, 0x00F8);
+  for (int e = 0; e < kEffects; e++) {
+    canvas_clear(&cv, kPicture);
+    double start;
+    eraser_state *st = begin_wipe(e, &start);
+    st = step_to(st, start, 0.5);
+    TEST_ASSERT_GREATER_THAN_INT(0, count_pixels(0x00F8));
+    TEST_ASSERT_EQUAL_INT(0, count_pixels(0));
+    eraser_free(st);
+  }
+}
+
+static uint64_t canvas_hash(void) {
+  uint64_t h = 0xcbf29ce484222325ull;
+  for (int i = 0; i < kSize * kSize; i++) h = (h ^ cv.px[i]) * 0x100000001b3ull;
+  return h;
+}
+
+void test_the_effects_look_different(void) {
+  uint64_t seen[kEffects];
+  for (int e = 0; e < kEffects; e++) {
+    canvas_clear(&cv, kPicture);
+    double start;
+    eraser_state *st = begin_wipe(e, &start);
+    st = step_to(st, start, 0.5);
+    seen[e] = canvas_hash();
+    eraser_free(st);
+    for (int p = 0; p < e; p++) TEST_ASSERT_NOT_EQUAL_UINT64(seen[p], seen[e]);
+  }
+}
+
 /* A hack in the style of Coral and Maze: it keeps its eraser in its closure
  * and never calls eraser_free. */
 static void *leaky_init(Display *d, Window w) {
@@ -190,6 +295,11 @@ void test_closing_the_display_frees_a_state_still_live(void) {
 
 int main(void) {
   UNITY_BEGIN();
+  RUN_TEST(test_effect_count_is_four);
+  RUN_TEST(test_cleared_area_grows_and_ends_complete);
+  RUN_TEST(test_steps_stay_inside_the_canvas_and_are_quick);
+  RUN_TEST(test_effects_use_the_window_background);
+  RUN_TEST(test_the_effects_look_different);
   RUN_TEST(test_closing_the_display_frees_a_state_still_live);
   RUN_TEST(test_stopping_mid_wipe_frees_a_state_the_hack_never_frees);
   RUN_TEST(test_eraser_free_then_release_does_not_double_free);
