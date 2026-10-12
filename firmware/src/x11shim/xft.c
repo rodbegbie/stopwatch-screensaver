@@ -31,15 +31,30 @@ static int requested_size(const char *name) {
   return atoi(name + start);
 }
 
+/* What a hack gets when no font is installed: every glyph advances and none
+ * has ink. XJack abort()s on no font, and a test that replays every hack in
+ * the registry would take the whole run down with it. The device always
+ * installs one (main.cpp). */
+static const XshimFont *blank_font(void) {
+  static XshimGlyph glyphs[XSHIM_FONT_LAST - XSHIM_FONT_FIRST + 1];
+  static XshimFontSize size = {16, 12, 5, glyphs, NULL};
+  static const XshimFont font = {1, &size};
+  if (!glyphs[0].advance)
+    for (size_t i = 0; i < sizeof glyphs / sizeof glyphs[0]; i++)
+      glyphs[i].advance = 8;
+  return &font;
+}
+
 XftFont *load_xft_font_retry(Display *dpy, int screen, const char *name) {
   (void)dpy;
   (void)screen;
-  if (!g_font || g_font->nsizes <= 0) return NULL;
-  const XshimFontSize *best = &g_font->sizes[0];
+  const XshimFont *family =
+      g_font && g_font->nsizes > 0 ? g_font : blank_font();
+  const XshimFontSize *best = &family->sizes[0];
   const int want = requested_size(name);
   if (want > 0) {
-    for (int i = 1; i < g_font->nsizes; i++) {
-      const XshimFontSize *s = &g_font->sizes[i];
+    for (int i = 1; i < family->nsizes; i++) {
+      const XshimFontSize *s = &family->sizes[i];
       const int d = abs(s->pixel_size - want);
       const int bd = abs(best->pixel_size - want);
       if (d < bd || (d == bd && s->pixel_size < best->pixel_size)) best = s;

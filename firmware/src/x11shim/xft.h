@@ -42,8 +42,9 @@ typedef struct XftDraw XftDraw;
 
 /* The first entry of a comma-separated list such as "Special Elite 24, Courier
  * 24" gives the size (its trailing number); ties between two baked sizes take
- * the smaller. A name with no number takes the font's first size. NULL if no
- * font is installed. */
+ * the smaller. A name with no number takes the font's first size. With no font
+ * installed (xshim_set_font) the font is blank: text takes room and has no ink,
+ * so a hack that abort()s on no font still runs. Only NULL if out of memory. */
 XftFont *load_xft_font_retry(Display *, int screen, const char *name);
 void XftFontClose(Display *, XftFont *);
 

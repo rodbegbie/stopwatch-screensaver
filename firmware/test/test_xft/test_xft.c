@@ -135,9 +135,30 @@ void test_a_name_without_a_size_takes_the_first_size(void) {
   XftFontClose(dpy, f);
 }
 
-void test_no_font_installed_gives_no_font(void) {
+/* XJack abort()s when it gets no font, and a test that replays every hack
+ * would take the whole run down with it. */
+void test_with_no_font_installed_text_lays_out_but_draws_nothing(void) {
   xshim_set_font(NULL);
-  TEST_ASSERT_NULL(load_xft_font_retry(dpy, 0, "Special Elite 12"));
+  XftFont *f = load_xft_font_retry(dpy, 0, "Special Elite 12");
+  TEST_ASSERT_NOT_NULL(f);
+  TEST_ASSERT_TRUE(f->ascent > 0);
+  TEST_ASSERT_TRUE(f->descent > 0);
+  XGlyphInfo g;
+  XftTextExtentsUtf8(dpy, f, (const FcChar8 *)"ab", 2, &g);
+  TEST_ASSERT_TRUE(g.xOff > 0);
+  TEST_ASSERT_EQUAL_INT(0, g.width);
+  XftColor white = colour("white");
+  draw(f, &white, 2, 6, "NN", 2);
+  TEST_ASSERT_EQUAL_INT(0, count_not(0));
+  XftFontClose(dpy, f);
+}
+
+void test_an_installed_font_with_no_sizes_is_as_good_as_none(void) {
+  const XshimFont empty = {0, NULL};
+  xshim_set_font(&empty);
+  XftFont *f = load_xft_font_retry(dpy, 0, "x 8");
+  TEST_ASSERT_NOT_NULL(f);
+  XftFontClose(dpy, f);
 }
 
 void test_extents_of_one_glyph(void) {
@@ -400,7 +421,8 @@ int main(void) {
   RUN_TEST(test_the_nearest_size_is_chosen_from_the_first_family_in_the_list);
   RUN_TEST(test_a_tie_between_two_sizes_takes_the_smaller);
   RUN_TEST(test_a_name_without_a_size_takes_the_first_size);
-  RUN_TEST(test_no_font_installed_gives_no_font);
+  RUN_TEST(test_with_no_font_installed_text_lays_out_but_draws_nothing);
+  RUN_TEST(test_an_installed_font_with_no_sizes_is_as_good_as_none);
   RUN_TEST(test_extents_of_one_glyph);
   RUN_TEST(test_extents_of_two_glyphs_add_advances_and_span_both_inks);
   RUN_TEST(test_extents_of_blank_text_have_an_advance_and_no_ink);

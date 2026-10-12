@@ -40,8 +40,8 @@ typedef struct {
   const XshimFontSize *sizes;
 } XshimFont;
 
-/* NULL removes the font, and load_xft_font_retry then finds none. The font
- * must outlive every XftFont opened from it. */
+/* NULL removes the font, and load_xft_font_retry then gives a blank one. The
+ * font must outlive every XftFont opened from it. */
 void xshim_set_font(const XshimFont *);
 
 #ifdef __cplusplus
