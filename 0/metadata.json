@@ -83,6 +83,37 @@
         "label": "Skill: markdown",
         "default_collapsed": true
       }
+    },
+    {
+      "id": "claude-skill-toolu_01Y7sShqBVAwdE2zVdQuYh7d",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "deliver-branch"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "f953f3f9a769",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 3971,
+        "end": 3972,
+        "entry_ids": [
+          "402b5556-dc8b-401a-9745-92cc301d714c"
+        ],
+        "tool_use_id": "toolu_01Y7sShqBVAwdE2zVdQuYh7d"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01Y7sShqBVAwdE2zVdQuYh7d"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: deliver-branch",
+        "default_collapsed": true
+      }
     }
   ],
   "session_metrics": {
