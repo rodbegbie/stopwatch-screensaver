@@ -31,11 +31,11 @@ it with `uv run tools/score_hacks.py`.
 
 | Rating | Meaning | Count |
 | --- | --- | --- |
-| S | 2D, and the unmodified source compiles against the shim | 6 |
-| M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 14 |
-| L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 60 |
-| XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 134 |
-| Ported | Already running on the device, so no rating | 69 |
+| S | 2D, and the unmodified source compiles against the shim | 16 |
+| M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 12 |
+| L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 45 |
+| XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 131 |
+| Ported | Already running on the device, so no rating | 79 |
 
 ## Speed
 
@@ -95,7 +95,7 @@ does not yet provide every GL helper under `xs_support/glx/`.
 
 ## Measured on the device
 
-Seventy hacks have been run so far (default settings, 466×466 canvas
+Eighty hacks have been run so far (default settings, 466×466 canvas
 pushed to the display every frame, canvas held in PSRAM). The firmware times
 each frame in three parts, averaged over 5 seconds: **step** is the hack's own
 draw call, **push** is sending the canvas to the display, and **wait** is what
@@ -226,6 +226,32 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | HexTrail (count 6, double) | 9.2-36.8, mean 12.7 | 13-76 ms | 11.1-32.5 ms | 0-3 ms | about 0.66 MB |
 | HexTrail (count 6, single precision) | 9.6-38.2, mean 13.0 | 12-71 ms | 11.5-32.5 ms | 0-2 ms | about 0.66 MB |
 | HexTrail | 10.8-50.6, mean 15.3 | 8-59 ms | 6.9-32.5 ms | 0-5 ms | about 0.66 MB |
+| Eruption (as copied) | 9.6-9.8 | 72.5-72.6 ms | 29.0 ms | 0 ms | about 0.70 MB |
+| Eruption (half size, `lowrez_put.h` before its int loop) | 13.6-13.8 | 42.6 ms | 29.2 ms | 0 ms | about 0.21 MB |
+| Eruption | 14.6 | 39.0-39.1 ms | 29.0 ms | 0 ms | about 0.21 MB |
+| Eruption (`-DERUPTION_SCALE=3`) | 18.0 | 25.5 ms | 29.0 ms | 0 ms | about 0.12 MB |
+| Eruption (half size, no put, probe) | 40.8 | 13.4 ms | 0.1 ms | 11.0 ms | about 0.21 MB |
+| Kumppa | 13.4 | 44.5 ms | 29.3 ms | 0 ms | none measurable |
+| ShadeBobs | 73.6-75.4 | 2.0-2.3 ms | 0.7-0.8 ms | 10.5 ms | about 0.43 MB |
+| Piecewise (double) | 9.8-10.4 | 66.0-71.0 ms | 29.3 ms | 0 ms | none measurable |
+| Piecewise (double, no clear, probe) | 12.4-13.2 | 51.2-56.2 ms | 23.2-24.6 ms | 0 ms | none measurable |
+| Piecewise | 13.0-14.0 | 41.2-44.0 ms | 29.3 ms | 0 ms | none measurable |
+| BoxFit | 10.0-25.4 | 9.1-17.0 ms | 5.1-9.2 ms | 24-81 ms | about 37 KB |
+| Interference | 10.2 | 67.9-68.0 ms | 29.0 ms | 2.3 ms | about 0.44 MB |
+| BinaryRing (as copied, 24-bit path) | 2.8-3.2 | 284-335 ms | 29.1 ms | 0 ms | about 2.3 MB |
+| BinaryRing (single precision) | 3.6-4.2 | 210-254 ms | 29.1 ms | 0 ms | about 2.3 MB |
+| BinaryRing (single precision, no image put or copy, probe) | 7.6-15.8 | 52.5-121.4 ms | 0.1-0.2 ms | 11.1 ms | about 2.3 MB |
+| BinaryRing | 7.2-13.8, 13.6 after 20 s | 44.9-113.3 ms | 13.4-27.9 ms | 0-1.5 ms | about 2.3 MB |
+| GraphStat | 10.2-14.6 | 35.0-67.8 ms | 29.1-29.3 ms | 2.1-2.3 ms | about 0.67 MB |
+| EtruscanVenus (64 by 48, full size) | 4.0-7.8 | 100-229 ms | 13.8-29.2 ms | 0-13.4 ms | about 0.93 MB |
+| EtruscanVenus (64 by 48, half size) | 6.4-9.6 | 78-127 ms | 13.6-29.2 ms | 0-13.5 ms | about 0.71 MB |
+| EtruscanVenus | 9.2-12.6 | 53.2-78.6 ms | 15.6-29.2 ms | 0-10.8 ms | about 0.64 MB |
+| BlockTube (as copied, 1,000 blocks, full size) | 3.2-3.4 | 264-285 ms | 29.0 ms | 8.8-12.5 ms | about 1.13 MB |
+| BlockTube (1,000 blocks, half size) | 5.0 | 161.6-164.0 ms | 29.2 ms | 12.2 ms | about 0.92 MB |
+| BlockTube (500 blocks, half size, single precision, `*delay: 40000`) | 7.0-7.4 | 93.9-102.5 ms | 26.1-29.2 ms | 12.2-15.9 ms | about 0.87 MB |
+| BlockTube (500 blocks) | 8.0-9.0 | 83.9-94.0 ms | 26.4-32.8 ms | 0 ms | about 0.87 MB |
+| BlockTube | 8.8-10.0 | 71.6-80.4 ms | 28.0-33.0 ms | 0 ms | about 0.86 MB |
+| Fireworkx (after `lowrez_put.h`'s int loop) | 13.8-14.0 | 41.7-44.3 ms | 29.0 ms | 0 ms | about 0.34 MB |
 
 The seven rows from CWaves to HexTrail are the CWaves, Vermiculate, Cynosure,
 Moire, Moire2, Boing and HexTrail batch (2026-10-11), each from a pinned build
@@ -235,6 +261,25 @@ overlay), so "Extra PSRAM" is the drop from 6,989,667 bytes, which Cynosure
 and Moire read and which allocate almost nothing; treat it as good to about
 10 KB. Free heap was flat in every capture and no stack canary, panic or
 reboot appeared.
+
+The rows from Eruption to BlockTube are the batch of 2026-10-12 (Eruption,
+Kumppa, ShadeBobs, Piecewise, BoxFit, Interference, BinaryRing, GraphStat,
+EtruscanVenus and BlockTube), each from a pinned build with rotation off, read
+for 20 to 60 s with Rod's go-ahead to flash while he was away. "Extra PSRAM"
+is the drop from 6,989,667 bytes, which Kumppa and Piecewise read; good to
+about 10 KB. A full-frame write to the PSRAM canvas costs about 25 ms here:
+Eruption at half size spent 26 ms of its 39 ms step putting the image (each
+pixel written as a 2 by 2 square), against 13 ms for the fire itself.
+BinaryRing's 13.6 fps comes after about 20 s: while the ring is still on the
+screen the step is 98-113 ms. Interference changes every pixel each frame, so
+it pays a full put and a full push. GraphStat's step is TinyGL drawing its
+grid as thin full-height quads (fill 35 ms for about 3,400 triangles) and a
+10 ms clear. EtruscanVenus's step depends on its mode: the ones that fill the
+screen are fill-bound, and the rest is its own surface maths and about 16,000
+GL calls a frame. Its first two rows were read with `-DGL_PROFILE`, as were the
+first three BlockTube rows. Fireworkx shares `lowrez_put.h`, so its row is
+after this batch's change to the helper (12.4-12.6 fps before, with
+pixel-identical frames).
 
 CWaves' cosines were 4 ms of a 61 ms step in single precision; the rest was
 233 two-pixel-wide column fills, each store on a different cache line of the
@@ -814,32 +859,40 @@ needing few additions come first.
 
 | Gap | Score | 2D hacks needing it |
 | --- | --- | --- |
-| `XSetGraphicsExposures` | 4.18 | 8 |
-| `make_color_loop` | 4.14 | 6 |
-| `async_load_state` | 4.01 | 14 |
-| `load_image_async_simple` | 4.01 | 14 |
-| `error: too few arguments to function call, expected 2, have 1` | 2.93 | 7 |
-| `visual_depth` | 2.08 | 3 |
-| `XYBitmap` | 1.62 | 5 |
-| `XDrawString` | 1.34 | 6 |
-| `XClearArea` | 1.16 | 4 |
-| `XFree` | 1.13 | 4 |
+| `error: too few arguments to function call, expected 2, have 1` | 4.71 | 7 |
+| `XYBitmap` | 1.64 | 5 |
+| `XQueryColors` | 1.43 | 4 |
+| `XDrawString` | 1.38 | 6 |
+| `XFree` | 1.27 | 4 |
+| `XImage.byte_order` | 1.2 | 5 |
+| `visual_rgb_masks` | 1.19 | 4 |
+| `XClearArea` | 1.18 | 4 |
+| `pow2.h` | 1.17 | 4 |
+| `LineOnOffDash` | 1.0 | 1 |
 
 ## All hacks
 
 | Hack | Kind | Effort | Speed | Ported | Shim gaps | Flags | LOC |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| attraction | 2d | S | low (0.014 ms) | - | - | - | 1115 |
-| bouboule | 2d | S | high (0.066 ms) | - | - | xor | 860 |
+| abstractile | 2d | S | high (0.054 ms) | - | - | - | 1625 |
+| attraction | 2d | S | medium (0.02 ms) | - | - | - | 1115 |
+| binaryhorizon | 2d | S | high (1.7 ms) | - | - | pixmaps, readback | 624 |
+| bouboule | 2d | S | high (0.07 ms) | - | - | xor | 860 |
+| ccurve | 2d | S | high (0.54 ms) | - | - | pixmaps | 872 |
+| decayscreen | 2d | S | low (0.0022 ms) | - | - | pixmaps | 392 |
+| flow | 2d | S | high (0.92 ms) | - | - | pixmaps | 1216 |
 | greynetic | 2d | S | medium (0.016 ms) | - | - | - | 297 |
-| halftone | 2d | S | high (0.67 ms) | ❌ | - | pixmaps | 413 |
+| halftone | 2d | S | high (0.66 ms) | ❌ | - | pixmaps | 413 |
+| marbling | 2d | S | high (11 ms) | - | - | - | 635 |
 | nerverot | 2d | S | high (0.37 ms) | - | - | pixmaps, float-heavy | 1367 |
 | popsquares | 2d | S | high (0.13 ms) | - | - | pixmaps | 310 |
-| abstractile | 2d | M | - | - | `make_color_loop` | - | 1625 |
+| rocks | 2d | S | medium (0.026 ms) | - | - | pixmaps | 562 |
+| rotzoomer | 2d | S | crashed on the host | - | - | pixmaps, readback | 601 |
+| twang | 2d | S | crashed on the host | - | - | pixmaps, readback | 791 |
+| wander | 2d | S | medium (0.033 ms) | - | - | pixmaps | 284 |
 | ant | 2d | M | - | - | `NUMSTIPPLES`, `automata.h`, `hexagonUnit`, `triangleUnit` | - | 1351 |
 | barcode | 2d | M | - | - | `XImage.bitmap_bit_order`, `XImage.byte_order`, `XYBitmap` | - | 2055 |
 | deco | 2d | M | - | - | `XStoreColors`, `allocate_writable_colors` | - | 345 |
-| eruption | 2d | M | - | - | `error: typedef redefinition with different types ('unsigned long' vs 'unsigned int')` | - | 608 |
 | hyperball | 2d | M | - | - | `UnmapNotify` | - | 2464 |
 | imsmap | 2d | M | - | - | `XYBitmap` | - | 426 |
 | lisa | 2d | M | - | - | `XMaxRequestSize` | - | 744 |
@@ -848,67 +901,52 @@ needing few additions come first.
 | penrose | 2d | M | - | - | `LineOnOffDash` | - | 1342 |
 | triangle | 2d | M | - | - | `free_colors`, `make_smooth_colormap` | - | 355 |
 | worm | 2d | M | - | - | `XClearArea` | xor | 434 |
-| xrayswarm | 2d | M | - | - | `XSetGraphicsExposures`, `initTime` | - | 1235 |
+| xrayswarm | 2d | M | - | - | `initTime` | - | 1235 |
 | apollonian | 2d | L | - | - | `FcChar8`, `XColor.color`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall` | - | 820 |
 | apple2-main | 2d | L | - | - | `A2CONTROLLER_DONE`, `A2CONTROLLER_FREE`, `A2_GR_FULL`, `A2_GR_HIRES`, `A2_GR_LORES`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `GrayScale`, `PseudoColor`, `TTY_BLINK`, `TTY_BOLD`, `TTY_INVERSE`, `TTY_SYMBOLS`, `XQueryColors`, `a2_clear_gr`, `a2_clear_hgr`, `a2_cls`, `a2_display_image_loading`, `a2_goto`, `a2_hline`, `a2_hplot`, `a2_invalidate`, `a2_plot`, `a2_printc`, `a2_printc_noscroll`, `a2_prints`, `analogtv_reconfigure`, `ansi-tty.h`, `ansi_tty`, `ansi_tty_free`, `ansi_tty_init`, `ansi_tty_print`, `apple2.h`, `apple2_one_frame`, `apple2_sim_t`, `apple2_start`, `apple2_state_t`, `error: expected expression`, `error: incompatible integer to pointer conversion initializing 'char *' with an expression of type 'int' [-Wint-conversion]`, `flag`, `load_image_async`, `sim`, `st`, `tc`, `tty`, `tty_char`, `tty_flag`, `utf8_encode`, `utf8_to_latin1`, `utf8wc.h`, `visual_cells`, `visual_class`, `visual_rgb_masks` | pixmaps, readback | 1642 |
-| binaryhorizon | 2d | L | - | - | `visual_depth` | pixmaps, readback | 624 |
-| binaryring | 2d | L | - | - | `visual_depth` | pixmaps, readback | 577 |
-| blitspin | 2d | L | - | - | `GXand`, `GXclear`, `GXset`, `XDisplayHeight`, `XDisplayWidth`, `XScreenNumberOfScreen`, `async_load_state`, `file_to_pixmap`, `images/gen/som_png.h`, `load_image_async_simple`, `pow2.h`, `som_png`, `to_pow2` | pixmaps, readback, clipmask | 467 |
-| boxfit | 2d | L | - | - | `async_load_state`, `load_image_async_simple` | pixmaps, readback | 573 |
-| bsod | 2d | L | - | - | `A2CONTROLLER_DONE`, `A2CONTROLLER_FREE`, `A2_GR_FULL`, `A2_GR_HIRES`, `A2_GR_LORES`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `FcChar8`, `XClearArea`, `XColor.color`, `XFetchName`, `XGlyphInfo`, `XSetPlaneMask`, `XStoreName`, `XftColor`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `XftTextExtentsUtf8_multi`, `a2_cls`, `a2_goto`, `a2_init_memory_active`, `a2_invalidate`, `a2_poke`, `a2_printc`, `a2_printc_noscroll`, `a2_prints`, `amiga_png`, `android_png`, `apple2.h`, `apple2_one_frame`, `apple2_sim_t`, `apple2_start`, `apple2_state_t`, `apple_png`, `async_load_state`, `atari_png`, `atm_png`, `dvd_png`, `em`, `error: expected expression`, `font`, `gnome1_png`, `gnome2_png`, `hmac_png`, `images/gen/amiga_png.h`, `images/gen/android_png.h`, `images/gen/apple_png.h`, `images/gen/atari_png.h`, `images/gen/atm_png.h`, `images/gen/dvd_png.h`, `images/gen/gnome1_png.h`, `images/gen/gnome2_png.h`, `images/gen/hmac_png.h`, `images/gen/mac_png.h`, `images/gen/macbomb_png.h`, `images/gen/osx_10_2_png.h`, `images/gen/osx_10_3_png.h`, `images/gen/ransomware_png.h`, `images/gen/sun_png.h`, `load_image_async_simple`, `load_xft_font_retry`, `mac_png`, `macbomb_png`, `osx_10_2_png`, `osx_10_3_png`, `ov`, `ov2`, `ransomware_png`, `screen_number`, `sim`, `st`, `sun_png`, `utf8_decode_combining`, `utf8wc.h`, `xft.h`, `xft_word_wrap`, `xftwrap.h` | pixmaps, readback, clipmask | 7809 |
+| blitspin | 2d | L | - | - | `GXand`, `GXclear`, `GXset`, `XDisplayHeight`, `XDisplayWidth`, `XScreenNumberOfScreen`, `file_to_pixmap`, `images/gen/som_png.h`, `pow2.h`, `som_png`, `to_pow2` | pixmaps, readback, clipmask | 467 |
+| bsod | 2d | L | - | - | `A2CONTROLLER_DONE`, `A2CONTROLLER_FREE`, `A2_GR_FULL`, `A2_GR_HIRES`, `A2_GR_LORES`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `FcChar8`, `XClearArea`, `XColor.color`, `XFetchName`, `XGlyphInfo`, `XSetPlaneMask`, `XStoreName`, `XftColor`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `XftTextExtentsUtf8_multi`, `a2_cls`, `a2_goto`, `a2_init_memory_active`, `a2_invalidate`, `a2_poke`, `a2_printc`, `a2_printc_noscroll`, `a2_prints`, `amiga_png`, `android_png`, `apple2.h`, `apple2_one_frame`, `apple2_sim_t`, `apple2_start`, `apple2_state_t`, `apple_png`, `atari_png`, `atm_png`, `dvd_png`, `em`, `error: expected expression`, `font`, `gnome1_png`, `gnome2_png`, `hmac_png`, `images/gen/amiga_png.h`, `images/gen/android_png.h`, `images/gen/apple_png.h`, `images/gen/atari_png.h`, `images/gen/atm_png.h`, `images/gen/dvd_png.h`, `images/gen/gnome1_png.h`, `images/gen/gnome2_png.h`, `images/gen/hmac_png.h`, `images/gen/mac_png.h`, `images/gen/macbomb_png.h`, `images/gen/osx_10_2_png.h`, `images/gen/osx_10_3_png.h`, `images/gen/ransomware_png.h`, `images/gen/sun_png.h`, `load_xft_font_retry`, `mac_png`, `macbomb_png`, `osx_10_2_png`, `osx_10_3_png`, `ov`, `ov2`, `ransomware_png`, `screen_number`, `sim`, `st`, `sun_png`, `utf8_decode_combining`, `utf8wc.h`, `xft.h`, `xft_word_wrap`, `xftwrap.h` | pixmaps, readback, clipmask | 7809 |
 | bubbles | 2d | L | - | - | `BUBBLE_MAGIC`, `Bubble`, `Bubble_Step`, `DELETE_BUBBLE`, `KEEP_BUBBLE`, `MAX`, `MAX_DROPPAGE`, `MIN`, `bubbles.h`, `default_bubbles`, `error: expected expression`, `head`, `init_default_bubbles`, `least`, `newpix`, `nextbub`, `num_default_bubbles`, `pixmap_list`, `rv`, `tmp`, `tmppix`, `touch` | pixmaps, clipmask | 1468 |
-| bumps | 2d | L | - | - | `XQueryColors`, `async_load_state`, `load_image_async_simple` | pixmaps, readback | 705 |
-| ccurve | 2d | L | - | - | `make_color_loop` | pixmaps | 872 |
+| bumps | 2d | L | - | - | `XQueryColors` | pixmaps, readback | 705 |
 | crystal | 2d | L | - | - | `XCreateColormap`, `XFreeColormap`, `XInstallColormap`, `XSetWindowColormap`, `free_colors`, `has_writable_cells`, `make_random_colormap`, `make_smooth_colormap`, `make_uniform_colormap`, `rotate_colors` | xor, float-heavy | 1286 |
-| decayscreen | 2d | L | - | - | `async_load_state`, `load_image_async_simple` | pixmaps | 392 |
 | demon | 2d | L | - | - | `NUMSTIPPLES`, `STIPPLESIZE`, `automata.h`, `hexagonUnit`, `stipples`, `triangleUnit` | - | 953 |
-| distort | 2d | L | - | - | `XImage.byte_order`, `XImage.format`, `async_load_state`, `load_image_async_simple` | pixmaps, readback | 894 |
-| droste | 2d | L | - | - | `GET_PARENT_OBJ`, `THREAD_DEFAULTS`, `THREAD_OPTIONS`, `async_load_state`, `error: expected expression`, `error: field has incomplete type 'struct threadpool'`, `error: variable has incomplete type 'const struct threadpool_class'`, `hardware_concurrency`, `i_log2_fast`, `load_image_async_simple`, `pow2.h`, `thread_util.h`, `threadpool`, `threadpool_create`, `threadpool_destroy`, `threadpool_run`, `threadpool_wait` | pixmaps, readback | 686 |
-| fiberlamp | 2d | L | - | - | `RootWindow`, `XAllocNamedColor`, `XSetGraphicsExposures`, `XTranslateCoordinates` | pixmaps | 480 |
+| distort | 2d | L | - | - | `XImage.byte_order`, `XImage.format` | pixmaps, readback | 894 |
+| droste | 2d | L | - | - | `i_log2_fast`, `pow2.h` | pixmaps, readback | 686 |
+| fiberlamp | 2d | L | - | - | `RootWindow`, `XAllocNamedColor`, `XTranslateCoordinates` | pixmaps | 480 |
 | filmleader | 2d | L | - | - | `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_SIGNAL_LEN`, `FcChar8`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftColorFree`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftTextExtentsUtf8`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_load_ximage`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `error: expected expression`, `extents`, `load_xft_font_retry`, `screen_number`, `xftfont` | pixmaps, readback | 548 |
-| flag | 2d | L | - | - | `GCFont`, `XCharStruct`, `XDrawString`, `XFontStruct`, `XFreeFont`, `XGCValues.font`, `XLoadQueryFont`, `XSetGraphicsExposures`, `XTextExtents`, `XYBitmap`, `bob_png`, `file_to_pixmap`, `font`, `image_data_to_ximage`, `images/gen/bob_png.h`, `o2`, `overall` | pixmaps, readback, text | 570 |
-| flow | 2d | L | - | - | `XSetGraphicsExposures` | pixmaps | 1216 |
+| flag | 2d | L | - | - | `GCFont`, `XDrawString`, `XFontStruct`, `XFreeFont`, `XGCValues.font`, `XLoadQueryFont`, `XTextExtents`, `XYBitmap`, `bob_png`, `file_to_pixmap`, `font`, `images/gen/bob_png.h` | pixmaps, readback, text | 570 |
 | fluidballs | 2d | L | - | - | `FcChar8`, `RootWindow`, `XTranslateCoordinates`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `error: expected expression`, `error: too few arguments to function call, expected 2, have 1`, `load_xft_font_retry`, `screen_number` | pixmaps | 881 |
 | fontglide | 2d | L | - | - | `FcChar8`, `XDrawString`, `XDrawString16`, `XFreeFont`, `XGetAtomName`, `XGlyphInfo`, `XLoadQueryFont`, `XRenderColor`, `XSetFont`, `XTextExtents`, `XTextExtents16`, `XftColor`, `XftColorAllocValue`, `XftColorFree`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `bg`, `error: Xft is required under X11`, `error: expected expression`, `extents`, `fg`, `load_xft_font_retry`, `screen_number`, `swap`, `utf8_decode_combining`, `utf8wc.h`, `xftdraw` | pixmaps, readback, text, clipmask | 2474 |
-| glitchpeg | 2d | L | - | - | `BitmapBitOrder`, `XImage.bitmap_bit_order`, `XImage.blue_mask`, `XImage.byte_order`, `XImage.green_mask`, `XImage.red_mask`, `XtAppAddInput`, `XtInputExceptMask`, `XtInputId`, `XtInputReadMask`, `XtRemoveInput`, `error: incompatible integer to pointer conversion assigning to 'XImage *' (aka 'struct XImage *') from 'int' [-Wint-conversion]`, `image_data_to_ximage` | readback | 466 |
-| interference | 2d | L | - | - | `GET_PARENT_OBJ`, `THREAD_DEFAULTS`, `THREAD_OPTIONS`, `XShmGetEventBase`, `error: expected expression`, `error: field has incomplete type 'struct threadpool'`, `error: too few arguments to function call, expected 2, have 1`, `error: variable has incomplete type 'const struct threadpool_class'`, `hardware_concurrency`, `make_color_loop`, `thread_memory_alignment`, `thread_util.h`, `threadpool`, `threadpool_create`, `threadpool_destroy`, `threadpool_run`, `threadpool_wait`, `visual_pixmap_depth` | pixmaps | 1002 |
+| glitchpeg | 2d | L | - | - | `BitmapBitOrder`, `XImage.bitmap_bit_order`, `XImage.blue_mask`, `XImage.byte_order`, `XImage.green_mask`, `XImage.red_mask`, `XtAppAddInput`, `XtInputExceptMask`, `XtInputId`, `XtInputReadMask`, `XtRemoveInput` | readback | 466 |
 | intermomentary | 2d | L | - | - | `XSetTile` | pixmaps | 605 |
 | juggle | 2d | L | - | - | `XDrawImageString`, `XDrawString`, `XFontStruct`, `XFreeFontInfo`, `XLoadQueryFont`, `XTextWidth`, `gettimeofday` | text, float-heavy | 2798 |
 | julia | 2d | L | - | - | `Cursor`, `XCreatePixmapCursor`, `XDefineCursor`, `XFreeCursor`, `XSetStipple`, `XSetTSOrigin`, `XUndefineCursor` | pixmaps, float-heavy | 451 |
-| kumppa | 2d | L | - | - | `XSetGraphicsExposures` | pixmaps | 545 |
 | lcdscrub | 2d | L | - | - | `error: too few arguments to function call, expected 2, have 1` | pixmaps, readback, clipmask | 399 |
 | m6502 | 2d | L | - | - | `ANALOGTV_BLACK_LEVEL`, `ANALOGTV_BOT`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_TOP`, `ANALOGTV_VISLINES`, `ANALOGTV_VIS_END`, `ANALOGTV_VIS_LEN`, `ANALOGTV_VIS_START`, `ANALOGTV_WHITE_LEVEL`, `Bit8`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_draw_solid`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_lcp_to_ntsc`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `asm6502.h`, `m6502.h`, `m6502_build`, `m6502_destroy6502`, `m6502_next_eval`, `m6502_start_eval_file`, `m6502_start_eval_string`, `machine_6502` | - | 288 |
-| marbling | 2d | L | - | - | `GET_PARENT_OBJ`, `THREAD_DEFAULTS`, `THREAD_OPTIONS`, `error: expected expression`, `error: field has incomplete type 'struct threadpool'`, `error: variable has incomplete type 'const struct threadpool_class'`, `hardware_concurrency`, `thread_memory_alignment`, `thread_util.h`, `threadpool_create`, `threadpool_destroy`, `threadpool_run`, `threadpool_wait`, `visual_pixmap_depth` | - | 635 |
 | memscroller | 2d | L | - | - | `FcChar8`, `XGlyphInfo`, `XImage.blue_mask`, `XImage.green_mask`, `XImage.red_mask`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall`, `screen_number`, `xft.h` | pixmaps | 626 |
 | noseguy | 2d | L | - | - | `FcChar8`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `extents`, `images/gen/nose-f1_png.h`, `images/gen/nose-f2_png.h`, `images/gen/nose-f3_png.h`, `images/gen/nose-f4_png.h`, `images/gen/nose-l1_png.h`, `images/gen/nose-l2_png.h`, `images/gen/nose-r1_png.h`, `images/gen/nose-r2_png.h`, `load_xft_font_retry`, `nose_f1_png`, `nose_f2_png`, `nose_f3_png`, `nose_f4_png`, `nose_l1_png`, `nose_l2_png`, `nose_r1_png`, `nose_r2_png`, `screen_number` | pixmaps, readback, clipmask | 720 |
 | penetrate | 2d | L | - | - | `FcChar8`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall`, `screen_number`, `usleep` | - | 1037 |
 | phosphor | 2d | L | - | - | `FALSE`, `FcChar8`, `TTY_BOLD`, `TTY_INVERSE`, `TTY_ITALIC`, `TTY_SYMBOLS`, `Time`, `XColor.color`, `XGlyphInfo`, `XWriteBitmapFile`, `XYBitmap`, `XftColor`, `XftDraw`, `XftDrawCreate`, `XftDrawStringUtf8`, `XftFont`, `XftTextExtentsUtf8`, `_6x10font_png`, `ansi-tty.h`, `ansi_graphics_unicode`, `ansi_tty`, `ansi_tty_free`, `ansi_tty_init`, `ansi_tty_print`, `ansi_tty_resize`, `error: expected expression`, `font`, `images/gen/6x10font_png.h`, `load_xft_font_retry`, `overall`, `screen_number`, `tcell`, `tty`, `tty_char`, `utf8_encode`, `utf8_to_latin1`, `utf8wc.h`, `xftdraw` | pixmaps, readback, clipmask | 1260 |
-| piecewise | 2d | L | - | - | `make_color_loop` | pixmaps | 1036 |
 | polyominoes | 2d | L | - | - | `XImage.bitmap_bit_order`, `XImage.bitmap_unit`, `XImage.byte_order`, `XYBitmap`, `countof` | - | 2370 |
 | pong | 2d | L | - | - | `ANALOGTV_BLACK_LEVEL`, `ANALOGTV_BOT`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_TOP`, `ANALOGTV_VISLINES`, `ANALOGTV_VIS_END`, `ANALOGTV_VIS_LEN`, `ANALOGTV_VIS_START`, `ButtonPressMask`, `ButtonReleaseMask`, `CurrentTime`, `Cursor`, `FocusChangeMask`, `FocusIn`, `FocusOut`, `GrabModeAsync`, `KeyPressMask`, `KeyRelease`, `KeyReleaseMask`, `X11/keysym.h`, `XCreatePixmapCursor`, `XDefineCursor`, `XGrabPointer`, `XHeightMMOfScreen`, `XHeightOfScreen`, `XUngrabPointer`, `XWarpPointer`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_draw_solid`, `analogtv_draw_string`, `analogtv_font`, `analogtv_font_set_char`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_lcp_to_ntsc`, `analogtv_make_font`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync` | pixmaps | 1109 |
 | rdbomb | 2d | L | - | - | `XListPixmapFormats`, `XPixmapFormatValues`, `error: expected ')'`, `error: expected function body after function declarator`, `error: expected parameter declarator`, `error: incompatible integer to pointer conversion passing 'int' to parameter of type 'void *' [-Wint-conversion]`, `error: subscripted value is not an array, pointer, or vector`, `pfv` | - | 571 |
-| ripples | 2d | L | - | - | `async_load_state`, `load_image_async_simple`, `visual_rgb_masks` | readback | 1127 |
-| rocks | 2d | L | - | - | `XSetGraphicsExposures` | pixmaps | 562 |
-| rotzoomer | 2d | L | - | - | `async_load_state`, `load_image_async_simple` | pixmaps, readback | 601 |
-| shadebobs | 2d | L | - | - | `XFree`, `XListPixmapFormats` | readback | 474 |
-| slidescreen | 2d | L | - | - | `XFree`, `XQueryColors`, `async_load_state`, `load_image_async_simple`, `visual_cells` | pixmaps | 507 |
-| slip | 2d | L | - | - | `ScreenOfDisplay`, `XSetGraphicsExposures`, `load_image_async` | pixmaps | 376 |
+| ripples | 2d | L | - | - | `visual_rgb_masks` | readback | 1127 |
+| slidescreen | 2d | L | - | - | `XFree`, `XQueryColors`, `visual_cells` | pixmaps | 507 |
+| slip | 2d | L | - | - | `ScreenOfDisplay`, `load_image_async` | pixmaps | 376 |
 | speedmine | 2d | L | - | - | `error: too few arguments to function call, expected 2, have 1` | pixmaps, clipmask | 1659 |
-| spotlight | 2d | L | - | - | `async_load_state`, `error: too few arguments to function call, expected 2, have 1`, `load_image_async_simple` | pixmaps, clipmask | 355 |
-| strange | 2d | L | - | - | `GCGraphicsExposures`, `GET_PARENT_OBJ`, `StaticColor`, `THREAD_OPTIONS`, `TrueColor`, `XGCValues.graphics_exposures`, `XImage.byte_order`, `XQueryColors`, `XSetGraphicsExposures`, `aligned_free`, `aligned_malloc`, `error: field has incomplete type 'struct threadpool'`, `error: incomplete definition of type 'struct threadpool'`, `error: invalid application of 'sizeof' to an incomplete type 'XrmOptionDescRec[]'`, `error: unexpected type name 'ATTRACTOR': expected expression`, `error: variable has incomplete type 'const struct threadpool_class'`, `hardware_concurrency`, `i_log2`, `pow2.h`, `thread_memory_alignment`, `thread_util.h`, `threadpool_create`, `threadpool_destroy`, `threadpool_run`, `threadpool_wait`, `visual_class`, `visual_pixmap_depth`, `visual_rgb_masks` | pixmaps, xor | 1353 |
+| spotlight | 2d | L | - | - | `error: too few arguments to function call, expected 2, have 1` | pixmaps, clipmask | 355 |
+| strange | 2d | L | - | - | `GCGraphicsExposures`, `StaticColor`, `TrueColor`, `XGCValues.graphics_exposures`, `XImage.byte_order`, `XQueryColors`, `aligned_free`, `aligned_malloc`, `error: invalid operands to binary expression ('int (Display *, GC, Bool)' (aka 'int (struct XshimDisplay *, struct XshimGC *, int)') and 'long')`, `i_log2`, `pow2.h`, `visual_class`, `visual_rgb_masks` | pixmaps, xor | 1353 |
 | swirl | 2d | L | - | - | `XCreateColormap`, `XFree`, `XFreeColormap`, `XInstallColormap`, `XSetWMColormapWindows`, `XSetWindowColormap`, `XStoreColors`, `free_colors`, `make_smooth_colormap`, `rotate_colors` | - | 1447 |
 | t3d | 2d | L | - | - | `Button1Mask`, `Button2Mask`, `Button3Mask`, `GXandInverted`, `XAllocColorCells`, `XStoreColors`, `error: too few arguments to function call, expected 2, have 1` | pixmaps, readback, float-heavy | 991 |
-| tessellimage | 2d | L | - | - | `ITRIANGLE`, `X11/keysymdef.h`, `XYZ`, `async_load_state`, `delaunay`, `delaunay.h`, `delaunay_xyzcompare`, `error: expected expression`, `load_image_async_simple`, `p`, `tt`, `v`, `visual_rgb_masks` | pixmaps, readback | 996 |
-| testx11 | 2d | L | - | - | `GCFont`, `XClearArea`, `XDrawString`, `XGCValues.font`, `XLoadFont`, `colorbars.h`, `draw_colorbars`, `error: expected ')'`, `error: expected function body after function declarator`, `error: expected parameter declarator`, `make_color_loop`, `visual_depth` | pixmaps, readback, text, clipmask | 968 |
-| twang | 2d | L | - | - | `async_load_state`, `load_image_async_simple` | pixmaps, readback | 791 |
+| tessellimage | 2d | L | - | - | `ITRIANGLE`, `X11/keysymdef.h`, `XYZ`, `delaunay`, `delaunay.h`, `delaunay_xyzcompare`, `error: expected expression`, `p`, `tt`, `v`, `visual_rgb_masks` | pixmaps, readback | 996 |
+| testx11 | 2d | L | - | - | `GCFont`, `XClearArea`, `XDrawString`, `XGCValues.font`, `XLoadFont`, `colorbars.h`, `draw_colorbars`, `error: expected ')'`, `error: expected function body after function declarator`, `error: expected parameter declarator` | pixmaps, readback, text, clipmask | 968 |
 | vfeedback | 2d | L | - | - | `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_SIGNAL_LEN`, `RANDSIGN`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_input_allocate`, `analogtv_load_ximage`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync` | pixmaps, readback | 592 |
-| wander | 2d | L | - | - | `make_color_loop` | pixmaps | 284 |
 | whirlygig | 2d | L | - | - | `XDrawString` | pixmaps, text, float-heavy | 741 |
 | xanalogtv | 2d | L | - | - | `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_PIC_LEN`, `ANALOGTV_SCALE`, `ANALOGTV_SIGNAL_LEN`, `ANALOGTV_V`, `ANALOGTV_VIS_LEN`, `ANALOGTV_VIS_START`, `XrmDatabase`, `XrmPutResource`, `XrmValue`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_draw_solid_rel_lcp`, `analogtv_draw_string_centered`, `analogtv_font`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_lcp_to_ntsc`, `analogtv_load_ximage`, `analogtv_make_font`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `analogtv_setup_teletext`, `db`, `file_to_pixmap`, `gethostname`, `images/gen/testcard_bbcf_png.h`, `images/gen/testcard_pm5544_png.h`, `images/gen/testcard_rca_png.h`, `inp`, `input`, `load_image_async`, `rec`, `testcard_bbcf_png`, `testcard_pm5544_png`, `testcard_rca_png`, `value` | pixmaps, readback | 689 |
-| xflame | 2d | L | - | - | `bob_png`, `image_data_to_ximage`, `images/gen/bob_png.h` | readback | 826 |
+| xflame | 2d | L | - | - | `bob_png`, `images/gen/bob_png.h` | readback | 826 |
 | xjack | 2d | L | - | - | `FcChar8`, `XClearArea`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall`, `screen_number` | pixmaps | 508 |
 | xlyap | 2d | L | - | - | `Cursor`, `X11/cursorfont.h`, `XComposeStatus`, `XPending`, `XStoreColors`, `error: expected expression` | pixmaps | 1939 |
-| zoom | 2d | L | - | - | `async_load_state`, `error: too few arguments to function call, expected 2, have 1`, `load_image_async_simple` | pixmaps, readback | 290 |
+| zoom | 2d | L | - | - | `error: too few arguments to function call, expected 2, have 1` | pixmaps, readback | 290 |
 | antinspect | gl | XL | - | - | - | - | 696 |
 | antmaze | gl | XL | - | - | - | - | 1612 |
 | antspotlight | gl | XL | - | - | - | - | 797 |
@@ -917,7 +955,6 @@ needing few additions come first.
 | b_lockglue | gl | XL | - | - | - | - | 240 |
 | beats | gl | XL | - | - | - | - | 439 |
 | blinkbox | gl | XL | - | - | - | - | 615 |
-| blocktube | gl | XL | - | - | - | - | 454 |
 | boing | gl | XL | - | ❌ | - | float-heavy | 666 |
 | bouncingcow | gl | XL | - | - | - | - | 649 |
 | boxed | gl | XL | - | - | - | - | 1361 |
@@ -946,7 +983,6 @@ needing few additions come first.
 | energystream | gl | XL | - | - | - | - | 536 |
 | engine | gl | XL | - | - | - | - | 1015 |
 | esper | gl | XL | - | - | - | - | 2463 |
-| etruscanvenus | gl | XL | - | - | - | - | 2761 |
 | extrusion | gl | XL | - | - | - | - | 552 |
 | flipflop | gl | XL | - | - | - | - | 875 |
 | flipscreen3d | gl | XL | - | - | - | - | 524 |
@@ -970,7 +1006,6 @@ needing few additions come first.
 | glslideshow | gl | XL | - | - | - | - | 1917 |
 | glsnake | gl | XL | - | - | - | - | 2699 |
 | gltext | gl | XL | - | - | - | - | 619 |
-| graphstat | gl | XL | - | - | - | - | 750 |
 | gravitywell | gl | XL | - | - | - | - | 770 |
 | handsy | gl | XL | - | - | - | - | 1158 |
 | headroom | gl | XL | - | - | - | - | 628 |
@@ -1045,7 +1080,9 @@ needing few additions come first.
 | xshadertoy | gl | XL | - | - | `XFetchName`, `XStoreName` | - | 1192 |
 | anemone | 2d | - | 25.5-46.3 ms measured | ✅ | - | pixmaps | 458 |
 | anemotaxis | 2d | - | 19.8-22.5 ms measured | ✅ | - | pixmaps | 760 |
+| binaryring | 2d | - | - | ✅ | - | pixmaps, readback | 577 |
 | blaster | 2d | - | 3.6-3.7 ms measured | ✅ | - | - | 1208 |
+| boxfit | 2d | - | 9.1-17 ms measured | ✅ | - | pixmaps, readback | 573 |
 | braid | 2d | - | 95-296 ms measured | ✅ | - | - | 444 |
 | celtic | 2d | - | 12.6-76.8 ms measured | ✅ | - | - | 1141 |
 | cloudlife | 2d | - | 8.8-8.9 ms measured | ✅ | - | - | 440 |
@@ -1073,6 +1110,7 @@ needing few additions come first.
 | ifs | 2d | - | 19-23.2 ms measured | ✅ | - | pixmaps | 560 |
 | interaggregate | 2d | - | 41.8-47.4 ms measured | ✅ | - | - | 989 |
 | kaleidescope | 2d | - | 7-9.8 ms measured | ✅ | - | - | 514 |
+| kumppa | 2d | - | 44.5 ms measured | ✅ | - | pixmaps | 545 |
 | laser | 2d | - | 21.6-25.1 ms measured | ✅ | - | - | 356 |
 | lightning | 2d | - | 1.8-1.9 ms measured | ✅ | - | - | 602 |
 | lissie | 2d | - | 0.3-0.4 ms measured | ✅ | - | - | 323 |
@@ -1083,6 +1121,7 @@ needing few additions come first.
 | mountain | 2d | - | 0-0.4 ms measured | ✅ | - | - | 283 |
 | pedal | 2d | - | 126-519 ms measured | ✅ | - | - | 339 |
 | petri | 2d | - | 0.3-2.5 ms measured | ✅ | - | - | 780 |
+| piecewise | 2d | - | 41.2-44 ms measured | ✅ | - | pixmaps | 1036 |
 | pyro | 2d | - | 0.8-1.1 ms measured | ✅ | - | - | 373 |
 | qix | 2d | - | 8.8-17.9 ms measured | ✅ | - | - | 642 |
 | rorschach | 2d | - | 0.6-1.7 ms measured | ✅ | - | - | 227 |
@@ -1102,12 +1141,18 @@ needing few additions come first.
 | wormhole | 2d | - | 22.4-23.1 ms measured | ✅ | - | pixmaps | 734 |
 | xspirograph | 2d | - | 54-56 ms measured | ✅ | - | - | 338 |
 | cynosure | 2d | - | 17-17.8 ms measured | ✅ | `XCreateBitmapFromData` | - | 457 |
+| eruption | 2d | - | 39-39.1 ms measured | ✅ | `error: typedef redefinition with different types ('unsigned long' vs 'unsigned int')` | - | 608 |
 | goop | 2d | - | - | ✅ | `AllPlanes`, `GXclear`, `XSetPlaneMask` | pixmaps, xor | 651 |
+| interference | 2d | - | 67.9-68 ms measured | ✅ | `XShmGetEventBase`, `error: too few arguments to function call, expected 2, have 1` | pixmaps | 1002 |
 | loop | 2d | - | - | ✅ | `STIPPLESIZE`, `automata.h`, `hexagonUnit`, `stipples`, `triangleUnit` | - | 1700 |
 | pacman | 2d | - | 1.3-1.9 ms measured | ✅ | `BLUE`, `GHOSTS`, `GHOST_DANGER`, `JAILHEIGHT`, `LEVHEIGHT`, `LEVWIDTH`, `MAXGDIR`, `MAXGFLASH`, `MAXGWAG`, `MAXMOUTH`, `MINGRIDSIZE`, `MINSIZE`, `NOWHERE`, `NUM_BONUS_DOTS`, `PAC_DEATH_FRAMES`, `START`, `XDrawString`, `XLoadQueryFont`, `chasing`, `error: expected expression`, `error: invalid application of 'sizeof' to an incomplete type 'argtype[]'`, `ghoststruct`, `goingin`, `goingout`, `hiding`, `images/gen/pacman_png.h`, `inbox`, `pacman.h`, `pacman_ai.h`, `pacman_bonus_dot_eaten`, `pacman_bonus_dot_pos`, `pacman_createnewlevel`, `pacman_eat_bonus_dot`, `pacman_ghost_update`, `pacman_is_bonus_dot`, `pacman_level.h`, `pacman_png`, `pacman_trackmouse`, `pacman_update`, `pacmangamestruct`, `pp`, `ps_chasing`, `ps_dieing`, `ps_eating` | pixmaps, text, clipmask | 1479 |
+| shadebobs | 2d | - | 2-2.3 ms measured | ✅ | `XFree`, `XListPixmapFormats` | readback | 474 |
 | xmatrix | 2d | - | - | ✅ | `images/gen/matrix1_png.h`, `images/gen/matrix1b_png.h`, `images/gen/matrix2_png.h`, `images/gen/matrix2b_png.h`, `matrix1_png`, `matrix1b_png`, `matrix2_png`, `matrix2b_png` | pixmaps, readback | 1915 |
+| blocktube | gl | - | 71.6-80.4 ms measured | ✅ | - | - | 454 |
 | cubicgrid | gl | - | - | ✅ | - | - | 322 |
+| etruscanvenus | gl | - | 53.2-78.6 ms measured | ✅ | - | - | 2761 |
 | gears | gl | - | 65-330 ms measured | ✅ | - | - | 953 |
+| graphstat | gl | - | 35-67.8 ms measured | ✅ | - | - | 750 |
 | hextrail | gl | - | - | ✅ | - | - | 782 |
 | morph3d | gl | - | 48-86 ms measured | ✅ | - | - | 841 |
 | stonerview | gl | - | 12.6-15.6 ms measured | ✅ | - | - | 156 |
