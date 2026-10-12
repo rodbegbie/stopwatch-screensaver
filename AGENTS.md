@@ -168,6 +168,8 @@ Set `NO_COLOR=1` on `pio` output you parse.
   with the runner broken (Pyro clears its own window), and "20 non-black
   pixels" passed on Substrate's white canvas before it drew. Test shared
   behaviour with stub hacks, and compare with the canvas the hack started on.
+  A step that ends with a corrective final write (the erase's `XClearWindow`)
+  hides a wrong intermediate write: assert the middle too.
   Counting distinct colours could not see a consistent byte swap (a swap maps
   colours one to one): pin a hash of the frame instead, taken from a build you
   trust, and call `srandom(1)` first, because `random()` carries over between
@@ -232,6 +234,11 @@ ones below apply everywhere.
   `git show HEAD:<path>`, and leave changes you didn't make alone.
 - `pio test` hides `printf` and stderr from tests. To see two values, assert
   `TEST_ASSERT_EQUAL_UINT64(a, b)` temporarily: the failure line prints both.
+- `test_frames_of_every_hack_but_maze_match_main` stops at the first moved
+  hash, so the others hide behind it. To list all of them, temporarily append
+  `name idx got=0x...` to a buffer and `TEST_FAIL_MESSAGE` it (`TEST_MESSAGE`
+  is hidden too), then `git checkout` the file. The failure prints decimal;
+  `python3 -c "print(hex(N))"` gives the `kBaseline` form.
 - In a git worktree the ignored `vendor/`, `.venv/` and `.platformio/` are
   missing. Symlink them from the main checkout. `.gitignore`'s trailing slashes
   don't match symlinks, so they would show as untracked, but the shared
@@ -244,8 +251,12 @@ ones below apply everywhere.
   "worktree"`) starts from `origin/main`, not from your branch, and has no
   vendor or toolchain until you link them.
   It also refuses heredocs, `git -C` and `cd` into another worktree: use the
-  Edit and Write tools. Parallel calls can race (a `uv run` in the root
-  disturbed `.venv` while `pio` ran: "../.venv/bin/pio: no such file"), so run
+  Edit and Write tools. It refuses `git ... | tar` and `cd <dir> && git ...`
+  too: use `git archive -o f.tar <sha>` then `tar -x -f f.tar -C <dir>`, and run
+  git from the worktree root. A background shell starts there as well, so use
+  `pio test -d <abs>/firmware` with absolute paths. Parallel calls can race
+  (a `uv run` in the root disturbed `.venv` while `pio` ran:
+  "../.venv/bin/pio: no such file"), so run
   `uv` and `pio` one at a time. To fast-forward `main` or remove the worktree,
   leave it first with `ExitWorktree keep`.
   Before `ExitWorktree remove` on a merged branch, check
