@@ -354,3 +354,8 @@ int XSync(Display *dpy, Bool discard) {
   (void)dpy, (void)discard;
   return 0;
 }
+
+long XMaxRequestSize(Display *dpy) {
+  (void)dpy;
+  return 65535;
+}

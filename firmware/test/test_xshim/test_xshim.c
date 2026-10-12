@@ -1217,6 +1217,69 @@ void test_free_pixmap_of_none_and_sync_are_harmless(void) {
   TEST_ASSERT_EQUAL_INT(0, XSync(dpy, False));
 }
 
+void test_clear_area_clears_only_its_rectangle_to_the_background(void) {
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XFillRectangle(dpy, win, gc, 0, 0, 16, 16);
+  XClearArea(dpy, win, 4, 5, 3, 2, False);
+  TEST_ASSERT_EQUAL_INT(256 - 6, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0, at(4, 5));
+  TEST_ASSERT_EQUAL_HEX16(0, at(6, 6));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(7, 5));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(4, 7));
+  XSetWindowBackground(dpy, win, 0x07E0);
+  XClearArea(dpy, win, 0, 0, 1, 1, False);
+  TEST_ASSERT_EQUAL_HEX16(0x07E0, at(0, 0));
+  XSetWindowBackground(dpy, win, 0);
+  XFreeGC(dpy, gc);
+}
+
+void test_clear_area_of_zero_size_extends_to_the_window_edge(void) {
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XFillRectangle(dpy, win, gc, 0, 0, 16, 16);
+  XClearArea(dpy, win, 10, 12, 0, 0, False);
+  TEST_ASSERT_EQUAL_INT(256 - 6 * 4, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0, at(15, 15));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(9, 12));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(10, 11));
+  XFreeGC(dpy, gc);
+}
+
+void test_clear_area_clips_a_negative_origin_and_a_huge_size(void) {
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XFillRectangle(dpy, win, gc, 0, 0, 16, 16);
+  XClearArea(dpy, win, -2, -2, 4, 4, False);
+  TEST_ASSERT_EQUAL_INT(256 - 4, count_set());
+  XClearArea(dpy, win, 12, 14, 0xFFFFFFFFu, 0xFFFFFFFFu, False);
+  TEST_ASSERT_EQUAL_INT(256 - 4 - 4 * 2, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(11, 14));
+  XFreeGC(dpy, gc);
+}
+
+void test_dashed_line_styles_draw_solid(void) {
+  XGCValues v;
+  v.foreground = 0xFFFF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XSetLineAttributes(dpy, gc, 1, LineOnOffDash, CapNotLast, JoinMiter);
+  XDrawLine(dpy, win, gc, 0, 0, 5, 0);
+  TEST_ASSERT_EQUAL_INT(6, count_set());
+  XClearWindow(dpy, win);
+  XSetLineAttributes(dpy, gc, 1, LineDoubleDash, CapNotLast, JoinMiter);
+  XDrawLine(dpy, win, gc, 0, 0, 5, 0);
+  TEST_ASSERT_EQUAL_INT(6, count_set());
+  XFreeGC(dpy, gc);
+}
+
+void test_max_request_size_leaves_room_for_long_polylines(void) {
+  /* Lisa draws (size - 3) / 2 points per XDrawLines call. */
+  TEST_ASSERT_TRUE((XMaxRequestSize(dpy) - 3) / 2 >= 1000);
+}
+
 void test_parse_color_reads_hex_and_names_into_16_bit_channels(void) {
   XColor c = {0};
   TEST_ASSERT_TRUE(XParseColor(dpy, 1, "#9C542B", &c) != 0);
@@ -3594,6 +3657,11 @@ int main(void) {
   RUN_TEST(test_release_pixmaps_frees_every_live_pixmap_once);
   RUN_TEST(test_close_display_releases_pixmaps_a_hack_left_behind);
   RUN_TEST(test_pixmaps_freed_in_any_order_unlink_cleanly);
+  RUN_TEST(test_clear_area_clears_only_its_rectangle_to_the_background);
+  RUN_TEST(test_clear_area_of_zero_size_extends_to_the_window_edge);
+  RUN_TEST(test_clear_area_clips_a_negative_origin_and_a_huge_size);
+  RUN_TEST(test_dashed_line_styles_draw_solid);
+  RUN_TEST(test_max_request_size_leaves_room_for_long_polylines);
   RUN_TEST(test_fill_arc_full_still_matches_the_old_ellipse);
   RUN_TEST(test_zero_size_and_zero_sweep_arcs_draw_nothing_much);
   RUN_TEST(test_huge_arcs_return_without_hanging_or_overflowing);

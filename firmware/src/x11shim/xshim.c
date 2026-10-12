@@ -143,6 +143,19 @@ int XClearWindow(Display *dpy, Window w) {
   return 0;
 }
 
+int XClearArea(Display *dpy, Window win, int x, int y, unsigned int w,
+               unsigned int h, Bool exposures) {
+  (void)win, (void)exposures;
+  int64_t right = w ? (int64_t)x + w : dpy->canvas->w;
+  int64_t bottom = h ? (int64_t)y + h : dpy->canvas->h;
+  if (right > dpy->canvas->w) right = dpy->canvas->w;
+  if (bottom > dpy->canvas->h) bottom = dpy->canvas->h;
+  if (right <= x || bottom <= y) return 0;
+  canvas_fill_rect(dpy->canvas, x, y, (int)(right - x), (int)(bottom - y),
+                   (uint16_t)dpy->window_background);
+  return 0;
+}
+
 int XSetWindowBackground(Display *dpy, Window w, unsigned long pixel) {
   (void)w;
   dpy->window_background = pixel;
