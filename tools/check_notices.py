@@ -13,6 +13,18 @@ from pathlib import Path
 # OWN_HACK_DIRS are hack directories that hold our own code (MIT), not copies.
 SUFFIXES = {".c", ".h", ".cpp"}
 OWN_HACK_DIRS = frozenset({"ad_flyingtoasters"})
+# Files xscreensaver ships with no header at all, covered by the package's
+# licence (xscreensaver.spec: "License: BSD"); Rod approved copying them in
+# issue #44. They still need a row in the notices.
+PACKAGE_LICENCE_FILES = frozenset(
+    {
+        "xs_support/glx/buildlwo.c",
+        "xs_support/glx/buildlwo.h",
+        "xs_support/glx/pipeobjs.c",
+        "xs_support/glx/teapot.h",
+        "xs_support/glx/teapot2.h",
+    }
+)
 HEADER_LINES = 100
 NOTICE_PHRASES = (
     "permission to use, copy, modify, distribute, and sell this software",
@@ -40,7 +52,9 @@ def check(src_dir: Path, notices_md: Path) -> list[str]:
         rel = path.relative_to(src_dir)
         if rel.parts[0] == "hacks" and rel.parts[1] in OWN_HACK_DIRS:
             continue
-        if not has_notice(path.read_text(errors="replace")):
+        if rel.as_posix() not in PACKAGE_LICENCE_FILES and not has_notice(
+            path.read_text(errors="replace")
+        ):
             problems.append(f"{rel}: no licence notice in first {HEADER_LINES} lines")
         if path.name not in notices and path.stem not in notices:
             problems.append(f"{rel}: not listed in {notices_md.name}")

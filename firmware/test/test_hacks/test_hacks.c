@@ -141,6 +141,7 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Rocks",
                                          "DecayScreen",
                                          "XJack",
+                                         "Pipes",
 #ifdef HAVE_AFTER_DARK_TOASTERS
                                          "ad-flyingtoasters",
 #endif
@@ -546,6 +547,7 @@ static const uint64_t kBaseline[] = {
     0x08d32e1f97fcdaf2ull, /* Rocks: taken after looking at the frames (bitmap rock stamps) */
     0, /* DecayScreen: unpinned on purpose, it smears the shim's grab image and has none here (see test_decayscreen_melts_the_grab_image) */
     0xecc578b5f7eb7789ull, /* XJack: taken after looking at the frames, with test_font.h's blocky font */
+    0xa8aea6821a500af3ull, /* Pipes: taken after looking at the frames (fixed camera, incremental, no fade) */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -1071,6 +1073,53 @@ void test_gears_start_and_stop_do_not_leak(void) {
   TEST_ASSERT_TRUE_MESSAGE(after < before + 64 * 1024, "allocated bytes grew");
 }
 
+/* Pipes builds every display list of a screen when the screen starts and
+ * deletes them in free_pipes; the context goes with the shim's release hook. */
+void test_pipes_start_and_stop_do_not_leak(void) {
+  const int pipes = index_of("Pipes");
+  TEST_ASSERT_TRUE(pipes >= 0);
+  srandom(1);
+  for (int i = 0; i < 3; i++) start_step_and_stop_gl_hack(pipes, "Pipes");
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  for (int i = 0; i < 20; i++) start_step_and_stop_gl_hack(pipes, "Pipes");
+  const size_t after = __sanitizer_get_current_allocated_bytes();
+  TEST_ASSERT_TRUE_MESSAGE(after < before + 64 * 1024, "allocated bytes grew");
+}
+
+extern int pipes_full_redraw;
+long pipes_lists_skipped(void);
+
+static void pipes_frame_hashes(uint64_t *out, int frames) {
+  srandom(1);
+  HackRunner *r = runner_create(&cv);
+  runner_start(r, index_of("Pipes"));
+  for (int f = 0; f < frames; f++) {
+    runner_step(r);
+    out[f] = frame_hash();
+  }
+  runner_destroy(r);
+}
+
+/* pipes_gl.c skips the clear and the lists last frame already drew. Every
+ * frame must match a full redraw, across several screens (each new screen
+ * recompiles the same list names), and the skip must actually happen. */
+void test_pipes_incremental_redraw_matches_a_full_redraw(void) {
+  enum { kFrames = 400 };
+  static uint64_t full[kFrames], incremental[kFrames];
+  pipes_full_redraw = 1;
+  pipes_frame_hashes(full, kFrames);
+  pipes_full_redraw = 0;
+  const long skipped_before = pipes_lists_skipped();
+  pipes_frame_hashes(incremental, kFrames);
+  TEST_ASSERT_TRUE_MESSAGE(pipes_lists_skipped() - skipped_before > 10000,
+                           "the incremental redraw skipped nothing");
+  for (int f = 0; f < kFrames; f++) {
+    char msg[32];
+    snprintf(msg, sizeof msg, "frame %d", f);
+    TEST_ASSERT_EQUAL_UINT64_MESSAGE(full[f], incremental[f], msg);
+  }
+}
+
 /* Morph3D builds no display lists and keeps one small struct, so the only
  * thing that can grow is the GL context itself: 64 KB is far below one. */
 void test_morph3d_start_and_stop_do_not_leak(void) {
@@ -1520,6 +1569,8 @@ int main(void) {
   RUN_TEST(test_kaleidescope_stops_do_not_leak);
   RUN_TEST(test_gears_start_and_stop_do_not_leak);
   RUN_TEST(test_gears_registers_a_shorter_pause);
+  RUN_TEST(test_pipes_start_and_stop_do_not_leak);
+  RUN_TEST(test_pipes_incremental_redraw_matches_a_full_redraw);
   RUN_TEST(test_morph3d_start_and_stop_do_not_leak);
   RUN_TEST(test_morph3d_registers_a_shorter_pause);
   RUN_TEST(test_cubicgrid_start_and_stop_do_not_leak);

@@ -180,3 +180,32 @@ def test_another_hack_directory_without_a_notice_is_still_reported(tmp_path):
         "hacks/pyro/pyro.c: no licence notice in first 100 lines",
         "hacks/pyro/pyro.c: not listed in THIRD_PARTY_NOTICES.md",
     ]
+
+
+def setup_glx(tmp_path, files: dict[str, str], notices: str):
+    glx = tmp_path / "firmware" / "src" / "xs_support" / "glx"
+    glx.mkdir(parents=True)
+    for name, text in files.items():
+        (glx / name).write_text(text)
+    md = tmp_path / "THIRD_PARTY_NOTICES.md"
+    md.write_text(notices)
+    return tmp_path / "firmware" / "src", md
+
+
+def test_a_header_less_file_under_the_package_licence_needs_only_a_listing(tmp_path):
+    src, md = setup_glx(tmp_path, {"pipeobjs.c": OURS}, "| `pipeobjs.c` |")
+    assert cn.check(src, md) == []
+
+
+def test_a_header_less_file_under_the_package_licence_must_be_listed(tmp_path):
+    src, md = setup_glx(tmp_path, {"pipeobjs.c": OURS}, "")
+    assert cn.check(src, md) == [
+        "xs_support/glx/pipeobjs.c: not listed in THIRD_PARTY_NOTICES.md"
+    ]
+
+
+def test_another_header_less_glx_file_is_still_reported(tmp_path):
+    src, md = setup_glx(tmp_path, {"sphere.c": OURS}, "| `sphere.c` |")
+    assert cn.check(src, md) == [
+        "xs_support/glx/sphere.c: no licence notice in first 100 lines"
+    ]
