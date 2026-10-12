@@ -388,6 +388,11 @@ ones below apply everywhere.
   from the current build and from `git stash` of the wrapper, and look at both
   side by side. Interaggregate's blend bug showed as rainbow confetti against
   green and brown strokes, though every test had passed.
+- `pre-commit` failing with `InvalidManifestError` means its hook cache
+  vanished: `uvx pre-commit clean` and rerun. If `git status` then shows
+  hundreds of files deleted or `git fsck` reports missing blobs, the
+  worktree's index is damaged (history is fine): move the index file aside,
+  `git read-tree HEAD`, check `git fsck`, then re-stage your files by name.
 - Board details (pins, power, recovery) are in
   `.claude/skills/m5stack-stopwatch/`.
 

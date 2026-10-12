@@ -73,9 +73,9 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   The older wrappers (Galaxy, Drift, Discrete, Flame, Substrate) have not been
   checked.
 - A colour pixmap is a `Canvas`, and every drawing primitive draws on the
-  drawable it is given (`xshim_target` in `pixmap.c`); a bitmap or `None`
-  draws nothing, and only `XCopyArea` writes into a bitmap (`XCopyPlane`
-  follows the same rule). One exception still draws on the window whatever
+  drawable it is given (`xshim_target` in `pixmap.c`); `None` draws nothing,
+  and a bitmap takes only `XCopyArea`, `XCopyPlane` and filled rectangles and
+  polygons (see below). One exception still draws on the window whatever
   it is given: Deluxe's wrapper, which calls `stroke_circle(dpy->canvas,
   ...)`. No
   registered hack drew into a pixmap before this (the `HAVE_JWXYZ` wrappers
@@ -188,11 +188,12 @@ Moved verbatim from the Gotchas section of AGENTS.md.
 - Added for the 2026-10-12 batch, each test-first: `XCopyArea` from the
   window (onto itself, rows moved with `memmove` in the order that reads each
   first, or into a pixmap); `XSetGraphicsExposures`; `make_color_loop` (ours);
-  `grabclient.h` with `load_image_async_simple`, which finishes at once with
-  nothing; `thread_util.h`, a pool that runs each thread in turn on the caller,
-  as upstream does without pthreads; `visual_pixmap_depth`; `XCharStruct`; and
-  `image_data_to_ximage` (RGBA bytes, bottom row first). `screenhack.h` now
-  includes `visual.h` and `grabclient.h`, as upstream's does.
+  `grabclient.h` with `load_image_async_simple`, which finishes at once, with
+  the grab image painted if one is set (below); `thread_util.h`, a pool that
+  runs each thread in turn on the caller, as upstream does without pthreads;
+  `visual_pixmap_depth`; `XCharStruct`; and `image_data_to_ximage` (RGBA
+  bytes, bottom row first). `screenhack.h` now includes `visual.h` and
+  `grabclient.h`, as upstream's does.
 - `tools/wire_hack.py` puts a new hack before the After Dark toasters'
   `#ifdef` in the registry, the expected list and `kBaseline`.
 - Added for the 2026-10-12 second batch, each test-first: `XClearArea` (the
