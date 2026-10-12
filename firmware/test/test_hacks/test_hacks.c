@@ -486,16 +486,16 @@ static const uint64_t kBaseline[] = {
     0x32f706208dc0a079ull, /* Moire2: taken after looking at the frames (bit planes) */
     0x0100bedf6ddf582cull, /* HexTrail: taken after looking at the frames (count 6, single precision) */
     0x91947298c096ed6full, /* Celtic: taken after looking at the frames (single precision, graph sized to the screen, step scale 4); re-taken for the eraser (#86), which moved its frames past the stroker's shared-edge slack (#56) */
-    0x4911a0b3d958bb8cull, /* Eruption: taken after looking at the frames */
+    0x0dad40e48c340ce1ull, /* Eruption: taken after looking at the frames (half size) */
     0xe6027906951dc3f8ull, /* Kumppa: taken after looking at the frames */
     0xf6e24658b84f263full, /* ShadeBobs: taken after looking at the frames */
-    0, /* Piecewise: not yet pinned */
+    0x4898ef61ca0c5048ull, /* Piecewise: taken after looking at the frames (straight on the window, single precision) */
     0xff886d98e4c5738aull, /* BoxFit: taken after looking at the frames */
     0xbbe4d8bcc0be9671ull, /* Interference: taken after looking at the frames (on the shim clock) */
     0x7ebd7eb4bca2728bull, /* BinaryRing: taken after looking at the frames (24-bit path, single precision, pixels straight to the window) */
     0x72caf5a8963dd1e9ull, /* GraphStat: taken after looking at the frames (8x8 bitmap titles) */
-    0, /* EtruscanVenus: not yet pinned */
-    0, /* BlockTube: not yet pinned */
+    0xd38b37194b632481ull, /* EtruscanVenus: taken after looking at the frames (single precision, 48 by 32, half resolution) */
+    0x7ece6975586f8589ull, /* BlockTube: taken after looking at the frames (400 blocks, half resolution, fog per block) */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
