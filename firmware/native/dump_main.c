@@ -27,6 +27,7 @@ static int stats_main(int index) {
   enum { WARMUP = 100, TIMED = 300 };
   Canvas cv;
   if (canvas_init(&cv, 466, 466, malloc) != 0) return 1;
+  xshim_set_clock(fake_clock);
   HackRunner *r = runner_create(&cv);
   if (!r || runner_start(r, index) != 0) {
     fprintf(stderr, "bad hack index %d (have %d)\n", index, g_hack_count);
