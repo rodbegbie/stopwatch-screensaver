@@ -76,6 +76,11 @@ void glshim_TexCoordPointer(GLint size, GLenum type, GLsizei stride,
 void glshim_EnableClientState(GLenum array);
 void glshim_DisableClientState(GLenum array);
 void glshim_DrawArrays(GLenum mode, GLint first, GLsizei count);
+/* Sets the arrays a packed format holds and turns the others off, as GL does,
+ * for the formats gllist.c uses: GL_V3F, GL_C3F_V3F and GL_N3F_V3F. Any other
+ * format turns every array off, so nothing is drawn from it. */
+void glshim_InterleavedArrays(GLenum format, GLsizei stride, const GLvoid *pointer);
+#define glInterleavedArrays glshim_InterleavedArrays
 #define glVertexPointer glshim_VertexPointer
 #define glNormalPointer glshim_NormalPointer
 #define glColorPointer glshim_ColorPointer
@@ -83,6 +88,16 @@ void glshim_DrawArrays(GLenum mode, GLint first, GLsizei count);
 #define glEnableClientState glshim_EnableClientState
 #define glDisableClientState glshim_DisableClientState
 #define glDrawArrays glshim_DrawArrays
+
+/* TinyGL takes only three-component GL_RGB, GL_UNSIGNED_BYTE textures and
+ * exits on anything else. This converts GL_RGBA (alpha dropped), GL_LUMINANCE
+ * and GL_LUMINANCE_ALPHA bytes to RGB first, and ignores any other format or
+ * type. Not for use inside a display list: TinyGL would keep a pointer to the
+ * converted copy, which is freed on return. */
+void glshim_TexImage2D(GLint target, GLint level, GLint components, GLint width,
+                       GLint height, GLint border, GLint format, GLint type,
+                       const void *pixels);
+#define glTexImage2D glshim_TexImage2D
 
 void glMateriali(GLint face, GLint pname, GLint value);
 /* TinyGL has this commented out. Pixel unpacking only matters for texture
@@ -98,6 +113,24 @@ void glLineWidth(GLfloat width);
  * by the usual orthographic projection. */
 void glOrtho(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top,
              GLdouble znear, GLdouble zfar);
+
+/* TinyGL has these commented out of its header. Its depth test is always
+ * less-than and it always modulates a texture by the vertex colour, so
+ * glDepthFunc and glTexEnvf are accepted and ignored; glTexParameterf passes
+ * the value on to glTexParameteri. */
+void glDepthFunc(GLint func);
+void glTexEnvf(GLint target, GLint pname, GLfloat param);
+void glTexParameterf(GLint target, GLint pname, GLfloat param);
+/* TinyGL has only the float colour calls. */
+void glColor4ub(GLubyte r, GLubyte g, GLubyte b, GLubyte a);
+/* TinyGL cannot generate texture coordinates (no sphere map): accepted and
+ * ignored, so vertices keep the coordinates the hack gives them. */
+void glTexGeni(GLint coord, GLint pname, GLint param);
+/* OpenGL 1.2's separate specular colour: TinyGL ignores a light model it does
+ * not know, so these change nothing. */
+#define GL_LIGHT_MODEL_COLOR_CONTROL 0x81F8
+#define GL_SINGLE_COLOR 0x81F9
+#define GL_SEPARATE_SPECULAR_COLOR 0x81FA
 
 /* TinyGL defines these but its header does not declare them. */
 void glVertex3f(GLfloat x, GLfloat y, GLfloat z);

@@ -102,6 +102,45 @@ void test_a_null_image_draws_nothing(void) {
   XFreeGC(dpy, gc);
 }
 
+/* Every pixel against a plain reference, for images placed off each edge. */
+static void reference_put(uint16_t *ref, XImage *im, int sx, int sy, int dx, int dy, int w,
+                          int h) {
+  if (w > im->width - sx) w = im->width - sx;
+  if (h > im->height - sy) h = im->height - sy;
+  const int ox = (20 - im->width * 3) / 2, oy = (14 - im->height * 3) / 2;
+  for (int j = 0; j < h; j++)
+    for (int i = 0; i < w; i++)
+      for (int ky = 0; ky < 3; ky++)
+        for (int kx = 0; kx < 3; kx++) {
+          const int x = ox + (dx + i) * 3 + kx, y = oy + (dy + j) * 3 + ky;
+          if (x < 0 || y < 0 || x >= 20 || y >= 14) continue;
+          ref[y * 20 + x] = px_swap((uint16_t)XGetPixel(im, sx + i, sy + j));
+        }
+}
+
+void test_random_placements_match_a_plain_reference(void) {
+  XGCValues v = {0};
+  GC gc = XCreateGC(dpy, XSHIM_WINDOW, 0, &v);
+  srandom(7);
+  for (int round = 0; round < 300; round++) {
+    const int iw = 1 + (int)(random() % 9), ih = 1 + (int)(random() % 6);
+    XImage *im = image_16(iw, ih);
+    for (int y = 0; y < ih; y++)
+      for (int x = 0; x < iw; x++) XPutPixel(im, x, y, (unsigned long)(random() & 0xFFFF) | 1);
+    const int sx = (int)(random() % iw), sy = (int)(random() % ih);
+    const int dx = (int)(random() % 13) - 6, dy = (int)(random() % 11) - 5;
+    const int w = 1 + (int)(random() % 10), h = 1 + (int)(random() % 7);
+    uint16_t ref[20 * 14];
+    memset(cv.px, 0, sizeof ref);
+    memset(ref, 0, sizeof ref);
+    reference_put(ref, im, sx, sy, dx, dy, w, h);
+    lowrez_put_image(dpy, XSHIM_WINDOW, gc, im, sx, sy, dx, dy, (unsigned)w, (unsigned)h);
+    TEST_ASSERT_EQUAL_HEX16_ARRAY(ref, cv.px, 20 * 14);
+    XDestroyImage(im);
+  }
+  XFreeGC(dpy, gc);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_the_window_is_reported_at_a_third_of_its_size);
@@ -109,5 +148,6 @@ int main(void) {
   RUN_TEST(test_an_image_wider_than_the_window_is_clipped_not_wrapped);
   RUN_TEST(test_a_source_offset_past_the_image_draws_nothing_and_reads_nothing_past_it);
   RUN_TEST(test_a_null_image_draws_nothing);
+  RUN_TEST(test_random_placements_match_a_plain_reference);
   return UNITY_END();
 }

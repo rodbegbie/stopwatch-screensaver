@@ -185,3 +185,13 @@ Moved verbatim from the Gotchas section of AGENTS.md.
 - The comment in `xshim.h` saying `XPutImage` byte-swaps a 16-bit image has
   been stale since commit 272ad6a: an `XImage` holds canvas-order pixels. A
   hack that builds its own 16-bit image must `px_swap` its pixels first.
+- Added for the 2026-10-12 batch, each test-first: `XCopyArea` from the
+  window (onto itself, rows moved with `memmove` in the order that reads each
+  first, or into a pixmap); `XSetGraphicsExposures`; `make_color_loop` (ours);
+  `grabclient.h` with `load_image_async_simple`, which finishes at once with
+  nothing; `thread_util.h`, a pool that runs each thread in turn on the caller,
+  as upstream does without pthreads; `visual_pixmap_depth`; `XCharStruct`; and
+  `image_data_to_ximage` (RGBA bytes, bottom row first). `screenhack.h` now
+  includes `visual.h` and `grabclient.h`, as upstream's does.
+- `tools/wire_hack.py` puts a new hack before the After Dark toasters'
+  `#ifdef` in the registry, the expected list and `kBaseline`.

@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <math.h>
 #include <sanitizer/allocator_interface.h>
 #include <stdint.h>
@@ -10,6 +11,7 @@
 #include "fps.h"
 #include "glshim/glshim.h"
 #include "glshim/glshim_prof.h"
+#include "texfont.h"
 #include "tinygl/src/zgl.h"
 #include "x11shim/xshim.h"
 #include "zbuffer.h"
@@ -374,6 +376,299 @@ void test_draw_arrays_with_nothing_enabled_or_a_zero_count_draws_nothing(void) {
   TEST_ASSERT_EQUAL_INT(0, count_set());
 }
 
+
+/* Companion Cube and Floppy draw their models through gllist.c, which hands
+ * glInterleavedArrays one packed array per part. TinyGL has no such call. */
+static const float kNV[18] = {0, 0, 1, -0.8f, -0.8f, 0, 0, 0, 1, 0.8f, -0.8f, 0,
+                              0, 0, 1, 0.0f, 0.8f, 0};
+
+void test_interleaved_normals_and_vertices_draw_the_triangle(void) {
+  open_flat_red_scene();
+  take_reference_and_clear();
+  glInterleavedArrays(GL_N3F_V3F, 0, kNV);
+  glDrawArrays(GL_TRIANGLES, 0, 3);
+  TEST_ASSERT_TRUE(count_set() > 100);
+  TEST_ASSERT_EQUAL_MEMORY(reference, cv.px, sizeof reference);
+}
+
+/* A colour array left on by an earlier call is turned off: the triangle stays
+ * the current colour, red. */
+void test_interleaved_normals_turn_off_a_colour_array(void) {
+  static const float blue[12] = {0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1};
+  open_flat_red_scene();
+  take_reference_and_clear();
+  glColorPointer(4, GL_FLOAT, 0, blue);
+  glEnableClientState(GL_COLOR_ARRAY);
+  glInterleavedArrays(GL_N3F_V3F, 0, kNV);
+  glDrawArrays(GL_TRIANGLES, 0, 3);
+  TEST_ASSERT_EQUAL_MEMORY(reference, cv.px, sizeof reference);
+}
+
+static uint16_t centre(void) { return cv.px[(SIZE / 2) * SIZE + SIZE / 2]; }
+
+void test_interleaved_colours_colour_each_vertex_and_honour_a_stride(void) {
+  /* green, x, y, z, then two floats of padding a vertex */
+  static const float kCV[24] = {0, 1, 0, -0.8f, -0.8f, 0, 9, 9, 0, 1, 0, 0.8f, -0.8f, 0, 9, 9,
+                                0, 1, 0, 0.0f, 0.8f, 0, 9, 9};
+  open_flat_red_scene();
+  glInterleavedArrays(GL_C3F_V3F, 8 * sizeof(float), kCV);
+  glDrawArrays(GL_TRIANGLES, 0, 3);
+  TEST_ASSERT_EQUAL_HEX16(rgb565(0, 255, 0), centre());
+}
+
+/* Lit from the viewer's side, a triangle facing the light is bright and one
+ * facing away is dark: the normals in the array must reach the lighting. */
+static uint16_t lit_centre(const float *nv) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glViewport(0, 0, SIZE, SIZE);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  const GLfloat black[4] = {0, 0, 0, 1}, white[4] = {1, 1, 1, 1};
+  const GLfloat towards_viewer[4] = {0, 0, 1, 0};
+  glEnable(GL_LIGHTING);
+  glEnable(GL_LIGHT0);
+  glLightfv(GL_LIGHT0, GL_POSITION, (GLfloat *)towards_viewer);
+  glLightfv(GL_LIGHT0, GL_AMBIENT, (GLfloat *)black);
+  glLightfv(GL_LIGHT0, GL_DIFFUSE, (GLfloat *)white);
+  glLightModelfv(GL_LIGHT_MODEL_AMBIENT, (GLfloat *)black);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, (GLfloat *)black);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, (GLfloat *)white);
+  glNormal3f(0, 0, -1);
+  glInterleavedArrays(GL_N3F_V3F, 0, nv);
+  glDrawArrays(GL_TRIANGLES, 0, 3);
+  const uint16_t c = centre();
+  glshim_close();
+  return c;
+}
+
+void test_interleaved_normals_reach_the_lighting(void) {
+  TEST_ASSERT_EQUAL_HEX16(rgb565(255, 255, 255), lit_centre(kNV));
+}
+
+void test_an_interleaved_format_it_does_not_handle_turns_the_arrays_off(void) {
+  open_flat_red_scene();
+  point_at(kTri);
+  glInterleavedArrays(GL_C4UB_V3F, 0, kNV);
+  glDrawArrays(GL_TRIANGLES, 0, 3);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+}
+
+/* Graphstat's titles. The font is TinyGL's 8x8 bitmap font drawn as quads, at
+ * half the point size: 16 points is one pixel a font pixel. */
+static texture_font_data *open_text_scene(const char *font) {
+  const char *const overrides[] = {font, NULL};
+  xshim_set_overrides(overrides);
+  texture_font_data *f = load_texture_font(dpy, (char *)"titleFont");
+  xshim_set_overrides(NULL);
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glViewport(0, 0, SIZE, SIZE);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glOrtho(0, SIZE, 0, SIZE, -1, 1);
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  glDisable(GL_LIGHTING);
+  glColor3f(1, 0, 0);
+  return f;
+}
+
+void test_texfont_metrics_follow_the_point_size(void) {
+  texture_font_data *f = open_text_scene("*titleFont: sans-serif 16");
+  XCharStruct e;
+  int ascent, descent;
+  texture_string_metrics(f, "ab\ncde", &e, &ascent, &descent);
+  TEST_ASSERT_EQUAL_INT(24, e.width);
+  TEST_ASSERT_EQUAL_INT(24, e.rbearing);
+  TEST_ASSERT_EQUAL_INT(0, e.lbearing);
+  TEST_ASSERT_EQUAL_INT(7, e.ascent);
+  TEST_ASSERT_EQUAL_INT(9, e.descent);
+  TEST_ASSERT_EQUAL_INT(7, ascent);
+  TEST_ASSERT_EQUAL_INT(1, descent);
+  free_texture_font(f);
+  f = open_text_scene("*titleFont: sans-serif 32");
+  texture_string_metrics(f, "abc", &e, NULL, NULL);
+  TEST_ASSERT_EQUAL_INT(48, e.width);
+  TEST_ASSERT_EQUAL_INT(14, e.ascent);
+  free_texture_font(f);
+}
+
+void test_texfont_needs_its_resource(void) {
+  TEST_ASSERT_NULL(load_texture_font(dpy, (char *)"titleFont"));
+}
+
+/* The box around every lit pixel, in canvas rows (y down). */
+static void lit_box(int *x0, int *y0, int *x1, int *y1) {
+  *x0 = *y0 = SIZE, *x1 = *y1 = -1;
+  for (int y = 0; y < SIZE; y++)
+    for (int x = 0; x < SIZE; x++)
+      if (cv.px[y * SIZE + x]) {
+        if (x < *x0) *x0 = x;
+        if (x > *x1) *x1 = x;
+        if (y < *y0) *y0 = y;
+        if (y > *y1) *y1 = y;
+      }
+}
+
+/* '-' is row 3 of its cell, columns 0 to 5: GL x 10 to 16 and y 23 to 24 with
+ * the origin at (10, 20). TinyGL fills that quad as columns 9 to 15 and both
+ * rows, canvas rows 39 and 40. */
+void test_texfont_draws_a_glyph_at_the_origin_of_the_transform(void) {
+  texture_font_data *f = open_text_scene("*titleFont: sans-serif 16");
+  glTranslatef(10, 20, 0);
+  print_texture_string(f, "-");
+  int x0, y0, x1, y1;
+  lit_box(&x0, &y0, &x1, &y1);
+  TEST_ASSERT_EQUAL_INT(9, x0);
+  TEST_ASSERT_EQUAL_INT(15, x1);
+  TEST_ASSERT_EQUAL_INT(SIZE - 1 - 24, y0);
+  TEST_ASSERT_EQUAL_INT(SIZE - 1 - 23, y1);
+  TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), cv.px[(SIZE - 1 - 23) * SIZE + 12]);
+  free_texture_font(f);
+}
+
+/* The second '-' is a cell (8 pixels) to the right, the third a line (8
+ * pixels) down. */
+void test_texfont_steps_along_a_line_and_down_a_new_one(void) {
+  texture_font_data *f = open_text_scene("*titleFont: sans-serif 16");
+  glTranslatef(10, 30, 0);
+  print_texture_string(f, "--\n-");
+  int x0, y0, x1, y1;
+  lit_box(&x0, &y0, &x1, &y1);
+  TEST_ASSERT_EQUAL_INT(9, x0);
+  TEST_ASSERT_EQUAL_INT(23, x1);
+  TEST_ASSERT_EQUAL_INT(SIZE - 1 - 34, y0);
+  TEST_ASSERT_EQUAL_INT(SIZE - 1 - 25, y1);
+  TEST_ASSERT_EQUAL_HEX16(0, cv.px[(SIZE - 1 - 26) * SIZE + 20]);
+  TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), cv.px[(SIZE - 1 - 33) * SIZE + 20]);
+  free_texture_font(f);
+}
+
+/* TinyGL takes only three-component GL_RGB textures and exits on anything
+ * else. Etruscan Venus uploads a luminance texture and BlockTube an RGBA one,
+ * so the upload converts them to RGB first. */
+static uint16_t textured_centre(GLint components, GLenum format, const GLubyte *texel, int bpp) {
+  GLubyte *img = malloc((size_t)4 * 4 * (size_t)bpp);
+  for (int i = 0; i < 16; i++) memcpy(img + i * bpp, texel, (size_t)bpp);
+  open_flat_red_scene();
+  glColor3f(1, 1, 1);
+  GLuint tex;
+  glGenTextures(1, &tex);
+  glBindTexture(GL_TEXTURE_2D, tex);
+  glTexImage2D(GL_TEXTURE_2D, 0, components, 4, 4, 0, format, GL_UNSIGNED_BYTE, img);
+  free(img);
+  glEnable(GL_TEXTURE_2D);
+  glBegin(GL_QUADS);
+  glTexCoord2f(0, 0);
+  glVertex3f(-0.9f, -0.9f, 0);
+  glTexCoord2f(1, 0);
+  glVertex3f(0.9f, -0.9f, 0);
+  glTexCoord2f(1, 1);
+  glVertex3f(0.9f, 0.9f, 0);
+  glTexCoord2f(0, 1);
+  glVertex3f(-0.9f, 0.9f, 0);
+  glEnd();
+  glDisable(GL_TEXTURE_2D);
+  glDeleteTextures(1, &tex);
+  return centre();
+}
+
+/* TinyGL modulates a texel by the vertex colour in fixed point, which can lose
+ * a step of a channel. */
+static void assert_close_to(uint8_t r, uint8_t g, uint8_t b, uint16_t got) {
+  const uint16_t want = px_swap(rgb565(r, g, b)), have = px_swap(got);
+  TEST_ASSERT_INT_WITHIN(1, want >> 11, have >> 11);
+  TEST_ASSERT_INT_WITHIN(1, (want >> 5) & 63, (have >> 5) & 63);
+  TEST_ASSERT_INT_WITHIN(1, want & 31, have & 31);
+}
+
+void test_an_rgb_texture_shows_its_colour(void) {
+  const GLubyte green[3] = {0, 255, 0};
+  assert_close_to(0, 255, 0, textured_centre(3, GL_RGB, green, 3));
+}
+
+void test_an_rgba_texture_is_drawn_as_its_rgb(void) {
+  const GLubyte blue[4] = {0, 0, 255, 128};
+  assert_close_to(0, 0, 255, textured_centre(GL_RGBA, GL_RGBA, blue, 4));
+}
+
+void test_a_luminance_texture_is_drawn_as_grey(void) {
+  const GLubyte grey[1] = {0x80};
+  assert_close_to(0x80, 0x80, 0x80, textured_centre(GL_LUMINANCE, GL_LUMINANCE, grey, 1));
+}
+
+/* A green texture stays green after uploads it cannot convert. */
+void test_a_texture_of_a_type_it_cannot_convert_is_ignored(void) {
+  static const GLubyte green[4 * 4 * 3] = {[1] = 255, [4] = 255, [7] = 255, [10] = 255,
+                                           [13] = 255, [16] = 255, [19] = 255, [22] = 255,
+                                           [25] = 255, [28] = 255, [31] = 255, [34] = 255,
+                                           [37] = 255, [40] = 255, [43] = 255, [46] = 255};
+  static GLubyte white[4 * 4 * 4 * 4];
+  memset(white, 0xFF, sizeof white);
+  open_flat_red_scene();
+  glColor3f(1, 1, 1);
+  GLuint tex;
+  glGenTextures(1, &tex);
+  glBindTexture(GL_TEXTURE_2D, tex);
+  glTexImage2D(GL_TEXTURE_2D, 0, 3, 4, 4, 0, GL_RGB, GL_UNSIGNED_BYTE, green);
+  glTexImage2D(GL_TEXTURE_2D, 0, 3, 4, 4, 0, GL_RGB, GL_FLOAT, white);
+  glTexImage2D(GL_TEXTURE_2D, 0, 3, 4, 4, 0, GL_ALPHA, GL_UNSIGNED_BYTE, white);
+  glEnable(GL_TEXTURE_2D);
+  glBegin(GL_QUADS);
+  glTexCoord2f(0, 0);
+  glVertex3f(-0.9f, -0.9f, 0);
+  glTexCoord2f(1, 0);
+  glVertex3f(0.9f, -0.9f, 0);
+  glTexCoord2f(1, 1);
+  glVertex3f(0.9f, 0.9f, 0);
+  glTexCoord2f(0, 1);
+  glVertex3f(-0.9f, 0.9f, 0);
+  glEnd();
+  glDisable(GL_TEXTURE_2D);
+  glDeleteTextures(1, &tex);
+  assert_close_to(0, 255, 0, centre());
+}
+
+/* Etruscan Venus sets these; TinyGL has a fixed less-than depth test, always
+ * modulates textures, and has no separate specular colour. */
+void test_depth_func_tex_env_and_colour_control_change_nothing(void) {
+  open_flat_red_scene();
+  take_reference_and_clear();
+  glDepthFunc(GL_LESS);
+  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glLightModeli(GL_LIGHT_MODEL_COLOR_CONTROL, GL_SEPARATE_SPECULAR_COLOR);
+  glLightModeli(GL_LIGHT_MODEL_COLOR_CONTROL, GL_SINGLE_COLOR);
+  TEST_ASSERT_EQUAL_HEX(0x81F8, GL_LIGHT_MODEL_COLOR_CONTROL);
+  TEST_ASSERT_EQUAL_HEX(0x81F9, GL_SINGLE_COLOR);
+  TEST_ASSERT_EQUAL_HEX(0x81FA, GL_SEPARATE_SPECULAR_COLOR);
+  draw_triangle_immediately();
+  TEST_ASSERT_EQUAL_MEMORY(reference, cv.px, sizeof reference);
+}
+
+/* BlockTube colours its blocks with glColor4ub; TinyGL has only the float
+ * forms. */
+void test_color4ub_is_the_colour_over_255(void) {
+  open_flat_red_scene();
+  glColor4ub(0, 255, 0, 255);
+  draw_triangle_immediately();
+  TEST_ASSERT_EQUAL_HEX16(rgb565(0, 255, 0), centre());
+  glColor4ub(0, 0, 0x80, 255);
+  draw_triangle_immediately();
+  TEST_ASSERT_EQUAL_HEX16(rgb565(0, 0, 0x80), centre());
+}
+
+/* BlockTube asks for sphere-mapped texture coordinates. TinyGL cannot make
+ * them, so the call is accepted and the vertices keep their own. */
+void test_tex_gen_is_accepted_and_changes_nothing(void) {
+  open_flat_red_scene();
+  take_reference_and_clear();
+  glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
+  glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
+  draw_triangle_immediately();
+  TEST_ASSERT_EQUAL_MEMORY(reference, cv.px, sizeof reference);
+}
 
 /* Dirty rectangle: TinyGL tracks the box around what it draws, glClear clears
  * only the box drawn since the last clear, and the swap marks only the old and
@@ -1580,6 +1875,22 @@ int main(void) {
   RUN_TEST(test_a_display_list_keeps_the_arrays_it_recorded);
   RUN_TEST(test_a_new_context_starts_with_no_client_arrays_enabled);
   RUN_TEST(test_draw_arrays_with_nothing_enabled_or_a_zero_count_draws_nothing);
+  RUN_TEST(test_interleaved_normals_and_vertices_draw_the_triangle);
+  RUN_TEST(test_interleaved_normals_turn_off_a_colour_array);
+  RUN_TEST(test_interleaved_colours_colour_each_vertex_and_honour_a_stride);
+  RUN_TEST(test_interleaved_normals_reach_the_lighting);
+  RUN_TEST(test_an_interleaved_format_it_does_not_handle_turns_the_arrays_off);
+  RUN_TEST(test_an_rgb_texture_shows_its_colour);
+  RUN_TEST(test_an_rgba_texture_is_drawn_as_its_rgb);
+  RUN_TEST(test_a_luminance_texture_is_drawn_as_grey);
+  RUN_TEST(test_a_texture_of_a_type_it_cannot_convert_is_ignored);
+  RUN_TEST(test_depth_func_tex_env_and_colour_control_change_nothing);
+  RUN_TEST(test_color4ub_is_the_colour_over_255);
+  RUN_TEST(test_tex_gen_is_accepted_and_changes_nothing);
+  RUN_TEST(test_texfont_metrics_follow_the_point_size);
+  RUN_TEST(test_texfont_needs_its_resource);
+  RUN_TEST(test_texfont_draws_a_glyph_at_the_origin_of_the_transform);
+  RUN_TEST(test_texfont_steps_along_a_line_and_down_a_new_one);
   RUN_TEST(test_clear_writes_canvas_byte_order);
   RUN_TEST(test_the_first_list_name_is_not_zero);
   RUN_TEST(test_perspective_and_lookat_put_a_point_where_the_maths_says);

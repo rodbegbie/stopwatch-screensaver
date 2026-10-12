@@ -9,9 +9,11 @@
 #include <sys/time.h>
 
 #include "colors.h"
+#include "grabclient.h"
 #include "hsv.h"
 #include "runner/hack_entry.h"
 #include "utils.h"
+#include "visual.h"
 #include "yarandom.h"
 #include "x11shim/xshim.h"
 

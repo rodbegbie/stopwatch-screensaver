@@ -114,6 +114,38 @@ Pixmap image_data_to_pixmap(Display *dpy, Window win, const unsigned char *data,
   return (Pixmap)(uintptr_t)colour;
 }
 
+static unsigned expand(unsigned v, unsigned bits) {
+  return bits == 5 ? (v << 3) | (v >> 2) : (v << 2) | (v >> 4);
+}
+
+XImage *image_data_to_ximage(Display *dpy, Visual *visual, const unsigned char *data,
+                             unsigned long size) {
+  if (size < 8 || memcmp(data, "565M", 4) != 0) return NULL;
+  const unsigned w = le16(data + 4), h = le16(data + 6);
+  const uint64_t pixel_bytes = (uint64_t)w * h * 2;
+  const unsigned stride = (w + 7) / 8;
+  if (w == 0 || h == 0 || size != 8 + pixel_bytes + (uint64_t)stride * h) return NULL;
+  XImage *im = XCreateImage(dpy, visual, 32, ZPixmap, 0, NULL, w, h, 32, (int)(4 * w));
+  if (!im) return NULL;
+  im->data = (char *)malloc((size_t)4 * w * h);
+  if (!im->data) {
+    XDestroyImage(im);
+    return NULL;
+  }
+  const unsigned char *mask = data + 8 + pixel_bytes;
+  for (unsigned y = 0; y < h; y++) {
+    unsigned char *out = (unsigned char *)im->data + (size_t)(h - 1 - y) * 4 * w;
+    for (unsigned x = 0; x < w; x++, out += 4) {
+      const unsigned v = le16(data + 8 + 2 * ((size_t)y * w + x));
+      out[0] = (unsigned char)expand(v >> 11, 5);
+      out[1] = (unsigned char)expand((v >> 5) & 63, 6);
+      out[2] = (unsigned char)expand(v & 31, 5);
+      out[3] = (mask[y * stride + x / 8] >> (7 - x % 8)) & 1 ? 255 : 0;
+    }
+  }
+  return im;
+}
+
 int XFreePixmap(Display *dpy, Pixmap p) {
   struct XshimPixmap *pm = pixmap_of(p);
   if (pm) untrack(dpy, pm);
@@ -232,7 +264,9 @@ Pixmap XCreatePixmapFromBitmapData(Display *dpy, Drawable d, char *data,
  * drawn on the canvas uses the GC's foreground and background. When source and
  * destination are the same pixmap and overlap, rows and columns are walked in
  * the order that reads each pixel before it is overwritten. Otherwise, with no
- * clip mask, colour rows are copied whole. */
+ * clip mask, colour rows are copied whole (with memmove, row by row in that
+ * order, when the source is the destination: Kumppa copies the window onto
+ * itself one pixel over). */
 static void copy_region(Display *dpy, GC gc, const struct XshimPixmap *src,
                         struct XshimPixmap *dst, int sx, int sy,
                         unsigned int w, unsigned int h, int dx, int dy) {
@@ -244,14 +278,22 @@ static void copy_region(Display *dpy, GC gc, const struct XshimPixmap *src,
   const int64_t j0 = max64(0, max64(-(int64_t)sy, -(int64_t)dy));
   const int64_t j1 = min64(h, min64((int64_t)src->h - sy, dh - dy));
   if (i1 <= i0 || j1 <= j0) return;
-  const int same = dst == src;
-  if (src->depth == 16 && out && !same && !gc->clip) {
-    for (int64_t j = j0; j < j1; j++)
-      canvas_paste_rect(out, (int)(dx + i0), (int)(dy + j), (int)(i1 - i0), 1,
-                        src->canvas.px + (sy + j) * src->w + sx + i0);
+  const int same = dst == src || (out && src->depth == 16 && out->px == src->canvas.px);
+  const int reverse_x = same && dx > sx, reverse_y = same && dy > sy;
+  if (src->depth == 16 && out && !gc->clip) {
+    for (int64_t jj = 0; jj < j1 - j0; jj++) {
+      const int64_t j = reverse_y ? j1 - 1 - jj : j0 + jj;
+      const uint16_t *from = src->canvas.px + (sy + j) * src->w + sx + i0;
+      if (same) {
+        memmove(out->px + (dy + j) * out->w + dx + i0, from,
+                (size_t)(i1 - i0) * sizeof(uint16_t));
+        canvas_mark_dirty(out, (int)(dx + i0), (int)(dy + j), (int)(i1 - i0), 1);
+      } else {
+        canvas_paste_rect(out, (int)(dx + i0), (int)(dy + j), (int)(i1 - i0), 1, from);
+      }
+    }
     return;
   }
-  const int reverse_x = same && dx > sx, reverse_y = same && dy > sy;
   for (int64_t jj = 0; jj < j1 - j0; jj++) {
     const int64_t j = reverse_y ? j1 - 1 - jj : j0 + jj;
     for (int64_t ii = 0; ii < i1 - i0; ii++) {
@@ -273,13 +315,20 @@ static void copy_region(Display *dpy, GC gc, const struct XshimPixmap *src,
   }
 }
 
-/* To the canvas, the source must be a colour pixmap. To a pixmap, source and
- * destination must have the same depth. Anything else draws nothing, including
- * a destination of None: XCreatePixmap returns it when it cannot allocate, and
- * a hack that carries on must not paint its sprites on the screen. */
+/* The window is a colour source like any colour pixmap. To the canvas, the
+ * source must be colour. To a pixmap, source and destination must have the
+ * same depth. Anything else draws nothing, including a destination of None:
+ * XCreatePixmap returns it when it cannot allocate, and a hack that carries on
+ * must not paint its sprites on the screen. */
 int XCopyArea(Display *dpy, Drawable src, Drawable dst, GC gc, int sx, int sy,
               unsigned int w, unsigned int h, int dx, int dy) {
+  struct XshimPixmap window;
   const struct XshimPixmap *pm = pixmap_of(src);
+  if (src == XSHIM_WINDOW) {
+    window = (struct XshimPixmap){.w = dpy->canvas->w, .h = dpy->canvas->h, .depth = 16,
+                                  .canvas = *dpy->canvas};
+    pm = &window;
+  }
   struct XshimPixmap *target = pixmap_of(dst);
   if (!pm) return 0;
   if (!target && dst != XSHIM_WINDOW) return 0;

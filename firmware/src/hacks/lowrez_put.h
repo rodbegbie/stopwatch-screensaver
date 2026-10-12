@@ -57,13 +57,24 @@ static int lowrez_put_image(Display *dpy, Drawable d, GC gc, XImage *im,
       if (first) {
         memcpy(row + xa, first + xa, (size_t)(xb - xa) * sizeof(uint16_t));
       } else {
-        for (unsigned int i = 0; i < w; i++) {
+        /* Only the source columns whose squares reach [xa, xb), found once in
+         * 64 bits; every x in the loop is then within a square of the canvas
+         * and fits an int, which a 32-bit core does in one instruction. */
+        const int64_t base = ox + (int64_t)dst_x * S;
+        const int64_t i0 = (xa - base) / S, i1 = (xb - base + S - 1) / S;
+        const int ia = (int)xa, ib = (int)xb;
+        int x = (int)(base + i0 * S);
+        for (int64_t i = i0; i < i1; i++, x += (int)S) {
           const uint16_t v = px_swap((uint16_t)(src[2 * i] | (src[2 * i + 1] << 8)));
-          const int64_t x0 = ox + ((int64_t)dst_x + i) * S;
-          for (int64_t kk = 0; kk < S; kk++) {
-            const int64_t x = x0 + kk;
-            if (x >= xa && x < xb) row[x] = v;
+          const int a = x < ia ? ia : x, b = x + (int)S > ib ? ib : x + (int)S;
+#if LOWREZ_SCALE == 2
+          /* Both pixels of the pair in one 32-bit store when it is aligned. */
+          if (b - a == 2 && !(((uintptr_t)(row + a)) & 3)) {
+            *(uint32_t *)(row + a) = (uint32_t)v | ((uint32_t)v << 16);
+            continue;
           }
+#endif
+          for (int k = a; k < b; k++) row[k] = v;
         }
         first = row;
       }

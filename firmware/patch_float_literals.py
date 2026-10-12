@@ -9,14 +9,16 @@ Import("env")  # noqa: F821
 
 project = Path(env["PROJECT_DIR"])  # noqa: F821
 sys.path.insert(0, str(project.parent / "tools"))
+import binaryring_patch  # noqa: E402
 import celtic_patch  # noqa: E402
+import etruscanvenus_patch  # noqa: E402
 import float_literals  # noqa: E402
 import fireworkx_patch  # noqa: E402
 
 generated = Path(env.subst("$BUILD_DIR")) / "generated"  # noqa: F821
 generated.mkdir(parents=True, exist_ok=True)
 
-for name in ("braid",) + ('euler2d', 'compass', 'fuzzyflakes', 'halftone', 'interaggregate', 'anemone', 'lmorph', 'hexadrop', 'fireworkx', 'starfish', 'goop', 'cwaves', 'hextrail', 'celtic'):
+for name in ("braid",) + ('euler2d', 'compass', 'fuzzyflakes', 'halftone', 'interaggregate', 'anemone', 'lmorph', 'hexadrop', 'fireworkx', 'starfish', 'goop', 'cwaves', 'hextrail', 'celtic', 'binaryring', 'piecewise', 'etruscanvenus'):
     source = (project / "src" / "hacks" / name / f"{name}.c").read_text()
     if name == "fireworkx":
         source = fireworkx_patch.scale_for_a_small_window(source)
@@ -24,6 +26,10 @@ for name in ("braid",) + ('euler2d', 'compass', 'fuzzyflakes', 'halftone', 'inte
         source = celtic_patch.compute_spline_position_once(source)
         source = celtic_patch.fit_the_graph_to_the_screen(source)
         source = celtic_patch.scale_the_animation_step(source)
+    if name == "etruscanvenus":
+        source = etruscanvenus_patch.size_the_grid(source)
+    if name == "binaryring":
+        source = binaryring_patch.float_random_scale(source)
     patched = float_literals.float_literals(source)
     target = generated / f"{name}_floatlit.c"
     if not target.exists() or target.read_text() != patched:

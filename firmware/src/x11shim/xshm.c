@@ -11,6 +11,12 @@ int visual_depth(Screen *screen, Visual *visual) {
   return 16;
 }
 
+int visual_pixmap_depth(Screen *screen, Visual *visual) {
+  (void)screen;
+  (void)visual;
+  return 16;
+}
+
 XImage *create_xshm_image(Display *dpy, Visual *visual, unsigned int depth,
                           int format, XShmSegmentInfo *shm, unsigned int w,
                           unsigned int h) {

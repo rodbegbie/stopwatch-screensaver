@@ -154,6 +154,24 @@ extern const HackEntry celtic_hack;
 extern const HackEntry ad_flyingtoasters_hack;
 #endif
 
+extern const HackEntry eruption_hack;
+
+extern const HackEntry kumppa_hack;
+
+extern const HackEntry shadebobs_hack;
+
+extern const HackEntry piecewise_hack;
+
+extern const HackEntry boxfit_hack;
+
+extern const HackEntry interference_hack;
+
+extern const HackEntry binaryring_hack;
+
+XLOCKMORE_HACK(graphstat, "GraphStat");
+
+XLOCKMORE_HACK(etruscanvenus, "EtruscanVenus");
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -214,6 +232,15 @@ const HackEntry *const g_hacks[] = {
     &moire2_hack,
     &hextrail_hack,
     &celtic_hack,
+    &eruption_hack,
+    &kumppa_hack,
+    &shadebobs_hack,
+    &piecewise_hack,
+    &boxfit_hack,
+    &interference_hack,
+    &binaryring_hack,
+    &graphstat_hack,
+    &etruscanvenus_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif

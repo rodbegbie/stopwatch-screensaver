@@ -115,6 +115,15 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Moire2",
                                          "HexTrail",
                                          "Celtic",
+                                         "Eruption",
+                                         "Kumppa",
+                                         "ShadeBobs",
+                                         "Piecewise",
+                                         "BoxFit",
+                                         "Interference",
+                                         "BinaryRing",
+                                         "GraphStat",
+                                         "EtruscanVenus",
 #ifdef HAVE_AFTER_DARK_TOASTERS
                                          "ad-flyingtoasters",
 #endif
@@ -476,6 +485,15 @@ static const uint64_t kBaseline[] = {
     0x32f706208dc0a079ull, /* Moire2: taken after looking at the frames (bit planes) */
     0x0100bedf6ddf582cull, /* HexTrail: taken after looking at the frames (count 6, single precision) */
     0x91947298c096ed6full, /* Celtic: taken after looking at the frames (single precision, graph sized to the screen, step scale 4); re-taken for the eraser (#86), which moved its frames past the stroker's shared-edge slack (#56) */
+    0x0dad40e48c340ce1ull, /* Eruption: taken after looking at the frames (half size) */
+    0xe6027906951dc3f8ull, /* Kumppa: taken after looking at the frames */
+    0xf6e24658b84f263full, /* ShadeBobs: taken after looking at the frames */
+    0x4898ef61ca0c5048ull, /* Piecewise: taken after looking at the frames (straight on the window, single precision) */
+    0xff886d98e4c5738aull, /* BoxFit: taken after looking at the frames */
+    0xbbe4d8bcc0be9671ull, /* Interference: taken after looking at the frames (on the shim clock) */
+    0x7ebd7eb4bca2728bull, /* BinaryRing: taken after looking at the frames (24-bit path, single precision, pixels straight to the window) */
+    0x72caf5a8963dd1e9ull, /* GraphStat: taken after looking at the frames (8x8 bitmap titles) */
+    0xd38b37194b632481ull, /* EtruscanVenus: taken after looking at the frames (single precision, 48 by 32, half resolution) */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -1257,6 +1275,42 @@ void test_restart_does_not_leak(void) {
 }
 #endif
 
+void test_eruption_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Eruption", 0);
+}
+
+void test_kumppa_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Kumppa", 0);
+}
+
+void test_shadebobs_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("ShadeBobs", 0);
+}
+
+void test_piecewise_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Piecewise", 0);
+}
+
+void test_boxfit_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("BoxFit", 0);
+}
+
+void test_interference_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Interference", 0);
+}
+
+void test_binaryring_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("BinaryRing", 0);
+}
+
+void test_graphstat_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("GraphStat", 1);
+}
+
+void test_etruscanvenus_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("EtruscanVenus", 1);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -1335,6 +1389,15 @@ int main(void) {
   RUN_TEST(test_toasters_delay_is_a_thirtieth_of_a_second_less_the_step);
   RUN_TEST(test_restart_does_not_leak);
 #endif
+  RUN_TEST(test_eruption_stops_do_not_leak);
+  RUN_TEST(test_kumppa_stops_do_not_leak);
+  RUN_TEST(test_shadebobs_stops_do_not_leak);
+  RUN_TEST(test_piecewise_stops_do_not_leak);
+  RUN_TEST(test_boxfit_stops_do_not_leak);
+  RUN_TEST(test_interference_stops_do_not_leak);
+  RUN_TEST(test_binaryring_stops_do_not_leak);
+  RUN_TEST(test_graphstat_stops_do_not_leak);
+  RUN_TEST(test_etruscanvenus_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);

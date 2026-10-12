@@ -15,6 +15,7 @@
 #include "fps.h"
 #include "alpha.h"
 #include "screenhack.h"
+#include "thread_util.h"
 #include "utils.h"
 #include "xshm.h"
 #include "x11shim/arc.h"
@@ -590,6 +591,40 @@ void test_make_color_ramp_blends_saturation_and_value_too(void) {
   TEST_ASSERT_TRUE(colors[4].green > 0x2000 && colors[4].green < 0x6000);
 }
 
+/* Piecewise and Interference cycle through a loop of three anchor colours. */
+void test_make_color_loop_passes_each_anchor_in_turn_and_closes(void) {
+  XColor colors[30];
+  memset(colors, 0, sizeof(colors));
+  int n = 30;
+  make_color_loop(NULL, NULL, 1, 0, 1.0, 1.0, 120, 1.0, 1.0, 240, 1.0, 1.0,
+                  colors, &n, True, NULL);
+  TEST_ASSERT_EQUAL_INT(30, n);
+  TEST_ASSERT_TRUE(colors[0].red > 0xF000 && colors[0].green < 0x1000 && colors[0].blue < 0x1000);
+  TEST_ASSERT_TRUE(colors[10].green > 0xF000 && colors[10].red < 0x1000 && colors[10].blue < 0x1000);
+  TEST_ASSERT_TRUE(colors[20].blue > 0xF000 && colors[20].red < 0x1000 && colors[20].green < 0x1000);
+  for (int i = 0; i < n; i++) {
+    const XColor *a = &colors[i], *b = &colors[(i + 1) % n];
+    TEST_ASSERT_TRUE(abs((int)a->red - (int)b->red) < 0x4000);
+    TEST_ASSERT_TRUE(abs((int)a->green - (int)b->green) < 0x4000);
+    TEST_ASSERT_TRUE(abs((int)a->blue - (int)b->blue) < 0x4000);
+    TEST_ASSERT_EQUAL_HEX(rgb565_from16(a->red, a->green, a->blue), a->pixel);
+  }
+}
+
+void test_make_color_loop_takes_the_short_way_and_blends_value(void) {
+  XColor colors[6];
+  memset(colors, 0, sizeof(colors));
+  int n = 6;
+  make_color_loop(NULL, NULL, 1, 350, 1.0, 1.0, 10, 1.0, 0.5, 350, 1.0, 1.0,
+                  colors, &n, True, NULL);
+  for (int i = 0; i < n; i++) {
+    TEST_ASSERT_TRUE(colors[i].green < 0x3000);
+    TEST_ASSERT_TRUE(colors[i].blue < 0x3000);
+  }
+  TEST_ASSERT_UINT16_WITHIN(0x0800, 0x8000, colors[2].red);
+  TEST_ASSERT_TRUE(colors[1].red > 0x9000 && colors[1].red < 0xF000);
+}
+
 void test_a_gc_remembers_its_function_but_draws_copy(void) {
   XGCValues v = {0};
   GC plain = XCreateGC(dpy, win, 0, &v);
@@ -608,6 +643,101 @@ void test_a_gc_remembers_its_function_but_draws_copy(void) {
   TEST_ASSERT_EQUAL_HEX(0x1234, at(2, 2));
   XFreeGC(dpy, plain);
   XFreeGC(dpy, ored);
+}
+
+/* No expose events ever arrive, so a hack's choice about them changes
+ * nothing it draws (Kumppa turns them off on its copying GC). */
+void test_set_graphics_exposures_is_accepted_and_draws_nothing(void) {
+  XGCValues v = {0};
+  GC gc = XCreateGC(dpy, win, 0, &v);
+  TEST_ASSERT_EQUAL_INT(0, XSetGraphicsExposures(dpy, gc, False));
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XFreeGC(dpy, gc);
+}
+
+/* No images to load: Boxfit's optional grab mode finds loading done at once. */
+void test_load_image_async_simple_finishes_at_once_with_nothing(void) {
+  char *name = (char *)"stale";
+  XRectangle geom = {1, 2, 3, 4};
+  TEST_ASSERT_NULL(load_image_async_simple(NULL, NULL, win, win, &name, &geom));
+  TEST_ASSERT_NULL(name);
+  TEST_ASSERT_EQUAL_INT(0, geom.x);
+  TEST_ASSERT_EQUAL_INT(0, geom.y);
+  TEST_ASSERT_EQUAL_INT(0, geom.width);
+  TEST_ASSERT_EQUAL_INT(0, geom.height);
+  TEST_ASSERT_NULL(load_image_async_simple(NULL, NULL, win, win, NULL, NULL));
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+}
+
+/* Interference splits its rows over a thread pool. Here the pool runs its
+ * "threads" one after another on the caller, as upstream does without
+ * pthreads. */
+struct pool_owner {
+  int before;
+  struct threadpool pool;
+};
+
+struct pool_thread {
+  unsigned id;
+  struct pool_owner *owner;
+  int *log;
+};
+
+static int g_pool_log[16], g_pool_log_n, g_pool_fail_id = -1;
+
+static int pool_thread_create(void *self_raw, struct threadpool *pool, unsigned id) {
+  struct pool_thread *self = (struct pool_thread *)self_raw;
+  if ((int)id == g_pool_fail_id) return 12;
+  self->id = id;
+  self->owner = GET_PARENT_OBJ(struct pool_owner, pool, pool);
+  g_pool_log[g_pool_log_n++] = 100 + (int)id;
+  return 0;
+}
+
+static void pool_thread_destroy(void *self_raw) {
+  g_pool_log[g_pool_log_n++] = 200 + (int)((struct pool_thread *)self_raw)->id;
+}
+
+static void pool_thread_run(void *self_raw) {
+  struct pool_thread *self = (struct pool_thread *)self_raw;
+  g_pool_log[g_pool_log_n++] = 300 + (int)self->id + self->owner->before;
+}
+
+static const struct threadpool_class kPoolClass = {sizeof(struct pool_thread),
+                                                   pool_thread_create,
+                                                   pool_thread_destroy};
+
+void test_threadpool_runs_each_thread_in_turn_on_the_caller(void) {
+  struct pool_owner owner = {.before = 10};
+  g_pool_log_n = 0;
+  g_pool_fail_id = -1;
+  TEST_ASSERT_EQUAL_INT(0, threadpool_create(&owner.pool, &kPoolClass, dpy, 3));
+  TEST_ASSERT_EQUAL_UINT(3, owner.pool.count);
+  threadpool_run(&owner.pool, pool_thread_run);
+  threadpool_wait(&owner.pool);
+  threadpool_run(&owner.pool, pool_thread_run);
+  threadpool_wait(&owner.pool);
+  threadpool_destroy(&owner.pool);
+  const int want[] = {100, 101, 102, 310, 311, 312, 310, 311, 312, 200, 201, 202};
+  TEST_ASSERT_EQUAL_INT(12, g_pool_log_n);
+  TEST_ASSERT_EQUAL_INT_ARRAY(want, g_pool_log, 12);
+}
+
+void test_threadpool_create_failure_undoes_the_threads_it_made(void) {
+  struct pool_owner owner = {0};
+  g_pool_log_n = 0;
+  g_pool_fail_id = 2;
+  TEST_ASSERT_EQUAL_INT(12, threadpool_create(&owner.pool, &kPoolClass, dpy, 4));
+  g_pool_fail_id = -1;
+  const int want[] = {100, 101, 200, 201};
+  TEST_ASSERT_EQUAL_INT(4, g_pool_log_n);
+  TEST_ASSERT_EQUAL_INT_ARRAY(want, g_pool_log, 4);
+}
+
+void test_one_core_and_a_pointer_sized_alignment_without_threads(void) {
+  TEST_ASSERT_EQUAL_UINT(1, hardware_concurrency(dpy));
+  TEST_ASSERT_EQUAL_UINT(sizeof(void *), thread_memory_alignment(dpy));
+  TEST_ASSERT_EQUAL_INT(16, visual_pixmap_depth(NULL, NULL));
 }
 
 void test_the_arrow_and_page_keysyms_have_x_values(void) {
@@ -766,6 +896,48 @@ static Pixmap load_image(Pixmap *mask) {
   int w, h;
   fill_blob();
   return image_data_to_pixmap(dpy, win, blob, sizeof(blob), &w, &h, mask);
+}
+
+/* GL hacks load textures as RGBA bytes, upside down (row 0 is the bottom), as
+ * upstream's image_data_to_ximage gives them. Alpha comes from the mask. */
+static const unsigned char *rgba_at(const XImage *im, int x, int y) {
+  return (const unsigned char *)im->data + (size_t)y * (size_t)im->bytes_per_line + 4 * (size_t)x;
+}
+
+void test_image_data_to_ximage_gives_rgba_bytes_bottom_row_first(void) {
+  fill_blob();
+  XImage *im = image_data_to_ximage(dpy, NULL, blob, sizeof(blob));
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_INT(BLOB_W, im->width);
+  TEST_ASSERT_EQUAL_INT(BLOB_H, im->height);
+  TEST_ASSERT_EQUAL_INT(32, im->bits_per_pixel);
+  TEST_ASSERT_EQUAL_INT(4 * BLOB_W, im->bytes_per_line);
+  /* Source (1, 2) is 0x1009: red 2, green 0, blue 9; its mask row is clear. */
+  const unsigned char want_a[4] = {0x10, 0x00, 0x4A, 0x00};
+  TEST_ASSERT_EQUAL_HEX8_ARRAY(want_a, rgba_at(im, 1, 0), 4);
+  /* Source (0, 0) is 0x1000 and masked in. */
+  const unsigned char want_b[4] = {0x10, 0x00, 0x00, 0xFF};
+  TEST_ASSERT_EQUAL_HEX8_ARRAY(want_b, rgba_at(im, 0, 2), 4);
+  /* Source (2, 1): 0x1006, green 0, mask row 1 has column 2. */
+  const unsigned char want_c[4] = {0x10, 0x00, 0x31, 0xFF};
+  TEST_ASSERT_EQUAL_HEX8_ARRAY(want_c, rgba_at(im, 2, 1), 4);
+  /* Source (1, 1): mask clear. */
+  TEST_ASSERT_EQUAL_HEX8(0x00, rgba_at(im, 1, 1)[3]);
+  XDestroyImage(im);
+  /* Green has six bits: 32 of 63 is 0x82. */
+  blob[8 + 2 * 3] = 0x00;
+  blob[9 + 2 * 3] = 0x04;
+  im = image_data_to_ximage(dpy, NULL, blob, sizeof(blob));
+  const unsigned char want_d[4] = {0x00, 0x82, 0x00, 0xFF};
+  TEST_ASSERT_EQUAL_HEX8_ARRAY(want_d, rgba_at(im, 3, 2), 4);
+  XDestroyImage(im);
+}
+
+void test_image_data_to_ximage_refuses_a_bad_blob(void) {
+  fill_blob();
+  TEST_ASSERT_NULL(image_data_to_ximage(dpy, NULL, blob, sizeof(blob) - 1));
+  blob[0] = 'X';
+  TEST_ASSERT_NULL(image_data_to_ximage(dpy, NULL, blob, sizeof(blob)));
 }
 
 static GC new_gc(unsigned long fg, unsigned long bg) {
@@ -1980,6 +2152,86 @@ void test_create_pixmap_rejects_zero_and_huge_sizes(void) {
   TEST_ASSERT_EQUAL(None, XCreatePixmap(dpy, win, 65535, 65535, 1));
 }
 
+/* Kumppa rotates the picture by copying blocks of the window onto the window,
+ * one pixel over: X copies as if the whole source were read first. */
+static void number_canvas(void) {
+  for (int i = 0; i < cv.w * cv.h; i++) cv.px[i] = (uint16_t)(i + 1);
+}
+
+static void reference_copy(uint16_t *ref, int sx, int sy, int w, int h, int dx,
+                           int dy) {
+  uint16_t before[16 * 16];
+  memcpy(before, cv.px, sizeof before);
+  memcpy(ref, cv.px, sizeof before);
+  for (int j = 0; j < h; j++)
+    for (int i = 0; i < w; i++) {
+      const int x = dx + i, y = dy + j, px = sx + i, py = sy + j;
+      if (x < 0 || y < 0 || x >= 16 || y >= 16) continue;
+      if (px < 0 || py < 0 || px >= 16 || py >= 16) continue;
+      ref[y * 16 + x] = before[py * 16 + px];
+    }
+}
+
+static void check_window_copy(int sx, int sy, int w, int h, int dx, int dy) {
+  uint16_t ref[16 * 16];
+  number_canvas();
+  reference_copy(ref, sx, sy, w, h, dx, dy);
+  GC gc = new_gc(0xFFFF, 0);
+  XCopyArea(dpy, win, win, gc, sx, sy, (unsigned)w, (unsigned)h, dx, dy);
+  XFreeGC(dpy, gc);
+  TEST_ASSERT_EQUAL_HEX16_ARRAY(ref, cv.px, 16 * 16);
+}
+
+void test_copy_area_from_the_window_to_itself_apart(void) {
+  check_window_copy(0, 0, 4, 3, 9, 10);
+}
+
+void test_copy_area_from_the_window_to_itself_overlapping_each_way(void) {
+  check_window_copy(2, 2, 10, 9, 3, 3);
+  check_window_copy(2, 2, 10, 9, 1, 1);
+  check_window_copy(2, 2, 10, 9, 3, 1);
+  check_window_copy(2, 2, 10, 9, 1, 3);
+  check_window_copy(0, 0, 16, 16, 0, 1);
+  check_window_copy(0, 0, 16, 16, 1, 0);
+}
+
+void test_copy_area_from_the_window_clips_at_every_edge(void) {
+  check_window_copy(-3, -2, 8, 8, 12, 11);
+  check_window_copy(10, 11, 9, 9, -4, -5);
+  check_window_copy(0, 0, 0xFFFF, 0xFFFF, 2, 2);
+}
+
+void test_copy_area_from_the_window_marks_the_rows_it_wrote(void) {
+  number_canvas();
+  canvas_clear_dirty(&cv);
+  GC gc = new_gc(0xFFFF, 0);
+  XCopyArea(dpy, win, win, gc, 0, 0, 3, 2, 5, 7);
+  XFreeGC(dpy, gc);
+  int x0, x1;
+  TEST_ASSERT_FALSE(canvas_dirty_row(&cv, 6, &x0, &x1));
+  TEST_ASSERT_TRUE(canvas_dirty_row(&cv, 7, &x0, &x1));
+  TEST_ASSERT_EQUAL_INT(5, x0);
+  TEST_ASSERT_EQUAL_INT(7, x1);
+  TEST_ASSERT_TRUE(canvas_dirty_row(&cv, 8, &x0, &x1));
+  TEST_ASSERT_FALSE(canvas_dirty_row(&cv, 9, &x0, &x1));
+}
+
+void test_copy_area_from_the_window_into_a_pixmap_and_back(void) {
+  number_canvas();
+  uint16_t before[16 * 16];
+  memcpy(before, cv.px, sizeof before);
+  Pixmap p = XCreatePixmap(dpy, win, 4, 4, 16);
+  GC gc = new_gc(0xFFFF, 0);
+  XCopyArea(dpy, win, p, gc, 5, 6, 4, 4, 0, 0);
+  memset(cv.px, 0, sizeof before);
+  XCopyArea(dpy, p, win, gc, 0, 0, 4, 4, 1, 2);
+  TEST_ASSERT_EQUAL_HEX16(before[6 * 16 + 5], at(1, 2));
+  TEST_ASSERT_EQUAL_HEX16(before[9 * 16 + 8], at(4, 5));
+  TEST_ASSERT_EQUAL_INT(16, count_set());
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+}
+
 void test_copy_area_into_a_colour_pixmap_then_out_to_the_canvas(void) {
   Pixmap mask = None;
   Pixmap src = load_image(&mask);
@@ -3188,7 +3440,14 @@ int main(void) {
   RUN_TEST(test_make_color_ramp_takes_the_short_way_round_the_hue_wheel);
   RUN_TEST(test_make_color_ramp_takes_the_short_way_backwards_too);
   RUN_TEST(test_make_color_ramp_blends_saturation_and_value_too);
+  RUN_TEST(test_make_color_loop_passes_each_anchor_in_turn_and_closes);
+  RUN_TEST(test_make_color_loop_takes_the_short_way_and_blends_value);
   RUN_TEST(test_a_gc_remembers_its_function_but_draws_copy);
+  RUN_TEST(test_set_graphics_exposures_is_accepted_and_draws_nothing);
+  RUN_TEST(test_load_image_async_simple_finishes_at_once_with_nothing);
+  RUN_TEST(test_threadpool_runs_each_thread_in_turn_on_the_caller);
+  RUN_TEST(test_threadpool_create_failure_undoes_the_threads_it_made);
+  RUN_TEST(test_one_core_and_a_pointer_sized_alignment_without_threads);
   RUN_TEST(test_the_arrow_and_page_keysyms_have_x_values);
   RUN_TEST(test_visual_depth_is_sixteen);
   RUN_TEST(test_xshm_image_is_a_16_bit_image_put_where_asked);
@@ -3305,6 +3564,13 @@ int main(void) {
   RUN_TEST(test_fill_arc_quarter_is_a_pie_slice_including_the_centre);
   RUN_TEST(test_create_pixmap_is_zeroed_and_reports_its_geometry);
   RUN_TEST(test_create_pixmap_rejects_zero_and_huge_sizes);
+  RUN_TEST(test_copy_area_from_the_window_to_itself_apart);
+  RUN_TEST(test_copy_area_from_the_window_to_itself_overlapping_each_way);
+  RUN_TEST(test_copy_area_from_the_window_clips_at_every_edge);
+  RUN_TEST(test_copy_area_from_the_window_marks_the_rows_it_wrote);
+  RUN_TEST(test_copy_area_from_the_window_into_a_pixmap_and_back);
+  RUN_TEST(test_image_data_to_ximage_gives_rgba_bytes_bottom_row_first);
+  RUN_TEST(test_image_data_to_ximage_refuses_a_bad_blob);
   RUN_TEST(test_copy_area_into_a_colour_pixmap_then_out_to_the_canvas);
   RUN_TEST(test_copy_area_into_a_bitmap_copies_bits);
   RUN_TEST(test_copy_area_between_different_depths_does_nothing);

@@ -33,6 +33,20 @@ def _insert_before(text: str, marker: str, addition: str) -> str:
     return text[:i] + addition + text[i:]
 
 
+# The After Dark toasters stay last (built only with the disk image), so a new
+# hack goes before this guard in each list that has it.
+GUARD = "#ifdef HAVE_AFTER_DARK_TOASTERS\n"
+
+
+def _guard_in(text: str, start: str, end: str) -> int:
+    """Index of GUARD between `start` and `end`, or -1."""
+    a = text.find(start)
+    b = text.find(end, a)
+    if a < 0 or b < 0:
+        return -1
+    return text.find(GUARD, a, b)
+
+
 def wire(
     root: Path,
     name: str,
@@ -58,29 +72,43 @@ def wire(
     else:
         decl = f"extern const HackEntry {name}_hack;\n"
     reg = _insert_before(reg, "const HackEntry *const g_hacks[]", decl + "\n")
-    reg, n = re.subn(
-        r"    &(\w+)_hack\};", rf"    &\1_hack,\n    &{name}_hack}};", reg, count=1
-    )
-    if n != 1:
-        raise ValueError("cannot find the end of g_hacks[]")
+    g = _guard_in(reg, "g_hacks[] = {", "};")
+    if g >= 0:
+        reg = reg[:g] + f"    &{name}_hack,\n" + reg[g:]
+    else:
+        reg, n = re.subn(
+            r"    &(\w+)_hack\};", rf"    &\1_hack,\n    &{name}_hack}};", reg, count=1
+        )
+        if n != 1:
+            raise ValueError("cannot find the end of g_hacks[]")
 
     t = tests.read_text()
-    t, n = re.subn(
-        r'"\};\n  const int n = sizeof\(expected\)',
-        f'",\n                                         "{cls}"}};\n  const int n = sizeof(expected)',
-        t,
-        count=1,
+    g = _guard_in(t, "expected[] = {", "const int n = sizeof(expected)")
+    if g >= 0:
+        t = t[:g] + f'                                         "{cls}",\n' + t[g:]
+    else:
+        t, n = re.subn(
+            r'"\};\n  const int n = sizeof\(expected\)',
+            f'",\n                                         "{cls}"}};\n  const int n = sizeof(expected)',
+            t,
+            count=1,
+        )
+        if n != 1:
+            raise ValueError("cannot find the expected list in test_hacks.c")
+    g = _guard_in(
+        t, "kBaseline[] = {", "void test_frames_of_every_hack_but_maze_match_main"
     )
-    if n != 1:
-        raise ValueError("cannot find the expected list in test_hacks.c")
-    t, n = re.subn(
-        r"(\};\n\nvoid test_frames_of_every_hack_but_maze_match_main)",
-        f"    0, /* {cls}: not yet pinned */\n\\1",
-        t,
-        count=1,
-    )
-    if n != 1:
-        raise ValueError("cannot find kBaseline in test_hacks.c")
+    if g >= 0:
+        t = t[:g] + f"    0, /* {cls}: not yet pinned */\n" + t[g:]
+    else:
+        t, n = re.subn(
+            r"(\};\n\nvoid test_frames_of_every_hack_but_maze_match_main)",
+            f"    0, /* {cls}: not yet pinned */\n\\1",
+            t,
+            count=1,
+        )
+        if n != 1:
+            raise ValueError("cannot find kBaseline in test_hacks.c")
     leak = (
         f"void test_{name}_stops_do_not_leak(void) {{\n"
         f'  check_restarts_and_stops_do_not_leak("{cls}", {1 if xlockmore else 0});\n'

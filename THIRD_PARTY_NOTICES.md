@@ -112,12 +112,23 @@ implied warranty.
 | `firmware/src/hacks/moire2/moire2.c` | Copyright (c) 1997-2013 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/boing/boing.c` | Copyright (c) 2005-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/hextrail/hextrail.c` | Copyright (c) 2022 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/eruption/eruption.c` | Copyright (c) 2002-2003 W.P. van Paassen | jwz permission notice (above) |
+| `firmware/src/hacks/kumppa/kumppa.c` | Copyright (C) Teemu Suutari, 1998 | X Consortium permission notice (below) |
+| `firmware/src/hacks/shadebobs/shadebobs.c` | Copyright (c) 1999 Shane Smit | jwz permission notice (above) |
+| `firmware/src/hacks/piecewise/piecewise.c` | No copyright line; the header credits Geoffrey Irving (2003) | jwz permission notice (above) |
+| `firmware/src/hacks/boxfit/boxfit.c` | Copyright (c) 2005-2014 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/interference/interference.c` | Copyright (C) 1998 Hannu Mallat | jwz permission notice (above) |
+| `firmware/src/hacks/binaryring/binaryring.c` | Copyright (c) 2006-2014 Emilio Del Tessandoro | jwz permission notice (above) |
+| `firmware/src/hacks/graphstat/graphstat.c` | Copyright (c) 2026 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/etruscanvenus/etruscanvenus.c` | Copyright (c) 2019-2026 Carsten Steger | xlock permission notice (below) |
+| `firmware/src/hacks/blocktube/blocktube.c` | Copyright (c) 2003 Lars Damerow | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.c` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/involute.h` | Copyright (c) 2004-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/normals.c` | Copyright (c) 2002-2004 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/normals.h` | Copyright (c) 2002-2021 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/tube.c` | Copyright (c) 2001-2012 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/tube.h` | Copyright (c) 2001, 2003, 2007 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/xs_support/glx/glsl-utils.h` | Copyright (c) 2020-2026 Carsten Steger | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/rotator.c` | Copyright (c) 1998-2016 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/rotator.h` | Copyright (c) 1998-2002 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/gltrackball.c` | Copyright © 2002-2026 Jamie Zawinski | jwz permission notice (above) |
@@ -243,6 +254,40 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ```
 
+### X Consortium permission notice (Kumppa)
+
+`kumppa.c` carries the X Consortium's form of the MIT licence under its
+author's copyright line, not jwz's notice. It is reproduced here as it appears
+in the file:
+
+```text
+Copyright (C) Teemu Suutari (temisu@utu.fi) Feb 1998
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE X CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+Except as contained in this notice, the name of the X Consortium shall
+not be used in advertising or otherwise to promote the sale, use or
+other dealings in this Software without prior written authorization
+from the X Consortium.
+```
+
 ### The Maze logo
 
 Maze draws the xscreensaver logo inside its maze. The logo data in
@@ -276,6 +321,17 @@ not contain them. `firmware/matrix_glyphs.py` reads them from `vendor/` at
 build time and converts each to the raw blob described in `ximage-loader.h` in
 the build directory. The glyph sheets are not part of the MIT-licensed code in
 this repository.
+
+### Build-time data: Etruscan Venus's texture and Graphstat's words
+
+Etruscan Venus includes `hacks/glx/curlicue.h` from xscreensaver 6.16, a 64
+by 64 texture of a curlicue, and Graphstat includes `graphstat.h`, which
+upstream's build makes from `hacks/glx/graphstat.txt`, its list of words for
+titles. Neither file has licence text of its own, and this repository does not
+contain them: `firmware/vendor_data.py` copies `curlicue.h` from `vendor/` into
+the build directory, and `firmware/graphstat_strings.py` writes `graphstat.h`
+there from `graphstat.txt`. They are not part of the MIT-licensed code in this
+repository.
 
 ### Silicon Graphics notice (trackball)
 

@@ -397,6 +397,26 @@ static ClientArray *client_array(GLenum array) {
   }
 }
 
+void glshim_InterleavedArrays(GLenum format, GLsizei stride, const GLvoid *pointer) {
+  int c = 0, n = 0;
+  switch (format) {
+    case GL_V3F: break;
+    case GL_C3F_V3F: c = 3; break;
+    case GL_N3F_V3F: n = 3; break;
+    default:
+      g_vertex.on = g_normal.on = g_color.on = 0;
+      return;
+  }
+  const GLsizei bytes = stride ? stride : (GLsizei)((c + n + 3) * sizeof(GLfloat));
+  const GLfloat *p = (const GLfloat *)pointer;
+  glshim_ColorPointer(3, GL_FLOAT, bytes, p);
+  g_color.on = c != 0;
+  glshim_NormalPointer(GL_FLOAT, bytes, p + c);
+  g_normal.on = n != 0;
+  glshim_VertexPointer(3, GL_FLOAT, bytes, p + c + n);
+  g_vertex.on = 1;
+}
+
 void glshim_EnableClientState(GLenum array) {
   ClientArray *a = client_array(array);
   if (a) a->on = 1;
@@ -433,6 +453,22 @@ void glshim_DrawArrays(GLenum mode, GLint first, GLsizei count) {
 void glMateriali(GLint face, GLint pname, GLint value) {
   GLfloat v[4] = {(GLfloat)value, 0, 0, 1};
   glMaterialfv(face, pname, v);
+}
+
+void glDepthFunc(GLint func) { (void)func; }
+
+void glColor4ub(GLubyte r, GLubyte g, GLubyte b, GLubyte a) {
+  glColor4f(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f);
+}
+
+void glTexGeni(GLint coord, GLint pname, GLint param) { (void)coord, (void)pname, (void)param; }
+
+void glTexEnvf(GLint target, GLint pname, GLfloat param) {
+  (void)target, (void)pname, (void)param;
+}
+
+void glTexParameterf(GLint target, GLint pname, GLfloat param) {
+  glTexParameteri(target, pname, (GLint)param);
 }
 
 void glPixelStorei(GLint pname, GLint param) {
@@ -511,6 +547,33 @@ void gluLookAt(GLdouble eyex, GLdouble eyey, GLdouble eyez, GLdouble cx,
 }
 
 void glshim_set_render_scale(int scale) { g_next_scale = scale == 2 ? 2 : 1; }
+
+#undef glTexImage2D
+void glshim_TexImage2D(GLint target, GLint level, GLint components, GLint width,
+                       GLint height, GLint border, GLint format, GLint type,
+                       const void *pixels) {
+  (void)components;
+  int bytes;
+  switch (format) {
+    case GL_RGB: bytes = 3; break;
+    case GL_RGBA: bytes = 4; break;
+    case GL_LUMINANCE: bytes = 1; break;
+    case GL_LUMINANCE_ALPHA: bytes = 2; break;
+    default: return;
+  }
+  if (type != GL_UNSIGNED_BYTE || width <= 0 || height <= 0 || !pixels) return;
+  const size_t n = (size_t)width * (size_t)height;
+  GLubyte *rgb = malloc(n * 3);
+  if (!rgb) return;
+  const GLubyte *in = pixels;
+  for (size_t i = 0; i < n; i++, in += bytes) {
+    rgb[3 * i + 0] = in[0];
+    rgb[3 * i + 1] = bytes >= 3 ? in[1] : in[0];
+    rgb[3 * i + 2] = bytes >= 3 ? in[2] : in[0];
+  }
+  glTexImage2D(target, level, 3, width, height, border, GL_RGB, GL_UNSIGNED_BYTE, rgb);
+  free(rgb);
+}
 
 #undef glViewport
 void glshim_Viewport(GLint x, GLint y, GLint w, GLint h) {
