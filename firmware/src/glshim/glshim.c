@@ -397,6 +397,26 @@ static ClientArray *client_array(GLenum array) {
   }
 }
 
+void glshim_InterleavedArrays(GLenum format, GLsizei stride, const GLvoid *pointer) {
+  int c = 0, n = 0;
+  switch (format) {
+    case GL_V3F: break;
+    case GL_C3F_V3F: c = 3; break;
+    case GL_N3F_V3F: n = 3; break;
+    default:
+      g_vertex.on = g_normal.on = g_color.on = 0;
+      return;
+  }
+  const GLsizei bytes = stride ? stride : (GLsizei)((c + n + 3) * sizeof(GLfloat));
+  const GLfloat *p = (const GLfloat *)pointer;
+  glshim_ColorPointer(3, GL_FLOAT, bytes, p);
+  g_color.on = c != 0;
+  glshim_NormalPointer(GL_FLOAT, bytes, p + c);
+  g_normal.on = n != 0;
+  glshim_VertexPointer(3, GL_FLOAT, bytes, p + c + n);
+  g_vertex.on = 1;
+}
+
 void glshim_EnableClientState(GLenum array) {
   ClientArray *a = client_array(array);
   if (a) a->on = 1;

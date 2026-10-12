@@ -375,6 +375,84 @@ void test_draw_arrays_with_nothing_enabled_or_a_zero_count_draws_nothing(void) {
 }
 
 
+/* Companion Cube and Floppy draw their models through gllist.c, which hands
+ * glInterleavedArrays one packed array per part. TinyGL has no such call. */
+static const float kNV[18] = {0, 0, 1, -0.8f, -0.8f, 0, 0, 0, 1, 0.8f, -0.8f, 0,
+                              0, 0, 1, 0.0f, 0.8f, 0};
+
+void test_interleaved_normals_and_vertices_draw_the_triangle(void) {
+  open_flat_red_scene();
+  take_reference_and_clear();
+  glInterleavedArrays(GL_N3F_V3F, 0, kNV);
+  glDrawArrays(GL_TRIANGLES, 0, 3);
+  TEST_ASSERT_TRUE(count_set() > 100);
+  TEST_ASSERT_EQUAL_MEMORY(reference, cv.px, sizeof reference);
+}
+
+/* A colour array left on by an earlier call is turned off: the triangle stays
+ * the current colour, red. */
+void test_interleaved_normals_turn_off_a_colour_array(void) {
+  static const float blue[12] = {0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1};
+  open_flat_red_scene();
+  take_reference_and_clear();
+  glColorPointer(4, GL_FLOAT, 0, blue);
+  glEnableClientState(GL_COLOR_ARRAY);
+  glInterleavedArrays(GL_N3F_V3F, 0, kNV);
+  glDrawArrays(GL_TRIANGLES, 0, 3);
+  TEST_ASSERT_EQUAL_MEMORY(reference, cv.px, sizeof reference);
+}
+
+static uint16_t centre(void) { return cv.px[(SIZE / 2) * SIZE + SIZE / 2]; }
+
+void test_interleaved_colours_colour_each_vertex_and_honour_a_stride(void) {
+  /* green, x, y, z, then two floats of padding a vertex */
+  static const float kCV[24] = {0, 1, 0, -0.8f, -0.8f, 0, 9, 9, 0, 1, 0, 0.8f, -0.8f, 0, 9, 9,
+                                0, 1, 0, 0.0f, 0.8f, 0, 9, 9};
+  open_flat_red_scene();
+  glInterleavedArrays(GL_C3F_V3F, 8 * sizeof(float), kCV);
+  glDrawArrays(GL_TRIANGLES, 0, 3);
+  TEST_ASSERT_EQUAL_HEX16(rgb565(0, 255, 0), centre());
+}
+
+/* Lit from the viewer's side, a triangle facing the light is bright and one
+ * facing away is dark: the normals in the array must reach the lighting. */
+static uint16_t lit_centre(const float *nv) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glViewport(0, 0, SIZE, SIZE);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  const GLfloat black[4] = {0, 0, 0, 1}, white[4] = {1, 1, 1, 1};
+  const GLfloat towards_viewer[4] = {0, 0, 1, 0};
+  glEnable(GL_LIGHTING);
+  glEnable(GL_LIGHT0);
+  glLightfv(GL_LIGHT0, GL_POSITION, (GLfloat *)towards_viewer);
+  glLightfv(GL_LIGHT0, GL_AMBIENT, (GLfloat *)black);
+  glLightfv(GL_LIGHT0, GL_DIFFUSE, (GLfloat *)white);
+  glLightModelfv(GL_LIGHT_MODEL_AMBIENT, (GLfloat *)black);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, (GLfloat *)black);
+  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, (GLfloat *)white);
+  glNormal3f(0, 0, -1);
+  glInterleavedArrays(GL_N3F_V3F, 0, nv);
+  glDrawArrays(GL_TRIANGLES, 0, 3);
+  const uint16_t c = centre();
+  glshim_close();
+  return c;
+}
+
+void test_interleaved_normals_reach_the_lighting(void) {
+  TEST_ASSERT_EQUAL_HEX16(rgb565(255, 255, 255), lit_centre(kNV));
+}
+
+void test_an_interleaved_format_it_does_not_handle_turns_the_arrays_off(void) {
+  open_flat_red_scene();
+  point_at(kTri);
+  glInterleavedArrays(GL_C4UB_V3F, 0, kNV);
+  glDrawArrays(GL_TRIANGLES, 0, 3);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+}
+
 /* Dirty rectangle: TinyGL tracks the box around what it draws, glClear clears
  * only the box drawn since the last clear, and the swap marks only the old and
  * new boxes for the push. These pin that it changes nothing visible. */
@@ -1580,6 +1658,11 @@ int main(void) {
   RUN_TEST(test_a_display_list_keeps_the_arrays_it_recorded);
   RUN_TEST(test_a_new_context_starts_with_no_client_arrays_enabled);
   RUN_TEST(test_draw_arrays_with_nothing_enabled_or_a_zero_count_draws_nothing);
+  RUN_TEST(test_interleaved_normals_and_vertices_draw_the_triangle);
+  RUN_TEST(test_interleaved_normals_turn_off_a_colour_array);
+  RUN_TEST(test_interleaved_colours_colour_each_vertex_and_honour_a_stride);
+  RUN_TEST(test_interleaved_normals_reach_the_lighting);
+  RUN_TEST(test_an_interleaved_format_it_does_not_handle_turns_the_arrays_off);
   RUN_TEST(test_clear_writes_canvas_byte_order);
   RUN_TEST(test_the_first_list_name_is_not_zero);
   RUN_TEST(test_perspective_and_lookat_put_a_point_where_the_maths_says);

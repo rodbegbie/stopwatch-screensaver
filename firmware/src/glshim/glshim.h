@@ -76,6 +76,11 @@ void glshim_TexCoordPointer(GLint size, GLenum type, GLsizei stride,
 void glshim_EnableClientState(GLenum array);
 void glshim_DisableClientState(GLenum array);
 void glshim_DrawArrays(GLenum mode, GLint first, GLsizei count);
+/* Sets the arrays a packed format holds and turns the others off, as GL does,
+ * for the formats gllist.c uses: GL_V3F, GL_C3F_V3F and GL_N3F_V3F. Any other
+ * format turns every array off, so nothing is drawn from it. */
+void glshim_InterleavedArrays(GLenum format, GLsizei stride, const GLvoid *pointer);
+#define glInterleavedArrays glshim_InterleavedArrays
 #define glVertexPointer glshim_VertexPointer
 #define glNormalPointer glshim_NormalPointer
 #define glColorPointer glshim_ColorPointer
