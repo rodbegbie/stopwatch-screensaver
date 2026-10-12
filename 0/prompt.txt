@@ -1,0 +1,1 @@
+Uncomment the post-checkout, post-merge and post-rewrite hook types now that we have the uv-sync hook and re-run `uvx pre-commit install` so that uv syncs the environment correctly.
