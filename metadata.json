@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4Q8B26RTZ86YFQCK40YB30F",
+  "strategy": "manual-commit",
+  "branch": "feature/80-line-loop",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/test/test_hacks/test_hacks.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 106,
+    "cache_creation_tokens": 114125,
+    "cache_read_tokens": 5921744,
+    "output_tokens": 24644,
+    "api_call_count": 53
+  }
+}
