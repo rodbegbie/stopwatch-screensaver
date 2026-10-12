@@ -1,6 +1,9 @@
-/* Builds the unmodified blocktube.c with USE_GL set for this file only (see
- * hacks/gears_gl.c). Its texture, blocktube.png, is converted from vendor/ at
- * build time (firmware/gl_textures.py).
+/* Builds blocktube.c with USE_GL set for this file only (see hacks/gears_gl.c),
+ * in single precision with its decimal literals made floats at build time
+ * (tools/float_literals.py), with BLOCKTUBE_ENTITIES blocks instead of 1,000
+ * (tools/blocktube_patch.py), and at half resolution. Its texture,
+ * blocktube.png, is converted from vendor/ at build time
+ * (firmware/gl_textures.py).
  *
  * TinyGL has no fog. The hack's linear black fog is applied here per block
  * instead of per pixel: the hack sets each block's colour once its transform
@@ -18,6 +21,14 @@
 #include <string.h>
 
 #include "xlockmore.h"
+#include "colors.h"
+
+/* On the board at half size: 1,000 blocks ran at 5.0 fps, 500 at 8.0 to 9.0,
+ * 400 at 8.8 to 10.0 (full size, 1,000: 3.3). -DBLOCKTUBE_ENTITIES=<n> and
+ * -DBLOCKTUBE_FULL try the others. */
+#ifndef BLOCKTUBE_ENTITIES
+#define BLOCKTUBE_ENTITIES 400
+#endif
 
 static int blocktube_fog_on;
 static GLfloat blocktube_fog_start, blocktube_fog_end = 1, blocktube_fog_factor = 1;
@@ -61,4 +72,19 @@ static void blocktube_enable(GLint cap) {
 #define glColor4ub blocktube_color4ub
 #define glCallList blocktube_call_list
 
-#include "blocktube/blocktube.c"
+#include "hacks/single_precision.h"
+#include "hacks/single_frand.h"
+
+#include "blocktube_floatlit.c"
+
+#ifndef BLOCKTUBE_FULL
+/* Half resolution (glshim_set_render_scale), as etruscanvenus_single_gl.c. */
+static void init_blocktube_half(ModeInfo *mi) {
+  glshim_set_render_scale(2);
+  init_blocktube(mi);
+}
+
+__attribute__((constructor)) static void blocktube_renders_at_half_size(void) {
+  blocktube_xlockmore_function_table.hack_init = init_blocktube_half;
+}
+#endif
