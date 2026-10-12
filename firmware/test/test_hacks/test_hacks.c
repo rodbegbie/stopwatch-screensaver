@@ -13,6 +13,8 @@
 #include "xlockmore.h"
 #include "hacks/fast_trig.h"
 #include "hacks/pacman/pacman.h"
+#include "hacks/pacman/pacman_level.h"
+#include "hacks/pacman_pool.h"
 #include "glshim/glshim.h"
 #include "hacks/registry.h"
 #include "runner/hack_runner.h"
@@ -432,7 +434,7 @@ static const uint64_t kBaseline[] = {
     0, /* Maze: see test_maze_frame_matches_main */
     0x1472437ef1d9a798ull, /* Blaster */
     0xb90b3ccdac009a41ull, /* Substrate */
-    0x30f53883f531c363ull, /* Pacman: taken on its own branch, after looking at the frames */
+    0x08a8895ef4d1943cull, /* Pacman: taken after looking at the frames; re-taken for the level pool (#32), whose pick consumes one random() */
     0x0f7959307446f1c1ull, /* Braid: taken after looking at the frames; re-pinned for the eraser (#86) */
     0x8ce46510f0e0360cull, /* Mountain: taken after looking at the frames */
     0xa19684045106b327ull, /* Epicycle: taken after looking at the frames */
@@ -685,6 +687,66 @@ void test_pacman_stays_within_the_loop_task_stack(void) {
   TEST_ASSERT_TRUE_MESSAGE(worst < 16 * 1024, "Pacman used 16 KB of stack or more");
 }
 
+/* Whether the whole 11 px cell (x, y) of the 40 by 32 maze, centred on the
+ * 466 px panel (13 px in from the left, 57 from the top), is inside the round
+ * display. The same rule as `cell_visible` in tools/pacman_levels.py. */
+static int pacman_cell_in_circle(int x, int y) {
+  for (int cx = x; cx <= x + 1; cx++) {
+    for (int cy = y; cy <= y + 1; cy++) {
+      const int dx = 13 + cx * 11 - 233, dy = 57 + cy * 11 - 233;
+      if (dx * dx + dy * dy > 233 * 233) return 0;
+    }
+  }
+  return 1;
+}
+
+/* pacman_createnewlevel plays the fixed level about half the time (it returns
+ * 1 for it) and otherwise a level from the pool. Over 1,000 levels every pool
+ * level turns up (the chance of missing one is about 1e-9), and each formatted
+ * level has its two jail gates, four power pellets and a dot count that matches
+ * its cells, with every dot inside the panel's circle. */
+void test_pacman_picks_the_fixed_level_or_any_pool_level(void) {
+  enum { kPool = sizeof pacman_pool / sizeof pacman_pool[0], kLevels = 1000 };
+  static uint64_t seen[kPool + 8];
+  int distinct = 0, fixed = 0;
+  const int pacman = index_of("Pacman");
+  TEST_ASSERT_TRUE(pacman >= 0);
+  HackRunner *r = runner_create(&cv);
+  runner_start(r, pacman);
+  runner_step(r); /* the hack allocates its game state on the first step */
+  pacmangamestruct *pp = &pacman_games[0];
+  srandom(1);
+  for (int n = 0; n < kLevels; n++) {
+    const int is_fixed = pacman_createnewlevel(pp);
+    uint64_t h = 0xcbf29ce484222325ull;
+    int gates = 0, pellets = 0, dots = 0;
+    for (int i = 0; i < (int)(LEVWIDTH * LEVHEIGHT); i++) {
+      const char c = pp->level[i];
+      h = (h ^ (uint64_t)(unsigned char)c) * 0x100000001b3ull;
+      gates += c == '=';
+      pellets += c == 'o';
+      dots += c == '.' || c == 'o';
+      if (c == '.' || c == 'o') {
+        TEST_ASSERT_TRUE_MESSAGE(pacman_cell_in_circle(i % LEVWIDTH, i / LEVWIDTH),
+                                 "a dot is outside the round display");
+      }
+    }
+    TEST_ASSERT_EQUAL_INT(2, gates);
+    TEST_ASSERT_EQUAL_INT(NUM_BONUS_DOTS, pellets);
+    TEST_ASSERT_EQUAL_INT(dots, (int)pp->dotsleft);
+    fixed += is_fixed;
+    int known = 0;
+    for (int s = 0; s < distinct; s++) known |= seen[s] == h;
+    if (!known) {
+      TEST_ASSERT_TRUE_MESSAGE(distinct < kPool + 1, "more levels than the pool and the fixed one");
+      seen[distinct++] = h;
+    }
+  }
+  runner_destroy(r);
+  TEST_ASSERT_EQUAL_INT(kPool + 1, distinct);
+  TEST_ASSERT_TRUE_MESSAGE(fixed > 400 && fixed < 600, "the fixed level is not about half");
+}
+
 /* Pacman loads and scales its sprite sheet in init, so start and stop is where
  * pixmaps would leak. Growth over 40 restarts is measured at exactly 0, so 512
  * bytes is slack, and a leaked GC per restart is caught. */
@@ -832,7 +894,7 @@ void test_pacman_ghosts_take_the_same_routes_home(void) {
   }
   runner_destroy(r);
   TEST_ASSERT_TRUE_MESSAGE(trips > 0, "no ghost ever followed a route home");
-  TEST_ASSERT_EQUAL_UINT64(2287115883820344180ull, chain);
+  TEST_ASSERT_EQUAL_UINT64(11730971072022198547ull, chain);
 }
 
 void test_prev_from_first_wraps_to_last_hack(void) {
@@ -1219,6 +1281,7 @@ int main(void) {
   RUN_TEST(test_goop_blends_only_in_its_transparent_mode);
   RUN_TEST(test_maze_frame_matches_main);
   RUN_TEST(test_pacman_levels_do_not_leak);
+  RUN_TEST(test_pacman_picks_the_fixed_level_or_any_pool_level);
   RUN_TEST(test_pacman_start_and_stop_do_not_leak);
   RUN_TEST(test_pacman_stays_within_the_loop_task_stack);
   RUN_TEST(test_pacman_ghosts_take_the_same_routes_home);
