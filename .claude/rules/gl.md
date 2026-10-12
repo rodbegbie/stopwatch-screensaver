@@ -11,6 +11,8 @@ paths:
   - "firmware/src/hacks/cubicgrid_gl.c"
   - "firmware/src/hacks/unknownpleasures/**"
   - "firmware/src/hacks/unknownpleasures_gl.c"
+  - "firmware/src/hacks/pipes/**"
+  - "firmware/src/hacks/pipes_gl.c"
   - "firmware/native/gl_budget_main.c"
   - "firmware/patch_tinygl.py"
   - "tools/tinygl_patch.py"
@@ -262,3 +264,23 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
 - TinyGL prints a warning for every `glEnable` it does not know, each time,
   which on the board goes to the serial log every frame: filter them in the
   wrapper.
+- Pipes (issue #44, `hacks/pipes_gl.c`) skips work no other GL hack can: with
+  its camera fixed (`*rotatepipes: False`), when the clear, both matrices and
+  the lists called so far match last frame, it skips the clear and those lists
+  and draws only the new piece. Two traps, each caught by
+  `test_pipes_incremental_redraw_matches_a_full_redraw`: a new screen
+  recompiles the same list names, so any `glNewList` must end the skipping; and
+  the next screen must be generated at the start of a draw, as upstream's fade
+  does, because `generate_system` clears, and a clear after the swap erased the
+  frame just shown in a full redraw. `pipes_full_redraw` turns the skipping off
+  for the tests.
+- Pipes compiles every display list of a screen when the screen starts, and a
+  list holds each vertex expanded (a 16 by 16 sphere from `glDrawArrays` is
+  about 17 KB). Board PSRAM sets the screen size (`-DPIPES_CYCLES`,
+  `-DPIPES_SIZE`), and TinyGL does not check a list's allocation, so running
+  out crashes: 3 systems of 150 left 1.9 MB free. Host heap for the same lists
+  is about twice the board's (8-byte list words).
+- Pipes' helpers: `teapot.c` is built with `HAVE_JWZGLES` (a triangle table,
+  `teapot2.h`, instead of evaluators TinyGL lacks), and that table is 228 KB
+  of flash. `buildlwo.c` maps `GL_POLYGON` to `GL_TRIANGLE_FAN` in its own
+  wrapper only (issue #80 is the general question).

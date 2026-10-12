@@ -59,12 +59,13 @@ skips) and with it fixed.
 
 None of this has run on the board.
 
-## Open decisions
+## Decisions, and the port
 
-- `buildlwo.c`, `buildlwo.h`, `pipeobjs.c` and `teapot2.h` carry no licence
-  text. The repo's precedent for such files (Pacman's sprites, XMatrix's
-  glyphs) is to read them from `vendor/` at build time and never commit them.
-- A fixed camera (`*rotatepipes: False`) changes the look.
-- The fade: keep it (about 5 s per screen at `size` 100), or end a screen
-  without it.
-- `GL_POLYGON` and `GL_LINE_LOOP` in TinyGL generally (see the #44 comment).
+Rod's answers on issue #44: a fixed camera, smaller screens, no fade (fades
+later), and copying the header-less helpers into the repo (`xscreensaver.spec`
+says "License: BSD"). The firmware port is `firmware/src/hacks/pipes_gl.c`,
+which carries this experiment over with two fixes the lab did not need:
+recompiling a list ends the skipping (each new screen reuses the list names),
+and the next screen is generated at the start of a draw. On the board it runs
+at about 60 fps with three systems of 150 (`tools/assessment_measured.md.in`).
+This lab leaves out the firmware's helper wrappers and builds its own copies.
