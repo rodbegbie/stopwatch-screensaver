@@ -272,7 +272,10 @@ ones below apply everywhere.
   `ExitWorktree keep` names a branch (`worktree-<name>`) that may not exist:
   remove the worktree with `git worktree remove --force <path>` and delete the
   real branch, as separate commands, because a failed `&&` link skips the rest
-  silently. Check `git worktree list` afterwards. To delete the merged branch
+  silently. Check `git worktree list` afterwards. In a session resumed from a
+  summary, `ExitWorktree` is a no-op ("no active EnterWorktree session"):
+  remove the worktree with `git worktree remove --force <path>` from the main
+  checkout instead. To delete the merged branch
   you are standing on, `git switch --detach origin/main` in the worktree first.
   The shell's directory resets after each command and after `ExitWorktree`, so
   use absolute paths (`../.venv/bin/pio` failed from the wrong place and the run

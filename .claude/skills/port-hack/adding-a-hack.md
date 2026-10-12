@@ -42,3 +42,6 @@ hack, and holds a recipe per trap. The steps:
    builds. A reason Rod gave in his own words ("boring on a small screen") is
    the reason to record. File an issue only if there is something to come back
    to.
+   Unhook its build steps too: its entry in `patch_float_literals.py` and any
+   pre-script only it needs (BlockTube's `gl_textures.py`), or every build
+   still runs them and fails without their `vendor/` input.

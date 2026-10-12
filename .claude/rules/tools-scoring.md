@@ -22,6 +22,9 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   device, and read
   `docs/speed-backtest.md` before trusting a band. A hack with gaps (M and
   above) cannot be built, so it has no Speed.
+- A `failed_ports.txt` name is the scorer's: the source file's stem
+  (`companion` for Companion Cube), as the assessment's rows spell it. Check
+  the cross appears after regenerating.
 - `score_hacks.py --no-probe` also blanks the Speed column of the generated
   assessment ("high (2 ms)" becomes "-"): commit the output of a full run. The
   backtest reads a measured row only when its name is the bare hack name
