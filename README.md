@@ -92,8 +92,8 @@ seconds. Button A starts the next hack and button B the previous one, wrapping
 around at either end, and either press restarts the 90 second count. The
 hack's name shows for a few seconds as it starts, and a tap on the screen
 cycles the readout: nothing (the default at boot), a name badge, a QR code, the
-frame rate, then the battery level. The badge is "Rod" in large letters in the
-middle of the screen, in place of the hack's name; build with
+frame rate, then the battery level. The badge is "Rod" over "Begbie" in large letters,
+centred on the screen, in place of the hack's name; build with
 `-DBADGE_NAME=\"Ann\"` to change it. The QR code is white-backed and covers
 most of the screen, pointing at `https://linkedin.com/in/rodbegbie`; build with
 `-DQR_URL=\"https://example.com\"` to change it. The frame rate and battery

@@ -18,7 +18,8 @@ Moved verbatim from AGENTS.md.
   pinned build still rotates, so add `=0` to measure one hack.
   The log prints `rotate -> <hack> heap= psram=` at each change. Combine flags
   in one `PLATFORMIO_BUILD_FLAGS` string.
-  `-DBADGE_NAME=\"Rod\ B.\"` sets the name badge text (default "Rod"). Check a
+  `-DBADGE_NAME=\"Rod\ B.\"` sets the name badge text (default "Rod" over
+  "Begbie"; `\n` starts a new line). Check a
   flag reached the binary with
   `strings -a -n 3 .pio/build/stopwatch/firmware.elf | grep -c '^Rod B\.$'`:
   plain `strings` skips anything under 4 characters.

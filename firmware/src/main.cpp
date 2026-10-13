@@ -50,13 +50,13 @@ static const char *const kForcedStart = START_HACK;
 static const char *const kForcedStart = nullptr;
 #endif
 
-/* The name badge text; build with -DBADGE_NAME=\"Ann\" to change it. Text wider
- * than the screen is clipped. */
+/* The name badge text, one line per "\n"; build with -DBADGE_NAME=\"Ann\" to
+ * change it. Text wider than the screen is clipped. */
 #ifndef BADGE_NAME
-#define BADGE_NAME "Rod"
+#define BADGE_NAME "Rod\nBegbie"
 #endif
 static const char *const kBadgeName = BADGE_NAME;
-static const int kBadgeScale = 10;
+static const int kBadgeScale = 8;
 
 /* The QR code overlay's target; build with -DQR_URL=\"https://example.com\". */
 #ifndef QR_URL
@@ -286,7 +286,7 @@ static void printStats(const char *tag) {
  * as the hack left it, since hacks draw incrementally. M5Canvas wraps the
  * canvas buffer so M5GFX's fonts can draw into it; the DejaVu fonts are 1-bit,
  * so only pure black and white are written (the same in either byte order). */
-static const int kPatchMaxH = 100;
+static const int kPatchMaxH = 140;
 
 struct Patch {
   int x, y, w, h;
@@ -299,7 +299,21 @@ static Patch namePatch, infoPatch;
 static uint16_t *qrPixels;
 
 /* The outline is a black copy of the text at every offset within `outline`
- * pixels, which grows with the text size so it stays visible. */
+ * pixels, which grows with the text size so it stays visible. A "\n" starts a
+ * new line; the lines are centred on (cx, cy) as a block. */
+static const int kStampMaxLine = 32;
+
+/* Copies the first line of `text` into `line` and returns the start of the
+ * next one (the terminator when there is none). */
+static const char *takeLine(const char *text, char line[kStampMaxLine]) {
+  const char *end = strchr(text, '\n');
+  size_t n = end ? (size_t)(end - text) : strlen(text);
+  n = n < (size_t)kStampMaxLine - 1 ? n : (size_t)kStampMaxLine - 1;
+  memcpy(line, text, n);
+  line[n] = 0;
+  return end ? end + 1 : text + strlen(text);
+}
+
 static void stampText(Patch *p, const char *text, int cx, int cy,
                       const lgfx::IFont *font, int scale = 1) {
   int outline = 1 + scale / 4;
@@ -307,19 +321,36 @@ static void stampText(Patch *p, const char *text, int cx, int cy,
   stamp.setFont(font);
   stamp.setTextSize(scale);
   stamp.setTextDatum(middle_center);
-  int w = stamp.textWidth(text) + 2 * margin;
-  int h = stamp.fontHeight() + 2 * margin;
+  int lines = 1, widest = 0;
+  for (const char *c = text; *c; c++) lines += *c == '\n';
+  const int lineH = stamp.fontHeight();
+  for (const char *c = text; *c;) {
+    char line[kStampMaxLine];
+    const char *next = takeLine(c, line);
+    widest = max(widest, (int)stamp.textWidth(line));
+    c = next;
+  }
+  int w = widest + 2 * margin;
+  int h = lines * lineH + 2 * margin;
   p->w = w < kSize ? w : kSize;
   p->h = h < kPatchMaxH ? h : kPatchMaxH;
   p->x = cx - p->w / 2;
   p->y = cy - p->h / 2;
   canvas_copy_rect(&canvas, p->x, p->y, p->w, p->h, p->saved);
-  stamp.setTextColor(0x000000);
-  for (int dy = -outline; dy <= outline; dy++)
-    for (int dx = -outline; dx <= outline; dx++)
-      if (dx || dy) stamp.drawString(text, cx + dx, cy + dy);
-  stamp.setTextColor(0xFFFFFF);
-  stamp.drawString(text, cx, cy);
+  const int top = cy - lines * lineH / 2 + lineH / 2;
+  int row = 0;
+  for (const char *c = text; *c; row++) {
+    char line[kStampMaxLine];
+    const char *next = takeLine(c, line);
+    const int ly = top + row * lineH;
+    stamp.setTextColor(0x000000);
+    for (int dy = -outline; dy <= outline; dy++)
+      for (int dx = -outline; dx <= outline; dx++)
+        if (dx || dy) stamp.drawString(line, cx + dx, ly + dy);
+    stamp.setTextColor(0xFFFFFF);
+    stamp.drawString(line, cx, ly);
+    c = next;
+  }
   stamp.setTextSize(1);
   canvas_mark_dirty(&canvas, p->x, p->y, p->w, p->h);
 }
