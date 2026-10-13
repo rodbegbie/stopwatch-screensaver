@@ -80,7 +80,8 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   Substrate is white; every other hack asks for black or nothing.
 - Overlay modes cycle on a tap: nothing, name badge, QR code, fps, battery. The
   badge, the QR code and the info line share the stamp/unstamp path, and
-  `kPatchMaxH` (100) must cover the tallest glyph plus its outline. The
+  `kPatchMaxH` (140) must cover the text block plus its outline: the badge
+  is two lines, and `stampText` drops any line that would not fit. The
   battery is polled every 30 s (`M5.Power.getBatteryLevel()`; negative means a
   failed read, so the last good level stays). The QR code is encoded once at
   boot with M5GFX's `lgfx_qrcode` (`buildQr`, lowest version that holds
