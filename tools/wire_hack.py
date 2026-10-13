@@ -4,7 +4,7 @@
         [--notice "<licence column>"] [--xlockmore] [--glx]
 
 Does the mechanical steps of `.claude/skills/port-hack/adding-a-hack.md`
-(steps 2 and 3): copies `vendor/xscreensaver-6.16/hacks/<name>.c` to
+(steps 2 and 3): copies `<xs_vendor.UPSTREAM>/hacks/<name>.c` to
 `firmware/src/hacks/<name>/`, adds the registry entry (last in the button
 order), the name to the expected list in `test_hacks.c`, a frame hash of `0`
 (skipped until pinned: see "Batches" in that skill), a leak test, and the
@@ -22,8 +22,10 @@ import shutil
 import sys
 from pathlib import Path
 
+import xs_vendor
+
 ROOT = Path(__file__).resolve().parent.parent
-UPSTREAM = "vendor/xscreensaver-6.16"
+UPSTREAM = xs_vendor.UPSTREAM
 
 
 def _insert_before(text: str, marker: str, addition: str) -> str:

@@ -17,12 +17,13 @@ LAB = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "tools"))
 import gl_budget
 import probe_hacks
+import xs_vendor
 
 out = Path(sys.argv[1])
 incremental = "--incremental" in sys.argv
 overrides = [a for a in sys.argv[2:] if a != "--incremental"]
 out.mkdir(parents=True, exist_ok=True)
-glx = ROOT / "vendor/xscreensaver-6.16/hacks/glx"
+glx = xs_vendor.upstream(ROOT) / "hacks" / "glx"
 for h in ("sphere.h", "teapot.h", "buildlwo.h", "teapot2.h"):
     shutil.copy(glx / h, out / h)
 generated = out / "generated"

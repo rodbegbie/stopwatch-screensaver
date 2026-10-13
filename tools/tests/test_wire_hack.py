@@ -48,9 +48,9 @@ NOTICES = """\
 
 @pytest.fixture
 def repo(tmp_path):
-    (tmp_path / "vendor/xscreensaver-6.16/hacks/glx").mkdir(parents=True)
-    (tmp_path / "vendor/xscreensaver-6.16/hacks/newhack.c").write_text("/* plain */\n")
-    (tmp_path / "vendor/xscreensaver-6.16/hacks/glx/glhack.c").write_text("/* gl */\n")
+    (tmp_path / wh.UPSTREAM / "hacks/glx").mkdir(parents=True)
+    (tmp_path / wh.UPSTREAM / "hacks/newhack.c").write_text("/* plain */\n")
+    (tmp_path / wh.UPSTREAM / "hacks/glx/glhack.c").write_text("/* gl */\n")
     hacks = tmp_path / "firmware/src/hacks"
     hacks.mkdir(parents=True)
     (hacks / "registry.c").write_text(REGISTRY)
@@ -111,7 +111,7 @@ def test_a_glx_hack_is_read_from_the_glx_directory(repo):
 
 
 def test_it_refuses_a_hack_that_is_already_registered_and_changes_nothing(repo):
-    (repo / "vendor/xscreensaver-6.16/hacks/old.c").write_text("/* old */\n")
+    (repo / wh.UPSTREAM / "hacks/old.c").write_text("/* old */\n")
     before = read(repo, "firmware/src/hacks/registry.c")
     with pytest.raises(ValueError, match="already"):
         wh.wire(repo, "old", "Old", "c")
@@ -119,7 +119,7 @@ def test_it_refuses_a_hack_that_is_already_registered_and_changes_nothing(repo):
 
 
 def test_a_name_inside_another_hacks_name_is_not_taken_for_a_duplicate(repo):
-    (repo / "vendor/xscreensaver-6.16/hacks/ball.c").write_text("/* ball */\n")
+    (repo / wh.UPSTREAM / "hacks/ball.c").write_text("/* ball */\n")
     wh.wire(repo, "ball", "Ball", "c")
     assert "extern const HackEntry ball_hack;" in read(
         repo, "firmware/src/hacks/registry.c"

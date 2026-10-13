@@ -7,9 +7,10 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import fireworkx_patch as fp
+import xs_vendor
 
 ROOT = Path(__file__).resolve().parents[2]
-UPSTREAM = ROOT / "vendor" / "xscreensaver-6.16" / "hacks" / "fireworkx.c"
+UPSTREAM = xs_vendor.upstream(ROOT) / "hacks" / "fireworkx.c"
 
 SAMPLE = """\
 #define PIXCOUNT 500              /* 500     */

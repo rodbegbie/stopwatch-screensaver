@@ -14,9 +14,11 @@ import urllib.error
 import urllib.request
 from pathlib import Path, PurePosixPath
 
+import xs_vendor
+
 BASE_URL = "https://www.jwz.org/xscreensaver/"
 DOWNLOAD_PAGE = BASE_URL + "download.html"
-SURVEYED_VERSION = "6.16"
+SURVEYED_VERSION = xs_vendor.VERSION
 USER_AGENT = (
     "stopwatch-screensaver-fetch/1.0 (personal project; fetches xscreensaver source)"
 )
@@ -119,7 +121,7 @@ def run(args: argparse.Namespace) -> None:
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--version", help="specific version, e.g. 6.16")
+    parser.add_argument("--version", help="specific version, e.g. 6.17")
     parser.add_argument("--force", action="store_true", help="replace existing")
     parser.add_argument("--dest", default="vendor", help="default: vendor")
     args = parser.parse_args(argv)
