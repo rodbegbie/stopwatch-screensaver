@@ -300,7 +300,8 @@ static uint16_t *qrPixels;
 
 /* The outline is a black copy of the text at every offset within `outline`
  * pixels, which grows with the text size so it stays visible. A "\n" starts a
- * new line; the lines are centred on (cx, cy) as a block. */
+ * new line; the lines are centred on (cx, cy) as a block, and only as many as
+ * fit in kPatchMaxH are drawn. */
 static const int kStampMaxLine = 32;
 
 /* Copies the first line of `text` into `line` and returns the start of the
@@ -324,11 +325,14 @@ static void stampText(Patch *p, const char *text, int cx, int cy,
   int lines = 1, widest = 0;
   for (const char *c = text; *c; c++) lines += *c == '\n';
   const int lineH = stamp.fontHeight();
-  for (const char *c = text; *c;) {
+  /* Lines past the saved patch would never be restored, so they are dropped. */
+  const int fit = max(1, (kPatchMaxH - 2 * margin) / lineH);
+  lines = min(lines, fit);
+  const char *c = text;
+  for (int row = 0; row < lines && *c; row++) {
     char line[kStampMaxLine];
-    const char *next = takeLine(c, line);
+    c = takeLine(c, line);
     widest = max(widest, (int)stamp.textWidth(line));
-    c = next;
   }
   int w = widest + 2 * margin;
   int h = lines * lineH + 2 * margin;
@@ -338,10 +342,10 @@ static void stampText(Patch *p, const char *text, int cx, int cy,
   p->y = cy - p->h / 2;
   canvas_copy_rect(&canvas, p->x, p->y, p->w, p->h, p->saved);
   const int top = cy - lines * lineH / 2 + lineH / 2;
-  int row = 0;
-  for (const char *c = text; *c; row++) {
+  c = text;
+  for (int row = 0; row < lines && *c; row++) {
     char line[kStampMaxLine];
-    const char *next = takeLine(c, line);
+    c = takeLine(c, line);
     const int ly = top + row * lineH;
     stamp.setTextColor(0x000000);
     for (int dy = -outline; dy <= outline; dy++)
@@ -349,7 +353,6 @@ static void stampText(Patch *p, const char *text, int cx, int cy,
         if (dx || dy) stamp.drawString(line, cx + dx, ly + dy);
     stamp.setTextColor(0xFFFFFF);
     stamp.drawString(line, cx, ly);
-    c = next;
   }
   stamp.setTextSize(1);
   canvas_mark_dirty(&canvas, p->x, p->y, p->w, p->h);
