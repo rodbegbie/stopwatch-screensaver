@@ -1,6 +1,6 @@
 {
-  "id": "trail-review",
-  "display_name": "Trail Review",
+  "id": "trail-review-codex",
+  "display_name": "Trail Review Codex",
   "enabled": true,
   "scope": "trail",
   "runtime": {
