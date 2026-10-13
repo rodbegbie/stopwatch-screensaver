@@ -1,0 +1,5 @@
+Tweaking the name display.  Can you make the default text "Rod Begbie" with a new line between Rod and Begbie.  Horizontally and vertically centered on the screen.  Make the font about 20% smaller.
+
+---
+
+flash the board
