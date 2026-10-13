@@ -1,6 +1,6 @@
 """Lists what an xscreensaver release changes for this firmware.
 
-    uv run tools/vendor_diff.py vendor/xscreensaver-6.16 vendor/xscreensaver-6.17
+    uv run tools/vendor_diff.py vendor/xscreensaver-<old> vendor/xscreensaver-<new>
 
 Prints four lists: files in `firmware/src/` copied byte for byte from the old
 release that the new one changes or removes, data the build reads from
