@@ -17,8 +17,10 @@ static Display *dpy;
 void setUp(void) {
   TEST_ASSERT_EQUAL_INT(0, canvas_init(&cv, 64, 64, malloc));
   dpy = xshim_open_display(&cv);
+  xshim_set_defaults((const char *const *)rotzoomer_defaults);
 }
 void tearDown(void) {
+  xshim_set_defaults(NULL);
   xshim_close_display(dpy);
   canvas_free(&cv);
 }
@@ -30,6 +32,7 @@ void test_the_first_draw_finds_a_picture_and_zoom_boxes_ready(void) {
   struct state *st = rotzoomer_init(dpy, 1);
   TEST_ASSERT_NOT_NULL(st->orig_map);
   TEST_ASSERT_NOT_NULL(st->zoom_box);
+  TEST_ASSERT_TRUE(st->num_zoom > 0);
   for (int i = 0; i < st->num_zoom; i++) TEST_ASSERT_NOT_NULL(st->zoom_box[i]);
   rotzoomer_draw(dpy, 1, st);
   rotzoomer_free(dpy, 1, st);
