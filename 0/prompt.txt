@@ -1,0 +1,3 @@
+Try and figure out some ways to improve the flash usage.  Issue #102.
+
+I think getting rid of the large XMatrix glyph sheets is probably a good start.  And look into compression for the other images?

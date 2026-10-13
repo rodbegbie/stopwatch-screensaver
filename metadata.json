@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4SG0CR9T0KD1FT1PXDFVZD8",
+  "strategy": "manual-commit",
+  "branch": "feature/102-compressed-blobs",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/platformio.ini",
+    "firmware/src/x11shim/inflate.c",
+    "firmware/src/x11shim/inflate.h",
+    "firmware/src/x11shim/pixmap.c",
+    "firmware/test/test_xshim/test_xshim.c",
+    "tools/make_logo_blob.py",
+    "tools/tests/test_make_logo_blob.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 60,
+    "cache_creation_tokens": 108552,
+    "cache_read_tokens": 3018615,
+    "output_tokens": 23859,
+    "api_call_count": 30
+  }
+}
