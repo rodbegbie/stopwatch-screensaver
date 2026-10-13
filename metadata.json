@@ -1,0 +1,56 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4SSFR5CXSSGZCERYJG5EPNY",
+  "strategy": "manual-commit",
+  "branch": "chore/91-xscreensaver-6-17",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "AGENTS.md",
+    "README.md",
+    "THIRD_PARTY_NOTICES.md",
+    "docs/gl-budget.md",
+    "docs/pipes-lab/build.py",
+    "docs/porting-assessment.md",
+    "firmware/gl_textures.py",
+    "firmware/graphstat_strings.py",
+    "firmware/matrix_glyphs.py",
+    "firmware/pacman_sprites.py",
+    "firmware/platformio.ini",
+    "firmware/src/hacks/graphstat/graphstat.c",
+    "firmware/src/hacks/graphstat_gl.c",
+    "firmware/src/x11shim/include/nls.h",
+    "firmware/src/x11shim/include/screenhack.h",
+    "firmware/src/x11shim/include/screenhackI.h",
+    "firmware/test/test_xshim/test_xshim.c",
+    "firmware/vendor_data.py",
+    "tools/fetch_xscreensaver.py",
+    "tools/gl_budget.py",
+    "tools/tests/test_binaryring_patch.py",
+    "tools/tests/test_blocktube_patch.py",
+    "tools/tests/test_etruscanvenus_patch.py",
+    "tools/tests/test_fetch.py",
+    "tools/tests/test_fireworkx_patch.py",
+    "tools/tests/test_text_to_c.py",
+    "tools/tests/test_wire_hack.py",
+    "tools/tests/test_xs_vendor.py",
+    "tools/text_to_c.py",
+    "tools/wire_hack.py",
+    "tools/xs_vendor.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 100,
+    "cache_creation_tokens": 152066,
+    "cache_read_tokens": 6821279,
+    "output_tokens": 32316,
+    "api_call_count": 50
+  }
+}
