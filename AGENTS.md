@@ -284,6 +284,16 @@ ones below apply everywhere.
   command: write it as a script in the scratchpad that edits the file, runs
   `pio test` through `subprocess` and restores the file in `finally`, then run
   it with `python3 -I`.
+  Also refused: a heredoc (use the Write tool for a scratchpad script), `$(...)`
+  inside a git command, and the quoted `PLATFORMIO_BUILD_FLAGS` above combined
+  with a redirect or `NO_COLOR=1`. Flashing worked as
+  `PLATFORMIO_CORE_DIR=<wt>/.platformio PLATFORMIO_BUILD_FLAGS="..."
+  .venv/bin/pio run -d firmware -e stopwatch -t upload` with no redirect: the
+  540 KB of output lands in a tool-results file, so grep that for "Hash of data
+  verified". Edit and Write refuse the main checkout's path while you are in a
+  worktree. `pio test -f test_x` runs the whole suite (`test_hacks` takes 3
+  minutes, the full native run 7), and a failing summary reads "2 failed, 101
+  succeeded": match `[FAILED]` or the return code, not "succeeded".
 - zsh does not word-split `$var`: loop over file lists with `bash -c`. It also
   stops on a glob that matches nothing, so quote `--include='*.c'`, and
   `grep` needs `-e` for a pattern that starts with a dash (`-e '->px'`).

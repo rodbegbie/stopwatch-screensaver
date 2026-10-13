@@ -82,3 +82,11 @@ Moved verbatim from AGENTS.md.
 - A shared-code PR (stroker, runner, canvas) can move pins of hacks merged
   since it branched: merge or rebase onto `main` and rerun the pin loop before
   judging frames (Celtic joined #89's moved set after #88 landed).
+- Why a gate is red: `gh api
+  repos/rodbegbie/stopwatch-screensaver/commits/<branch>/check-runs
+  --jq '.check_runs[]|.output.summary'`.
+  "Approvals: failed" is just Rod not having approved yet, and "Checks:
+  skipped" is normal (no CI here). `entire trail watch` streams forever, so to
+  watch poll `gh pr view N`, that API and `entire trail finding list N` from a
+  script file under a Monitor, printing only on change. Merge only when Rod
+  says to, even once the gates are green.

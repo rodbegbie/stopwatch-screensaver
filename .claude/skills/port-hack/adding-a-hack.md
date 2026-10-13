@@ -45,3 +45,11 @@ hack, and holds a recipe per trap. The steps:
    Unhook its build steps too: its entry in `patch_float_literals.py` and any
    pre-script only it needs (BlockTube's `gl_textures.py`), or every build
    still runs them and fails without their `vendor/` input.
+9. A header that a pre-script writes into the build dir (the font, the grab
+   image) must be included under `__has_include` in `native/dump_main.c`:
+   `tools/probe_hacks.py` compiles that file without the build's generated
+   directory, and an unconditional include failed two `test_probe_hacks`
+   cases. Add the pre-script to all three `extra_scripts` lines in
+   `platformio.ini`, and a wrapper's original source to all three
+   `build_src_filter` lines (`sed -i.bak 's|<last entry>$|<last entry> <new>|'`
+   does all three).
