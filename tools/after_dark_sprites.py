@@ -16,6 +16,7 @@ import argparse
 import hashlib
 import struct
 import sys
+import zlib
 from pathlib import Path
 
 TAGGED_IMAGE_SIZE = 838_400
@@ -238,6 +239,14 @@ def c_array(name: str, rows: list[bytes], row_len: str, comment: str) -> str:
     return "\n".join(lines)
 
 
+def c_flat_array(name: str, data: bytes, comment: str) -> str:
+    lines = [f"static const unsigned char {name}[] = {{ /* {comment} */"]
+    for i in range(0, len(data), 16):
+        lines.append("  " + ",".join(f"0x{b:02X}" for b in data[i : i + 16]) + ",")
+    lines.append("};")
+    return "\n".join(lines)
+
+
 def render_header(
     colour, mono, sha256: str, source: str = "the After Dark 2.0 disk image"
 ) -> str:
@@ -250,7 +259,12 @@ def render_header(
             "",
             f"#define AD_ART_SIZE {SPRITE_SIZE}",
             "",
-            c_array("ad_colour_rgb", colour_rows, "64 * 64 * 3", "frames 0-3, toast"),
+            "#define AD_COLOUR_BYTES (5 * 64 * 64 * 3)",
+            c_flat_array(
+                "ad_colour_z",
+                zlib.compress(b"".join(colour_rows), 9),
+                "RGB, frames 0-3 then toast, as one zlib stream",
+            ),
             "",
             c_array("ad_mono_bits", list(mono), "64 * 64 / 8", "MSB first, 1 = black"),
             "",
