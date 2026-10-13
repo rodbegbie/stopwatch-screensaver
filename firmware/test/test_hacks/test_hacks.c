@@ -447,7 +447,7 @@ void test_substrate_draws_what_it_drew_before_pixels_were_swapped(void) {
   runner_start(r, 0);
   for (int f = 0; f < 200; f++) runner_step(r);
   runner_destroy(r);
-  TEST_ASSERT_EQUAL_UINT64(0xb0001ae2c830b47cull, frame_hash());
+  TEST_ASSERT_EQUAL_UINT64(0x71b5f5d79017c196ull, frame_hash());
 }
 
 /* A hack can be blank at any one frame (Lightning, Pedal), so fold in a frame
@@ -482,7 +482,7 @@ static const uint64_t kBaseline[] = {
     0xc73423265e03fc8eull, /* Critical */
     0x8e607be7fad1b855ull, /* CloudLife */
     0x9fc760a330da4c12ull, /* WhirlWindWarp */
-    0x42cee3f3b8b3c778ull, /* Flame */
+    0xf61f5bf7d5d0a647ull, /* Flame: re-pinned for float literals and frand, frames looked at */
     0x3809dd8f3972a6b2ull, /* Hopalong */
     0x7cecada4d69a47beull, /* Vines: re-pinned for the eraser (#86) */
     0x81324f88137bfcf1ull, /* Sierpinski: re-pinned for the eraser (#86) */
@@ -490,13 +490,13 @@ static const uint64_t kBaseline[] = {
     0x574c61de3bb517afull, /* Thornbird */
     0x7fa47eb9300dc9dull, /* Spiral */
     0x9748fd2017af52e5ull, /* Sphere */
-    0x1cf92001cbfc23e5ull, /* Discrete */
-    0x4815a4e22a59c710ull, /* Galaxy */
-    0x6026dc7a36bf2a59ull, /* Drift */
+    0xf515df80a322e75eull, /* Discrete: re-pinned for float literals and MAXRAND, frames looked at */
+    0x45841851b3f71f7cull, /* Galaxy: re-pinned for float literals and MAXRAND, frames looked at */
+    0x54c7b5f9d01dda85ull, /* Drift: re-pinned for float literals, MAXRAND and frand, frames looked at */
     0xe97dd56bf15d2b99ull, /* Lightning */
     0, /* Maze: see test_maze_frame_matches_main */
     0x1472437ef1d9a798ull, /* Blaster */
-    0xb90b3ccdac009a41ull, /* Substrate */
+    0x5fcacb0c5dc6c823ull, /* Substrate: re-pinned for float literals and frand, frames looked at */
     0x08a8895ef4d1943cull, /* Pacman: taken after looking at the frames; re-taken for the level pool (#32), whose pick consumes one random() */
     0x0f7959307446f1c1ull, /* Braid: taken after looking at the frames; re-pinned for the eraser (#86) */
     0xbd090f31b6b23308ull, /* Mountain: taken after looking at the frames */

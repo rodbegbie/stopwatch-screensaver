@@ -26,6 +26,21 @@ def test_literals_that_already_have_a_suffix_are_left_alone():
     assert fl.float_literals("a = 2.0f + 3.0L + 4.0;") == "a = 2.0f + 3.0L + 4.0f;"
 
 
+def test_exponent_literals_become_float():
+    assert fl.float_literals("a = 1e-6 + 1.0E5 + 2.5e+3 + .5e2 + 1E4;") == (
+        "a = 1e-6f + 1.0E5f + 2.5e+3f + .5e2f + 1E4f;"
+    )
+
+
+def test_exponent_literals_with_a_suffix_are_left_alone():
+    assert fl.float_literals("a = 1e-6f + 1e3L + 2.0;") == "a = 1e-6f + 1e3L + 2.0f;"
+
+
+def test_hex_literals_and_identifiers_that_look_like_exponents_are_left_alone():
+    source = "n = 0x1e5 + 0X1E+5 + a1e5 + e5 + 0x1.8p3; k = 1.5;"
+    assert fl.float_literals(source) == source.replace("1.5;", "1.5f;")
+
+
 def test_integers_member_access_and_identifiers_are_left_alone():
     source = "n = 15 + v.x + arr[1].y + p->a1.b + x2.c;"
     assert fl.float_literals(source + " k = 1.5;") == source + " k = 1.5f;"
