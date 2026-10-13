@@ -46,3 +46,7 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   registry name it cannot scan as a typo. `speed_backtest.py` runs on the host
   only the registered hacks that have a device-measured row, so a `dump` build
   without the After Dark disk (which lacks the toasters) still works.
+- `probe_hacks.MEASURED_ROW` takes only a number range in the fps cell: a
+  row like `| HexTrail | 10.8-50.6, mean 15.3 |` is skipped, so the assessment
+  shows `-` for its step and the backtest leaves it out. Put the mean in the
+  prose.

@@ -307,6 +307,16 @@ and when one survives, find an input that reaches it or say it is defensive.
 Wrapping bugs can also hide in what is stored, not what is drawn: a depth that
 wrapped round only showed when a third fill was drawn afterwards.
 
+## Wrapping an xlockmore hack's init or draw
+
+Emptying `XSCREENSAVER_MODULE` (Blaster) fails: the hack includes
+`xlockmore.h`, which has no include guard and defines it again. Rename the
+hack's tables instead (`#define pipes_xscreensaver_function_table
+pipes_upstream_xscreensaver_table`, the same for `_xlockmore_function_table`),
+include the hack, `#undef` both, define the wrappers, then
+`#define draw_pipes pipes_draw_no_fade` and call
+`XSCREENSAVER_MODULE_2("Pipes", pipes, pipes)`. See `hacks/pipes_gl.c`.
+
 ## Background colour
 
 The runner paints the canvas in the hack's `background` resource before `init`,

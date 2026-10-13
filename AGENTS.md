@@ -232,6 +232,10 @@ ones below apply everywhere.
   Take both readings at rest (after `runner_destroy`): a reading while a hack
   runs counts random-sized live state (Loop swings about 1 MB by mode), so
   the verdict depends on test order.
+- AddressSanitizer cannot see an index past an array inside a struct
+  (`pp->Cells[x][25][z]`). Build with `-fsanitize=address,array-bounds
+  -fno-sanitize-recover=all` to check such a claim, and prove first that it
+  fires on a small probe.
 - Another session may be working in the same checkout. Run `git status` and
   `git log -1` before you edit or quote line numbers, take line numbers from
   `git show HEAD:<path>`, and leave changes you didn't make alone.
@@ -284,6 +288,8 @@ ones below apply everywhere.
   command: write it as a script in the scratchpad that edits the file, runs
   `pio test` through `subprocess` and restores the file in `finally`, then run
   it with `python3 -I`.
+  Stopping such a script (TaskStop) kills it before `finally` runs: check
+  `git diff` afterwards and restore the file by hand.
   Also refused: a heredoc (use the Write tool for a scratchpad script), `$(...)`
   inside a git command, and the quoted `PLATFORMIO_BUILD_FLAGS` above combined
   with a redirect or `NO_COLOR=1`. Flashing worked as
@@ -297,6 +303,7 @@ ones below apply everywhere.
 - zsh does not word-split `$var`: loop over file lists with `bash -c`. It also
   stops on a glob that matches nothing, so quote `--include='*.c'`, and
   `grep` needs `-e` for a pattern that starts with a dash (`-e '->px'`).
+  A word starting with `=` is a command lookup in zsh: quote `'====='`.
 - macOS tools: BSD `sed -i` needs a suffix argument (`sed -i.bak ...`), so
   edit with Python or the Edit tool; zsh spells `PIPESTATUS` `pipestatus`, so
   run a command on its own to read its exit status.
