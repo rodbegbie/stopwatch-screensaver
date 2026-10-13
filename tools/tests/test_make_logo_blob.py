@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import zlib
 from pathlib import Path
 
 import pytest
@@ -62,6 +63,25 @@ def test_header_holds_the_blob_bytes_under_the_name_the_hack_expects():
     body = text.split("= {", 1)[1].split("};", 1)[0]
     assert bytes(int(h, 16) for h in re.findall(r"0x([0-9a-f]{2})", body)) == blob
     assert text.endswith("#endif\n")
+
+
+def test_deflated_blob_keeps_the_header_and_zlib_compresses_the_rest():
+    blob = mlb.build_blob(2, 2, RED + GREEN + CLEAR_BLUE + WHITE)
+    packed = mlb.deflate_blob(blob)
+    assert packed[:8] == b"565Z" + blob[4:8]
+    assert zlib.decompress(packed[8:]) == blob[8:]
+
+
+def test_deflate_option_writes_a_565z_blob_of_the_same_image(tmp_path):
+    src = make_image(tmp_path, (64, 64))
+    plain, packed = tmp_path / "plain.h", tmp_path / "packed.h"
+    assert mlb.main([str(src), "--name", "n", "-o", str(plain)]) == 0
+    assert mlb.main([str(src), "--name", "n", "--deflate", "-o", str(packed)]) == 0
+    raw, z = blob_from_header(plain), blob_from_header(packed)
+    assert z[:4] == b"565Z"
+    assert z[4:8] == raw[4:8]
+    assert zlib.decompress(z[8:]) == raw[8:]
+    assert len(z) < len(raw)
 
 
 def blob_from_header(path):

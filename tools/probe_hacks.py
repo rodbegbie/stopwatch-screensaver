@@ -179,6 +179,7 @@ def probe(name: str, source: str, root: Path, cc: str = "cc") -> dict:
                 *map(str, shim_sources(root)),
                 "-lm",
                 "-lpthread",
+                "-lz",
                 "-o",
                 str(program),
             ]

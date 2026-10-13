@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "x11shim/inflate.h"
 #include "ximage-loader.h"
 
 static struct XshimPixmap *pixmap_of(Pixmap p) {
@@ -82,6 +83,35 @@ static int bit_at(const struct XshimPixmap *pm, int x, int y) {
 
 static unsigned le16(const unsigned char *p) { return p[0] | (p[1] << 8); }
 
+/* Reads a blob's size and finds its pixels, followed by its mask. A "565M"
+ * blob's lie in the blob itself; a "565Z" blob's are inflated into
+ * `*unpacked`, which the caller frees (NULL for "565M"). 0 on success. */
+static int blob_open(const unsigned char *data, unsigned long size, unsigned *w,
+                     unsigned *h, const unsigned char **body,
+                     unsigned char **unpacked) {
+  *unpacked = NULL;
+  if (size < 8) return -1;
+  const int packed = memcmp(data, "565Z", 4) == 0;
+  if (!packed && memcmp(data, "565M", 4) != 0) return -1;
+  *w = le16(data + 4);
+  *h = le16(data + 6);
+  const uint64_t body_bytes = (uint64_t)*w * *h * 2 + (uint64_t)((*w + 7) / 8) * *h;
+  /* The canvas's limit, which also keeps every size below in a 32-bit size_t. */
+  if (*w == 0 || *h == 0 || *w > INT16_MAX || *h > INT16_MAX) return -1;
+  if (!packed) {
+    *body = data + 8;
+    return size == 8 + body_bytes ? 0 : -1;
+  }
+  *unpacked = (unsigned char *)malloc((size_t)body_bytes);
+  if (*unpacked && xshim_inflate(data + 8, size - 8, *unpacked, (size_t)body_bytes) == 0) {
+    *body = *unpacked;
+    return 0;
+  }
+  free(*unpacked);
+  *unpacked = NULL;
+  return -1;
+}
+
 Pixmap image_data_to_pixmap(Display *dpy, Window win, const unsigned char *data,
                             unsigned long size, int *width_ret,
                             int *height_ret, Pixmap *mask_ret) {
@@ -89,23 +119,25 @@ Pixmap image_data_to_pixmap(Display *dpy, Window win, const unsigned char *data,
   if (width_ret) *width_ret = 0;
   if (height_ret) *height_ret = 0;
   if (mask_ret) *mask_ret = None;
-  if (size < 8 || memcmp(data, "565M", 4) != 0) return None;
-
-  const unsigned w = le16(data + 4), h = le16(data + 6);
+  unsigned w, h;
+  const unsigned char *body;
+  unsigned char *unpacked;
+  if (blob_open(data, size, &w, &h, &body, &unpacked) != 0) return None;
   const uint64_t pixel_bytes = (uint64_t)w * h * 2;
   const uint64_t mask_bytes = (uint64_t)((w + 7) / 8) * h;
-  if (w == 0 || h == 0 || size != 8 + pixel_bytes + mask_bytes) return None;
 
   struct XshimPixmap *colour = pixmap_new((int)w, (int)h, 16);
   struct XshimPixmap *mask = mask_ret ? pixmap_new((int)w, (int)h, 1) : NULL;
   if (!colour || (mask_ret && !mask)) {
     pixmap_free(colour);
     pixmap_free(mask);
+    free(unpacked);
     return None;
   }
   for (unsigned i = 0; i < w * h; i++)
-    colour->canvas.px[i] = px_swap((uint16_t)le16(data + 8 + 2 * i));
-  if (mask) memcpy(mask->bits, data + 8 + pixel_bytes, (size_t)mask_bytes);
+    colour->canvas.px[i] = px_swap((uint16_t)le16(body + 2 * i));
+  if (mask) memcpy(mask->bits, body + pixel_bytes, (size_t)mask_bytes);
+  free(unpacked);
 
   track(dpy, colour);
   if (mask) track(dpy, mask);
@@ -121,29 +153,31 @@ static unsigned expand(unsigned v, unsigned bits) {
 
 XImage *image_data_to_ximage(Display *dpy, Visual *visual, const unsigned char *data,
                              unsigned long size) {
-  if (size < 8 || memcmp(data, "565M", 4) != 0) return NULL;
-  const unsigned w = le16(data + 4), h = le16(data + 6);
+  unsigned w, h;
+  const unsigned char *body;
+  unsigned char *unpacked;
+  if (blob_open(data, size, &w, &h, &body, &unpacked) != 0) return NULL;
   const uint64_t pixel_bytes = (uint64_t)w * h * 2;
   const unsigned stride = (w + 7) / 8;
-  if (w == 0 || h == 0 || size != 8 + pixel_bytes + (uint64_t)stride * h) return NULL;
   XImage *im = XCreateImage(dpy, visual, 32, ZPixmap, 0, NULL, w, h, 32, (int)(4 * w));
-  if (!im) return NULL;
-  im->data = (char *)malloc((size_t)4 * w * h);
-  if (!im->data) {
-    XDestroyImage(im);
+  if (im) im->data = (char *)malloc((size_t)4 * w * h);
+  if (!im || !im->data) {
+    if (im) XDestroyImage(im);
+    free(unpacked);
     return NULL;
   }
-  const unsigned char *mask = data + 8 + pixel_bytes;
+  const unsigned char *mask = body + pixel_bytes;
   for (unsigned y = 0; y < h; y++) {
     unsigned char *out = (unsigned char *)im->data + (size_t)(h - 1 - y) * 4 * w;
     for (unsigned x = 0; x < w; x++, out += 4) {
-      const unsigned v = le16(data + 8 + 2 * ((size_t)y * w + x));
+      const unsigned v = le16(body + 2 * ((size_t)y * w + x));
       out[0] = (unsigned char)expand(v >> 11, 5);
       out[1] = (unsigned char)expand((v >> 5) & 63, 6);
       out[2] = (unsigned char)expand(v & 31, 5);
       out[3] = (mask[y * stride + x / 8] >> (7 - x % 8)) & 1 ? 255 : 0;
     }
   }
+  free(unpacked);
   return im;
 }
 

@@ -6,6 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <unity.h>
+#include <zlib.h>
 
 #include "colors.h"
 #include "core/canvas.h"
@@ -1073,6 +1074,114 @@ void test_image_data_to_pixmap_rejects_a_blob_that_is_not_ours(void) {
     TEST_ASSERT_EQUAL(None, mask);
     TEST_ASSERT_EQUAL_INT(0, w);
     TEST_ASSERT_EQUAL_INT(0, h);
+  }
+}
+
+/* The "565Z" form of fill_blob's image: its header, then `body_len` bytes of
+ * its pixels and mask (fewer or more than the image needs, for the failure
+ * cases) as one zlib stream. Returns the blob's size. */
+static unsigned long deflate_blob(unsigned char *out, unsigned long cap, unsigned long body_len) {
+  unsigned char body[sizeof(blob) + 1] = {0};
+  fill_blob();
+  memcpy(body, blob + 8, sizeof(blob) - 8);
+  memcpy(out, "565Z", 4);
+  memcpy(out + 4, blob + 4, 4);
+  uLongf len = cap - 8;
+  TEST_ASSERT_EQUAL_INT(Z_OK, compress2(out + 8, &len, body, body_len, 9));
+  return 8 + len;
+}
+
+void test_a_deflated_blob_loads_the_same_pixels_and_mask_as_the_plain_one(void) {
+  unsigned char packed[256];
+  const unsigned long size = deflate_blob(packed, sizeof(packed), sizeof(blob) - 8);
+  fill_blob();
+
+  XImage *want = image_data_to_ximage(dpy, NULL, blob, sizeof(blob));
+  XImage *got = image_data_to_ximage(dpy, NULL, packed, size);
+  TEST_ASSERT_NOT_NULL(got);
+  TEST_ASSERT_EQUAL_HEX8_ARRAY(want->data, got->data, 4 * BLOB_W * BLOB_H);
+  XDestroyImage(want);
+  XDestroyImage(got);
+
+  int w = 99, h = 99;
+  Pixmap mask = None;
+  Pixmap p = image_data_to_pixmap(dpy, win, packed, size, &w, &h, &mask);
+  TEST_ASSERT_NOT_EQUAL(None, p);
+  TEST_ASSERT_NOT_EQUAL(None, mask);
+  TEST_ASSERT_EQUAL_INT(BLOB_W, w);
+  TEST_ASSERT_EQUAL_INT(BLOB_H, h);
+  XImage *im = XGetImage(dpy, p, 0, 0, BLOB_W, BLOB_H, ~0UL, ZPixmap);
+  for (int y = 0; y < BLOB_H; y++)
+    for (int x = 0; x < BLOB_W; x++)
+      TEST_ASSERT_EQUAL_HEX16(px_swap((uint16_t)(0x1000 + BLOB_W * y + x)),
+                              XGetPixel(im, x, y));
+  XDestroyImage(im);
+  /* Copied through the mask, only its 6 set pixels land on a clear window. */
+  XGCValues gcv = {0};
+  GC gc = XCreateGC(dpy, win, 0, &gcv);
+  XSetClipMask(dpy, gc, mask);
+  XCopyArea(dpy, p, win, gc, 0, 0, BLOB_W, BLOB_H, 0, 0);
+  TEST_ASSERT_EQUAL_INT(MASK_SET_BITS, count_set());
+  XFreeGC(dpy, gc);
+  XFreePixmap(dpy, p);
+  XFreePixmap(dpy, mask);
+}
+
+void test_a_deflated_blob_that_is_corrupt_or_the_wrong_size_is_rejected(void) {
+  unsigned char shorter[256], longer[256], corrupt[256];
+  const unsigned long body = sizeof(blob) - 8;
+  const unsigned long n_short = deflate_blob(shorter, sizeof(shorter), body - 1);
+  const unsigned long n_long = deflate_blob(longer, sizeof(longer), body + 1);
+  const unsigned long n_corrupt = deflate_blob(corrupt, sizeof(corrupt), body);
+  corrupt[n_corrupt / 2] ^= 0xFF;
+  struct {
+    const unsigned char *data;
+    unsigned long size;
+  } cases[] = {{shorter, n_short}, {longer, n_long}, {corrupt, n_corrupt},
+               {longer, 8}};
+  for (unsigned i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+    int w = 99, h = 99;
+    Pixmap mask = 12345;
+    TEST_ASSERT_EQUAL(None, image_data_to_pixmap(dpy, win, cases[i].data, cases[i].size,
+                                                 &w, &h, &mask));
+    TEST_ASSERT_EQUAL(None, mask);
+    TEST_ASSERT_EQUAL_INT(0, w);
+    TEST_ASSERT_NULL(image_data_to_ximage(dpy, NULL, cases[i].data, cases[i].size));
+  }
+  /* A stream cut short before its end. */
+  const unsigned long n_whole = deflate_blob(corrupt, sizeof(corrupt), body);
+  TEST_ASSERT_NULL(image_data_to_ximage(dpy, NULL, corrupt, n_whole - 5));
+}
+
+/* A "565Z" blob of a black w by h image, malloc'd; its size goes in *size. */
+static unsigned char *black_deflated_blob(unsigned w, unsigned h, unsigned long *size) {
+  const unsigned long body_len = 2UL * w * h + (unsigned long)((w + 7) / 8) * h;
+  unsigned char *body = (unsigned char *)calloc(1, body_len);
+  uLongf len = compressBound(body_len);
+  unsigned char *out = (unsigned char *)malloc(8 + len);
+  TEST_ASSERT_EQUAL_INT(Z_OK, compress2(out + 8, &len, body, body_len, 9));
+  free(body);
+  memcpy(out, "565Z", 4);
+  out[4] = w & 0xFF, out[5] = w >> 8, out[6] = h & 0xFF, out[7] = h >> 8;
+  *size = 8 + len;
+  return out;
+}
+
+/* Past INT16_MAX a side is more than the canvas allows, and on the device a
+ * 65535 by 65535 blob's size would wrap the 32-bit size_t passed to malloc. */
+void test_a_blob_wider_or_taller_than_int16_max_is_rejected(void) {
+  const unsigned sizes[][2] = {{32768, 1}, {1, 32768}, {32767, 1}, {1, 32767}};
+  for (unsigned i = 0; i < 4; i++) {
+    unsigned long size;
+    unsigned char *b = black_deflated_blob(sizes[i][0], sizes[i][1], &size);
+    XImage *im = image_data_to_ximage(dpy, NULL, b, size);
+    if (i < 2) {
+      TEST_ASSERT_NULL(im);
+    } else {
+      TEST_ASSERT_NOT_NULL(im);
+      XDestroyImage(im);
+    }
+    free(b);
   }
 }
 
@@ -3758,6 +3867,9 @@ int main(void) {
   RUN_TEST(test_image_data_to_pixmap_makes_a_colour_pixmap_and_a_mask);
   RUN_TEST(test_image_data_to_pixmap_without_a_mask_pointer_still_loads_the_colours);
   RUN_TEST(test_image_data_to_pixmap_rejects_a_blob_that_is_not_ours);
+  RUN_TEST(test_a_deflated_blob_loads_the_same_pixels_and_mask_as_the_plain_one);
+  RUN_TEST(test_a_deflated_blob_that_is_corrupt_or_the_wrong_size_is_rejected);
+  RUN_TEST(test_a_blob_wider_or_taller_than_int16_max_is_rejected);
   RUN_TEST(test_get_geometry_of_the_window_is_the_canvas_and_of_nothing_is_failure);
   RUN_TEST(test_copy_area_draws_the_image_at_the_destination);
   RUN_TEST(test_copy_area_copies_only_the_requested_source_rectangle);
