@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4STEXK25E7PGDG3XTWEJWNH",
+  "strategy": "manual-commit",
+  "branch": "chore/91-xscreensaver-6-17",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "tools/tests/test_vendor_diff.py",
+    "tools/vendor_diff.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 28,
+    "cache_creation_tokens": 11722,
+    "cache_read_tokens": 2942239,
+    "output_tokens": 5216,
+    "api_call_count": 14
+  }
+}
