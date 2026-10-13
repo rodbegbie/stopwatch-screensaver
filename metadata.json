@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4TTZCQHPQMMJ72G21S5XPTX",
+  "strategy": "manual-commit",
+  "branch": "worktree-batch6-s-m-hacks",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "firmware/platformio.ini",
+    "firmware/src/hacks/binaryhorizon_swapped.c",
+    "firmware/test/test_binaryhorizon_wrapper/test_binaryhorizon_wrapper.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 78,
+    "cache_creation_tokens": 59321,
+    "cache_read_tokens": 4498476,
+    "output_tokens": 21636,
+    "api_call_count": 39
+  }
+}
