@@ -81,3 +81,14 @@ def test_main_prints_each_section(repo, capsys):
     assert "hacks/gone.c" in out
     assert "sprites.png" in out
     assert "fresh" in out
+
+
+@pytest.mark.parametrize("which", ["old", "new"])
+def test_a_missing_or_incomplete_tree_is_an_error(repo, capsys, which):
+    root, old, new = repo
+    trees = {"old": old, "new": new}
+    trees[which] = root / "vendor/absent"
+    assert vd.main([str(trees["old"]), str(trees["new"]), "--root", str(root)]) == 1
+    assert "absent" in capsys.readouterr().err
+    (root / "vendor/absent").mkdir()
+    assert vd.main([str(trees["old"]), str(trees["new"]), "--root", str(root)]) == 1

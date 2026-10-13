@@ -93,6 +93,10 @@ def main(argv: list[str]) -> int:
     parser.add_argument("new", help="the release to move to")
     parser.add_argument("--root", default=str(ROOT), help="the repository")
     args = parser.parse_args(argv)
+    for tree in (args.old, args.new):
+        if not _configs(Path(tree)):
+            print(f"error: {tree} is not an xscreensaver source tree", file=sys.stderr)
+            return 1
     report = compare(Path(args.root), Path(args.old), Path(args.new))
     _section(
         "copied files changed upstream", [f"{a} <- {b}" for a, b in report.changed]
