@@ -226,6 +226,8 @@ extern const HackEntry imsmap_hack;
 
 extern const HackEntry metaballs_hack;
 
+extern const HackEntry munch_hack;
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -313,6 +315,7 @@ const HackEntry *const g_hacks[] = {
     &deco_hack,
     &imsmap_hack,
     &metaballs_hack,
+    &munch_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif

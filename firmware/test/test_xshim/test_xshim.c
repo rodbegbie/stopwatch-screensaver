@@ -14,6 +14,7 @@
 #include "easing.h"
 #include "erase.h"
 #include "fps.h"
+#include "pow2.h"
 #include "alpha.h"
 #include "screenhack.h"
 #include "thread_util.h"
@@ -222,6 +223,30 @@ void test_gc_accepts_function_and_line_width_fields(void) {
   TEST_ASSERT_NOT_NULL(gc);
   XDrawPoint(dpy, win, gc, 1, 1);
   TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(1, 1));
+  XFreeGC(dpy, gc);
+}
+
+void test_a_point_drawn_with_gxxor_flips_the_pixel_and_drawing_it_twice_restores_it(void) {
+  XGCValues v = {0};
+  v.foreground = 0x00FF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XSetFunction(dpy, gc, GXxor);
+  canvas_clear(&cv, 0x0F0F);
+  XDrawPoint(dpy, win, gc, 3, 4);
+  TEST_ASSERT_EQUAL_HEX16(0x0FF0, at(3, 4));
+  TEST_ASSERT_EQUAL_HEX16(0x0F0F, at(4, 4));
+  XDrawPoint(dpy, win, gc, 3, 4);
+  TEST_ASSERT_EQUAL_HEX16(0x0F0F, at(3, 4));
+  XDrawPoint(dpy, win, gc, -1, 0);
+  XDrawPoint(dpy, win, gc, 3, -1);
+  XDrawPoint(dpy, win, gc, cv.w, cv.h - 1);
+  XDrawPoint(dpy, win, gc, 3, cv.h);
+  XSetFunction(dpy, gc, GXor);
+  XDrawPoint(dpy, win, gc, 3, 4);
+  TEST_ASSERT_EQUAL_HEX16(0x00FF, at(3, 4));
+  XSetFunction(dpy, gc, GXcopy);
+  XDrawPoint(dpy, win, gc, 3, 4);
+  TEST_ASSERT_EQUAL_HEX16(0x00FF, at(3, 4));
   XFreeGC(dpy, gc);
 }
 
@@ -3517,6 +3542,27 @@ void test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits(void) {
   XDestroyImage(im);
 }
 
+void test_i_log2_is_the_floor_of_log_two_and_minus_one_for_zero(void) {
+  TEST_ASSERT_EQUAL_INT(-1, i_log2(0));
+  TEST_ASSERT_EQUAL_INT(0, i_log2(1));
+  TEST_ASSERT_EQUAL_INT(1, i_log2(2));
+  TEST_ASSERT_EQUAL_INT(1, i_log2(3));
+  TEST_ASSERT_EQUAL_INT(8, i_log2(373));
+  TEST_ASSERT_EQUAL_INT(8, i_log2(511));
+  TEST_ASSERT_EQUAL_INT(9, i_log2(512));
+  TEST_ASSERT_EQUAL_INT(i_log2(1000), i_log2_fast(1000));
+}
+
+void test_to_pow2_rounds_up_to_the_next_power_of_two(void) {
+  TEST_ASSERT_EQUAL_UINT64(1, to_pow2(0));
+  TEST_ASSERT_EQUAL_UINT64(1, to_pow2(1));
+  TEST_ASSERT_EQUAL_UINT64(2, to_pow2(2));
+  TEST_ASSERT_EQUAL_UINT64(4, to_pow2(3));
+  TEST_ASSERT_EQUAL_UINT64(8, to_pow2(5));
+  TEST_ASSERT_EQUAL_UINT64(512, to_pow2(512));
+  TEST_ASSERT_EQUAL_UINT64(512, to_pow2(373));
+}
+
 void test_bitmap_pad_is_32_bits_and_makes_a_tight_image_row_whole_words(void) {
   TEST_ASSERT_EQUAL_INT(32, BitmapPad(dpy));
   XImage *im = XCreateImage(dpy, NULL, 16, ZPixmap, 0, NULL, 3, 1, BitmapPad(dpy), 0);
@@ -3902,6 +3948,8 @@ int main(void) {
   RUN_TEST(test_query_color_recovers_the_colour_alloc_color_made);
   RUN_TEST(test_the_screen_is_a_colour_display_with_no_writable_cells);
   RUN_TEST(test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits);
+  RUN_TEST(test_i_log2_is_the_floor_of_log_two_and_minus_one_for_zero);
+  RUN_TEST(test_to_pow2_rounds_up_to_the_next_power_of_two);
   RUN_TEST(test_bitmap_pad_is_32_bits_and_makes_a_tight_image_row_whole_words);
   RUN_TEST(test_a_bitmap_image_is_one_bit_a_pixel_least_significant_bit_first);
   RUN_TEST(test_put_image_of_a_bitmap_draws_set_bits_in_the_foreground_and_clear_in_the_background);
@@ -4006,6 +4054,7 @@ int main(void) {
   RUN_TEST(test_resources_missing_integer_returns_zero);
   RUN_TEST(test_pixel_resource_black_white_hex);
   RUN_TEST(test_gc_accepts_function_and_line_width_fields);
+  RUN_TEST(test_a_point_drawn_with_gxxor_flips_the_pixel_and_drawing_it_twice_restores_it);
   RUN_TEST(test_window_attributes_have_depth_visual_screen);
   RUN_TEST(test_button_press_event_fields_exist);
   RUN_TEST(test_xrectangle_type_exists);

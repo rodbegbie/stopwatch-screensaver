@@ -164,7 +164,12 @@ int XSetWindowBackground(Display *dpy, Window w, unsigned long pixel) {
 
 int XDrawPoint(Display *dpy, Drawable d, GC gc, int x, int y) {
   Canvas *c = xshim_target(dpy, d);
-  if (c) canvas_point(c, x, y, (uint16_t)gc->foreground);
+  if (!c) return 0;
+  if (gc->function == GXxor && x >= 0 && y >= 0 && x < c->w && y < c->h)
+    canvas_point(c, x, y,
+                 (uint16_t)(c->px[(size_t)y * c->w + x] ^ gc->foreground));
+  else
+    canvas_point(c, x, y, (uint16_t)gc->foreground);
   return 0;
 }
 

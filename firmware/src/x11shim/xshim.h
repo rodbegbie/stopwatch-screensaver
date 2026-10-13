@@ -45,8 +45,9 @@ typedef struct XshimGC {
   struct XshimPixmap *clip;
   int clip_x, clip_y;
   int line_width, cap_style, join_style;
-  /* GXcopy, GXor or GXxor as the hack set it. The shim's own drawing always
-   * copies; a wrapper that draws into bit planes reads this. */
+  /* GXcopy, GXor or GXxor as the hack set it. The shim's own drawing copies,
+   * except XDrawPoint, which flips the pixel under GXxor (Munch); a wrapper
+   * that draws into bit planes reads this. */
   int function;
   /* 0 draws opaque. 1 to 31 is the weight out of 32 given to this GC's colour
    * when a wide line or circle (stroke.c) is blended over the canvas. */
