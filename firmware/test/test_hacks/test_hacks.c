@@ -476,7 +476,7 @@ static const uint64_t kBaseline[] = {
     0x9b337f3f1305e6d1ull, /* Petri */
     0x0577bf85b67da573ull, /* Helix: re-pinned for the eraser (#86) */
     0xaeed5737b8ef81e7ull, /* Rorschach: re-pinned for the eraser (#86) */
-    0xc1db63631e6d26ecull, /* Pedal: re-pinned for the eraser (#86) */
+    0xb9beb1574e026761ull, /* Pedal: re-pinned for the exact polygon fill (3 pixels at frame 50) */
     0, /* Coral reads the clock: not deterministic, so not pinned */
     0xdabd390a15578da4ull, /* Squiral */
     0xc73423265e03fc8eull, /* Critical */
@@ -527,7 +527,7 @@ static const uint64_t kBaseline[] = {
     0xa4895fcbd5d235feull, /* StonerView: taken after looking at the frames (saturating additive blend); re-taken for the square outlines (GL_LINE_LOOP, #80) */
     0x6312d77d82216fc7ull, /* Halo: taken after looking at the frames, with GCBackground honoured */
     0x9b1b0de461b6438bull, /* XMatrix: taken after looking at the frames, trace off */
-    0x51a9a94db9bf9128ull, /* Qix: taken after looking at the frames */
+    0xe8237ebf78401273ull, /* Qix: re-pinned for the exact polygon fill, which drops stray pixels the double fill left on a thin sliver */
     0xa25b9411b50849b8ull, /* Fireworkx: taken after looking at the frames (shells and lengths scaled to the render size) */
     0x77bfaaf3faa1cc64ull, /* Starfish: taken after looking at the frames (spline.h before the float rename) */
     0x5694978ccee06fd6ull, /* Goop: taken after looking at the frames (spline.h before the float rename) */

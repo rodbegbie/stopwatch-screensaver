@@ -1,5 +1,6 @@
 #include "core/canvas.h"
 
+#include <limits.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -279,8 +280,114 @@ static int compare_doubles(const void *a, const void *b) {
   return (x > y) - (x < y);
 }
 
+/* Past this the products below could outgrow 64 bits, and the polygon is far
+ * off any screen: the slow path may have it. */
+#define POLYGON_INT_MAX (1 << 24)
+
+/* An edge of the polygon being filled, oriented downwards: it crosses the
+ * centre line of rows ylo <= y < yhi. At row y it crosses at
+ * x = xlo + (2k + 1) * dx / (2 * dy), k = y - ylo, and the first pixel at or
+ * right of that is ceil(x - 0.5) = xlo + ceil(((2k + 1) * dx - dy) / (2 * dy)).
+ * `col` and `rem` hold that numerator's floor quotient and remainder over
+ * `den` = 2 * dy, so each row down adds 2 * dx to the numerator without a
+ * division. */
+typedef struct {
+  int ylo, yhi, xlo, dx;
+  int den, step_col, step_rem;
+  int col, rem;
+  int row; /* the row col and rem are for; INT_MIN before the first */
+} PolyEdge;
+
+static int64_t floor_div(int64_t a, int64_t b) {
+  const int64_t q = a / b;
+  return a % b < 0 ? q - 1 : q;
+}
+
+static int compare_ints(const void *a, const void *b) {
+  const int x = *(const int *)a, y = *(const int *)b;
+  return (x > y) - (x < y);
+}
+
+/* Even-odd fill in whole numbers (the S3 does double in software, and the old
+ * fill divided in double for every edge on every row). Exact: a pixel on a
+ * left edge is in and one on a right edge is out, whatever the slope. */
+static void fill_polygon_in_integers(Canvas *c, const int *xy, int n, uint16_t color) {
+  PolyEdge stack_edges[64];
+  int stack_xs[64];
+  PolyEdge *edges = stack_edges;
+  int *xs = stack_xs;
+  void *heap = NULL;
+  if (n > 64) {
+    heap = malloc((size_t)n * (sizeof(PolyEdge) + sizeof(int)));
+    if (!heap) return;
+    edges = (PolyEdge *)heap;
+    xs = (int *)(edges + n);
+  }
+  int ne = 0, ymin = xy[1], ymax = xy[1];
+  for (int i = 0, j = n - 1; i < n; j = i++) {
+    int xa = xy[2 * i], ya = xy[2 * i + 1], xb = xy[2 * j], yb = xy[2 * j + 1];
+    if (ya < ymin) ymin = ya;
+    if (ya > ymax) ymax = ya;
+    if (ya == yb) continue;
+    if (ya > yb) {
+      const int tx = xa, ty = ya;
+      xa = xb, ya = yb, xb = tx, yb = ty;
+    }
+    PolyEdge *e = &edges[ne++];
+    e->ylo = ya, e->yhi = yb, e->xlo = xa, e->dx = xb - xa;
+    e->den = 2 * (yb - ya);
+    e->step_col = (int)floor_div(2 * (int64_t)e->dx, e->den);
+    e->step_rem = 2 * e->dx - e->step_col * e->den;
+    e->row = INT_MIN;
+  }
+  if (ymin < 0) ymin = 0;
+  if (ymax >= c->h) ymax = c->h - 1;
+  for (int y = ymin; y <= ymax; y++) {
+    int nx = 0;
+    for (int i = 0; i < ne; i++) {
+      PolyEdge *e = &edges[i];
+      if (y < e->ylo || y >= e->yhi) continue;
+      if (e->row == y - 1) {
+        e->col += e->step_col;
+        e->rem += e->step_rem;
+        if (e->rem >= e->den) e->rem -= e->den, e->col++;
+      } else {
+        const int64_t num = (2 * (int64_t)(y - e->ylo) + 1) * e->dx - e->den / 2;
+        const int64_t q = floor_div(num, e->den);
+        e->col = e->xlo + (int)q;
+        e->rem = (int)(num - q * e->den);
+      }
+      e->row = y;
+      xs[nx++] = e->col + (e->rem != 0);
+    }
+    if (nx > SORT_INSERTION_MAX) {
+      qsort(xs, (size_t)nx, sizeof(int), compare_ints);
+    } else {
+      for (int a = 1; a < nx; a++)
+        for (int b = a; b > 0 && xs[b - 1] > xs[b]; b--) {
+          const int tmp = xs[b];
+          xs[b] = xs[b - 1];
+          xs[b - 1] = tmp;
+        }
+    }
+    for (int k = 0; k + 1 < nx; k += 2) hspan(c, xs[k], (wide_t)xs[k + 1] - 1, y, color);
+  }
+  free(heap);
+}
+
+static void fill_polygon_in_double(Canvas *c, const int *xy, int n, uint16_t color);
+
 void canvas_fill_polygon(Canvas *c, const int *xy, int n, uint16_t color) {
   if (n < 3) return;
+  for (int i = 0; i < 2 * n; i++)
+    if (xy[i] > POLYGON_INT_MAX || xy[i] < -POLYGON_INT_MAX) {
+      fill_polygon_in_double(c, xy, n, color);
+      return;
+    }
+  fill_polygon_in_integers(c, xy, n, color);
+}
+
+static void fill_polygon_in_double(Canvas *c, const int *xy, int n, uint16_t color) {
   /* An edge crosses a scanline at most once, so n slots always suffice. The
    * heap is only used for big polygons, to keep the task stack small. */
   double stack_xs[64];
