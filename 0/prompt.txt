@@ -1,0 +1,22 @@
+Go to the pipes worktree and work more on Issue #44.  Let's see how far you can get.  Feel free to flash the attached device while you work on
+  it.
+
+---
+
+rebase from main and force-push again
+
+---
+
+file an issue for the flash space
+
+---
+
+flash the device with a fresh build of main
+
+---
+
+/claude-md-management:revise-claude-md
+
+---
+
+apply them
