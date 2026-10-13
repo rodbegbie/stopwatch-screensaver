@@ -212,9 +212,49 @@ void canvas_line(Canvas *c, int x0, int y0, int x1, int y1, uint16_t color) {
   }
 }
 
+/* Past this the squares below could overflow 64 bits; such an ellipse is far
+ * bigger than any screen, so the slow path may have it. */
+#define ELLIPSE_INT_MAX 32768
+
+/* A row of an ellipse in whole numbers (the S3 does double in software, and
+ * every row of every dot paid for a sqrt, a ceil and a floor). A pixel is in
+ * when its centre is: with distances from the ellipse's centre doubled to
+ * clear the halves, dx2^2 * h^2 <= w^2 * (h^2 - dy2^2). This is the largest
+ * |dx2| that satisfies it for a row at doubled offset dy2. The float sqrt is
+ * only the starting guess; the two loops make it exact. */
+static int64_t ellipse_reach2(int64_t w, int64_t h, int64_t dy2) {
+  const int64_t q = h * h - dy2 * dy2;
+  const int64_t limit = w * w * q;
+  int64_t s = (int64_t)(sqrtf((float)q) * (float)w / (float)h);
+  while (s > 0 && s * s * h * h > limit) s--;
+  while ((s + 1) * (s + 1) * h * h <= limit) s++;
+  return s;
+}
+
+static int64_t floor_half(int64_t n) { return (n - (n & 1)) / 2; }
+
+static void fill_ellipse_in_double(Canvas *c, int x, int y, int w, int h,
+                                   uint16_t color);
+
 void canvas_fill_ellipse(Canvas *c, int x, int y, int w, int h,
                          uint16_t color) {
   if (w <= 0 || h <= 0) return;
+  if (w > ELLIPSE_INT_MAX || h > ELLIPSE_INT_MAX) {
+    fill_ellipse_in_double(c, x, y, w, h, color);
+    return;
+  }
+  const int64_t centre2 = 2 * (int64_t)x + w - 1; /* twice the centre column */
+  wide_t y0 = y < 0 ? 0 : y, y1 = (wide_t)y + h - 1;
+  if (y1 >= c->h) y1 = c->h - 1;
+  for (wide_t yy = y0; yy <= y1; yy++) {
+    const int64_t dy2 = 2 * (yy - y) - h + 1;
+    const int64_t reach = ellipse_reach2(w, h, dy2);
+    hspan(c, floor_half(centre2 - reach + 1), floor_half(centre2 + reach), yy, color);
+  }
+}
+
+static void fill_ellipse_in_double(Canvas *c, int x, int y, int w, int h,
+                                   uint16_t color) {
   double cx = x + (w - 1) / 2.0, cy = y + (h - 1) / 2.0;
   double rx = w / 2.0, ry = h / 2.0;
   wide_t y0 = y < 0 ? 0 : y, y1 = (wide_t)y + h - 1;
