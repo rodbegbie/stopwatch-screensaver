@@ -1,0 +1,7 @@
+Port XJack
+
+---
+
+Yeah, option 1 is good.  There's some text stuff in graphstat too that might be useful to look at.  
+
+The Special Elite font is in the Google Fonts library https://github.com/google/fonts under a free license.
