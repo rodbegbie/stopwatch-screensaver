@@ -354,9 +354,12 @@ int XCopyPlane(Display *, Drawable src, Drawable dst, GC, int src_x,
                int src_y, unsigned int w, unsigned int h, int dst_x,
                int dst_y, unsigned long plane);
 /* An XImage is a block of pixels in the hack's own memory; XPutImage draws it.
- * Only ZPixmap images exist: 16-bit ones (what a hack that fills in its own
+ * ZPixmap images are 16-bit ones (what a hack that fills in its own
  * pixels asks for) and 24 or 32-bit ones (a mask scaled down from a loaded
- * picture, or XGetImage's copy of the canvas). */
+ * picture, or XGetImage's copy of the canvas). An XYBitmap image is depth 1,
+ * one bit a pixel, least significant bit first: XPutImage draws its set bits in
+ * the GC's foreground and its clear bits in the background. */
+#define XYBitmap 0
 #define XYPixmap 1
 #define LSBFirst 0
 #define MSBFirst 1

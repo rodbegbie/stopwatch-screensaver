@@ -17,14 +17,16 @@ XImage *XCreateImage(Display *dpy, Visual *visual, unsigned int depth,
   (void)dpy;
   (void)visual;
   (void)offset;
-  if (format != ZPixmap || (depth != 16 && depth != 24 && depth != 32)) return NULL;
-  const int bpp = depth == 16 ? 2 : BYTES_PER_PIXEL;
-  if (w == 0 || h == 0 || w > INT32_MAX / bpp) return NULL;
+  const int bitmap = format == XYBitmap && depth == 1;
+  if (!bitmap && (format != ZPixmap || (depth != 16 && depth != 24 && depth != 32)))
+    return NULL;
+  const int bits = bitmap ? 1 : depth == 16 ? 16 : BYTES_PER_PIXEL * 8;
+  if (w == 0 || h == 0 || w > INT32_MAX / (bits >= 8 ? bits / 8 : 1)) return NULL;
 
   int64_t pad = bitmap_pad >= 8 ? bitmap_pad : 32;
-  int64_t tight = ((int64_t)w * bpp * 8 + pad - 1) / pad * pad / 8;
+  int64_t tight = ((int64_t)w * bits + pad - 1) / pad * pad / 8;
   if (bytes_per_line == 0) bytes_per_line = (int)tight;
-  if (bytes_per_line < (int64_t)w * bpp) return NULL;
+  if (bytes_per_line < ((int64_t)w * bits + 7) / 8) return NULL;
   if ((int64_t)bytes_per_line * h > INT32_MAX) return NULL;
 
   XImage *im = (XImage *)calloc(1, sizeof(*im));
@@ -32,7 +34,7 @@ XImage *XCreateImage(Display *dpy, Visual *visual, unsigned int depth,
   im->width = (int)w;
   im->height = (int)h;
   im->depth = (int)depth;
-  im->bits_per_pixel = bpp * 8;
+  im->bits_per_pixel = bits;
   im->bytes_per_line = bytes_per_line;
   im->data = data;
   return im;
@@ -46,6 +48,14 @@ static char *pixel_at(const XImage *im, int x, int y) {
 }
 
 unsigned long XGetPixel(XImage *im, int x, int y) {
+  if (im->bits_per_pixel == 1) {
+    if (!im->data || x < 0 || y < 0 || x >= im->width || y >= im->height)
+      return 0;
+    return ((unsigned char)im->data[(size_t)y * (size_t)im->bytes_per_line +
+                                    (size_t)x / 8] >>
+            (x % 8)) &
+           1;
+  }
   const char *p = pixel_at(im, x, y);
   if (!p) return 0;
   if (im->bits_per_pixel == 16) {
@@ -59,6 +69,17 @@ unsigned long XGetPixel(XImage *im, int x, int y) {
 }
 
 int XPutPixel(XImage *im, int x, int y, unsigned long pixel) {
+  if (im->bits_per_pixel == 1) {
+    if (!im->data || x < 0 || y < 0 || x >= im->width || y >= im->height)
+      return 1;
+    unsigned char *byte = (unsigned char *)im->data +
+                          (size_t)y * (size_t)im->bytes_per_line + (size_t)x / 8;
+    if (pixel & 1)
+      *byte |= (unsigned char)(1u << (x % 8));
+    else
+      *byte &= (unsigned char)~(1u << (x % 8));
+    return 1;
+  }
   char *p = pixel_at(im, x, y);
   if (!p) return 1;
   if (im->bits_per_pixel == 16) {
@@ -119,9 +140,9 @@ static uint16_t xshim_image_pixel(XImage *im, int x, int y) {
 int XPutImage(Display *dpy, Drawable d, GC gc, XImage *im, int src_x,
               int src_y, int dst_x, int dst_y, unsigned int w,
               unsigned int h) {
-  (void)gc;
   Canvas *dst = xshim_target(dpy, d);
   if (!dst || !im || !im->data) return 0;
+  if (im->bits_per_pixel == 1 && !gc) return 0;
   const int64_t i0 = max_i64(0, max_i64(-(int64_t)src_x, -(int64_t)dst_x));
   const int64_t j0 = max_i64(0, max_i64(-(int64_t)src_y, -(int64_t)dst_y));
   const int64_t i1 = min_i64(w, min_i64((int64_t)im->width - src_x,
@@ -135,6 +156,13 @@ int XPutImage(Display *dpy, Drawable d, GC gc, XImage *im, int src_x,
              im->data + (src_y + j) * (int64_t)im->bytes_per_line +
                  (src_x + i0) * 2,
              (size_t)(i1 - i0) * sizeof(uint16_t));
+  } else if (im->bits_per_pixel == 1) {
+    for (int64_t j = j0; j < j1; j++)
+      for (int64_t i = i0; i < i1; i++)
+        dst->px[(dst_y + j) * dst->w + dst_x + i] =
+            (uint16_t)(XGetPixel(im, (int)(src_x + i), (int)(src_y + j))
+                           ? gc->foreground
+                           : gc->background);
   } else {
     for (int64_t j = j0; j < j1; j++)
       for (int64_t i = i0; i < i1; i++)

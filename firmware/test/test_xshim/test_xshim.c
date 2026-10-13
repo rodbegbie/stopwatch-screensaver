@@ -3517,6 +3517,44 @@ void test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits(void) {
   XDestroyImage(im);
 }
 
+void test_a_bitmap_image_is_one_bit_a_pixel_least_significant_bit_first(void) {
+  XImage *im = XCreateImage(dpy, NULL, 1, XYBitmap, 0, NULL, 9, 2, 8, 0);
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_INT(1, im->bits_per_pixel);
+  TEST_ASSERT_EQUAL_INT(2, im->bytes_per_line);
+  im->data = (char *)calloc(2, (size_t)im->bytes_per_line);
+  XPutPixel(im, 0, 0, 1);
+  XPutPixel(im, 2, 0, 1);
+  XPutPixel(im, 8, 1, 1);
+  TEST_ASSERT_EQUAL_HEX8(0x05, (uint8_t)im->data[0]);
+  TEST_ASSERT_EQUAL_HEX8(0x00, (uint8_t)im->data[1]);
+  TEST_ASSERT_EQUAL_HEX8(0x01, (uint8_t)im->data[3]);
+  TEST_ASSERT_EQUAL_HEX64(1, XGetPixel(im, 2, 0));
+  TEST_ASSERT_EQUAL_HEX64(0, XGetPixel(im, 1, 0));
+  TEST_ASSERT_EQUAL_HEX64(1, XGetPixel(im, 8, 1));
+  XPutPixel(im, 2, 0, 0);
+  TEST_ASSERT_EQUAL_HEX8(0x01, (uint8_t)im->data[0]);
+  XDestroyImage(im);
+}
+
+void test_put_image_of_a_bitmap_draws_set_bits_in_the_foreground_and_clear_in_the_background(void) {
+  XImage *im = XCreateImage(dpy, NULL, 1, XYBitmap, 0, NULL, 4, 1, 8, 0);
+  im->data = (char *)calloc(1, (size_t)im->bytes_per_line);
+  XPutPixel(im, 1, 0, 1);
+  XPutPixel(im, 3, 0, 1);
+  XGCValues v = {0};
+  GC gc = XCreateGC(dpy, win, 0, &v);
+  XSetForeground(dpy, gc, 0x1111);
+  XSetBackground(dpy, gc, 0x2222);
+  XPutImage(dpy, win, gc, im, 0, 0, 5, 6, 4, 1);
+  TEST_ASSERT_EQUAL_HEX16(0x2222, at(5, 6));
+  TEST_ASSERT_EQUAL_HEX16(0x1111, at(6, 6));
+  TEST_ASSERT_EQUAL_HEX16(0x2222, at(7, 6));
+  TEST_ASSERT_EQUAL_HEX16(0x1111, at(8, 6));
+  XFreeGC(dpy, gc);
+  XDestroyImage(im);
+}
+
 void test_put_image_of_a_16_bit_image_copies_canvas_order_pixels_unchanged(void) {
   XImage *im = XCreateImage(dpy, NULL, 16, ZPixmap, 0, NULL, 2, 1, 8, 0);
   im->data = (char *)calloc(1, (size_t)im->bytes_per_line);
@@ -3856,6 +3894,8 @@ int main(void) {
   RUN_TEST(test_query_color_recovers_the_colour_alloc_color_made);
   RUN_TEST(test_the_screen_is_a_colour_display_with_no_writable_cells);
   RUN_TEST(test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits);
+  RUN_TEST(test_a_bitmap_image_is_one_bit_a_pixel_least_significant_bit_first);
+  RUN_TEST(test_put_image_of_a_bitmap_draws_set_bits_in_the_foreground_and_clear_in_the_background);
   RUN_TEST(test_put_image_clips_at_every_edge_and_copies_the_matching_source_pixels);
   RUN_TEST(test_put_image_of_a_16_bit_image_copies_canvas_order_pixels_unchanged);
   RUN_TEST(test_put_image_reads_a_padded_16_bit_source_from_its_offset);

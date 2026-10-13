@@ -144,6 +144,7 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Pipes",
                                          "Marbling",
                                          "Deco",
+                                         "IMSMap",
 #ifdef HAVE_AFTER_DARK_TOASTERS
                                          "ad-flyingtoasters",
 #endif
@@ -552,6 +553,7 @@ static const uint64_t kBaseline[] = {
     0xdaff07126987ac48ull, /* Pipes: taken after looking at the frames (3x150, fixed camera, incremental, no fade) */
     0, /* Marbling: not yet pinned */
     0, /* Deco: not yet pinned */
+    0, /* IMSMap: not yet pinned */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -1567,6 +1569,10 @@ void test_deco_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("Deco", 0);
 }
 
+void test_imsmap_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("IMSMap", 0);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -1676,6 +1682,7 @@ int main(void) {
   RUN_TEST(test_xjack_stops_do_not_leak);
   RUN_TEST(test_marbling_stops_do_not_leak);
   RUN_TEST(test_deco_stops_do_not_leak);
+  RUN_TEST(test_imsmap_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);

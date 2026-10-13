@@ -153,6 +153,7 @@ implied warranty.
 | `firmware/src/hacks/pipes/pipes.c` | Marcelo F. Vianna (1997), factory equipment by Ed Mackey, later changes by the xlockmore and xscreensaver authors | xlock permission notice (below) |
 | `firmware/src/hacks/marbling/marbling.c` | Copyright © 2021-2022 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/deco/deco.c` | Copyright (c) 1997-2013 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/imsmap/imsmap.c` | Copyright (c) 1992-2013 Juergen Nickelsen and Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/sphere.c` | Copyright (c) 2002 Paul Bourke, Copyright (c) 2010-2026 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/sphere.h` | Copyright (c) 2001-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/teapot.c` | Copyright (c) Mark J. Kilgard, 1994; (c) Copyright 1993, Silicon Graphics, Inc. | Silicon Graphics notice (below) |
