@@ -252,6 +252,8 @@ XLOCKMORE_HACK(ant, "Ant");
 
 extern const HackEntry hyperball_hack;
 
+XLOCKMORE_HACK(demon, "Demon");
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -349,6 +351,7 @@ const HackEntry *const g_hacks[] = {
     &bouboule_hack,
     &ant_hack,
     &hyperball_hack,
+    &demon_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif
