@@ -95,7 +95,7 @@ does not yet provide every GL helper under `xs_support/glx/`.
 
 ## Measured on the device
 
-Eighty hacks have been run so far (default settings, 466×466 canvas
+Eighty-one hacks have been run so far (default settings, 466×466 canvas
 pushed to the display every frame, canvas held in PSRAM). The firmware times
 each frame in three parts, averaged over 5 seconds: **step** is the hack's own
 draw call, **push** is sending the canvas to the display, and **wait** is what
@@ -265,6 +265,23 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | XRaySwarm | 22.8-23.0 | 21.2-21.6 ms | 0.9-2.8 ms | 19.4-21.6 ms | about 59 KB |
 | Rocks | 17.2-17.4 | 2.5-3.2 ms | 3.5-4.7 ms | 50.7-52.0 ms | about 2.66 MB |
 | DecayScreen | 63.6-66.8 | 3.3-3.9 ms | 4.3-5.0 ms | 6.7-7.3 ms | none measurable |
+| XJack | 7.8-15.8 | 0.1-13.8 ms | 0.3-15.0 ms | 46-130 ms | none measurable |
+
+XJack (2026-10-12) is paced by its own delay, so its fps says little about the
+board: typing one character a frame takes 0.1 ms and the rest is `wait`. Read
+the row in two phases. Typing (the first 25 s, windows 2 to 5): 7.8-9.2 fps,
+step 0.1 ms, push 0.3 ms (10 rows a frame), wait 109-130 ms. Scrolling (after
+the page fills, windows 6 to 70): 8.8-15.8 fps, mean 11.6, step 3.9-13.8 ms
+(each of a line's eight sub-steps copies the window up 3 pixels),
+push 4.3-15.0 ms (74-241 rows a frame, mean 150), wait 46-104 ms. The host
+step is 0.003 ms, so the board ran roughly 30 times the host while typing; the
+speed backtest cannot take one number for it. Read from a pinned build at 20
+px with rotation off, for 350 s (the first window dropped), with Rod's go-ahead
+to flash. Free internal heap fell 352 bytes in three steps (303,600 at boot,
+303,568, 303,336, then 303,248 from about 225 s) and PSRAM did not move
+(6,989,667 throughout); a 6-minute run cannot say whether that drift is a
+leak. No stack canary, panic or reboot appeared. Rod looked at the panel and
+said it looks good at 20 px.
 
 The rows from Abstractile to XRaySwarm are the batch of 2026-10-12 (Abstractile,
 Attraction, Greynetic, Wander, PopSquares, Lisa, Penrose, Worm, Triangle and
@@ -904,13 +921,13 @@ needing few additions come first.
 
 | Hack | Kind | Effort | Speed | Ported | Shim gaps | Flags | LOC |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| binaryhorizon | 2d | S | high (1.7 ms) | - | - | pixmaps, readback | 624 |
-| bouboule | 2d | S | high (0.053 ms) | - | - | xor | 860 |
-| ccurve | 2d | S | high (0.54 ms) | - | - | pixmaps | 872 |
-| flow | 2d | S | high (0.93 ms) | - | - | pixmaps | 1216 |
-| halftone | 2d | S | high (0.66 ms) | ❌ | - | pixmaps | 413 |
-| marbling | 2d | S | high (11 ms) | - | - | - | 635 |
-| nerverot | 2d | S | high (0.37 ms) | - | - | pixmaps, float-heavy | 1367 |
+| binaryhorizon | 2d | S | high (1.8 ms) | - | - | pixmaps, readback | 624 |
+| bouboule | 2d | S | high (0.052 ms) | - | - | xor | 860 |
+| ccurve | 2d | S | high (0.55 ms) | - | - | pixmaps | 872 |
+| flow | 2d | S | high (0.95 ms) | - | - | pixmaps | 1216 |
+| halftone | 2d | S | high (0.68 ms) | ❌ | - | pixmaps | 413 |
+| marbling | 2d | S | high (12 ms) | - | - | - | 635 |
+| nerverot | 2d | S | high (0.38 ms) | - | - | pixmaps, float-heavy | 1367 |
 | rotzoomer | 2d | S | crashed on the host | - | - | pixmaps, readback | 601 |
 | twang | 2d | S | crashed on the host | - | - | pixmaps, readback | 791 |
 | ant | 2d | M | - | - | `NUMSTIPPLES`, `automata.h`, `hexagonUnit`, `triangleUnit` | - | 1351 |
@@ -1177,7 +1194,7 @@ needing few additions come first.
 | loop | 2d | - | - | ✅ | `STIPPLESIZE`, `automata.h`, `hexagonUnit`, `stipples`, `triangleUnit` | - | 1700 |
 | pacman | 2d | - | 1.3-1.9 ms measured | ✅ | `BLUE`, `GHOSTS`, `GHOST_DANGER`, `JAILHEIGHT`, `LEVHEIGHT`, `LEVWIDTH`, `MAXGDIR`, `MAXGFLASH`, `MAXGWAG`, `MAXMOUTH`, `MINGRIDSIZE`, `MINSIZE`, `NOWHERE`, `NUM_BONUS_DOTS`, `PAC_DEATH_FRAMES`, `START`, `XDrawString`, `XLoadQueryFont`, `chasing`, `error: expected expression`, `error: invalid application of 'sizeof' to an incomplete type 'argtype[]'`, `ghoststruct`, `goingin`, `goingout`, `hiding`, `images/gen/pacman_png.h`, `inbox`, `pacman.h`, `pacman_ai.h`, `pacman_bonus_dot_eaten`, `pacman_bonus_dot_pos`, `pacman_createnewlevel`, `pacman_eat_bonus_dot`, `pacman_ghost_update`, `pacman_is_bonus_dot`, `pacman_level.h`, `pacman_png`, `pacman_trackmouse`, `pacman_update`, `pacmangamestruct`, `pp`, `ps_chasing`, `ps_dieing`, `ps_eating` | pixmaps, text, clipmask | 1479 |
 | shadebobs | 2d | - | 2-2.3 ms measured | ✅ | `XFree`, `XListPixmapFormats` | readback | 474 |
-| xjack | 2d | - | - | ✅ | `FcChar8`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall`, `screen_number` | pixmaps | 508 |
+| xjack | 2d | - | 0.1-13.8 ms measured | ✅ | `FcChar8`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall`, `screen_number` | pixmaps | 508 |
 | xmatrix | 2d | - | - | ✅ | `images/gen/matrix1_png.h`, `images/gen/matrix1b_png.h`, `images/gen/matrix2_png.h`, `images/gen/matrix2b_png.h`, `matrix1_png`, `matrix1b_png`, `matrix2_png`, `matrix2b_png` | pixmaps, readback | 1915 |
 | cubicgrid | gl | - | - | ✅ | - | - | 322 |
 | etruscanvenus | gl | - | 53.2-78.6 ms measured | ✅ | - | - | 2761 |

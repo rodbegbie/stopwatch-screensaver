@@ -339,5 +339,8 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   panel: Rod found 16 small and 20 good, so the wrapper overrides it to 20
   (`-DXJACK_FONT_PX=<12|16|20|24>`; about 28 columns). The margins swing
   (modes 1 to 4 walk them diagonally on purpose), and the round bezel cuts the
-  corners of the page. Rod has seen it on the panel; its fps and heap are
-  unmeasured.
+  corners of the page. Rod has seen it on the panel. It runs at 8-16 fps, set
+  by its own delay (`wait` is 46-130 ms): typing is a 0.1 ms step, scrolling
+  3.9-13.8 ms with pushes of 74-241 rows. It holds no PSRAM, and a 6-minute
+  capture lost 352 bytes of internal heap in three steps (see
+  `assessment_measured.md.in`).
