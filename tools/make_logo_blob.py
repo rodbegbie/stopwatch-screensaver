@@ -14,6 +14,7 @@ Run with: uv run tools/make_logo_blob.py logo-50.gif --name logo_50_png \\
 
 import argparse
 import sys
+import zlib
 from pathlib import Path
 
 OPAQUE_ALPHA = 128
@@ -43,6 +44,12 @@ def build_blob(width: int, height: int, rgba: bytes) -> bytes:
         mask += row
     header = b"565M" + width.to_bytes(2, "little") + height.to_bytes(2, "little")
     return bytes(header + pixels + mask)
+
+
+def deflate_blob(blob: bytes) -> bytes:
+    """The "565Z" form: the same eight-byte header, then the pixels and mask as
+    one zlib stream. The shim inflates it when a hack loads the image."""
+    return b"565Z" + blob[4:8] + zlib.compress(blob[8:], 9)
 
 
 def c_header(name: str, blob: bytes, source: str) -> str:
@@ -77,12 +84,17 @@ def main(argv: list[str]) -> int:
         help="shrink to fit this many pixels square, keeping the aspect ratio "
         "(never enlarges)",
     )
+    parser.add_argument(
+        "--deflate", action="store_true", help='write the compressed "565Z" form'
+    )
     args = parser.parse_args(argv)
 
     image = Image.open(args.image).convert("RGBA")
     if args.size:
         image.thumbnail((args.size, args.size), Image.Resampling.LANCZOS)
     blob = build_blob(image.width, image.height, image.tobytes())
+    if args.deflate:
+        blob = deflate_blob(blob)
 
     # Left alone when unchanged, so an unchanged logo does not rebuild.
     output = Path(args.output)
