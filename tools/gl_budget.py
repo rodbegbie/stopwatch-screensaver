@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import probe_hacks
+import teapot_table
 import tinygl_patch
 
 # Milliseconds a frame spends on fixed work (clearing colour and z, then the
@@ -269,6 +270,14 @@ def measure(
             tmp = Path(tmp_name)
             generated = tmp / "generated"
             write_tinygl(root, generated)
+            glx = root / "firmware" / "src" / "xs_support" / "glx"
+            teapot_table.main(
+                [
+                    str(glx / "teapot.c"),
+                    str(glx / "teapot2.h"),
+                    str(generated / "teapot"),
+                ]
+            )
             (tmp / f"{name}.c").write_text("#define USE_GL\n" + source)
             registry = tmp / "probe_registry.c"
             registry.write_text(

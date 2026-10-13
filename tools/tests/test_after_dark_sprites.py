@@ -1,5 +1,7 @@
+import re
 import struct
 import sys
+import zlib
 from pathlib import Path
 
 import pytest
@@ -375,24 +377,38 @@ def test_wrong_sized_pict_is_rejected():
         ads.sprites_from_fork(make_resource_fork(resources))
 
 
+def array_bytes(text, name):
+    body = text.split(f"{name}[", 1)[1].split("= {", 1)[1].split("};", 1)[0]
+    return bytes(int(h, 16) for h in re.findall(r"0x([0-9A-Fa-f]{2})", body))
+
+
 def test_header_declares_both_arrays_and_the_hash():
     colour = [[(1, 2, 3)] * 4096 for _ in range(5)]
     mono = [bytes([0xA5]) * 512 for _ in range(5)]
     text = ads.render_header(colour, mono, "ab12")
-    assert "ad_colour_rgb[5][64 * 64 * 3]" in text
+    assert "ad_colour_z[]" in text
+    assert "#define AD_COLOUR_BYTES (5 * 64 * 64 * 3)" in text
     assert "ad_mono_bits[5][64 * 64 / 8]" in text
     assert "sha256 ab12" in text
     assert "#define AD_ART_SIZE 64" in text
     assert "AFTER_DARK_TOASTER_SPRITES_H" in text
-    assert "0x01,0x02,0x03" in text.replace(" ", "")
     assert "0xA5" in text
+
+
+def test_colour_art_is_one_zlib_stream_of_the_five_frames_in_order():
+    colour = [[(s, 2 * s, 255 - s)] * 4096 for s in range(5)]
+    colour[2][17] = (9, 8, 7)
+    mono = [bytes([0xA5]) * 512 for _ in range(5)]
+    text = ads.render_header(colour, mono, "ab12")
+    unpacked = zlib.decompress(array_bytes(text, "ad_colour_z"))
+    assert unpacked == bytes(c for sprite in colour for pixel in sprite for c in pixel)
 
 
 def test_header_has_exactly_the_expected_number_of_bytes():
     colour = [[(1, 2, 3)] * 4096 for _ in range(5)]
     mono = [bytes([0xA5]) * 512 for _ in range(5)]
     text = ads.render_header(colour, mono, "ab12")
-    assert text.count("0x01") == 5 * 4096
+    assert len(zlib.decompress(array_bytes(text, "ad_colour_z"))) == 5 * 4096 * 3
     assert text.count("0xA5") == 5 * 512
 
 

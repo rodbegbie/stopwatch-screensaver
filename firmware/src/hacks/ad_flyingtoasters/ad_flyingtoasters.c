@@ -17,6 +17,7 @@
 #include "hacks/ad_flyingtoasters/ad_sim.h"
 #include "hacks/ad_flyingtoasters/ad_sprites.h"
 #include "runner/hack_entry.h"
+#include "x11shim/inflate.h"
 
 #ifdef ESP_PLATFORM
 #include <esp_random.h>
@@ -107,13 +108,17 @@ static void *ad_flyingtoasters_init(Display *dpy, Window window) {
 #endif
 
   unsigned char *rgb = malloc(64 * 64 * 3);
-  if (!rgb) {
+  unsigned char *colour = pick.colour ? malloc(AD_COLOUR_BYTES) : NULL;
+  if (!rgb || (pick.colour && (!colour || xshim_inflate(ad_colour_z, sizeof(ad_colour_z),
+                                                         colour, AD_COLOUR_BYTES) != 0))) {
+    free(rgb);
+    free(colour);
     ad_flyingtoasters_free(dpy, window, st);
     return NULL;
   }
   for (int s = 0; s < AD_SPRITES; s++) {
     if (pick.colour) {
-      memcpy(rgb, ad_colour_rgb[s], 64 * 64 * 3);
+      memcpy(rgb, colour + (size_t)s * 64 * 64 * 3, 64 * 64 * 3);
       if (s == 4) ad_apply_doneness(rgb, 64 * 64, pick.doneness);
     } else {
       ad_expand_mono(ad_mono_bits[s], rgb);
@@ -121,11 +126,13 @@ static void *ad_flyingtoasters_init(Display *dpy, Window window) {
     st->sprite[s] = make_sprite(dpy, rgb);
     if (!st->sprite[s]) {
       free(rgb);
+      free(colour);
       ad_flyingtoasters_free(dpy, window, st);
       return NULL;
     }
   }
   free(rgb);
+  free(colour);
 
   static const char *const doneness[] = {"light", "medium", "dark"};
   fprintf(stderr, "ad-flyingtoasters: %s, doneness=%s\n",
