@@ -7,7 +7,19 @@
 
 #include "screenhack.h"
 
+/* The hack passes the addresses of its own `double` locals to rgb_to_hsv,
+ * which takes `double *`: as floats they would be written eight bytes. This
+ * comes before single_precision.h, so its `double` is the real one. */
+static void nerverot_rgb_to_hsv(unsigned short r, unsigned short g, unsigned short b,
+                                int *h, float *s, float *v) {
+  double ds, dv;
+  rgb_to_hsv(r, g, b, h, &ds, &dv);
+  *s = (float)ds;
+  *v = (float)dv;
+}
+
 #include "hacks/single_precision.h"
+#define rgb_to_hsv nerverot_rgb_to_hsv
 #undef M_PI
 #define M_PI 3.14159265358979323846f
 

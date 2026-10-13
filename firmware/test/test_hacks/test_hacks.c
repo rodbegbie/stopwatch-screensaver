@@ -562,20 +562,20 @@ static const uint64_t kBaseline[] = {
     0, /* DecayScreen: unpinned on purpose, it smears the shim's grab image and has none here (see test_decayscreen_melts_the_grab_image) */
     0xecc578b5f7eb7789ull, /* XJack: taken after looking at the frames, with test_font.h's blocky font */
     0xdaff07126987ac48ull, /* Pipes: taken after looking at the frames (3x150, fixed camera, incremental, no fade) */
-    0, /* Marbling: not yet pinned */
-    0, /* Deco: not yet pinned */
-    0, /* IMSMap: not yet pinned */
-    0, /* MetaBalls: not yet pinned */
-    0, /* Munch: not yet pinned */
-    0, /* CCurve: not yet pinned */
-    0, /* BinaryHorizon: not yet pinned */
-    0, /* RotZoomer: not yet pinned */
-    0, /* Twang: not yet pinned */
-    0, /* NerveRot: not yet pinned */
-    0, /* Flow: not yet pinned */
-    0, /* Bouboule: not yet pinned */
-    0, /* Ant: not yet pinned */
-    0, /* HyperBall: not yet pinned */
+    0x68c7b46b547273e1ull, /* Marbling: taken after looking at the frames */
+    0x12085acaa1958489ull, /* Deco: taken after looking at the frames */
+    0x14205ec78f0eaca4ull, /* IMSMap: taken after looking at the frames */
+    0xd0a9cc2bd13e0023ull, /* MetaBalls: taken after looking at the frames */
+    0xbd3f785cc1a7230full, /* Munch: taken after looking at the frames (GXxor points) */
+    0x65714a05d79efe6full, /* CCurve: taken after looking at the frames */
+    0xb858d0c595de9530ull, /* BinaryHorizon: taken after looking at the frames (24-bit wrapper) */
+    0, /* RotZoomer: unpinned on purpose, it zooms the shim's grab image and has none here, so every frame is black (see test_rotzoomer_wrapper) */
+    0x7d6fc922f308a38eull, /* Twang: taken after looking at the frames (flat tiles: the test has no grab image) */
+    0xb67d586893812842ull, /* NerveRot: taken after looking at the frames (single precision) */
+    0xcb96a80c57dc2d95ull, /* Flow: taken after looking at the frames (single precision) */
+    0x8d05055b1b5d7fe5ull, /* Bouboule: taken after looking at the frames */
+    0xdb9fc9d1551e2b09ull, /* Ant: taken after looking at the frames */
+    0x2a4ebe0336988260ull, /* HyperBall: taken after looking at the frames (single precision) */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
