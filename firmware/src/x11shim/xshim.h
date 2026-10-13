@@ -158,6 +158,8 @@ typedef union {
 #define ButtonPress 4
 #define ButtonRelease 5
 #define MotionNotify 6
+/* No such event ever arrives: the window is never iconified. */
+#define UnmapNotify 18
 #define Button1 1
 #define Button2 2
 #define Button3 3

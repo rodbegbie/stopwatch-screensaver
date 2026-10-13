@@ -250,6 +250,8 @@ XLOCKMORE_HACK_WITH(bouboule, "Bouboule", kBoubouleOverrides);
 
 XLOCKMORE_HACK(ant, "Ant");
 
+extern const HackEntry hyperball_hack;
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -346,6 +348,7 @@ const HackEntry *const g_hacks[] = {
     &flow_hack,
     &bouboule_hack,
     &ant_hack,
+    &hyperball_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif

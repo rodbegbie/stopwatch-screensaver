@@ -3542,6 +3542,12 @@ void test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits(void) {
   XDestroyImage(im);
 }
 
+void test_unmap_notify_has_the_x_event_number_and_fits_an_event_type(void) {
+  XEvent e;
+  e.type = UnmapNotify;
+  TEST_ASSERT_EQUAL_INT(18, e.type);
+}
+
 void test_i_log2_is_the_floor_of_log_two_and_minus_one_for_zero(void) {
   TEST_ASSERT_EQUAL_INT(-1, i_log2(0));
   TEST_ASSERT_EQUAL_INT(0, i_log2(1));
@@ -3948,6 +3954,7 @@ int main(void) {
   RUN_TEST(test_query_color_recovers_the_colour_alloc_color_made);
   RUN_TEST(test_the_screen_is_a_colour_display_with_no_writable_cells);
   RUN_TEST(test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits);
+  RUN_TEST(test_unmap_notify_has_the_x_event_number_and_fits_an_event_type);
   RUN_TEST(test_i_log2_is_the_floor_of_log_two_and_minus_one_for_zero);
   RUN_TEST(test_to_pow2_rounds_up_to_the_next_power_of_two);
   RUN_TEST(test_bitmap_pad_is_32_bits_and_makes_a_tight_image_row_whole_words);
