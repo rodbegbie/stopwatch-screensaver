@@ -1,0 +1,9 @@
+Work throuhg the remaining S and M hacks and try and port as many as you can get working.
+
+---
+
+/claude-md-management:revise-claude-md
+
+---
+
+apply on main then run your end session rituals.
