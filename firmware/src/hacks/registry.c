@@ -200,6 +200,24 @@ extern const HackEntry decayscreen_hack;
 
 extern const HackEntry xjack_hack;
 
+/* Pipes (issue #44, built by pipes_gl.c) builds every display list of a screen
+ * when the screen starts: upstream's 5 systems of up to 500 pieces is about
+ * 22 MB on the board. 3 of 150 left 1.9 MB of PSRAM free (2 of 200 left 2.4,
+ * 1 of 100 4.6), at about 60 fps. The fixed camera lets the wrapper draw only
+ * the newest piece each frame. Its DEFAULTS has no ncolors, which the
+ * xlockmore framework reads. -DPIPES_CYCLES=<systems> and -DPIPES_SIZE=<pieces>
+ * change the screen. */
+#ifndef PIPES_CYCLES
+#define PIPES_CYCLES 3
+#endif
+#ifndef PIPES_SIZE
+#define PIPES_SIZE 150
+#endif
+static const char *const kPipesOverrides[] = {
+    "*ncolors: 64", "*cycles: " HEXTRAIL_STR(PIPES_CYCLES),
+    "*size: " HEXTRAIL_STR(PIPES_SIZE), "*rotatepipes: False", NULL};
+XLOCKMORE_HACK_WITH(pipes, "Pipes", kPipesOverrides);
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -282,6 +300,7 @@ const HackEntry *const g_hacks[] = {
     &rocks_hack,
     &decayscreen_hack,
     &xjack_hack,
+    &pipes_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif
