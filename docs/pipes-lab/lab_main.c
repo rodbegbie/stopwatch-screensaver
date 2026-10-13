@@ -1,6 +1,7 @@
 /* Runs hack 0 for <frames> frames and prints, per frame, the vertices TinyGL
- * set up, the lit ones, filled pixels, the canvas rows the swap marked, and a
- * hash of the canvas. */
+ * set up, the lit ones, filled pixels, the canvas rows spanned by what was
+ * drawn (not what the swap marks: a clear also marks the rows it erased), and
+ * a hash of the canvas. */
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,7 +41,7 @@ int main(int argc, char **argv) {
     box_y0 = 1 << 30;
     box_y1 = -1;
     runner_step(r);
-    printf("%d vertices=%.0f lit=%.0f light_terms=%.0f pixels=%.0f rows=%d hash=%016llx\n", f,
+    printf("%d vertices=%.0f lit=%.0f light_terms=%.0f pixels=%.0f drawn_rows=%d hash=%016llx\n", f,
            gl_budget_counts[0], gl_budget_counts[1], gl_budget_counts[6], gl_budget_counts[5],
            box_y1 >= box_y0 ? box_y1 - box_y0 + 1 : 0, (unsigned long long)hash(&cv));
     if (getenv("HEAP")) { malloc_statistics_t st; malloc_zone_statistics(NULL, &st); printf("heap_in_use=%zu\n", st.size_in_use); }

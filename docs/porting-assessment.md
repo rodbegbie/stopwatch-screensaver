@@ -266,7 +266,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Rocks | 17.2-17.4 | 2.5-3.2 ms | 3.5-4.7 ms | 50.7-52.0 ms | about 2.66 MB |
 | DecayScreen | 63.6-66.8 | 3.3-3.9 ms | 4.3-5.0 ms | 6.7-7.3 ms | none measurable |
 | XJack | 7.8-15.8 | 0.1-13.8 ms | 0.3-15.0 ms | 46-130 ms | none measurable |
-| Pipes | 51.8-75, mean 60.2 | 2.0-7.8 ms | 0.3-0.5 ms | 10.9-11.0 ms | not measured against idle (1.91 MB left free at the lowest) |
+| Pipes | 51.8-75 | 2.0-7.8 ms | 0.3-0.5 ms | 10.9-11.0 ms | not measured against idle (1.91 MB left free at the lowest) |
 
 XJack (2026-10-12) is paced by its own delay, so its fps says little about the
 board: typing one character a frame takes 0.1 ms and the rest is `wait`. Read
@@ -531,12 +531,12 @@ hack is switched back to, so switching does not leak.
 Pipes (issue #44, 2026-10-12) is the registered build: a fixed camera, three
 systems of up to 150 pieces a screen, an incremental redraw that draws only
 the newest piece each frame, and no fade (`hacks/pipes_gl.c`). The row is one
-3-minute capture of a pinned build with rotation off; its own 10 ms pause is
-most of each frame, and the push is about 10 rows. As written (a turning
-camera, five systems of 500) it redrew every piece each frame, 1 to 3 fps on
-the TinyGL spike, and needs about 22 MB of display lists. One system of 100
-ran at 59.0-62.4 fps with 4.6-4.8 MB of PSRAM free, two of 200 at
-54.4-75.8 fps with 2.4-3.0 MB free. A rotation soak was not run.
+3-minute capture of a pinned build with rotation off, averaging 60.2 fps; its
+own 10 ms pause is most of each frame, and the push is about 10 rows. As
+written (a turning camera, five systems of 500) it redrew every piece each
+frame, 1 to 3 fps on the TinyGL spike, and needs about 22 MB of display lists.
+One system of 100 ran at 59.0-62.4 fps with 4.6-4.8 MB of PSRAM free, two of
+200 at 54.4-75.8 fps with 2.4-3.0 MB free. A rotation soak was not run.
 
 ## What limits the frame rate
 
@@ -933,8 +933,8 @@ needing few additions come first.
 | Hack | Kind | Effort | Speed | Ported | Shim gaps | Flags | LOC |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | binaryhorizon | 2d | S | high (1.8 ms) | - | - | pixmaps, readback | 624 |
-| bouboule | 2d | S | high (0.051 ms) | - | - | xor | 860 |
-| ccurve | 2d | S | high (0.56 ms) | - | - | pixmaps | 872 |
+| bouboule | 2d | S | high (0.052 ms) | - | - | xor | 860 |
+| ccurve | 2d | S | high (0.55 ms) | - | - | pixmaps | 872 |
 | flow | 2d | S | high (0.94 ms) | - | - | pixmaps | 1216 |
 | halftone | 2d | S | high (0.68 ms) | ❌ | - | pixmaps | 413 |
 | marbling | 2d | S | high (12 ms) | - | - | - | 635 |
@@ -1212,7 +1212,7 @@ needing few additions come first.
 | graphstat | gl | - | 35-67.8 ms measured | ✅ | - | - | 750 |
 | hextrail | gl | - | - | ✅ | - | - | 782 |
 | morph3d | gl | - | 48-86 ms measured | ✅ | - | - | 841 |
-| pipes | gl | - | - | ✅ | - | - | 1208 |
+| pipes | gl | - | 2-7.8 ms measured | ✅ | - | - | 1208 |
 | stonerview | gl | - | 12.6-15.6 ms measured | ✅ | - | - | 156 |
 | unknownpleasures | gl | - | 162-169 ms measured | ✅ | - | readback | 736 |
 

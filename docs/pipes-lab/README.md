@@ -3,7 +3,9 @@
 A host-only experiment, not a port. It builds Pipes and its helpers straight
 from `vendor/` against the shim and `tools/gl_budget.py`'s instrumented
 TinyGL, and prints one line per frame: vertices, lit vertices, filled pixels,
-the rows the swap marked, and a hash of the canvas.
+the rows spanned by what was drawn (`drawn_rows`; the swap also marks the rows
+a clear erased, so a fade or a new screen marks more), and a hash of the
+canvas.
 
 ```bash
 python3 -I docs/pipes-lab/build.py /tmp/pipes --incremental \
