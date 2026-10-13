@@ -11,7 +11,11 @@
  *   remainder          mask, row by row, each row padded to whole bytes,
  *                      most significant bit first; 1 = draw the pixel
  *
- * The blob size must match its width and height exactly. */
+ * The blob size must match its width and height exactly.
+ *
+ * A "565Z" blob (make_logo_blob.py --deflate) has the same eight-byte header,
+ * then the pixels and mask as one zlib stream, which must unpack to exactly
+ * that size. It is inflated into a temporary buffer while the image loads. */
 #ifndef XSHIM_XIMAGE_LOADER_H
 #define XSHIM_XIMAGE_LOADER_H
 

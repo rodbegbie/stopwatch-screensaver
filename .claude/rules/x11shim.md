@@ -90,7 +90,14 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   because hacks free the pixmap right after `XSetClipMask`. There is no PNG
   decoder: `image_data_to_pixmap` reads
   the raw blob described in `ximage-loader.h`, made by
-  `tools/make_logo_blob.py` (`uv run`, needs Pillow). The `logo_180`/`360`
+  `tools/make_logo_blob.py` (`uv run`, needs Pillow). Pacman's sprites,
+  XMatrix's large glyph sheets and the grab image are built with `--deflate`
+  ("565Z", issue #102): 1.39 MB of flash saved, unpacked into a temporary
+  buffer while the image loads (Pacman's is 522 KB of PSRAM, briefly), by the
+  ROM's `tinfl` on the device and zlib on the host, so host builds link `-lz`
+  (`platformio.ini`, `probe_hacks.py`, `gl_budget.py`). Host tests cover only
+  zlib. XMatrix's small sheets are never drawn at 466 px: their generated
+  headers `#define` them to the large ones. The `logo_180`/`360`
   headers are aliases of the 50 px data, as a 466 px screen only picks 50.
   `XS_LOGO=<image>` (relative to the repo root) swaps the logo for a local
   image, shrunk to fit 50 px, without committing it: `firmware/logo_override.py`
@@ -223,12 +230,13 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   directory: `firmware/assets/grab-image.png` (Rod's choice: the Windows 95
   screenshot from guidebookgallery.org, committed at his say-so, with a
   notices section), or `XS_GRAB_IMAGE=<file>`, and `XS_GRAB_IMAGE=none` builds
-  without. It is stored at up to 466 pixels (a 466 by 350 blob is 340
-  KB of flash: the build went from 2.39 MB to 2.74 MB, 87.0% of the app
-  partition). The host tests set their own picture, so a pin never depends on
-  the local file; `dump` sets it when the header exists. DecayScreen is
-  unpinned for that reason (`test_decayscreen_melts_the_grab_image`). Boxfit's
-  `grab` mode, off by default, would get the picture too.
+  without. It is stored at up to 466 pixels (a 466 by 350 blob was 340
+  KB of flash, 48 KB since it was deflated in #102: the build had gone from
+  2.39 MB to 2.74 MB, 87.0% of the app partition). The host tests set their
+  own picture, so a pin never depends on the local file; `dump` sets it when
+  the header exists. DecayScreen is unpinned for that reason
+  (`test_decayscreen_melts_the_grab_image`). Boxfit's `grab` mode, off by
+  default, would get the picture too.
 - `make_smooth_colormap` follows upstream's behaviour (written from scratch, not
   copied): two to five random points in hue, saturation and value, repicked if
   adjacent ones are close or the average is too grey or dark, joined in a closed

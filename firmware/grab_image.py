@@ -5,7 +5,7 @@ generated/grab_image.h in the build directory, that main.cpp hands to the shim
 The picture is firmware/assets/grab-image.png (a Windows 95 screenshot), or the
 file named by XS_GRAB_IMAGE (relative paths are taken from the repository
 root). It is scaled to fit 466 pixels (a 640 by 480 screenshot becomes 466 by
-350, about 340 KB of flash). With XS_GRAB_IMAGE=none nothing is generated and
+350, stored deflated in about 41 KB of flash). With XS_GRAB_IMAGE=none nothing is generated and
 a hack that wants a picture loads nothing. Needs uv, because Pillow is not in
 PlatformIO's Python."""
 
@@ -46,6 +46,7 @@ else:
             "grab_image_blob",
             "--size",
             str(GRAB_SIZE),
+            "--deflate",
             "-o",
             str(header),
         ],

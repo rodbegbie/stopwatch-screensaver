@@ -299,6 +299,7 @@ def measure(
                 *map(str, shim_sources(root)),
                 "-lm",
                 "-lpthread",
+                "-lz",
                 "-o",
                 str(program),
             ]

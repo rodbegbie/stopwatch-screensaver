@@ -1,8 +1,8 @@
 """PlatformIO pre-build script: converts xscreensaver's pacman.png into the
-raw blob pacman.c includes as images/gen/pacman_png.h (see
+deflated blob pacman.c includes as images/gen/pacman_png.h (see
 src/x11shim/include/ximage-loader.h for the format) and puts it on the include
-path. The image is read from vendor/ and never committed; its header is
-3 MB of C text. Needs uv, because Pillow is not in PlatformIO's Python."""
+path. The image is read from vendor/ and never committed. Needs uv, because
+Pillow is not in PlatformIO's Python."""
 
 import os
 import shutil
@@ -41,6 +41,7 @@ if (
             str(image),
             "--name",
             "pacman_png",
+            "--deflate",
             "-o",
             str(partial),
         ],
