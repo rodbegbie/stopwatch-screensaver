@@ -248,6 +248,8 @@ static const char *const kBoubouleOverrides[] = {"*use3d: False", "*cycles: 0",
                                                  NULL};
 XLOCKMORE_HACK_WITH(bouboule, "Bouboule", kBoubouleOverrides);
 
+XLOCKMORE_HACK(ant, "Ant");
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -343,6 +345,7 @@ const HackEntry *const g_hacks[] = {
     &nerverot_hack,
     &flow_hack,
     &bouboule_hack,
+    &ant_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif

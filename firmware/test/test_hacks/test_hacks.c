@@ -154,6 +154,7 @@ void test_registry_lists_hacks_in_order(void) {
                                          "NerveRot",
                                          "Flow",
                                          "Bouboule",
+                                         "Ant",
 #ifdef HAVE_AFTER_DARK_TOASTERS
                                          "ad-flyingtoasters",
 #endif
@@ -572,6 +573,7 @@ static const uint64_t kBaseline[] = {
     0, /* NerveRot: not yet pinned */
     0, /* Flow: not yet pinned */
     0, /* Bouboule: not yet pinned */
+    0, /* Ant: not yet pinned */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -1627,6 +1629,10 @@ void test_bouboule_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("Bouboule", 1);
 }
 
+void test_ant_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Ant", 1);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -1746,6 +1752,7 @@ int main(void) {
   RUN_TEST(test_nerverot_stops_do_not_leak);
   RUN_TEST(test_flow_stops_do_not_leak);
   RUN_TEST(test_bouboule_stops_do_not_leak);
+  RUN_TEST(test_ant_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
