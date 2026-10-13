@@ -40,6 +40,7 @@ for name in ("braid",) + (
     "rotzoomer",
     "twang",
     "nerverot",
+    "flow",
 ):
     source = (project / "src" / "hacks" / name / f"{name}.c").read_text()
     if name == "fireworkx":

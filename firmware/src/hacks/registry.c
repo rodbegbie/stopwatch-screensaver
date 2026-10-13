@@ -238,6 +238,8 @@ extern const HackEntry twang_hack;
 
 extern const HackEntry nerverot_hack;
 
+XLOCKMORE_HACK(flow, "Flow");
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -331,6 +333,7 @@ const HackEntry *const g_hacks[] = {
     &rotzoomer_hack,
     &twang_hack,
     &nerverot_hack,
+    &flow_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif
