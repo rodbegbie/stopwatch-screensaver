@@ -23,5 +23,10 @@
 
 #include "ccurve_floatlit.c"
 
+/* Each frame redraws the curve one iteration deeper, up to `limit` segments,
+ * every one with a malloc and a recursion: 200,000 took 740 ms in single
+ * precision. 30,000 is under 110 ms and still reads as a curve at 466 pixels. */
+static const char *const ccurve_overrides[] = {"*limit: 30000", NULL};
+
 const HackEntry ccurve_hack = {"CCurve", ccurve_defaults, ccurve_init,
-                               ccurve_draw, ccurve_free, NULL, NULL};
+                               ccurve_draw, ccurve_free, NULL, ccurve_overrides};
