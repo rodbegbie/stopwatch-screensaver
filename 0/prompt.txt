@@ -1,0 +1,9 @@
+Approved.  Merge it and update the build on my device.
+
+---
+
+/claude-md-management:revise-claude-md
+
+---
+
+apply all five
