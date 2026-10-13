@@ -1,0 +1,21 @@
+Flash them and monitor
+
+---
+
+Toasters and toast look good.
+
+---
+
+Do the checksum check, then push and open the PR
+
+---
+
+/address-findings
+
+---
+
+Merge it and re-flash the rotating build
+
+---
+
+/claude-md-management:revise-claude-md
