@@ -4,7 +4,7 @@ TinyGL, from vendor/ (nothing from Pipes is copied into the repo).
     python3 -I docs/pipes-lab/build.py <out-dir> [--incremental] [override ...]
     <out-dir>/prog <frames> <seed>   # one line per frame: counts and a hash
 
-ASAN=1 keeps AddressSanitizer on. See README.md."""
+ASAN=1 builds with AddressSanitizer. See README.md."""
 
 import os
 import shutil
@@ -52,11 +52,9 @@ OWN = {
     "glx_pipeobjs.c",
 }
 shim = [str(f) for f in gl_budget.shim_sources(ROOT) if f.name not in OWN]
-flags = (
-    list(probe_hacks.BUILD_FLAGS)
-    if os.environ.get("ASAN")
-    else [f for f in probe_hacks.BUILD_FLAGS if not f.startswith("-fsanitize")]
-)
+flags = list(probe_hacks.BUILD_FLAGS)
+if os.environ.get("ASAN"):
+    flags.append("-fsanitize=address")
 cmd = [
     "cc",
     *flags,

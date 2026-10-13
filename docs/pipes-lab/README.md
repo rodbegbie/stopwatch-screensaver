@@ -13,7 +13,8 @@ python3 -I docs/pipes-lab/build.py /tmp/pipes --incremental \
 ```
 
 Without `--incremental` it is Pipes as written. `HEAP=1` adds the host heap in
-use after each frame; `ASAN=1` keeps AddressSanitizer on.
+use after each frame; `ASAN=1` builds
+with AddressSanitizer.
 
 ## What it changes, and why
 
