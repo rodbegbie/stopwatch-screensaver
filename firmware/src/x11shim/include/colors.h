@@ -43,6 +43,10 @@ void make_uniform_colormap(Screen *, Visual *, Colormap, XColor *colors,
 /* The display is true colour: no colour cell can be rewritten, so a hack takes
  * its colour-cycling path that allocates a fresh colour each time. */
 Bool has_writable_cells(Screen *, Visual *);
+/* There are no writable cells to give: reports none, as a screen that cannot
+ * be rewritten does. */
+void allocate_writable_colors(Screen *, Colormap, unsigned long *pixels,
+                              int *ncolorsP);
 /* Nothing to release: colours are plain RGB565 values, not shared cells. */
 void free_colors(Screen *, Colormap, XColor *colors, int ncolors);
 

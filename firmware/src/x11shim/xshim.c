@@ -403,6 +403,11 @@ Status XAllocColor(Display *dpy, Colormap cmap, XColor *c) {
   return 1;
 }
 
+int XStoreColors(Display *dpy, Colormap cmap, XColor *colors, int ncolors) {
+  (void)dpy, (void)cmap, (void)colors, (void)ncolors;
+  return 1;
+}
+
 int XQueryColor(Display *dpy, Colormap cmap, XColor *c) {
   (void)dpy;
   (void)cmap;

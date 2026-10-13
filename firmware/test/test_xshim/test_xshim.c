@@ -1743,6 +1743,19 @@ void test_allocate_alpha_colors_reports_no_colour_planes(void) {
   TEST_ASSERT_NULL(masks);
 }
 
+void test_no_writable_colour_cells_can_be_allocated_or_stored(void) {
+  int ncolors = 8;
+  unsigned long pixels[9] = {7};
+  allocate_writable_colors(NULL, 1, pixels, &ncolors);
+  TEST_ASSERT_EQUAL_INT(0, ncolors);
+  XColor c = {0};
+  c.pixel = 5;
+  c.red = 0x1234;
+  XStoreColors(dpy, 1, &c, 1);
+  TEST_ASSERT_EQUAL_UINT16(0x1234, c.red);
+  TEST_ASSERT_EQUAL_UINT64(5, c.pixel);
+}
+
 void test_change_gc_updates_only_the_masked_line_fields(void) {
   XGCValues v;
   v.foreground = 1;
@@ -3978,6 +3991,7 @@ int main(void) {
   RUN_TEST(test_create_gc_reads_line_width_cap_and_join_from_the_mask);
   RUN_TEST(test_gc_accepts_a_plane_mask_and_draws_in_the_foreground_regardless);
   RUN_TEST(test_allocate_alpha_colors_reports_no_colour_planes);
+  RUN_TEST(test_no_writable_colour_cells_can_be_allocated_or_stored);
   RUN_TEST(test_change_gc_updates_only_the_masked_line_fields);
   RUN_TEST(test_set_line_attributes_sets_all_three);
   RUN_TEST(test_wide_horizontal_line_butt_caps);

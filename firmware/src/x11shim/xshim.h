@@ -414,6 +414,8 @@ Status XAllocColor(Display *, Colormap, XColor *);
  * channels are scaled up from RGB565, so 5 and 6 bit values come back as
  * multiples of 0x0842 and 0x0410 and not the colour that was asked for. */
 int XQueryColor(Display *, Colormap, XColor *);
+/* Nothing to store: colours are plain pixel values, not cells to rewrite. */
+int XStoreColors(Display *, Colormap, XColor *, int ncolors);
 int XFreeColors(Display *, Colormap, unsigned long *pixels, int n,
                 unsigned long planes);
 

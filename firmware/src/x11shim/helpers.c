@@ -20,6 +20,12 @@ Bool has_writable_cells(Screen *screen, Visual *visual) {
   return False;
 }
 
+void allocate_writable_colors(Screen *screen, Colormap cmap,
+                              unsigned long *pixels, int *ncolorsP) {
+  (void)screen, (void)cmap, (void)pixels;
+  *ncolorsP = 0;
+}
+
 void make_random_colormap(Screen *screen, Visual *visual, Colormap cmap,
                           XColor *colors, int *ncolorsP, Bool bright_p,
                           Bool allocate_p, Bool *writable_pP, Bool verbose_p) {
