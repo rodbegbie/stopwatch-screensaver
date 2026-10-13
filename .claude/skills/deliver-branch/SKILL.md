@@ -90,3 +90,8 @@ Moved verbatim from AGENTS.md.
   watch poll `gh pr view N`, that API and `entire trail finding list N` from a
   script file under a Monitor, printing only on change. Merge only when Rod
   says to, even once the gates are green.
+- If `entire trail create` reports "failed to push branch", run
+  `git push -u origin <branch>` and rerun it: the trail is then created.
+- Run `gh pr ready N` and `gh pr merge N --merge` as separate commands: on a
+  PR that is already ready, `ready` exits non-zero and skips a chained merge.
+  Confirm with `gh pr view N --json state`.

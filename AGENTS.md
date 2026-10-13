@@ -142,6 +142,9 @@ From the repo root:
   group in `pyproject.toml`; without Pillow the logo converter's tests are
   skipped, not run)
 - `uv run tools/check_notices.py`
+- `uv run tools/vendor_diff.py vendor/xscreensaver-<old>
+  vendor/xscreensaver-<new>` lists what a new release changes for us; see the
+  `update-xscreensaver` skill.
 - `uv run tools/score_hacks.py` regenerates `docs/porting-assessment.md`. It
   also builds each unported S hack with the shim and runs it on the host for the
   Speed column (`tools/probe_hacks.py`, about a minute); `--no-probe` skips it.
@@ -342,6 +345,9 @@ ones below apply everywhere.
   is: it was in Unknown Pleasures, slow but moving.
 - A push to GitHub is sometimes rejected once and succeeds on an immediate
   retry; never force-push for this.
+- Never gate a commit on `<tests> | tail -1 && git commit`: the pipe's exit
+  status is `tail`'s, and a0a5adf went in with a failing test. Redirect to a
+  file, check `$?`, then read the summary line.
 - Another session may be using the board. Before flashing, run `lsof
   /dev/cu.usbmodem112401`: a "multiple access on port" upload error was
   another session's serial capture, and esptool's connect resets the board

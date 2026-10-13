@@ -261,3 +261,7 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   (XJack's `xjack_init_on_paper`); doing it in the runner would change what
   every hack sees, so it is Rod's call. Any other registered hack with a
   light `background` that calls `XClearWindow` may have the same fault.
+- The shim's `screenhack.h` does not include `screenhackI.h` (upstream's
+  does), so plain hacks and xlockmore hacks see different headers. Put a
+  macro upstream defines in `screenhackI.h` for every hack into a small
+  header both include, as `nls.h` (`_()` and `gettext`) is.

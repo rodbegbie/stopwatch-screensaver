@@ -50,3 +50,7 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   row like `| HexTrail | 10.8-50.6, mean 15.3 |` is skipped, so the assessment
   shows `-` for its step and the backtest leaves it out. Put the mean in the
   prose.
+- A call to an undeclared shim function also shows up as a gap named
+  `error: incompatible integer to pointer conversion ...` (the implicit `int`
+  return). It is noise beside the real gap (Barcode's `utf8_to_latin1`), but it
+  counts towards the band.
