@@ -162,6 +162,7 @@ implied warranty.
 | `firmware/src/hacks/twang/twang.c` | Copyright (c) 2003 Dan Bornstein | jwz permission notice (above) |
 | `firmware/src/hacks/nerverot/nerverot.c` | Copyright (c) 2000-2001 Dan Bornstein | jwz permission notice (above) |
 | `firmware/src/hacks/flow/flow.c` | Copyright (c) 1996 Tim Auckland; code from Stephen Davies 2000 | xlock permission notice (below) |
+| `firmware/src/hacks/bouboule/bouboule.c` | Copyright (c) 1988-91 Patrick J. Naughton; ported to xscreensaver by Jamie Zawinski, 1997 | xlock permission notice (below) |
 | `firmware/src/xs_support/glx/sphere.c` | Copyright (c) 2002 Paul Bourke, Copyright (c) 2010-2026 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/sphere.h` | Copyright (c) 2001-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/teapot.c` | Copyright (c) Mark J. Kilgard, 1994; (c) Copyright 1993, Silicon Graphics, Inc. | Silicon Graphics notice (below) |

@@ -240,6 +240,14 @@ extern const HackEntry nerverot_hack;
 
 XLOCKMORE_HACK(flow, "Flow");
 
+/* Upstream draws a red and a blue starfield for 3D glasses (`use3d: True`) and
+ * ORs them where they overlap, which the shim does not do. Without glasses,
+ * the single-colour mode cycles through the palette. The framework reads
+ * `cycles`, which Bouboule does not define. */
+static const char *const kBoubouleOverrides[] = {"*use3d: False", "*cycles: 0",
+                                                 NULL};
+XLOCKMORE_HACK_WITH(bouboule, "Bouboule", kBoubouleOverrides);
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -334,6 +342,7 @@ const HackEntry *const g_hacks[] = {
     &twang_hack,
     &nerverot_hack,
     &flow_hack,
+    &bouboule_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif
