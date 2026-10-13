@@ -518,7 +518,7 @@ static const uint64_t kBaseline[] = {
     0x3441a22a1f12785aull, /* Compass: taken after looking at the frames; re-taken for the stroker's shared-edge slack (#56) */
     0xe94fb924120c76a5ull, /* FuzzyFlakes: taken after looking at the frames */
     0xb150a7b7357aa897ull, /* IFS: taken after looking at the frames */
-    0x78c62badb21d8dddull, /* Interaggregate: after looking at the frames, pixels swapped */
+    0x355cbdc840d0e8ceull, /* Interaggregate: re-pinned for the float frand, frames looked at */
     0x7118310d47ee4197ull, /* LMorph: taken after looking at the frames */
     0xe73572fd64eef48full, /* Wormhole: taken after looking at the frames */
     0x7dd7d7130551c261ull, /* Truchet: taken after looking at the frames */

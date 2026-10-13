@@ -15,6 +15,7 @@
 
 #include "core/canvas.h"
 #include "hacks/single_precision.h"
+#include "hacks/single_frand.h"
 
 /* Interaggregate's alpha blend takes the red, green and blue bits out of
  * pixel values itself (point2rgb), assuming ordinary RGB565. The canvas holds
