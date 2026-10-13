@@ -31,11 +31,11 @@ it with `uv run tools/score_hacks.py`.
 
 | Rating | Meaning | Count |
 | --- | --- | --- |
-| S | 2D, and the unmodified source compiles against the shim | 1 |
-| M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 0 |
+| S | 2D, and the unmodified source compiles against the shim | 4 |
+| M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 1 |
 | L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 41 |
 | XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 131 |
-| Ported | Already running on the device, so no rating | 110 |
+| Ported | Already running on the device, so no rating | 106 |
 
 ## Speed
 
@@ -954,7 +954,11 @@ needing few additions come first.
 
 | Hack | Kind | Effort | Speed | Ported | Shim gaps | Flags | LOC |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| halftone | 2d | S | high (0.62 ms) | ❌ | - | pixmaps | 413 |
+| droste | 2d | S | crashed on the host | - | - | pixmaps, readback | 686 |
+| flow | 2d | S | high (0.92 ms) | - | - | pixmaps | 1216 |
+| halftone | 2d | S | high (0.66 ms) | ❌ | - | pixmaps | 413 |
+| twang | 2d | S | crashed on the host | - | - | pixmaps, readback | 791 |
+| metaballs | 2d | M | - | - | `XFree`, `XListPixmapFormats` | - | 438 |
 | apollonian | 2d | L | - | - | `FcChar8`, `XColor.color`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall` | - | 820 |
 | apple2-main | 2d | L | - | - | `A2CONTROLLER_DONE`, `A2CONTROLLER_FREE`, `A2_GR_FULL`, `A2_GR_HIRES`, `A2_GR_LORES`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `GrayScale`, `PseudoColor`, `TTY_BLINK`, `TTY_BOLD`, `TTY_INVERSE`, `TTY_SYMBOLS`, `XQueryColors`, `a2_clear_gr`, `a2_clear_hgr`, `a2_cls`, `a2_display_image_loading`, `a2_goto`, `a2_hline`, `a2_hplot`, `a2_invalidate`, `a2_plot`, `a2_printc`, `a2_printc_noscroll`, `a2_prints`, `analogtv_reconfigure`, `ansi-tty.h`, `ansi_tty`, `ansi_tty_free`, `ansi_tty_init`, `ansi_tty_print`, `apple2.h`, `apple2_one_frame`, `apple2_sim_t`, `apple2_start`, `apple2_state_t`, `error: expected expression`, `flag`, `load_image_async`, `sim`, `st`, `tc`, `tty`, `tty_char`, `tty_flag`, `utf8_encode`, `visual_cells`, `visual_class`, `visual_rgb_masks` | pixmaps, readback | 1642 |
 | blitspin | 2d | L | - | - | `GXand`, `GXclear`, `GXset`, `XDisplayHeight`, `XDisplayWidth`, `XScreenNumberOfScreen`, `file_to_pixmap`, `images/gen/som_png.h`, `som_png` | pixmaps, readback, clipmask | 467 |
@@ -1152,13 +1156,11 @@ needing few additions come first.
 | demon | 2d | - | 1.1-1.6 ms measured | ✅ | - | - | 953 |
 | discrete | 2d | - | 149-160 ms measured | ✅ | - | - | 442 |
 | drift | 2d | - | 11-13 ms measured | ✅ | - | - | 674 |
-| droste | 2d | - | 192.1-194.1 ms measured | ✅ | - | pixmaps, readback | 686 |
 | epicycle | 2d | - | 0.3-2.1 ms measured | ✅ | - | - | 803 |
 | euler2d | 2d | - | 27.9 ms measured | ✅ | - | float-heavy | 893 |
 | fadeplot | 2d | - | 2.9-3.2 ms measured | ✅ | - | - | 243 |
 | fireworkx | 2d | - | - | ✅ | - | - | 882 |
 | flame | 2d | - | 26-107 ms measured | ✅ | - | - | 457 |
-| flow | 2d | - | 211.2-368.6 ms measured | ✅ | - | pixmaps | 1216 |
 | forest | 2d | - | 13-58.9 ms measured | ✅ | - | - | 241 |
 | fuzzyflakes | 2d | - | 30.2-30.9 ms measured | ✅ | - | pixmaps | 655 |
 | galaxy | 2d | - | 58-75 ms measured | ✅ | - | - | 462 |
@@ -1209,7 +1211,6 @@ needing few additions come first.
 | substrate | 2d | - | 2.9-43.9 ms measured | ✅ | - | - | 780 |
 | thornbird | 2d | - | 2-2.2 ms measured | ✅ | - | - | 270 |
 | truchet | 2d | - | 652-900 ms measured | ✅ | - | pixmaps | 541 |
-| twang | 2d | - | 135.6-151.7 ms measured | ✅ | - | pixmaps, readback | 791 |
 | vermiculate | 2d | - | 1.3-2.2 ms measured | ✅ | - | - | 1229 |
 | vines | 2d | - | 133-160 ms measured | ✅ | - | - | 190 |
 | wander | 2d | - | 4.4 ms measured | ✅ | - | pixmaps | 284 |
@@ -1219,7 +1220,6 @@ needing few additions come first.
 | xspirograph | 2d | - | 54-56 ms measured | ✅ | - | - | 338 |
 | cynosure | 2d | - | 17-17.8 ms measured | ✅ | `XCreateBitmapFromData` | - | 457 |
 | eruption | 2d | - | 39-39.1 ms measured | ✅ | `error: typedef redefinition with different types ('unsigned long' vs 'unsigned int')` | - | 608 |
-| metaballs | 2d | - | 81.7-83.7 ms measured | ✅ | `XFree`, `XListPixmapFormats` | - | 438 |
 | triangle | 2d | - | 3.6-6 ms measured | ✅ | `free_colors`, `make_smooth_colormap` | - | 355 |
 | xrayswarm | 2d | - | 21.2-21.6 ms measured | ✅ | `initTime` | - | 1235 |
 | goop | 2d | - | - | ✅ | `AllPlanes`, `GXclear`, `XSetPlaneMask` | pixmaps, xor | 651 |

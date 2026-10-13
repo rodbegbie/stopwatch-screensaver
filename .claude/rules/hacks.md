@@ -354,7 +354,10 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   memory allowed (Flow), 0.6 fps (Marbling) and 1.6 fps (Droste). Flash a
   batch before calling it done. A rotation build starting at the first new
   hack (`-DSTART_HACK=\"marbling\" -DROTATE_SECONDS=30`) measures all of them
-  in one 10 minute capture.
+  in one 10 minute capture. Rod then took MetaBalls, Twang, Flow and Droste
+  out of `g_hacks[]` (slow or margin-bound, not worth tuning). Their sources,
+  wrappers and wrapper tests stay in the tree, unregistered; to bring one
+  back, re-add its registry entry, expected name, pin and leak test.
 - Marbling does a 5-iteration fractal noise per pixel (12 ms a step on the
   host, 1,785 ms on the board, so the host suite takes about 3 minutes
   longer). `marbling_safe.c` overrides `*gridsize` to 6 and `*iterations` to 3

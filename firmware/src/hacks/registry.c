@@ -224,8 +224,6 @@ extern const HackEntry deco_hack;
 
 extern const HackEntry imsmap_hack;
 
-extern const HackEntry metaballs_hack;
-
 extern const HackEntry munch_hack;
 
 extern const HackEntry ccurve_hack;
@@ -234,19 +232,7 @@ extern const HackEntry binaryhorizon_hack;
 
 extern const HackEntry rotzoomer_hack;
 
-extern const HackEntry twang_hack;
-
 extern const HackEntry nerverot_hack;
-
-/* Flow mallocs (count + 36) * ncolors * taillen segments of 8 bytes: 3,000 bees
- * and 200 colours would be up to 29 MB, which the host allows and the board
- * does not (the allocation failed and the hack drew nothing after its first
- * frame). 120 bees and 8 colours is about 60 KB, and keeps the double-precision step
- * under 200 ms (400 bees took 233-770 ms). The hack stays in double
- * precision: in float its flow dies out within about 600 frames and the screen
- * stays black. */
-static const char *const kFlowOverrides[] = {"*count: 120", "*ncolors: 8", NULL};
-XLOCKMORE_HACK_WITH(flow, "Flow", kFlowOverrides);
 
 /* Upstream draws a red and a blue starfield for 3D glasses (`use3d: True`) and
  * ORs them where they overlap, which the shim does not do. Without glasses,
@@ -261,8 +247,6 @@ XLOCKMORE_HACK(ant, "Ant");
 extern const HackEntry hyperball_hack;
 
 XLOCKMORE_HACK(demon, "Demon");
-
-extern const HackEntry droste_hack;
 
 XLOCKMORE_HACK(polyominoes, "Polyominoes");
 
@@ -354,19 +338,15 @@ const HackEntry *const g_hacks[] = {
     &marbling_hack,
     &deco_hack,
     &imsmap_hack,
-    &metaballs_hack,
     &munch_hack,
     &ccurve_hack,
     &binaryhorizon_hack,
     &rotzoomer_hack,
-    &twang_hack,
     &nerverot_hack,
-    &flow_hack,
     &bouboule_hack,
     &ant_hack,
     &hyperball_hack,
     &demon_hack,
-    &droste_hack,
     &polyominoes_hack,
     &barcode_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
