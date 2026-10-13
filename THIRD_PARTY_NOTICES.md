@@ -6,7 +6,7 @@ relicensed.
 
 ## xscreensaver
 
-Hack sources copied from xscreensaver 6.16
+Hack sources copied from xscreensaver 6.17
 (<https://www.jwz.org/xscreensaver/>) are under the following permission
 notice. The copyright line of each copied file is listed in the table
 below.
@@ -313,7 +313,7 @@ from the X Consortium.
 ### The Maze logo
 
 Maze draws the xscreensaver logo inside its maze. The logo data in
-`logo-50_png.h` is `utils/images/logo-50.gif` from xscreensaver 6.16,
+`logo-50_png.h` is `utils/images/logo-50.gif` from xscreensaver 6.17,
 re-encoded as 50 by 50 RGB565 pixels and a transparency mask, without
 changing the design. It is not part of the MIT-licensed code in this
 repository.
@@ -328,7 +328,7 @@ in a local build without committing it, set `XS_LOGO` to the image file (see
 ### The Pacman sprites
 
 Pacman draws its characters from `hacks/images/pacman.png` in xscreensaver
-6.16, a 64 by 3840 sprite sheet. The file has no licence text of its own, and
+6.17, a 64 by 3840 sprite sheet. The file has no licence text of its own, and
 this repository does not contain it. `firmware/pacman_sprites.py` reads it from
 `vendor/` at build time and converts it to the raw blob described in
 `ximage-loader.h` (3 MB as C text) in the build directory. The sprites are not
@@ -337,7 +337,7 @@ part of the MIT-licensed code in this repository.
 ### The XMatrix glyph sheets
 
 XMatrix draws its characters from `hacks/images/matrix1.png`, `matrix1b.png`,
-`matrix2.png` and `matrix2b.png` in xscreensaver 6.16, two sizes of two glyph
+`matrix2.png` and `matrix2b.png` in xscreensaver 6.17, two sizes of two glyph
 sheets. The files have no licence text of their own, and this repository does
 not contain them. `firmware/matrix_glyphs.py` reads them from `vendor/` at
 build time and converts each to the raw blob described in `ximage-loader.h` in
@@ -346,14 +346,12 @@ this repository.
 
 ### Build-time data: Etruscan Venus's texture and Graphstat's words
 
-Etruscan Venus includes `hacks/glx/curlicue.h` from xscreensaver 6.16, a 64
-by 64 texture of a curlicue, and Graphstat includes `graphstat.h`, which
-upstream's build makes from `hacks/glx/graphstat.txt`, its list of words for
-titles. Neither file has licence text of its own, and this repository does not
-contain them: `firmware/vendor_data.py` copies `curlicue.h` from `vendor/` into
-the build directory, and `firmware/graphstat_strings.py` writes `graphstat.h`
-there from `graphstat.txt`. They are not part of the MIT-licensed code in this
-repository.
+Etruscan Venus includes `hacks/glx/curlicue.h` from xscreensaver 6.17, a 64
+by 64 texture of a curlicue, and Graphstat includes `hacks/glx/graphstat.h`, its
+list of words for titles. Neither file has licence text of its own, and this
+repository does not contain them: `firmware/vendor_data.py` copies both from
+`vendor/` into the build directory. They are not part of the MIT-licensed code
+in this repository.
 
 ### Silicon Graphics notice (trackball, teapot)
 
@@ -403,7 +401,7 @@ OpenGL(TM) is a trademark of Silicon Graphics, Inc.
 ### xscreensaver package licence (Pipes' helpers)
 
 `buildlwo.c`, `buildlwo.h`, `pipeobjs.c`, `teapot.h` and `teapot2.h` (Pipes'
-equipment models and its teapot) ship in xscreensaver 6.16 with no licence
+equipment models and its teapot) ship in xscreensaver 6.17 with no licence
 text of their own. They are copied byte-identical under the licence the
 package declares for itself in `xscreensaver.spec` ("License: BSD"), and
 `tools/check_notices.py` lists them by name.

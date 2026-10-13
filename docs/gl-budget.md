@@ -10,7 +10,7 @@ uv run tools/gl_budget.py [--frames N] [--seeds a,b,c]
 ```
 
 Gears is read from `firmware/src/hacks/gears/`; any other name from
-`vendor/xscreensaver-6.16/hacks/glx/` (git-ignored, never copied into the
+`vendor/xscreensaver-6.17/hacks/glx/` (git-ignored, never copied into the
 repo). A hack that does not build is reported with its first error, and the
 exit status is 1.
 

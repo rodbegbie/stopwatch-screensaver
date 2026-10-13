@@ -9,10 +9,13 @@ from pathlib import Path
 Import("env")  # noqa: F821
 
 repo = Path(env["PROJECT_DIR"]).parent  # noqa: F821
-glx = repo / "vendor" / "xscreensaver-6.16" / "hacks" / "glx"
+sys.path.insert(0, str(repo / "tools"))
+import xs_vendor
+
+glx = xs_vendor.upstream(repo) / "hacks" / "glx"
 generated = Path(env.subst("$BUILD_DIR")) / "generated"  # noqa: F821
 
-for name in ("curlicue.h",):
+for name in ("curlicue.h", "graphstat.h"):
     source = glx / name
     target = generated / name
     if not source.is_file():

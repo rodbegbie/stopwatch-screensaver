@@ -14,7 +14,10 @@ from pathlib import Path
 Import("env")  # noqa: F821
 
 repo = Path(env["PROJECT_DIR"]).parent  # noqa: F821
-images = repo / "vendor" / "xscreensaver-6.16" / "hacks" / "images"
+sys.path.insert(0, str(repo / "tools"))
+import xs_vendor
+
+images = xs_vendor.upstream(repo) / "hacks" / "images"
 converter = repo / "tools" / "make_logo_blob.py"
 generated = Path(env.subst("$BUILD_DIR")) / "generated"  # noqa: F821
 

@@ -6,9 +6,10 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import etruscanvenus_patch as ep
+import xs_vendor
 
 ROOT = Path(__file__).resolve().parents[2]
-UPSTREAM = ROOT / "vendor" / "xscreensaver-6.16" / "hacks" / "glx" / "etruscanvenus.c"
+UPSTREAM = xs_vendor.upstream(ROOT) / "hacks" / "glx" / "etruscanvenus.c"
 
 SAMPLE = """\
 /* Number of subdivisions of the surface */
@@ -31,7 +32,7 @@ def test_it_refuses_a_source_that_has_changed(missing):
         ep.size_the_grid(SAMPLE.replace(missing, ""))
 
 
-@pytest.mark.skipif(not UPSTREAM.exists(), reason="needs vendor/xscreensaver-6.16")
+@pytest.mark.skipif(not UPSTREAM.exists(), reason=f"needs {xs_vendor.UPSTREAM}")
 def test_upstream_has_both_defines_once():
     out = ep.size_the_grid(UPSTREAM.read_text())
     assert out.count("ETRUSCANVENUS_NUMU") == 1

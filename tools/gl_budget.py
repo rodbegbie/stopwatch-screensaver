@@ -21,6 +21,7 @@ from pathlib import Path
 import probe_hacks
 import teapot_table
 import tinygl_patch
+import xs_vendor
 
 # Milliseconds a frame spends on fixed work (clearing colour and z, then the
 # push to the display), microseconds per vertex set up, extra microseconds per
@@ -350,7 +351,7 @@ def measure(
 
 
 DEFAULT_SEEDS = [1, 2, 3]
-VENDOR_GLX = Path("vendor") / "xscreensaver-6.16" / "hacks" / "glx"
+VENDOR_GLX = xs_vendor.UPSTREAM / "hacks" / "glx"
 
 
 def hack_path(root: Path, name: str) -> Path:

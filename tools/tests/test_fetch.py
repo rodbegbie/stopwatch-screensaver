@@ -99,10 +99,10 @@ def test_main_skips_existing_dir_without_force(tmp_path, monkeypatch, capsys):
     assert "already present" in capsys.readouterr().out
 
 
-def test_main_warns_when_not_6_16(tmp_path, monkeypatch, capsys):
-    html = '<a href="xscreensaver-6.17.tar.gz">x</a>'
+def test_main_warns_when_not_the_surveyed_version(tmp_path, monkeypatch, capsys):
+    html = '<a href="xscreensaver-9.99.tar.gz">x</a>'
     monkeypatch.setattr(fx, "fetch_text", lambda url: html)
-    (tmp_path / "xscreensaver-6.17").mkdir()
+    (tmp_path / "xscreensaver-9.99").mkdir()
     assert fx.main(["--dest", str(tmp_path)]) == 0
     assert "re-check" in capsys.readouterr().err
 

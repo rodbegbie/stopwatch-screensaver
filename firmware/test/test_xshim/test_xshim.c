@@ -925,6 +925,12 @@ void test_countof_gives_the_array_length(void) {
   TEST_ASSERT_EQUAL_INT(5, countof(a));
 }
 
+void test_gettext_and_underscore_return_their_argument(void) {
+  const char *s = "Primary";
+  TEST_ASSERT_EQUAL_PTR(s, gettext(s));
+  TEST_ASSERT_EQUAL_PTR(s, _(s));
+}
+
 void test_fps_stand_ins_accept_a_null_state(void) {
   fps_compute(NULL, 0, 0);
   fps_draw(NULL);
@@ -3963,6 +3969,7 @@ int main(void) {
   RUN_TEST(test_nrand_stays_below_n_and_covers_the_range);
   RUN_TEST(test_lrand_is_non_negative_and_below_maxrand);
   RUN_TEST(test_countof_gives_the_array_length);
+  RUN_TEST(test_gettext_and_underscore_return_their_argument);
   RUN_TEST(test_fps_stand_ins_accept_a_null_state);
   RUN_TEST(test_xrm_option_strings_are_writable_like_xscreensavers);
   RUN_TEST(test_parse_color_reads_hex_and_names_into_16_bit_channels);

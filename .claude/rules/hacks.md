@@ -270,9 +270,11 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   them, and the frame's `XPutImage` into a pixmap and copy back are skipped:
   the 32-bit image was put a pixel at a time, 130 of a 240 ms step.
   `tools/binaryring_patch.py` makes `frand1`'s exponent literal a float.
-- GraphStat's word list (`graphstat.h`) is written from `vendor/` at build
-  time (`firmware/graphstat_strings.py`). Its timing is in frames tuned for
-  30 fps, so at 10 fps a picture takes about 36 s instead of 12.
+- GraphStat's word list (`graphstat.h`) is copied from `vendor/` at build
+  time (`firmware/vendor_data.py`); since 6.17 upstream ships the header, each
+  word wrapped in `_()` for `gettext` (`x11shim/include/nls.h`). Its timing
+  is in frames tuned for 30 fps, so at 10 fps a picture takes about 36 s
+  instead of 12.
 - EtruscanVenus (`etruscanvenus_single_gl.c`) runs on a 48 by 32 grid
   (`tools/etruscanvenus_patch.py`, upstream's 192 by 128) at half resolution;
   `-DETRUSCANVENUS_NUMU`, `-DETRUSCANVENUS_NUMV` and `-DETRUSCANVENUS_FULL`

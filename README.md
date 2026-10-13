@@ -7,7 +7,7 @@ learning project in embedded development.
 
 ![The StopWatch running a rotation of xscreensaver hacks](docs/video.avif)
 
-The hack sources are copied byte for byte from xscreensaver 6.16, and the
+The hack sources are copied byte for byte from xscreensaver 6.17, and the
 shim is extended to run them rather than the hacks being edited. A few are
 built through a thin wrapper: single precision for the `double`-heavy ones
 (the ESP32-S3's FPU handles only `float`), a build-time patched copy of Maze
