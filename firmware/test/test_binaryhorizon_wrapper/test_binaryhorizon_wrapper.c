@@ -71,6 +71,33 @@ void test_a_timed_restart_does_not_leak_the_pixel_buffer(void) {
   binaryhorizon_free(dpy, 1, st);
 }
 
+static time_t fake_reads[2];
+static int fake_calls;
+static time_t fake_clock(void) { return fake_reads[fake_calls++ ? 1 : 0]; }
+
+/* The wrapper's restart check and upstream's are two reads of the clock. When
+ * the second falls in the next second, upstream replaced the buffer with the
+ * wrapper's cleanup skipped: 868 KB leaked on the device. Both must see the
+ * same second. */
+void test_a_restart_on_the_edge_of_a_second_still_frees_the_old_buffer(void) {
+  struct state *st = binaryhorizon_init(dpy, 1);
+  st->duration = 30;
+  st->start_time = 1000;
+  binaryhorizon_draw(dpy, 1, st);
+  const size_t before = __sanitizer_get_current_allocated_bytes();
+  for (int i = 0; i < 20; i++) {
+    st->start_time = 1000;
+    fake_reads[0] = 1030;
+    fake_reads[1] = 1031;
+    fake_calls = 0;
+    binaryhorizon_clock = fake_clock;
+    binaryhorizon_draw(dpy, 1, st);
+  }
+  binaryhorizon_clock = binaryhorizon_real_clock;
+  TEST_ASSERT_TRUE(__sanitizer_get_current_allocated_bytes() <= before + 512);
+  binaryhorizon_free(dpy, 1, st);
+}
+
 /* The restart starts from black: the picture is not left under the new one. */
 void test_a_timed_restart_clears_the_window(void) {
   struct state *st = binaryhorizon_init(dpy, 1);
@@ -92,5 +119,6 @@ int main(void) {
   RUN_TEST(test_a_frame_leaves_the_window_alone_and_holds_no_frame_sized_image);
   RUN_TEST(test_a_timed_restart_does_not_leak_the_pixel_buffer);
   RUN_TEST(test_a_timed_restart_clears_the_window);
+  RUN_TEST(test_a_restart_on_the_edge_of_a_second_still_frees_the_old_buffer);
   return UNITY_END();
 }

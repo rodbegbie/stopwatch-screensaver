@@ -15,9 +15,13 @@
  *
  * Every `duration` seconds the hack starts again, which callocs a new pixel
  * buffer and never frees the old one (868 KB on the device). The wrapper frees
- * it, and clears the window, as the copy of the new black pixmap would have. */
+ * it, and clears the window, as the copy of the new black pixmap would have.
+ * The hack's own check and the wrapper's must agree, so the clock is read once
+ * a frame and both get that second: two reads can straddle the boundary, and
+ * upstream would then replace the buffer with the wrapper's cleanup skipped. */
 #include <stdint.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "screenhack.h"
 
@@ -62,6 +66,17 @@ static XImage *binaryhorizon_tiny_image(Display *dpy, Drawable d, int x, int y,
 }
 #define XGetImage binaryhorizon_tiny_image
 
+static time_t binaryhorizon_real_clock(void) { return (time)((time_t *)0); }
+static time_t (*binaryhorizon_clock)(void) = binaryhorizon_real_clock;
+static time_t binaryhorizon_frame_time;
+static time_t binaryhorizon_time(time_t *out) {
+  const time_t now =
+      binaryhorizon_frame_time ? binaryhorizon_frame_time : binaryhorizon_clock();
+  if (out) *out = now;
+  return now;
+}
+#define time(p) binaryhorizon_time(p)
+
 #undef XSCREENSAVER_MODULE
 #define XSCREENSAVER_MODULE(CLASS, PREFIX)
 #define binaryhorizon_init binaryhorizon_upstream_init
@@ -80,12 +95,15 @@ static void *binaryhorizon_init(Display *dpy, Window window) {
 static unsigned long binaryhorizon_draw(Display *display, Window win,
                                         void *closure) {
   struct state *st = (struct state *)closure;
-  if (st->duration && time((time_t *)0) > st->start_time + st->duration) {
+  binaryhorizon_frame_time = binaryhorizon_clock();
+  if (st->duration && binaryhorizon_frame_time > st->start_time + st->duration) {
     free(st->buffer);
     st->buffer = NULL;
     canvas_clear(binaryhorizon_window, 0);
   }
-  return binaryhorizon_upstream_draw(display, win, closure);
+  const unsigned long delay = binaryhorizon_upstream_draw(display, win, closure);
+  binaryhorizon_frame_time = 0;
+  return delay;
 }
 
 const HackEntry binaryhorizon_hack = {
