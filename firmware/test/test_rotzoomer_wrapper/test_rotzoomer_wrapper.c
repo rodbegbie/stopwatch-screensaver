@@ -52,13 +52,53 @@ void test_the_zoomed_picture_is_the_one_the_load_painted(void) {
   xshim_set_grab_image(flat, sizeof(flat));
   struct state *st = rotzoomer_init(dpy, 1);
   for (int i = 0; i < 10; i++) rotzoomer_draw(dpy, 1, st);
-  int painted = 0, other = 0;
-  for (int i = 0; i < cv.w * cv.h; i++) {
+  int painted = 0;
+  for (int i = 0; i < cv.w * cv.h; i++)
     if (cv.px[i] == px_swap(0x1234)) painted++;
-    else if (cv.px[i] != 0) other++;
-  }
-  TEST_ASSERT_TRUE(painted > 0);
-  TEST_ASSERT_EQUAL_INT(0, other);
+  TEST_ASSERT_EQUAL_INT(cv.w * cv.h, painted);
+  rotzoomer_free(dpy, 1, st);
+  xshim_set_grab_image(NULL, 0);
+}
+
+static void flat_picture(unsigned char *blob, unsigned lo, unsigned hi) {
+  memcpy(blob, "565M", 4);
+  blob[4] = 1;
+  blob[6] = 1;
+  blob[8] = (unsigned char)lo;
+  blob[9] = (unsigned char)hi;
+  blob[10] = 0x80;
+}
+
+/* The picture the hack zooms is a 32-bit image from XGetImage, but its buffer
+ * is 16 bits: copying one into the other alternates the picture with black
+ * and scrambles it. Every pixel of a flat picture must come out that colour. */
+void test_a_flat_picture_comes_out_without_black_pixels(void) {
+  static unsigned char flat[11];
+  flat_picture(flat, 0x34, 0x12);
+  xshim_set_grab_image(flat, sizeof(flat));
+  struct state *st = rotzoomer_init(dpy, 1);
+  TEST_ASSERT_EQUAL_INT(16, st->buffer_map->bits_per_pixel);
+  TEST_ASSERT_EQUAL_INT(16, st->orig_map->bits_per_pixel);
+  for (int i = 0; i < cv.w * cv.h; i++)
+    TEST_ASSERT_EQUAL_HEX16(px_swap(0x1234), cv.px[i]);
+  rotzoomer_free(dpy, 1, st);
+  xshim_set_grab_image(NULL, 0);
+}
+
+/* Every `duration` seconds the hack loads a picture again. The shim finishes
+ * that load at once, so upstream never sees it finish: the wrapper must
+ * refresh the zoomed picture itself, or the old one stays on show. */
+void test_a_timed_reload_shows_the_new_picture(void) {
+  static unsigned char first[11], second[11];
+  flat_picture(first, 0x34, 0x12);
+  flat_picture(second, 0x78, 0x56);
+  xshim_set_grab_image(first, sizeof(first));
+  struct state *st = rotzoomer_init(dpy, 1);
+  xshim_set_grab_image(second, sizeof(second));
+  st->start_time = 0;
+  rotzoomer_draw(dpy, 1, st);
+  for (int i = 0; i < cv.w * cv.h; i++)
+    TEST_ASSERT_EQUAL_HEX16(px_swap(0x5678), cv.px[i]);
   rotzoomer_free(dpy, 1, st);
   xshim_set_grab_image(NULL, 0);
 }
@@ -67,5 +107,7 @@ int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_the_first_draw_finds_a_picture_and_zoom_boxes_ready);
   RUN_TEST(test_the_zoomed_picture_is_the_one_the_load_painted);
+  RUN_TEST(test_a_flat_picture_comes_out_without_black_pixels);
+  RUN_TEST(test_a_timed_reload_shows_the_new_picture);
   return UNITY_END();
 }
