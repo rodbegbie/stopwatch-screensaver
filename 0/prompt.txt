@@ -1,0 +1,41 @@
+Flash the device
+
+---
+
+Open the serial port
+
+---
+
+<task-notification>
+<task-id>bra4770y2</task-id>
+<tool-use-id>toolu_01EmnS3Uf14BGeZzb8DftiTp</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/4ec7b3bd-21e0-400b-94ab-c1f553066fbd/tasks/bra4770y2.output</output-file>
+<status>completed</status>
+<summary>Background command "Capture 10 minutes of serial log in the background" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Flash pinned builds and monitor them.
+
+---
+
+<task-notification>
+<task-id>bjrnz2edr</task-id>
+<tool-use-id>toolu_01Vp2SdwqXpt1C6PfPzVLmXZ</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/4ec7b3bd-21e0-400b-94ab-c1f553066fbd/tasks/bjrnz2edr.output</output-file>
+<status>completed</status>
+<summary>Background command "Give Rod time to look at Pacman" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+All three look correct.
+
+---
+
+File an issue for those other two savings.
+
+---
+
+/address-findings
