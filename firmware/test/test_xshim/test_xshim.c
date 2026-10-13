@@ -1153,6 +1153,38 @@ void test_a_deflated_blob_that_is_corrupt_or_the_wrong_size_is_rejected(void) {
   TEST_ASSERT_NULL(image_data_to_ximage(dpy, NULL, corrupt, n_whole - 5));
 }
 
+/* A "565Z" blob of a black w by h image, malloc'd; its size goes in *size. */
+static unsigned char *black_deflated_blob(unsigned w, unsigned h, unsigned long *size) {
+  const unsigned long body_len = 2UL * w * h + (unsigned long)((w + 7) / 8) * h;
+  unsigned char *body = (unsigned char *)calloc(1, body_len);
+  uLongf len = compressBound(body_len);
+  unsigned char *out = (unsigned char *)malloc(8 + len);
+  TEST_ASSERT_EQUAL_INT(Z_OK, compress2(out + 8, &len, body, body_len, 9));
+  free(body);
+  memcpy(out, "565Z", 4);
+  out[4] = w & 0xFF, out[5] = w >> 8, out[6] = h & 0xFF, out[7] = h >> 8;
+  *size = 8 + len;
+  return out;
+}
+
+/* Past INT16_MAX a side is more than the canvas allows, and on the device a
+ * 65535 by 65535 blob's size would wrap the 32-bit size_t passed to malloc. */
+void test_a_blob_wider_or_taller_than_int16_max_is_rejected(void) {
+  const unsigned sizes[][2] = {{32768, 1}, {1, 32768}, {32767, 1}, {1, 32767}};
+  for (unsigned i = 0; i < 4; i++) {
+    unsigned long size;
+    unsigned char *b = black_deflated_blob(sizes[i][0], sizes[i][1], &size);
+    XImage *im = image_data_to_ximage(dpy, NULL, b, size);
+    if (i < 2) {
+      TEST_ASSERT_NULL(im);
+    } else {
+      TEST_ASSERT_NOT_NULL(im);
+      XDestroyImage(im);
+    }
+    free(b);
+  }
+}
+
 void test_get_geometry_of_the_window_is_the_canvas_and_of_nothing_is_failure(void) {
   Window root;
   int x, y;
@@ -3837,6 +3869,7 @@ int main(void) {
   RUN_TEST(test_image_data_to_pixmap_rejects_a_blob_that_is_not_ours);
   RUN_TEST(test_a_deflated_blob_loads_the_same_pixels_and_mask_as_the_plain_one);
   RUN_TEST(test_a_deflated_blob_that_is_corrupt_or_the_wrong_size_is_rejected);
+  RUN_TEST(test_a_blob_wider_or_taller_than_int16_max_is_rejected);
   RUN_TEST(test_get_geometry_of_the_window_is_the_canvas_and_of_nothing_is_failure);
   RUN_TEST(test_copy_area_draws_the_image_at_the_destination);
   RUN_TEST(test_copy_area_copies_only_the_requested_source_rectangle);

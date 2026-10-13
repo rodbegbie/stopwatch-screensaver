@@ -96,7 +96,8 @@ static int blob_open(const unsigned char *data, unsigned long size, unsigned *w,
   *w = le16(data + 4);
   *h = le16(data + 6);
   const uint64_t body_bytes = (uint64_t)*w * *h * 2 + (uint64_t)((*w + 7) / 8) * *h;
-  if (*w == 0 || *h == 0) return -1;
+  /* The canvas's limit, which also keeps every size below in a 32-bit size_t. */
+  if (*w == 0 || *h == 0 || *w > INT16_MAX || *h > INT16_MAX) return -1;
   if (!packed) {
     *body = data + 8;
     return size == 8 + body_bytes ? 0 : -1;
