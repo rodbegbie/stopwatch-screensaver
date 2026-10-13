@@ -3517,6 +3517,14 @@ void test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits(void) {
   XDestroyImage(im);
 }
 
+void test_bitmap_pad_is_32_bits_and_makes_a_tight_image_row_whole_words(void) {
+  TEST_ASSERT_EQUAL_INT(32, BitmapPad(dpy));
+  XImage *im = XCreateImage(dpy, NULL, 16, ZPixmap, 0, NULL, 3, 1, BitmapPad(dpy), 0);
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_INT(8, im->bytes_per_line);
+  XDestroyImage(im);
+}
+
 void test_a_bitmap_image_is_one_bit_a_pixel_least_significant_bit_first(void) {
   XImage *im = XCreateImage(dpy, NULL, 1, XYBitmap, 0, NULL, 9, 2, 8, 0);
   TEST_ASSERT_NOT_NULL(im);
@@ -3894,6 +3902,7 @@ int main(void) {
   RUN_TEST(test_query_color_recovers_the_colour_alloc_color_made);
   RUN_TEST(test_the_screen_is_a_colour_display_with_no_writable_cells);
   RUN_TEST(test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits);
+  RUN_TEST(test_bitmap_pad_is_32_bits_and_makes_a_tight_image_row_whole_words);
   RUN_TEST(test_a_bitmap_image_is_one_bit_a_pixel_least_significant_bit_first);
   RUN_TEST(test_put_image_of_a_bitmap_draws_set_bits_in_the_foreground_and_clear_in_the_background);
   RUN_TEST(test_put_image_clips_at_every_edge_and_copies_the_matching_source_pixels);

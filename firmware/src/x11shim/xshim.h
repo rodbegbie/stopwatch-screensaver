@@ -365,6 +365,8 @@ int XCopyPlane(Display *, Drawable src, Drawable dst, GC, int src_x,
 #define MSBFirst 1
 /* The server is little-endian (the S3 and the hosts the tests run on). */
 #define ImageByteOrder(dpy) ((void)(dpy), LSBFirst)
+/* Image rows pad to whole 32-bit words, as on a typical X server. */
+#define BitmapPad(dpy) ((void)(dpy), 32)
 #define ZPixmap 2
 typedef struct XImage {
   int width, height;
