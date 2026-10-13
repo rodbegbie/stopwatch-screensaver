@@ -158,6 +158,7 @@ implied warranty.
 | `firmware/src/hacks/munch/munch.c` | Portions copyright 1992-2014 Jamie Zawinski; 1997 Tim Showalter; 2004 Steven Hazel | jwz permission notice (above) |
 | `firmware/src/hacks/ccurve/ccurve.c` | Copyright (c) 1998, 1999 Rick Campbell | jwz permission notice (above) |
 | `firmware/src/hacks/binaryhorizon/binaryhorizon.c` | Copyright (c) 2020 Patrick Leiser; 1997-2002 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/rotzoomer/rotzoomer.c` | Copyright (C) 2001-2016 Claudio Matsuoka | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/sphere.c` | Copyright (c) 2002 Paul Bourke, Copyright (c) 2010-2026 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/sphere.h` | Copyright (c) 2001-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/teapot.c` | Copyright (c) Mark J. Kilgard, 1994; (c) Copyright 1993, Silicon Graphics, Inc. | Silicon Graphics notice (below) |

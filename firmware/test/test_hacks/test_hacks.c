@@ -149,6 +149,7 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Munch",
                                          "CCurve",
                                          "BinaryHorizon",
+                                         "RotZoomer",
 #ifdef HAVE_AFTER_DARK_TOASTERS
                                          "ad-flyingtoasters",
 #endif
@@ -562,6 +563,7 @@ static const uint64_t kBaseline[] = {
     0, /* Munch: not yet pinned */
     0, /* CCurve: not yet pinned */
     0, /* BinaryHorizon: not yet pinned */
+    0, /* RotZoomer: not yet pinned */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -1597,6 +1599,10 @@ void test_binaryhorizon_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("BinaryHorizon", 0);
 }
 
+void test_rotzoomer_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("RotZoomer", 0);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -1711,6 +1717,7 @@ int main(void) {
   RUN_TEST(test_munch_stops_do_not_leak);
   RUN_TEST(test_ccurve_stops_do_not_leak);
   RUN_TEST(test_binaryhorizon_stops_do_not_leak);
+  RUN_TEST(test_rotzoomer_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
