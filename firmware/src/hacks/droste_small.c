@@ -13,6 +13,12 @@
 #include <stdlib.h>
 
 #include "screenhack.h"
+#include "xshm.h"
+
+#include "core/canvas.h"
+
+#define LOWREZ_SCALE 2
+#include "hacks/lowrez_put.h"
 
 static char droste_loader_token;
 
@@ -37,9 +43,24 @@ static async_load_state *droste_load(async_load_state *state, Screen *screen,
 
 static Pixmap droste_window_sized_pixmap(Display *dpy, Drawable d, unsigned int w,
                                          unsigned int h, unsigned int depth) {
-  return XCreatePixmap(dpy, d, (w * 2 + 2) / 5, (h * 2 + 2) / 5, depth);
+  return XCreatePixmap(dpy, d, (w * 2 + 2) / 5 * LOWREZ_SCALE,
+                       (h * 2 + 2) / 5 * LOWREZ_SCALE, depth);
 }
 #define XCreatePixmap droste_window_sized_pixmap
+
+/* Half resolution: the hack is told the window is half the size and draws an
+ * image of that, which lowrez_put.h puts on the window as 2 by 2 squares. It
+ * wants ordinary RGB565 and the picture holds canvas-order pixels, so each
+ * pixel is swapped on the way in. */
+#define XGetWindowAttributes lowrez_get_attributes
+#define XPutPixel(im, x, y, p) XPutPixel(im, x, y, px_swap((uint16_t)(p)))
+static void droste_put_image(Display *dpy, Drawable d, GC gc, XImage *im, int sx, int sy,
+                             int dx, int dy, unsigned int w, unsigned int h,
+                             XShmSegmentInfo *shm) {
+  (void)shm;
+  lowrez_put_image(dpy, d, gc, im, sx, sy, dx, dy, w, h);
+}
+#define put_xshm_image droste_put_image
 
 #undef XSCREENSAVER_MODULE
 #define XSCREENSAVER_MODULE(CLASS, PREFIX)

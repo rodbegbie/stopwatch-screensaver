@@ -238,7 +238,14 @@ extern const HackEntry twang_hack;
 
 extern const HackEntry nerverot_hack;
 
-XLOCKMORE_HACK(flow, "Flow");
+/* Flow mallocs (count + 36) * ncolors * taillen segments of 8 bytes: 3,000 bees
+ * and 200 colours would be up to 29 MB, which the host allows and the board
+ * does not (the allocation failed and the hack drew nothing after its first
+ * frame). 400 bees and 8 colours is about 170 KB. The hack stays in double
+ * precision: in float its flow dies out within about 600 frames and the screen
+ * stays black. */
+static const char *const kFlowOverrides[] = {"*count: 400", "*ncolors: 8", NULL};
+XLOCKMORE_HACK_WITH(flow, "Flow", kFlowOverrides);
 
 /* Upstream draws a red and a blue starfield for 3D glasses (`use3d: True`) and
  * ORs them where they overlap, which the shim does not do. Without glasses,
