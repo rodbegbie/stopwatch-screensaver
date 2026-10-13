@@ -19,6 +19,7 @@
 #include "alpha.h"
 #include "screenhack.h"
 #include "thread_util.h"
+#include "utf8wc.h"
 #include "utils.h"
 #include "xshm.h"
 #include "x11shim/arc.h"
@@ -3543,6 +3544,21 @@ void test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits(void) {
   XDestroyImage(im);
 }
 
+void test_utf8_to_latin1_copies_ascii_and_gives_up_on_anything_else(void) {
+  const char *plain = "space program";
+  char *copy = utf8_to_latin1(plain, 1);
+  TEST_ASSERT_NOT_NULL(copy);
+  TEST_ASSERT_TRUE(copy != plain);
+  TEST_ASSERT_EQUAL_STRING("space program", copy);
+  free(copy);
+  copy = utf8_to_latin1("", 1);
+  TEST_ASSERT_NOT_NULL(copy);
+  TEST_ASSERT_EQUAL_STRING("", copy);
+  free(copy);
+  TEST_ASSERT_NULL(utf8_to_latin1("caf\xc3\xa9", 1));
+  TEST_ASSERT_NULL(utf8_to_latin1("caf\xc3\xa9", 0));
+}
+
 void test_an_image_reports_the_server_byte_and_bit_order_and_lets_a_hack_set_them(void) {
   XImage *im = XCreateImage(dpy, NULL, 1, XYBitmap, 0, NULL, 9, 1, 8, 0);
   TEST_ASSERT_NOT_NULL(im);
@@ -3977,6 +3993,7 @@ int main(void) {
   RUN_TEST(test_query_color_recovers_the_colour_alloc_color_made);
   RUN_TEST(test_the_screen_is_a_colour_display_with_no_writable_cells);
   RUN_TEST(test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits);
+  RUN_TEST(test_utf8_to_latin1_copies_ascii_and_gives_up_on_anything_else);
   RUN_TEST(test_an_image_reports_the_server_byte_and_bit_order_and_lets_a_hack_set_them);
   RUN_TEST(test_countof_is_the_number_of_elements_of_an_array_not_its_bytes);
   RUN_TEST(test_unmap_notify_has_the_x_event_number_and_fits_an_event_type);
