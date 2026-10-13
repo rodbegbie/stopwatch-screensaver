@@ -167,6 +167,7 @@ implied warranty.
 | `firmware/src/hacks/ant/ant.c` | Copyright (c) 1995 David Bagley | xlock permission notice (below) |
 | `firmware/src/hacks/hyperball/hyperball.c` | Copyright (c) 1992-2000 Jamie Zawinski; derived from TI Explorer Lisp code by Joe Keane, Fritz Mueller and Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/demon/demon.c` | Copyright (c) 1995 David Bagley | xlock permission notice (below) |
+| `firmware/src/hacks/droste/droste.c` | Copyright © 2023-2025 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/sphere.c` | Copyright (c) 2002 Paul Bourke, Copyright (c) 2010-2026 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/sphere.h` | Copyright (c) 2001-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/teapot.c` | Copyright (c) Mark J. Kilgard, 1994; (c) Copyright 1993, Silicon Graphics, Inc. | Silicon Graphics notice (below) |
