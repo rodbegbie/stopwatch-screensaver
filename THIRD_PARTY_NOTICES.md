@@ -28,6 +28,7 @@ implied warranty.
 | `firmware/src/xs_support/xlockmore.c` | Copyright (c) 1997-2018 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/xlockmore.h` | Copyright (c) 1997-2021 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/xlockmoreI.h` | Copyright (c) 1997-2025 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/xs_support/automata.h` | Copyright (c) 1995 David Bagley | xlock permission notice (below) |
 | `firmware/src/hacks/hypercube/hypercube.c` | Copyright (c) 1992-2008 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/xspirograph/xspirograph.c` | The Spiral Generator, Copyright (c) 2000 Rohit Singh; contains code from xscreensaver, Copyright (c) 1992, 1995, 1996, 1997 Jamie Zawinski | jwz permission notice (above); the file's own header says "notices" for its two copyright holders |
 | `firmware/src/hacks/petri/petri.c` | Copyright (c) 1992-1999 Dan Bornstein, with help from Jamie Zawinski | jwz permission notice (above) |
@@ -151,6 +152,24 @@ implied warranty.
 | `firmware/src/xs_support/glx/trackball.c` | Copyright 1993, 1994, Silicon Graphics, Inc. | Silicon Graphics notice (below) |
 | `firmware/src/xs_support/glx/trackball.h` | Copyright 1993, 1994, Silicon Graphics, Inc. | Silicon Graphics notice (below) |
 | `firmware/src/hacks/pipes/pipes.c` | Marcelo F. Vianna (1997), factory equipment by Ed Mackey, later changes by the xlockmore and xscreensaver authors | xlock permission notice (below) |
+| `firmware/src/hacks/marbling/marbling.c` | Copyright © 2021-2022 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/deco/deco.c` | Copyright (c) 1997-2013 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/imsmap/imsmap.c` | Copyright (c) 1992-2013 Juergen Nickelsen and Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/metaballs/metaballs.c` | Copyright (c) 2002-2003 W.P. van Paassen | jwz permission notice (above) |
+| `firmware/src/hacks/munch/munch.c` | Portions copyright 1992-2014 Jamie Zawinski; 1997 Tim Showalter; 2004 Steven Hazel | jwz permission notice (above) |
+| `firmware/src/hacks/ccurve/ccurve.c` | Copyright (c) 1998, 1999 Rick Campbell | jwz permission notice (above) |
+| `firmware/src/hacks/binaryhorizon/binaryhorizon.c` | Copyright (c) 2020 Patrick Leiser; 1997-2002 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/rotzoomer/rotzoomer.c` | Copyright (C) 2001-2016 Claudio Matsuoka | jwz permission notice (above) |
+| `firmware/src/hacks/twang/twang.c` | Copyright (c) 2003 Dan Bornstein | jwz permission notice (above) |
+| `firmware/src/hacks/nerverot/nerverot.c` | Copyright (c) 2000-2001 Dan Bornstein | jwz permission notice (above) |
+| `firmware/src/hacks/flow/flow.c` | Copyright (c) 1996 Tim Auckland; code from Stephen Davies 2000 | xlock permission notice (below) |
+| `firmware/src/hacks/bouboule/bouboule.c` | Copyright (c) 1988-91 Patrick J. Naughton; ported to xscreensaver by Jamie Zawinski, 1997 | xlock permission notice (below) |
+| `firmware/src/hacks/ant/ant.c` | Copyright (c) 1995 David Bagley | xlock permission notice (below) |
+| `firmware/src/hacks/hyperball/hyperball.c` | Copyright (c) 1992-2000 Jamie Zawinski; derived from TI Explorer Lisp code by Joe Keane, Fritz Mueller and Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/demon/demon.c` | Copyright (c) 1995 David Bagley | xlock permission notice (below) |
+| `firmware/src/hacks/droste/droste.c` | Copyright © 2023-2025 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/polyominoes/polyominoes.c` | Copyright (c) 2000 Stephen Montgomery-Smith | xlock permission notice (below) |
+| `firmware/src/hacks/barcode/barcode.c` | Copyright (c) 2003 Dan Bornstein | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/sphere.c` | Copyright (c) 2002 Paul Bourke, Copyright (c) 2010-2026 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/sphere.h` | Copyright (c) 2001-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/teapot.c` | Copyright (c) Mark J. Kilgard, 1994; (c) Copyright 1993, Silicon Graphics, Inc. | Silicon Graphics notice (below) |

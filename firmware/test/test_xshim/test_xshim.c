@@ -9,14 +9,17 @@
 #include <zlib.h>
 
 #include "colors.h"
+#include "countof.h"
 #include "core/canvas.h"
 #include "doubletime.h"
 #include "easing.h"
 #include "erase.h"
 #include "fps.h"
+#include "pow2.h"
 #include "alpha.h"
 #include "screenhack.h"
 #include "thread_util.h"
+#include "utf8wc.h"
 #include "utils.h"
 #include "xshm.h"
 #include "x11shim/arc.h"
@@ -222,6 +225,30 @@ void test_gc_accepts_function_and_line_width_fields(void) {
   TEST_ASSERT_NOT_NULL(gc);
   XDrawPoint(dpy, win, gc, 1, 1);
   TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(1, 1));
+  XFreeGC(dpy, gc);
+}
+
+void test_a_point_drawn_with_gxxor_flips_the_pixel_and_drawing_it_twice_restores_it(void) {
+  XGCValues v = {0};
+  v.foreground = 0x00FF;
+  GC gc = XCreateGC(dpy, win, GCForeground, &v);
+  XSetFunction(dpy, gc, GXxor);
+  canvas_clear(&cv, 0x0F0F);
+  XDrawPoint(dpy, win, gc, 3, 4);
+  TEST_ASSERT_EQUAL_HEX16(0x0FF0, at(3, 4));
+  TEST_ASSERT_EQUAL_HEX16(0x0F0F, at(4, 4));
+  XDrawPoint(dpy, win, gc, 3, 4);
+  TEST_ASSERT_EQUAL_HEX16(0x0F0F, at(3, 4));
+  XDrawPoint(dpy, win, gc, -1, 0);
+  XDrawPoint(dpy, win, gc, 3, -1);
+  XDrawPoint(dpy, win, gc, cv.w, cv.h - 1);
+  XDrawPoint(dpy, win, gc, 3, cv.h);
+  XSetFunction(dpy, gc, GXor);
+  XDrawPoint(dpy, win, gc, 3, 4);
+  TEST_ASSERT_EQUAL_HEX16(0x00FF, at(3, 4));
+  XSetFunction(dpy, gc, GXcopy);
+  XDrawPoint(dpy, win, gc, 3, 4);
+  TEST_ASSERT_EQUAL_HEX16(0x00FF, at(3, 4));
   XFreeGC(dpy, gc);
 }
 
@@ -1741,6 +1768,19 @@ void test_allocate_alpha_colors_reports_no_colour_planes(void) {
   allocate_alpha_colors(NULL, NULL, 1, &nplanes, True, &masks, &base);
   TEST_ASSERT_EQUAL_INT(0, nplanes);
   TEST_ASSERT_NULL(masks);
+}
+
+void test_no_writable_colour_cells_can_be_allocated_or_stored(void) {
+  int ncolors = 8;
+  unsigned long pixels[9] = {7};
+  allocate_writable_colors(NULL, 1, pixels, &ncolors);
+  TEST_ASSERT_EQUAL_INT(0, ncolors);
+  XColor c = {0};
+  c.pixel = 5;
+  c.red = 0x1234;
+  XStoreColors(dpy, 1, &c, 1);
+  TEST_ASSERT_EQUAL_UINT16(0x1234, c.red);
+  TEST_ASSERT_EQUAL_UINT64(5, c.pixel);
 }
 
 void test_change_gc_updates_only_the_masked_line_fields(void) {
@@ -3504,6 +3544,116 @@ void test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits(void) {
   XDestroyImage(im);
 }
 
+void test_utf8_to_latin1_copies_ascii_and_gives_up_on_anything_else(void) {
+  const char *plain = "space program";
+  char *copy = utf8_to_latin1(plain, 1);
+  TEST_ASSERT_NOT_NULL(copy);
+  TEST_ASSERT_TRUE(copy != plain);
+  TEST_ASSERT_EQUAL_STRING("space program", copy);
+  free(copy);
+  copy = utf8_to_latin1("", 1);
+  TEST_ASSERT_NOT_NULL(copy);
+  TEST_ASSERT_EQUAL_STRING("", copy);
+  free(copy);
+  TEST_ASSERT_NULL(utf8_to_latin1("caf\xc3\xa9", 1));
+  TEST_ASSERT_NULL(utf8_to_latin1("caf\xc3\xa9", 0));
+}
+
+void test_an_image_reports_the_server_byte_and_bit_order_and_lets_a_hack_set_them(void) {
+  XImage *im = XCreateImage(dpy, NULL, 1, XYBitmap, 0, NULL, 9, 1, 8, 0);
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_INT(LSBFirst, im->byte_order);
+  TEST_ASSERT_EQUAL_INT(LSBFirst, im->bitmap_bit_order);
+  TEST_ASSERT_EQUAL_INT(8, im->bitmap_unit);
+  im->byte_order = MSBFirst;
+  im->bitmap_unit = 8;
+  im->bitmap_bit_order = LSBFirst;
+  im->data = (char *)calloc(1, (size_t)im->bytes_per_line);
+  XPutPixel(im, 1, 0, 1);
+  TEST_ASSERT_EQUAL_HEX8(0x02, (uint8_t)im->data[0]);
+  XDestroyImage(im);
+}
+
+void test_countof_is_the_number_of_elements_of_an_array_not_its_bytes(void) {
+  int ints[7];
+  struct { double d; char c; } structs[3];
+  TEST_ASSERT_EQUAL_UINT64(7, countof(ints));
+  TEST_ASSERT_EQUAL_UINT64(3, countof(structs));
+}
+
+void test_unmap_notify_has_the_x_event_number_and_fits_an_event_type(void) {
+  XEvent e;
+  e.type = UnmapNotify;
+  TEST_ASSERT_EQUAL_INT(18, e.type);
+}
+
+void test_i_log2_is_the_floor_of_log_two_and_minus_one_for_zero(void) {
+  TEST_ASSERT_EQUAL_INT(-1, i_log2(0));
+  TEST_ASSERT_EQUAL_INT(0, i_log2(1));
+  TEST_ASSERT_EQUAL_INT(1, i_log2(2));
+  TEST_ASSERT_EQUAL_INT(1, i_log2(3));
+  TEST_ASSERT_EQUAL_INT(8, i_log2(373));
+  TEST_ASSERT_EQUAL_INT(8, i_log2(511));
+  TEST_ASSERT_EQUAL_INT(9, i_log2(512));
+  TEST_ASSERT_EQUAL_INT(i_log2(1000), i_log2_fast(1000));
+}
+
+void test_to_pow2_rounds_up_to_the_next_power_of_two(void) {
+  TEST_ASSERT_EQUAL_UINT64(1, to_pow2(0));
+  TEST_ASSERT_EQUAL_UINT64(1, to_pow2(1));
+  TEST_ASSERT_EQUAL_UINT64(2, to_pow2(2));
+  TEST_ASSERT_EQUAL_UINT64(4, to_pow2(3));
+  TEST_ASSERT_EQUAL_UINT64(8, to_pow2(5));
+  TEST_ASSERT_EQUAL_UINT64(512, to_pow2(512));
+  TEST_ASSERT_EQUAL_UINT64(512, to_pow2(373));
+}
+
+void test_bitmap_pad_is_32_bits_and_makes_a_tight_image_row_whole_words(void) {
+  TEST_ASSERT_EQUAL_INT(32, BitmapPad(dpy));
+  XImage *im = XCreateImage(dpy, NULL, 16, ZPixmap, 0, NULL, 3, 1, BitmapPad(dpy), 0);
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_INT(8, im->bytes_per_line);
+  XDestroyImage(im);
+}
+
+void test_a_bitmap_image_is_one_bit_a_pixel_least_significant_bit_first(void) {
+  XImage *im = XCreateImage(dpy, NULL, 1, XYBitmap, 0, NULL, 9, 2, 8, 0);
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_INT(1, im->bits_per_pixel);
+  TEST_ASSERT_EQUAL_INT(2, im->bytes_per_line);
+  im->data = (char *)calloc(2, (size_t)im->bytes_per_line);
+  XPutPixel(im, 0, 0, 1);
+  XPutPixel(im, 2, 0, 1);
+  XPutPixel(im, 8, 1, 1);
+  TEST_ASSERT_EQUAL_HEX8(0x05, (uint8_t)im->data[0]);
+  TEST_ASSERT_EQUAL_HEX8(0x00, (uint8_t)im->data[1]);
+  TEST_ASSERT_EQUAL_HEX8(0x01, (uint8_t)im->data[3]);
+  TEST_ASSERT_EQUAL_HEX64(1, XGetPixel(im, 2, 0));
+  TEST_ASSERT_EQUAL_HEX64(0, XGetPixel(im, 1, 0));
+  TEST_ASSERT_EQUAL_HEX64(1, XGetPixel(im, 8, 1));
+  XPutPixel(im, 2, 0, 0);
+  TEST_ASSERT_EQUAL_HEX8(0x01, (uint8_t)im->data[0]);
+  XDestroyImage(im);
+}
+
+void test_put_image_of_a_bitmap_draws_set_bits_in_the_foreground_and_clear_in_the_background(void) {
+  XImage *im = XCreateImage(dpy, NULL, 1, XYBitmap, 0, NULL, 4, 1, 8, 0);
+  im->data = (char *)calloc(1, (size_t)im->bytes_per_line);
+  XPutPixel(im, 1, 0, 1);
+  XPutPixel(im, 3, 0, 1);
+  XGCValues v = {0};
+  GC gc = XCreateGC(dpy, win, 0, &v);
+  XSetForeground(dpy, gc, 0x1111);
+  XSetBackground(dpy, gc, 0x2222);
+  XPutImage(dpy, win, gc, im, 0, 0, 5, 6, 4, 1);
+  TEST_ASSERT_EQUAL_HEX16(0x2222, at(5, 6));
+  TEST_ASSERT_EQUAL_HEX16(0x1111, at(6, 6));
+  TEST_ASSERT_EQUAL_HEX16(0x2222, at(7, 6));
+  TEST_ASSERT_EQUAL_HEX16(0x1111, at(8, 6));
+  XFreeGC(dpy, gc);
+  XDestroyImage(im);
+}
+
 void test_put_image_of_a_16_bit_image_copies_canvas_order_pixels_unchanged(void) {
   XImage *im = XCreateImage(dpy, NULL, 16, ZPixmap, 0, NULL, 2, 1, 8, 0);
   im->data = (char *)calloc(1, (size_t)im->bytes_per_line);
@@ -3843,6 +3993,15 @@ int main(void) {
   RUN_TEST(test_query_color_recovers_the_colour_alloc_color_made);
   RUN_TEST(test_the_screen_is_a_colour_display_with_no_writable_cells);
   RUN_TEST(test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits);
+  RUN_TEST(test_utf8_to_latin1_copies_ascii_and_gives_up_on_anything_else);
+  RUN_TEST(test_an_image_reports_the_server_byte_and_bit_order_and_lets_a_hack_set_them);
+  RUN_TEST(test_countof_is_the_number_of_elements_of_an_array_not_its_bytes);
+  RUN_TEST(test_unmap_notify_has_the_x_event_number_and_fits_an_event_type);
+  RUN_TEST(test_i_log2_is_the_floor_of_log_two_and_minus_one_for_zero);
+  RUN_TEST(test_to_pow2_rounds_up_to_the_next_power_of_two);
+  RUN_TEST(test_bitmap_pad_is_32_bits_and_makes_a_tight_image_row_whole_words);
+  RUN_TEST(test_a_bitmap_image_is_one_bit_a_pixel_least_significant_bit_first);
+  RUN_TEST(test_put_image_of_a_bitmap_draws_set_bits_in_the_foreground_and_clear_in_the_background);
   RUN_TEST(test_put_image_clips_at_every_edge_and_copies_the_matching_source_pixels);
   RUN_TEST(test_put_image_of_a_16_bit_image_copies_canvas_order_pixels_unchanged);
   RUN_TEST(test_put_image_reads_a_padded_16_bit_source_from_its_offset);
@@ -3944,6 +4103,7 @@ int main(void) {
   RUN_TEST(test_resources_missing_integer_returns_zero);
   RUN_TEST(test_pixel_resource_black_white_hex);
   RUN_TEST(test_gc_accepts_function_and_line_width_fields);
+  RUN_TEST(test_a_point_drawn_with_gxxor_flips_the_pixel_and_drawing_it_twice_restores_it);
   RUN_TEST(test_window_attributes_have_depth_visual_screen);
   RUN_TEST(test_button_press_event_fields_exist);
   RUN_TEST(test_xrectangle_type_exists);
@@ -3978,6 +4138,7 @@ int main(void) {
   RUN_TEST(test_create_gc_reads_line_width_cap_and_join_from_the_mask);
   RUN_TEST(test_gc_accepts_a_plane_mask_and_draws_in_the_foreground_regardless);
   RUN_TEST(test_allocate_alpha_colors_reports_no_colour_planes);
+  RUN_TEST(test_no_writable_colour_cells_can_be_allocated_or_stored);
   RUN_TEST(test_change_gc_updates_only_the_masked_line_fields);
   RUN_TEST(test_set_line_attributes_sets_all_three);
   RUN_TEST(test_wide_horizontal_line_butt_caps);

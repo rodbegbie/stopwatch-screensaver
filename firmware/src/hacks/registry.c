@@ -218,6 +218,40 @@ static const char *const kPipesOverrides[] = {
     "*size: " HEXTRAIL_STR(PIPES_SIZE), "*rotatepipes: False", NULL};
 XLOCKMORE_HACK_WITH(pipes, "Pipes", kPipesOverrides);
 
+extern const HackEntry marbling_hack;
+
+extern const HackEntry deco_hack;
+
+extern const HackEntry imsmap_hack;
+
+extern const HackEntry munch_hack;
+
+extern const HackEntry ccurve_hack;
+
+extern const HackEntry binaryhorizon_hack;
+
+extern const HackEntry rotzoomer_hack;
+
+extern const HackEntry nerverot_hack;
+
+/* Upstream draws a red and a blue starfield for 3D glasses (`use3d: True`) and
+ * ORs them where they overlap, which the shim does not do. Without glasses,
+ * the single-colour mode cycles through the palette. The framework reads
+ * `cycles`, which Bouboule does not define. */
+static const char *const kBoubouleOverrides[] = {"*use3d: False", "*cycles: 0",
+                                                 NULL};
+XLOCKMORE_HACK_WITH(bouboule, "Bouboule", kBoubouleOverrides);
+
+XLOCKMORE_HACK(ant, "Ant");
+
+extern const HackEntry hyperball_hack;
+
+XLOCKMORE_HACK(demon, "Demon");
+
+XLOCKMORE_HACK(polyominoes, "Polyominoes");
+
+extern const HackEntry barcode_hack;
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -301,6 +335,20 @@ const HackEntry *const g_hacks[] = {
     &decayscreen_hack,
     &xjack_hack,
     &pipes_hack,
+    &marbling_hack,
+    &deco_hack,
+    &imsmap_hack,
+    &munch_hack,
+    &ccurve_hack,
+    &binaryhorizon_hack,
+    &rotzoomer_hack,
+    &nerverot_hack,
+    &bouboule_hack,
+    &ant_hack,
+    &hyperball_hack,
+    &demon_hack,
+    &polyominoes_hack,
+    &barcode_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif

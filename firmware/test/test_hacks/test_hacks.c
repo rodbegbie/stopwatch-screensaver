@@ -142,6 +142,20 @@ void test_registry_lists_hacks_in_order(void) {
                                          "DecayScreen",
                                          "XJack",
                                          "Pipes",
+                                         "Marbling",
+                                         "Deco",
+                                         "IMSMap",
+                                         "Munch",
+                                         "CCurve",
+                                         "BinaryHorizon",
+                                         "RotZoomer",
+                                         "NerveRot",
+                                         "Bouboule",
+                                         "Ant",
+                                         "HyperBall",
+                                         "Demon",
+                                         "Polyominoes",
+                                         "Barcode",
 #ifdef HAVE_AFTER_DARK_TOASTERS
                                          "ad-flyingtoasters",
 #endif
@@ -548,6 +562,20 @@ static const uint64_t kBaseline[] = {
     0, /* DecayScreen: unpinned on purpose, it smears the shim's grab image and has none here (see test_decayscreen_melts_the_grab_image) */
     0xecc578b5f7eb7789ull, /* XJack: taken after looking at the frames, with test_font.h's blocky font */
     0xdaff07126987ac48ull, /* Pipes: taken after looking at the frames (3x150, fixed camera, incremental, no fade) */
+    0xb7f9298288e601f9ull, /* Marbling: taken after looking at the frames (gridsize 6, 3 iterations) */
+    0x12085acaa1958489ull, /* Deco: taken after looking at the frames */
+    0x14205ec78f0eaca4ull, /* IMSMap: taken after looking at the frames */
+    0xbd3f785cc1a7230full, /* Munch: taken after looking at the frames (GXxor points) */
+    0x0f2f79c8e4c26e90ull, /* CCurve: taken after looking at the frames (single precision, limit 30000) */
+    0xb858d0c595de9530ull, /* BinaryHorizon: taken after looking at the frames (24-bit wrapper) */
+    0, /* RotZoomer: unpinned on purpose, it zooms the shim's grab image and has none here, so every frame is black (see test_rotzoomer_wrapper) */
+    0xb67d586893812842ull, /* NerveRot: taken after looking at the frames (single precision) */
+    0x8d05055b1b5d7fe5ull, /* Bouboule: taken after looking at the frames */
+    0xdb9fc9d1551e2b09ull, /* Ant: taken after looking at the frames */
+    0x2a4ebe0336988260ull, /* HyperBall: taken after looking at the frames (single precision) */
+    0xcfc4f1fadbfb593dull, /* Demon: taken after looking at the frames */
+    0xd453fd2e5e9af439ull, /* Polyominoes: taken after looking at the frames */
+    0xce51885618135265ull, /* Barcode: taken after looking at the frames */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -1555,6 +1583,62 @@ void test_xjack_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("XJack", 0);
 }
 
+void test_marbling_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Marbling", 0);
+}
+
+void test_deco_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Deco", 0);
+}
+
+void test_imsmap_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("IMSMap", 0);
+}
+
+void test_munch_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Munch", 0);
+}
+
+void test_ccurve_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("CCurve", 0);
+}
+
+void test_binaryhorizon_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("BinaryHorizon", 0);
+}
+
+void test_rotzoomer_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("RotZoomer", 0);
+}
+
+void test_nerverot_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("NerveRot", 0);
+}
+
+void test_bouboule_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Bouboule", 1);
+}
+
+void test_ant_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Ant", 1);
+}
+
+void test_hyperball_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("HyperBall", 0);
+}
+
+void test_demon_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Demon", 1);
+}
+
+void test_polyominoes_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Polyominoes", 1);
+}
+
+void test_barcode_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Barcode", 0);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -1662,6 +1746,20 @@ int main(void) {
   RUN_TEST(test_rocks_stops_do_not_leak);
   RUN_TEST(test_decayscreen_stops_do_not_leak);
   RUN_TEST(test_xjack_stops_do_not_leak);
+  RUN_TEST(test_marbling_stops_do_not_leak);
+  RUN_TEST(test_deco_stops_do_not_leak);
+  RUN_TEST(test_imsmap_stops_do_not_leak);
+  RUN_TEST(test_munch_stops_do_not_leak);
+  RUN_TEST(test_ccurve_stops_do_not_leak);
+  RUN_TEST(test_binaryhorizon_stops_do_not_leak);
+  RUN_TEST(test_rotzoomer_stops_do_not_leak);
+  RUN_TEST(test_nerverot_stops_do_not_leak);
+  RUN_TEST(test_bouboule_stops_do_not_leak);
+  RUN_TEST(test_ant_stops_do_not_leak);
+  RUN_TEST(test_hyperball_stops_do_not_leak);
+  RUN_TEST(test_demon_stops_do_not_leak);
+  RUN_TEST(test_polyominoes_stops_do_not_leak);
+  RUN_TEST(test_barcode_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);

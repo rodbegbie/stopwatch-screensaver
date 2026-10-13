@@ -164,7 +164,12 @@ int XSetWindowBackground(Display *dpy, Window w, unsigned long pixel) {
 
 int XDrawPoint(Display *dpy, Drawable d, GC gc, int x, int y) {
   Canvas *c = xshim_target(dpy, d);
-  if (c) canvas_point(c, x, y, (uint16_t)gc->foreground);
+  if (!c) return 0;
+  if (gc->function == GXxor && x >= 0 && y >= 0 && x < c->w && y < c->h)
+    canvas_point(c, x, y,
+                 (uint16_t)(c->px[(size_t)y * c->w + x] ^ gc->foreground));
+  else
+    canvas_point(c, x, y, (uint16_t)gc->foreground);
   return 0;
 }
 
@@ -400,6 +405,11 @@ Status XAllocColor(Display *dpy, Colormap cmap, XColor *c) {
   (void)dpy;
   (void)cmap;
   c->pixel = rgb565_from16(c->red, c->green, c->blue);
+  return 1;
+}
+
+int XStoreColors(Display *dpy, Colormap cmap, XColor *colors, int ncolors) {
+  (void)dpy, (void)cmap, (void)colors, (void)ncolors;
   return 1;
 }
 

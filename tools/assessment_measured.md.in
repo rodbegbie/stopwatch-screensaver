@@ -172,6 +172,28 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | DecayScreen | 63.6-66.8 | 3.3-3.9 ms | 4.3-5.0 ms | 6.7-7.3 ms | none measurable |
 | XJack | 7.8-15.8 | 0.1-13.8 ms | 0.3-15.0 ms | 46-130 ms | none measurable |
 | Pipes | 51.8-75 | 2.0-7.8 ms | 0.3-0.5 ms | 10.9-11.0 ms | not measured against idle (1.91 MB left free at the lowest) |
+| Marbling | 5.4 | 157.7 ms | 28.9 ms | 0.0 ms | about 430 KB |
+| Deco | 0.2 | 33.1-35.4 ms | 29.1-29.2 ms | 5512.0-5515.7 ms | none measurable |
+| IMSMap | 16.0 | 17.7-17.8 ms | 2.7 ms | 88.6 ms | about 210 KB |
+| MetaBalls | 8.8-9.0 | 81.7-83.7 ms | 28.9 ms | 0.0 ms | about 420 KB |
+| Munch | 70.4-80.6 | 0.9-1.2 ms | 7.9-11.8 ms | 0.0-3.4 ms | none measurable |
+| CCurve | 1.4 | 41.7-43.3 ms | 28.9 ms | 824.0 ms | about 420 KB |
+| BinaryHorizon | 7.6-11.8 | 57.0-108.6 ms | 24.7-27.5 ms | 0.0 ms | about 1.0 MB |
+| RotZoomer | 10.8-11.2 | 79.3-81.7 ms | 4.7 ms | 6.6 ms | about 1.7 MB |
+| Twang | 5.6-6.2 | 135.6-151.7 ms | 28.9 ms | 0.0 ms | about 1.7 MB |
+| NerveRot | 14.4-14.8 | 38.0-39.7 ms | 29.1 ms | 0.0 ms | about 100 KB |
+| Flow | 3.0-4.8 | 211.2-368.6 ms | 28.9-29.0 ms | 0.0 ms | about 450 KB |
+| Bouboule | 27.8 | 13.9-14.0 ms | 4.4-6.8 ms | 15.3-17.7 ms | none measurable |
+| Ant | 44.0 | 0.4 ms | 0.4 ms | 22.0-22.1 ms | none measurable |
+| HyperBall | 16.8 | 38.6-38.7 ms | 18.0-18.1 ms | 3.2-3.3 ms | none measurable |
+| Demon | 17.6-17.8 | 1.1-1.6 ms | 1.0-1.7 ms | 53.8-54.7 ms | about 30 KB |
+| Droste | 4.6 | 192.1-194.1 ms | 29.1 ms | 0.0 ms | about 1.4 MB |
+| Polyominoes | 16.8-18.0 | 33.1-37.1 ms | 21.4 ms | 0.0 ms | none measurable |
+| Barcode | 14.0-16.2 | 42.5-52.2 ms | 17.8-18.9 ms | 0.0 ms | about 1.4 MB |
+| Marbling (as copied, gridsize 2, 5 iterations) | 0.6 | 1785 ms | 29.1 ms | 0 ms | about 430 KB |
+| CCurve (as copied, double, `limit` 200,000) | 0.2-2.2 | 49-2927 ms | 29.1 ms | 411-3292 ms | about 420 KB |
+| Droste (full size) | 1.6 | 630 ms | 29.1 ms | 0 ms | about 1.7 MB |
+| Flow (400 bees, double) | 1.6-5.2 | 233-770 ms | 28.9 ms | 0 ms | about 520 KB |
 
 XJack (2026-10-12) is paced by its own delay, so its fps says little about the
 board: typing one character a frame takes 0.1 ms and the rest is `wait`. Read

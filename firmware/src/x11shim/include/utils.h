@@ -9,8 +9,6 @@
 
 #include "x11shim/xshim.h"
 
-#ifndef countof
-#define countof(x) (sizeof(x) / sizeof((x)[0]))
-#endif
+#include "countof.h"
 
 #endif

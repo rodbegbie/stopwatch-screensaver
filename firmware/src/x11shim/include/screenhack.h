@@ -11,6 +11,7 @@
 #include "colors.h"
 #include "grabclient.h"
 #include "hsv.h"
+#include "countof.h"
 #include "nls.h"
 #include "runner/hack_entry.h"
 #include "utils.h"

@@ -346,3 +346,78 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   3.9-13.8 ms with pushes of 74-241 rows. It holds no PSRAM, and a 6-minute
   capture lost 352 bytes of internal heap in three steps (see
   `assessment_measured.md.in`).
+- The 2026-10-13 sixth batch (Marbling, Deco, IMSMap, MetaBalls, Munch, CCurve,
+  BinaryHorizon, RotZoomer, Twang, NerveRot, Flow, Bouboule, Ant, HyperBall,
+  Demon, Droste, Polyominoes, Barcode) passed every host test and then four
+  of them failed on the board, none of which a host frame could show: a stack
+  overflow (Polyominoes), an allocation too big for PSRAM that the host's lazy
+  memory allowed (Flow), 0.6 fps (Marbling) and 1.6 fps (Droste). Flash a
+  batch before calling it done. A rotation build starting at the first new
+  hack (`-DSTART_HACK=\"marbling\" -DROTATE_SECONDS=30`) measures all of them
+  in one 10 minute capture. Rod then took MetaBalls, Twang, Flow and Droste
+  out of `g_hacks[]` (slow or margin-bound, not worth tuning). Their sources,
+  wrappers and wrapper tests stay in the tree, unregistered; to bring one
+  back, re-add its registry entry, expected name, pin and leak test.
+- Marbling does a 5-iteration fractal noise per pixel (12 ms a step on the
+  host, 1,785 ms on the board, so the host suite takes about 3 minutes
+  longer). `marbling_safe.c` overrides `*gridsize` to 6 and `*iterations` to 3
+  (5.4 fps, cells of 6 pixels). Upstream's `marbling_free` never frees its
+  colour table (5 KB a start): the wrapper does.
+- Polyominoes (`polyominoes_iterative.c`, `tools/polyominoes_patch.py`) panicked
+  the board with a double exception inside `count_adjacent_blanks`: a flood
+  fill that calls itself once for each blank cell, up to 360 deep in several
+  puzzles, 32 bytes a level on top of the solver's frames. The build now
+  replaces it with a loop over an explicit stack (frames identical to the
+  recursive build). Read a puzzle hack's grid sizes, not just its frame size.
+- Flow's `csegs` is `(count + 36) * ncolors * taillen` segments of 8 bytes:
+  upstream's 3,000 bees and 200 colours is up to 29 MB, which the host
+  provided lazily and the board refused, so the hack drew one frame and
+  nothing more. The registry gives it 120 bees and 8 colours. In single
+  precision its flow dies out within about 600 frames (the screen stays
+  black), so it is double: 3.0-4.8 fps, about 200 ms of every step being its
+  search for the next flow. A single frame at 300 frames looked right in
+  both: sweep several frame counts (300, 1000, 3000) for a hack that
+  restarts itself or can die out.
+- CCurve's `*limit` of 200,000 segments (each a malloc and a recursion) took
+  740 ms in single precision and 2.9 s in double; the wrapper caps it at 30,000.
+  Its 1.4 fps is its own pacing: 0.4 s between iterations, 42 ms of work.
+- Droste (`droste_small.c`) hands back a loader token on the first call and
+  finishes on the next, with the pixmap's size as the rectangle, so upstream's
+  own "just finished" branch runs. It loads a picture the size of the window,
+  not 2.5 times it (5.4 MB as the 32-bit image `XGetImage` makes), and renders
+  at half width and height through `lowrez_put.h` (630 ms became 190 ms, 4.6
+  fps). `XPutPixel` is mapped to swap the pixel, since `lowrez_put.h` wants
+  ordinary RGB565 and the picture holds canvas order. MetaBalls takes all but
+  28 KB of the internal heap while it runs (466 row buffers of 466 bytes).
+- RotZoomer and Twang (`rotzoomer_single.c`, `twang_single.c`) start their
+  picture and tiles the first time `draw` finds `load_image_async_simple`
+  finished. The shim finishes at once and returns NULL, so that branch never
+  ran and the first draw used a NULL zoom box (exit 139). Each wrapper does
+  the finishing step straight after init. Changing the shim to return a loader
+  would also change Boxfit and DecayScreen, so it is Rod's call. Both are
+  single precision (they call `sin` and `cos` in double for every pixel).
+  RotZoomer is unpinned in `test_hacks.c`: with no grab image every frame is
+  black.
+- BinaryHorizon (`binaryhorizon_swapped.c`) is told the display is 24 bits
+  deep. Its 16-bit path adds less than a step of a channel per hit and rounds
+  its random colour walk down, so every colour drifted to black or a dim
+  green (as in BinaryRing). Pixels go straight to the window, and its image
+  and pixmap are one pixel big, because nothing reads them. Every 30 s it
+  restarts and callocs a new pixel buffer without freeing the old one (868 KB
+  on the device): the wrapper frees it and clears the window.
+- Munch defaults to `*xor: True`, so `XDrawPoint` honours `GXxor` now (only
+  that primitive: lines and fills still copy). `pow2.h` is our own
+  `i_log2` and `to_pow2`. IMSMap needed 1-bit `XYBitmap` images, `BitmapPad`
+  is 32, and Deco needed `allocate_writable_colors` and `XStoreColors` (no
+  writable cells). The scorer's gap lists were wrong twice: MetaBalls'
+  `XListPixmapFormats` is under `#if 0`, and Ant needed only `automata.h`, a
+  file in `hacks/` that is now copied to `xs_support/`.
+- NerveRot passes the address of its own `double` locals to `rgb_to_hsv`, so
+  its single-precision wrapper has an adapter (as Moire's). The restart test
+  under AddressSanitizer found it as a stack-buffer-overflow, but a host frame
+  looked right.
+- Bouboule's upstream default is a red and a blue starfield for 3D glasses,
+  drawn with `GXor`, which the shim does not do. The registry overrides
+  `*use3d: False` (a single colour cycling through the palette) and
+  `*cycles: 0`. Twang's 3 by 3 tiles of 120 pixels leave black margins and
+  clip at the round bezel; `*tileSize` is the lever.

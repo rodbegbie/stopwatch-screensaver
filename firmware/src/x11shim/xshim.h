@@ -45,8 +45,9 @@ typedef struct XshimGC {
   struct XshimPixmap *clip;
   int clip_x, clip_y;
   int line_width, cap_style, join_style;
-  /* GXcopy, GXor or GXxor as the hack set it. The shim's own drawing always
-   * copies; a wrapper that draws into bit planes reads this. */
+  /* GXcopy, GXor or GXxor as the hack set it. The shim's own drawing copies,
+   * except XDrawPoint, which flips the pixel under GXxor (Munch); a wrapper
+   * that draws into bit planes reads this. */
   int function;
   /* 0 draws opaque. 1 to 31 is the weight out of 32 given to this GC's colour
    * when a wide line or circle (stroke.c) is blended over the canvas. */
@@ -157,6 +158,8 @@ typedef union {
 #define ButtonPress 4
 #define ButtonRelease 5
 #define MotionNotify 6
+/* No such event ever arrives: the window is never iconified. */
+#define UnmapNotify 18
 #define Button1 1
 #define Button2 2
 #define Button3 3
@@ -354,14 +357,19 @@ int XCopyPlane(Display *, Drawable src, Drawable dst, GC, int src_x,
                int src_y, unsigned int w, unsigned int h, int dst_x,
                int dst_y, unsigned long plane);
 /* An XImage is a block of pixels in the hack's own memory; XPutImage draws it.
- * Only ZPixmap images exist: 16-bit ones (what a hack that fills in its own
+ * ZPixmap images are 16-bit ones (what a hack that fills in its own
  * pixels asks for) and 24 or 32-bit ones (a mask scaled down from a loaded
- * picture, or XGetImage's copy of the canvas). */
+ * picture, or XGetImage's copy of the canvas). An XYBitmap image is depth 1,
+ * one bit a pixel, least significant bit first: XPutImage draws its set bits in
+ * the GC's foreground and its clear bits in the background. */
+#define XYBitmap 0
 #define XYPixmap 1
 #define LSBFirst 0
 #define MSBFirst 1
 /* The server is little-endian (the S3 and the hosts the tests run on). */
 #define ImageByteOrder(dpy) ((void)(dpy), LSBFirst)
+/* Image rows pad to whole 32-bit words, as on a typical X server. */
+#define BitmapPad(dpy) ((void)(dpy), 32)
 #define ZPixmap 2
 typedef struct XImage {
   int width, height;
@@ -369,6 +377,9 @@ typedef struct XImage {
   int bits_per_pixel;
   int bytes_per_line;
   char *data;
+  /* The server's own orders: little-endian and least significant bit first.
+   * A hack may set them, and they change nothing. */
+  int byte_order, bitmap_unit, bitmap_bit_order;
 } XImage;
 
 /* A 16-bit image is two bytes a pixel of ordinary little-endian RGB565, as on
@@ -414,6 +425,8 @@ Status XAllocColor(Display *, Colormap, XColor *);
  * channels are scaled up from RGB565, so 5 and 6 bit values come back as
  * multiples of 0x0842 and 0x0410 and not the colour that was asked for. */
 int XQueryColor(Display *, Colormap, XColor *);
+/* Nothing to store: colours are plain pixel values, not cells to rewrite. */
+int XStoreColors(Display *, Colormap, XColor *, int ncolors);
 int XFreeColors(Display *, Colormap, unsigned long *pixels, int n,
                 unsigned long planes);
 
