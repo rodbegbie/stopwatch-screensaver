@@ -3,7 +3,7 @@
   "checkpoint_id": "01M4TWGH6QGHWJRCQE5T5PHY45",
   "strategy": "manual-commit",
   "branch": "feature/badge-two-line-name",
-  "checkpoints_count": 2,
+  "checkpoints_count": 4,
   "files_touched": [
     "README.md",
     "firmware/src/main.cpp"
@@ -15,13 +15,20 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": "/0/prompt.txt"
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 28,
-    "cache_creation_tokens": 53855,
-    "cache_read_tokens": 999959,
-    "output_tokens": 5849,
-    "api_call_count": 14
+    "input_tokens": 34,
+    "cache_creation_tokens": 54938,
+    "cache_read_tokens": 1514703,
+    "output_tokens": 6458,
+    "api_call_count": 17
   }
 }
