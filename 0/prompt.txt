@@ -1,0 +1,17 @@
+<task-notification>
+<task-id>bpgwl56le</task-id>
+<tool-use-id>toolu_01GbNL9z8oDshWYnSseqP6xy</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/4ec7b3bd-21e0-400b-94ab-c1f553066fbd/tasks/bpgwl56le.output</output-file>
+<status>completed</status>
+<summary>Background command "Run the full host test suite in the background" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bkoerct4z</task-id>
+<tool-use-id>toolu_013EcpMa6ZmQHZXQEvwx7YC4</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/4ec7b3bd-21e0-400b-94ab-c1f553066fbd/tasks/bkoerct4z.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for the native suite and summarise it" completed (exit code 0)</summary>
+</task-notification>
