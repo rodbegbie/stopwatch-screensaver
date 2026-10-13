@@ -124,6 +124,12 @@ Run `source tools/env.sh` first (keeps PlatformIO inside the repo), then from
 - `cc -O1 -fstack-usage -c src/hacks/<n>/<n>.c` (with `-Isrc
   -Isrc/x11shim/include -Isrc/xs_support -DXSHIM_NATIVE -DSTANDALONE`) lists
   stack frames; keep each well under the 16 KB loop stack.
+- Flash budget: `pio run -e stopwatch` prints `Flash: [...] N%` of the
+  3,145,728-byte app partition. The biggest symbols:
+  `.platformio/packages/toolchain-xtensa-esp32s3/bin/xtensa-esp32s3-elf-nm -S
+  --size-sort -C .pio/build/stopwatch/firmware.elf | tail` (sizes in hex).
+  Store large tables deflated and unpack them with `xshim_inflate`
+  (`x11shim/inflate.h`): the ROM's `tinfl` on the device, zlib on the host.
 - To review or mutation-check another branch without touching the checkout,
   read files with `git show origin/<branch>:<path>` and run tests in a
   `git archive` export in the scratchpad, with `vendor/` symlinked.
@@ -410,6 +416,14 @@ ones below apply everywhere.
   hundreds of files deleted or `git fsck` reports missing blobs, the
   worktree's index is damaged (history is fine): move the index file aside,
   `git read-tree HEAD`, check `git fsck`, then re-stage your files by name.
+- `tools/probe_hacks.py` and `tools/gl_budget.py` compile the shim (and the GL
+  layer) themselves, outside PlatformIO. Anything new the shim needs (a
+  library such as `-lz`, a header a pre-script generates) must be added there
+  too, or pytest fails with `KeyError: 'host_ms'` or `KeyError: 'counts'`.
+- To prove a device-only path the host cannot run (the ROM's `tinfl`), add a
+  temporary `#ifdef` block after `printStats("boot")` in `main.cpp` that logs
+  a checksum, compare it with one computed in Python, then `git checkout
+  firmware/src/main.cpp` before pushing.
 - Board details (pins, power, recovery) are in
   `.claude/skills/m5stack-stopwatch/`.
 
