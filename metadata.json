@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4SD4GZD0TT67QE9NYYF1TGY",
+  "strategy": "manual-commit",
+  "branch": "feature/44-pipes",
+  "checkpoints_count": 5,
+  "files_touched": [
+    "docs/pipes-lab/README.md",
+    "docs/pipes-lab/build.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 110,
+    "cache_creation_tokens": 47361,
+    "cache_read_tokens": 15291850,
+    "output_tokens": 25146,
+    "api_call_count": 55
+  }
+}
