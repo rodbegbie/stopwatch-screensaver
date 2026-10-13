@@ -26,7 +26,8 @@ Moved verbatim from AGENTS.md.
   (a `uv run` in the root disturbed `.venv` while `pio` ran:
   "../.venv/bin/pio: no such file"), so run
   `uv` and `pio` one at a time. To fast-forward `main` or remove the worktree,
-  leave it first with `ExitWorktree keep`.
+  leave it first with `ExitWorktree keep`. If no checkout has `main` out,
+  `git fetch origin main:main` fast-forwards it from anywhere.
   Before `ExitWorktree remove` on a merged branch, check
   `git merge-base --is-ancestor <tip> origin/main`; the tool's "discarded N
   commits" count ignores merges. `.platformio`, `.venv` and `vendor` there are

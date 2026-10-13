@@ -421,3 +421,18 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   `*use3d: False` (a single colour cycling through the palette) and
   `*cycles: 0`. Twang's 3 by 3 tiles of 120 pixels leave black margins and
   clip at the round bezel; `*tileSize` is the lever.
+- A wrapper that finishes an image load itself (RotZoomer, Twang, Droste) must
+  also handle the hack's timed reload, which the shim finishes at once too, so
+  upstream's "just finished" branch never runs again. It must also match image
+  layouts: `XGetImage` gives a 32-bit image, and a hack that memcpys it into
+  its own 16-bit buffer shows alternating black pixels. RotZoomer did on the
+  board until the trail review caught it. Test with a flat grab image and
+  assert every pixel, then change the image before a timed restart.
+- A wrapper that clears state before upstream's own timed check (BinaryHorizon
+  frees its buffer) reads the clock separately from upstream, and the two reads
+  can straddle a second. Read it once a frame and route upstream's `time()` to
+  that reading with a function-like `#define time(p)`; test it with a fake
+  clock whose second read is later.
+- A hack that leaks on every in-hack restart (Munch's `get_string_resource`
+  result) needs a restart-loop leak test of its own: `test_hacks` restarts only
+  through start and stop.
