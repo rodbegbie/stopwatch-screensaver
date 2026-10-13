@@ -281,6 +281,13 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   out crashes: 3 systems of 150 left 1.9 MB free. Host heap for the same lists
   is about twice the board's (8-byte list words).
 - Pipes' helpers: `teapot.c` is built with `HAVE_JWZGLES` (a triangle table,
-  `teapot2.h`, instead of evaluators TinyGL lacks), and that table is 228 KB
-  of flash. `buildlwo.c` maps `GL_POLYGON` to `GL_TRIANGLE_FAN` in its own
-  wrapper only (issue #80 is the general question).
+  `teapot2.h`, instead of evaluators TinyGL lacks). That table was 228 KB of
+  flash; since #104 `firmware/teapot_table.py` writes `generated/teapot/`, a
+  byte-identical copy of `teapot.c` beside a `teapot2.h` holding the floats
+  deflated (37 KB), so the copy's quoted include finds ours first.
+  `glshim/glx_teapot.c` renames upstream's `unit_teapot` and unpacks the table
+  into 227 KB of PSRAM only while it runs (Pipes calls it once, compiling a
+  list); with no memory the teapot is an empty list. `test_glshim` compares
+  the unpacked floats with upstream's. `buildlwo.c` maps `GL_POLYGON` to
+  `GL_TRIANGLE_FAN` in its own wrapper only (issue #80 is the general
+  question).

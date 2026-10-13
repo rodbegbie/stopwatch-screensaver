@@ -11,10 +11,15 @@
 #include "fps.h"
 #include "glshim/glshim.h"
 #include "glshim/glshim_prof.h"
+#include "glshim/glx_teapot.h"
+#include "teapot.h"
 #include "texfont.h"
 #include "tinygl/src/zgl.h"
 #include "x11shim/xshim.h"
 #include "zbuffer.h"
+
+/* Upstream's table, to compare the device's deflated copy with. */
+#include "xs_support/glx/teapot2.h"
 
 #define SIZE 64
 
@@ -60,6 +65,29 @@ void test_clear_writes_canvas_byte_order(void) {
   glClose();
   ZB_close(zb);
   canvas_free(&wide);
+}
+
+void test_the_unpacked_teapot_is_upstreams_table_byte_for_byte(void) {
+  const GLfloat *table = xshim_teapot_unpack();
+  TEST_ASSERT_NOT_NULL(table);
+  TEST_ASSERT_EQUAL_MEMORY(teapot_triangles, table, sizeof(teapot_triangles));
+  xshim_teapot_release();
+}
+
+/* The table is unpacked only while unit_teapot runs: tearDown's leak check
+ * fails if the 227 KB buffer is kept. */
+void test_unit_teapot_draws_every_triangle_and_frees_the_table(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glViewport(0, 0, SIZE, SIZE);
+  glClearColor(0, 0, 0, 0);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glColor3f(1, 1, 1);
+  const int want = (int)(sizeof(teapot_triangles) / sizeof(*teapot_triangles) / 9);
+  TEST_ASSERT_EQUAL_INT(want, unit_teapot(12, 0));
+  TEST_ASSERT_EQUAL_INT(want / 2, unit_teapot(12, 1));
+  int lit = 0;
+  for (int i = 0; i < SIZE * SIZE; i++) lit += cv.px[i] != 0;
+  TEST_ASSERT_GREATER_THAN_INT(SIZE * SIZE / 20, lit);
 }
 
 /* Real GL reserves list name 0 as invalid, and hacks abort on it. */
@@ -1914,5 +1942,7 @@ int main(void) {
   RUN_TEST(test_releasing_the_display_frees_the_context);
   RUN_TEST(test_opening_twice_replaces_the_context_without_leaking);
   RUN_TEST(test_opening_on_an_empty_canvas_returns_null);
+  RUN_TEST(test_the_unpacked_teapot_is_upstreams_table_byte_for_byte);
+  RUN_TEST(test_unit_teapot_draws_every_triangle_and_frees_the_table);
   return UNITY_END();
 }
