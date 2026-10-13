@@ -50,6 +50,40 @@
     "output_tokens": 32316,
     "api_call_count": 50
   },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01FnkWim8EVAEjcN5P14Phcn",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "337f396e5908",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 703,
+        "end": 704,
+        "entry_ids": [
+          "8a365dc9-5a7e-4efa-ac44-d154354e6b62"
+        ],
+        "tool_use_id": "toolu_01FnkWim8EVAEjcN5P14Phcn"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01FnkWim8EVAEjcN5P14Phcn"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    }
+  ],
   "initial_attribution": {
     "calculated_at": "2026-10-13T04:49:15.392652Z",
     "agent_lines": 0,
