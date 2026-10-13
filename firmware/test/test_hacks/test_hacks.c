@@ -580,10 +580,10 @@ static const uint64_t kBaseline[] = {
     0x8d05055b1b5d7fe5ull, /* Bouboule: taken after looking at the frames */
     0xdb9fc9d1551e2b09ull, /* Ant: taken after looking at the frames */
     0x2a4ebe0336988260ull, /* HyperBall: taken after looking at the frames (single precision) */
-    0, /* Demon: not yet pinned */
-    0, /* Droste: not yet pinned */
-    0, /* Polyominoes: not yet pinned */
-    0, /* Barcode: not yet pinned */
+    0xcfc4f1fadbfb593dull, /* Demon: taken after looking at the frames */
+    0, /* Droste: unpinned on purpose, it zooms the shim's grab image and has none here, so every frame is black (see test_droste_wrapper) */
+    0xd453fd2e5e9af439ull, /* Polyominoes: taken after looking at the frames */
+    0xce51885618135265ull, /* Barcode: taken after looking at the frames */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
