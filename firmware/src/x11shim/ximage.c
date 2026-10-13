@@ -37,6 +37,9 @@ XImage *XCreateImage(Display *dpy, Visual *visual, unsigned int depth,
   im->bits_per_pixel = bits;
   im->bytes_per_line = bytes_per_line;
   im->data = data;
+  im->byte_order = LSBFirst;
+  im->bitmap_unit = (int)pad;
+  im->bitmap_bit_order = LSBFirst;
   return im;
 }
 

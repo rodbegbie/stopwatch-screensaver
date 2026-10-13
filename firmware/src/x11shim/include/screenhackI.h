@@ -12,6 +12,7 @@
 
 #include "erase.h"
 #include "fps.h"
+#include "countof.h"
 #include "nls.h"
 #include "yarandom.h"
 #include "x11shim/xshim.h"

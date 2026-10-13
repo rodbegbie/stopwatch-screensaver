@@ -9,6 +9,7 @@
 #include <zlib.h>
 
 #include "colors.h"
+#include "countof.h"
 #include "core/canvas.h"
 #include "doubletime.h"
 #include "easing.h"
@@ -3542,6 +3543,28 @@ void test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits(void) {
   XDestroyImage(im);
 }
 
+void test_an_image_reports_the_server_byte_and_bit_order_and_lets_a_hack_set_them(void) {
+  XImage *im = XCreateImage(dpy, NULL, 1, XYBitmap, 0, NULL, 9, 1, 8, 0);
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_INT(LSBFirst, im->byte_order);
+  TEST_ASSERT_EQUAL_INT(LSBFirst, im->bitmap_bit_order);
+  TEST_ASSERT_EQUAL_INT(8, im->bitmap_unit);
+  im->byte_order = MSBFirst;
+  im->bitmap_unit = 8;
+  im->bitmap_bit_order = LSBFirst;
+  im->data = (char *)calloc(1, (size_t)im->bytes_per_line);
+  XPutPixel(im, 1, 0, 1);
+  TEST_ASSERT_EQUAL_HEX8(0x02, (uint8_t)im->data[0]);
+  XDestroyImage(im);
+}
+
+void test_countof_is_the_number_of_elements_of_an_array_not_its_bytes(void) {
+  int ints[7];
+  struct { double d; char c; } structs[3];
+  TEST_ASSERT_EQUAL_UINT64(7, countof(ints));
+  TEST_ASSERT_EQUAL_UINT64(3, countof(structs));
+}
+
 void test_unmap_notify_has_the_x_event_number_and_fits_an_event_type(void) {
   XEvent e;
   e.type = UnmapNotify;
@@ -3954,6 +3977,8 @@ int main(void) {
   RUN_TEST(test_query_color_recovers_the_colour_alloc_color_made);
   RUN_TEST(test_the_screen_is_a_colour_display_with_no_writable_cells);
   RUN_TEST(test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits);
+  RUN_TEST(test_an_image_reports_the_server_byte_and_bit_order_and_lets_a_hack_set_them);
+  RUN_TEST(test_countof_is_the_number_of_elements_of_an_array_not_its_bytes);
   RUN_TEST(test_unmap_notify_has_the_x_event_number_and_fits_an_event_type);
   RUN_TEST(test_i_log2_is_the_floor_of_log_two_and_minus_one_for_zero);
   RUN_TEST(test_to_pow2_rounds_up_to_the_next_power_of_two);

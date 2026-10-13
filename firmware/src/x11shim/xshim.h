@@ -377,6 +377,9 @@ typedef struct XImage {
   int bits_per_pixel;
   int bytes_per_line;
   char *data;
+  /* The server's own orders: little-endian and least significant bit first.
+   * A hack may set them, and they change nothing. */
+  int byte_order, bitmap_unit, bitmap_bit_order;
 } XImage;
 
 /* A 16-bit image is two bytes a pixel of ordinary little-endian RGB565, as on
