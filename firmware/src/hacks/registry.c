@@ -218,6 +218,8 @@ static const char *const kPipesOverrides[] = {
     "*size: " HEXTRAIL_STR(PIPES_SIZE), "*rotatepipes: False", NULL};
 XLOCKMORE_HACK_WITH(pipes, "Pipes", kPipesOverrides);
 
+extern const HackEntry marbling_hack;
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -301,6 +303,7 @@ const HackEntry *const g_hacks[] = {
     &decayscreen_hack,
     &xjack_hack,
     &pipes_hack,
+    &marbling_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif
