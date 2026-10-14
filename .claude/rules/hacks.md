@@ -457,3 +457,7 @@ Moved verbatim from the Gotchas section of AGENTS.md.
 - A hack that leaks on every in-hack restart (Munch's `get_string_resource`
   result) needs a restart-loop leak test of its own: `test_hacks` restarts only
   through start and stop.
+- Deluxe's `draw_star` (ten sin/cos in software `double`, #54 idea 5): a
+  single-precision build gave identical frames and no device gain (step
+  45.06 vs 45.12 ms, pinned, 2 rounds). Skip it; the step is the blend, the
+  mask and the strokes.

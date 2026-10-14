@@ -257,6 +257,9 @@ ones below apply everywhere.
 - `pio test -e native -f test_<dir>` runs one suite (the xshim and
   single-hack tests take about a second); `test_hacks` alone takes about
   2m20s and the whole `pio test -e native` about 5 minutes.
+- A hack's `-e dump` index: `grep -o '&[a-z0-9_]*_hack'
+  firmware/src/hacks/registry.c | grep -n ""` (1-based: subtract one).
+  `grep -on` on the file counts lines, not matches.
 - Count hacks from `g_hacks[]`, not from a list in a message or a note: a PR
   body said 14 where the registry had 15, and a review list had left one out.
   `grep -c` counts lines, and a line can hold several entries: use
