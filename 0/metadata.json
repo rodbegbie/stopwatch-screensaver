@@ -1,0 +1,292 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4WJY5VV4C42GM0REMZ0GW9H",
+  "session_id": "16383833-c961-4680-b44f-3feb241de877",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-14T06:52:30.960839Z",
+  "branch": "feature/dcache-64-byte-lines",
+  "checkpoints_count": 1,
+  "save_step_count": 13,
+  "files_touched": [
+    "firmware/src/dcache.h",
+    "firmware/src/diag/psram_bench.h",
+    "firmware/src/main.cpp"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "bcc5e1533d0f",
+  "checkpoint_transcript_start": 5754,
+  "transcript_lines_at_start": 5754,
+  "compact_transcript_start": 545,
+  "token_usage": {
+    "input_tokens": 50,
+    "cache_creation_tokens": 34050,
+    "cache_read_tokens": 2660699,
+    "output_tokens": 17385,
+    "api_call_count": 25
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01FKHYc8VYcowTVgS9xzTn6N",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "port-hack"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "27bcee8e2634",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 35,
+        "end": 36,
+        "entry_ids": [
+          "c8447901-cccf-4fe4-9845-c7c0e659280f"
+        ],
+        "tool_use_id": "toolu_01FKHYc8VYcowTVgS9xzTn6N"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01FKHYc8VYcowTVgS9xzTn6N"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: port-hack",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01H1uYwG9ifeJt7gfNqKR23z",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "worktree-session"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "27bcee8e2634",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 137,
+        "end": 138,
+        "entry_ids": [
+          "17652568-6f96-4eae-a406-c8aaa2e30eb6"
+        ],
+        "tool_use_id": "toolu_01H1uYwG9ifeJt7gfNqKR23z"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01H1uYwG9ifeJt7gfNqKR23z"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: worktree-session",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_014bygDnVFZ1D2AgtwGJkCxi",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "59753a064dc6",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 2412,
+        "end": 2413,
+        "entry_ids": [
+          "a00cbdde-21dc-4b8c-9859-0fd682ea716e"
+        ],
+        "tool_use_id": "toolu_014bygDnVFZ1D2AgtwGJkCxi"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_014bygDnVFZ1D2AgtwGJkCxi"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01VVRVKZbg17ksYDv8xdZKDs",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": ".claude/worktrees/soft-double-investigation:deliver-branch"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "71546c5ca1a0",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 4857,
+        "end": 4858,
+        "entry_ids": [
+          "719e155a-764c-4bec-be29-44ad95b52a88"
+        ],
+        "tool_use_id": "toolu_01VVRVKZbg17ksYDv8xdZKDs"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01VVRVKZbg17ksYDv8xdZKDs"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: .claude/worktrees/soft-double-investigation:deliver-branch",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "prompt-skill-claude-code-address-findings-2026-10-14T06:24:14.790711Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "address-findings"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "bcc5e1533d0f",
+      "timestamp": "2026-10-14T06:24:14.790711Z",
+      "native": {
+        "command": "/address-findings"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/address-findings",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 22
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-10-14T06:52:30.768894Z",
+    "agent_lines": 70,
+    "agent_removed": 29,
+    "human_added": 9,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 79,
+    "total_lines_changed": 110,
+    "agent_percentage": 90,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 150,
+      "agent_lines_removed": 20
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 170,
+      "agent_lines_removed": 58
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 6,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 7,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 201,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 8,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 201,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 9,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 201,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 10,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 201,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 11,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 201,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 12,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 237,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 13,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 237,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 14,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
