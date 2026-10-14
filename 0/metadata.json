@@ -1,0 +1,116 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M4Y1B7832NZ1VFSKVJSNR72K",
+  "session_id": "e5840acf-b6ed-4d01-9780-48deb0da6bc9",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-14T20:23:32.199003Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    ".private-journal/2026-10-10/13-26-22-000000-2fbe913b.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "7dbce30911d9",
+  "checkpoint_transcript_start": 2535,
+  "transcript_lines_at_start": 2535,
+  "compact_transcript_start": 260,
+  "token_usage": {
+    "input_tokens": 6,
+    "cache_creation_tokens": 1937,
+    "cache_read_tokens": 495669,
+    "output_tokens": 1499,
+    "api_call_count": 3
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01Aoe6VQbm8ZNAHLHxKEfCJj",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "port-hack"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "340db2d0d25d",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 35,
+        "end": 36,
+        "entry_ids": [
+          "caed6dc0-86af-458f-a280-28bd536466fd"
+        ],
+        "tool_use_id": "toolu_01Aoe6VQbm8ZNAHLHxKEfCJj"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01Aoe6VQbm8ZNAHLHxKEfCJj"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: port-hack",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01K26FVTsfCmzozuDA8mTmtG",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "340db2d0d25d",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 561,
+        "end": 562,
+        "entry_ids": [
+          "f5fe2414-2d2b-46b6-8078-64db4814de04"
+        ],
+        "tool_use_id": "toolu_01K26FVTsfCmzozuDA8mTmtG"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01K26FVTsfCmzozuDA8mTmtG"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "prompt-skill-claude-code-claude-md-management:revise-claude-md-2026-10-10T20:25:05.478592Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "claude-md-management:revise-claude-md"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "07cb4fbe4f9b",
+      "timestamp": "2026-10-10T20:25:05.478592Z",
+      "native": {
+        "command": "/claude-md-management:revise-claude-md"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/claude-md-management:revise-claude-md",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 14
+  }
+}
