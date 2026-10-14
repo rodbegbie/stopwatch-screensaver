@@ -29,4 +29,4 @@ static void nerverot_rgb_to_hsv(unsigned short r, unsigned short g, unsigned sho
 #include "nerverot_floatlit.c"
 
 const HackEntry nerverot_hack = {"NerveRot", nerverot_defaults, nerverot_init,
-                                 nerverot_draw, nerverot_free, NULL, NULL};
+                                 nerverot_draw, nerverot_free, NULL, NULL, 0, 0, 1};
