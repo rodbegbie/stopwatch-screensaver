@@ -48,6 +48,7 @@ for name in ("braid",) + (
     "vines",
     "hopalong",
     "whirlwindwarp",
+    "binaryhorizon",
     "discrete",
     "drift",
     "flame",
@@ -64,7 +65,7 @@ for name in ("braid",) + (
         source = etruscanvenus_patch.size_the_grid(source)
     if name == "xspirograph":
         source = xspirograph_patch.reduce_the_angles(source)
-    if name == "binaryring":
+    if name in ("binaryring", "binaryhorizon"):
         source = binaryring_patch.float_random_scale(source)
     patched = float_literals.float_literals(source)
     target = generated / f"{name}_floatlit.c"

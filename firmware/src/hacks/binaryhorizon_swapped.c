@@ -1,5 +1,8 @@
 /* Builds the unmodified binaryhorizon.c, told the display is 24 bits deep,
- * drawing straight on the window.
+ * drawing straight on the window, in single precision: its line drawing
+ * widened every coordinate to software double, per pixel. Its decimal
+ * literals are made floats at build time (tools/float_literals.py, and
+ * tools/binaryring_patch.py for the exponent literal in frand1).
  *
  * Like BinaryRing, the hack blends each hit into its own buffer of pixel
  * values at a low alpha. In its 16-bit path a hit adds less than one step of
@@ -77,12 +80,15 @@ static time_t binaryhorizon_time(time_t *out) {
 }
 #define time(p) binaryhorizon_time(p)
 
+#include "hacks/single_precision.h"
+#include "hacks/single_constants.h"
+
 #undef XSCREENSAVER_MODULE
 #define XSCREENSAVER_MODULE(CLASS, PREFIX)
 #define binaryhorizon_init binaryhorizon_upstream_init
 #define binaryhorizon_draw binaryhorizon_upstream_draw
 
-#include "binaryhorizon/binaryhorizon.c"
+#include "binaryhorizon_floatlit.c"
 
 #undef binaryhorizon_init
 #undef binaryhorizon_draw

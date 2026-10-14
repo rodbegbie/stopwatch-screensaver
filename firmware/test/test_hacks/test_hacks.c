@@ -567,7 +567,7 @@ static const uint64_t kBaseline[] = {
     0x14205ec78f0eaca4ull, /* IMSMap: taken after looking at the frames */
     0xbd3f785cc1a7230full, /* Munch: taken after looking at the frames (GXxor points) */
     0x0f2f79c8e4c26e90ull, /* CCurve: taken after looking at the frames (single precision, limit 30000) */
-    0xb858d0c595de9530ull, /* BinaryHorizon: taken after looking at the frames (24-bit wrapper) */
+    0x55c1dd757123ae20ull, /* BinaryHorizon: taken after looking at the frames (24-bit wrapper, single precision; blend rounding moves a few hundred pixels) */
     0, /* RotZoomer: unpinned on purpose, it zooms the shim's grab image and has none here, so every frame is black (see test_rotzoomer_wrapper) */
     0xb67d586893812842ull, /* NerveRot: taken after looking at the frames (single precision) */
     0x8d05055b1b5d7fe5ull, /* Bouboule: taken after looking at the frames */
