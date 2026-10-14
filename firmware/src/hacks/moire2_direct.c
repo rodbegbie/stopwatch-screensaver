@@ -39,4 +39,4 @@ static const char *const k_moire2_overrides[] = {"*delay: 10000", NULL};
 
 const HackEntry moire2_hack = {"Moire2", moire2_defaults, moire2_init,
                                moire2_draw, moire2_free_with_planes, NULL,
-                               k_moire2_overrides};
+                               k_moire2_overrides, 0, 0, 1};
