@@ -8,6 +8,7 @@
 
 #include "core/canvas.h"
 #include "hacks/registry.h"
+#include "runner/hack_runner.h"
 #include "runner/push_overlap.h"
 
 #define W 64
@@ -238,6 +239,174 @@ void test_create_fails_cleanly_when_spawn_fails(void) {
   TEST_ASSERT_NULL(push_overlap_create(&cv, NULL, &kOps, fake_push, &fake));
 }
 
+/* ---- Flagged hacks must really repaint everything ---- */
+
+#define BW 466
+#define FRAMES 300
+static Canvas big;
+static uint16_t *big_first_px;
+static uint16_t *shadow; /* what the display holds */
+
+static void big_open(void) {
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&big, BW, BW, malloc));
+  TEST_ASSERT_EQUAL_INT(0, canvas_set_disc(&big, malloc));
+  big_first_px = big.px;
+  shadow = calloc((size_t)BW * BW, sizeof(uint16_t));
+}
+static void big_close(void) {
+  big.px = big_first_px;
+  free(big.vis_x0);
+  free(big.vis_x1);
+  big.vis_x0 = big.vis_x1 = NULL;
+  free(shadow);
+  canvas_free(&big);
+}
+
+static uint32_t disc_hash(const uint16_t *px) {
+  uint32_t h = 2166136261u;
+  for (int y = 0; y < BW; y++) {
+    int x0, x1;
+    if (!canvas_visible_span(&big, y, &x0, &x1)) continue;
+    for (int x = x0; x <= x1; x++) h = (h ^ px[(size_t)y * BW + x]) * 16777619u;
+  }
+  return h;
+}
+
+static void add_noise(void) {
+  static uint32_t lcg = 12345;
+  for (int i = 0; i < BW * BW; i++) {
+    lcg = lcg * 1664525u + 1013904223u;
+    big.px[i] = (uint16_t)(lcg >> 16);
+  }
+}
+
+static void run_plain(const HackEntry *e, int frames, bool noise, uint32_t *out) {
+  const HackEntry *const hacks[] = {e};
+  HackRunner *r = runner_create_with(&big, hacks, 1);
+  srandom(1);
+  runner_start(r, 0);
+  for (int f = 0; f < frames; f++) {
+    if (noise) add_noise();
+    runner_step(r);
+    out[f] = disc_hash(big.px);
+  }
+  runner_destroy(r);
+}
+
+static int shadow_push(void *ctx, Canvas *view) {
+  (void)ctx;
+  int rows = 0, x0, x1;
+  for (int y = 0; y < view->h; y++) {
+    if (!canvas_dirty_row(view, y, &x0, &x1)) continue;
+    memcpy(shadow + (size_t)y * BW + x0, view->px + (size_t)y * BW + x0,
+           (size_t)(x1 - x0 + 1) * sizeof(uint16_t));
+    rows++;
+  }
+  return rows;
+}
+
+static void run_swapped(const HackEntry *e, int frames, uint32_t *out) {
+  const HackEntry *const hacks[] = {e};
+  HackRunner *r = runner_create_with(&big, hacks, 1);
+  uint16_t *spare_px = calloc((size_t)BW * BW, sizeof(uint16_t));
+  PushOverlap *p = push_overlap_create(&big, spare_px, &kOps, shadow_push, NULL);
+  TEST_ASSERT_NOT_NULL(p);
+  srandom(1);
+  runner_start(r, 0);
+  for (int f = 0; f < frames; f++) {
+    runner_step(r);
+    push_overlap_present(p, &big, true);
+    push_overlap_wait(p);
+    out[f] = disc_hash(shadow);
+  }
+  push_overlap_destroy(p);
+  runner_destroy(r);
+  big.px = big_first_px;
+  free(spare_px);
+}
+
+/* The plain run records the canvas after each step; the swapped one records
+ * what reached the display. */
+static bool ignores_the_canvas_it_starts_from(const HackEntry *e, int frames) {
+  uint32_t plain[FRAMES], noisy[FRAMES];
+  run_plain(e, frames, false, plain);
+  run_plain(e, frames, true, noisy);
+  return memcmp(plain, noisy, frames * sizeof plain[0]) == 0;
+}
+static bool looks_the_same_through_the_swap(const HackEntry *e, int frames) {
+  uint32_t plain[FRAMES], swapped[FRAMES];
+  run_plain(e, frames, false, plain);
+  run_swapped(e, frames, swapped);
+  return memcmp(plain, swapped, frames * sizeof plain[0]) == 0;
+}
+
+static int stub_frame;
+static void *stub_init(Display *dpy, Window w) {
+  (void)dpy;
+  (void)w;
+  stub_frame = 0;
+  return NULL;
+}
+static void stub_free(Display *dpy, Window w, void *closure) {
+  (void)dpy;
+  (void)w;
+  (void)closure;
+}
+static unsigned long full_draw(Display *dpy, Window w, void *closure) {
+  (void)dpy;
+  (void)w;
+  (void)closure;
+  canvas_fill_rect(&big, 0, 0, BW, BW, (uint16_t)(0x100 * ++stub_frame));
+  return 10000;
+}
+static unsigned long incremental_draw(Display *dpy, Window w, void *closure) {
+  (void)dpy;
+  (void)w;
+  (void)closure;
+  const int row = 100 + stub_frame % 3, x = 5 * stub_frame;
+  canvas_point(&big, x, row, 0xFFFF);
+  canvas_point(&big, x + 60, row, 0xFFFF);
+  stub_frame++;
+  return 10000;
+}
+static const HackEntry kFull = {"Full", NULL, stub_init, full_draw, stub_free,
+                                NULL, NULL, 0, 0, 1};
+static const HackEntry kIncremental = {"Incremental", NULL, stub_init,
+                                       incremental_draw, stub_free, NULL, NULL,
+                                       0, 0, 1};
+
+void test_a_stub_that_repaints_everything_passes_both_checks(void) {
+  big_open();
+  TEST_ASSERT_TRUE(ignores_the_canvas_it_starts_from(&kFull, 40));
+  TEST_ASSERT_TRUE(looks_the_same_through_the_swap(&kFull, 40));
+  big_close();
+}
+
+void test_a_stub_that_draws_on_top_of_the_last_frame_fails_both_checks(void) {
+  big_open();
+  TEST_ASSERT_FALSE(ignores_the_canvas_it_starts_from(&kIncremental, 40));
+  TEST_ASSERT_FALSE(looks_the_same_through_the_swap(&kIncremental, 40));
+  big_close();
+}
+
+void test_flagged_hacks_do_not_read_the_canvas_they_start_from(void) {
+  big_open();
+  for (int i = 0; i < g_hack_count; i++)
+    if (g_hacks[i]->repaints_all)
+      TEST_ASSERT_TRUE_MESSAGE(ignores_the_canvas_it_starts_from(g_hacks[i], FRAMES),
+                               g_hacks[i]->name);
+  big_close();
+}
+
+void test_flagged_hacks_look_the_same_through_the_real_swap(void) {
+  big_open();
+  for (int i = 0; i < g_hack_count; i++)
+    if (g_hacks[i]->repaints_all)
+      TEST_ASSERT_TRUE_MESSAGE(looks_the_same_through_the_swap(g_hacks[i], FRAMES),
+                               g_hacks[i]->name);
+  big_close();
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_no_hack_asks_for_both_repaints_all_and_sync_to_refresh);
@@ -251,5 +420,9 @@ int main(void) {
   RUN_TEST(test_the_view_gets_the_frames_dirty_spans_and_the_canvas_is_left_clean);
   RUN_TEST(test_take_rows_totals_completed_pushes);
   RUN_TEST(test_create_fails_cleanly_when_spawn_fails);
+  RUN_TEST(test_a_stub_that_repaints_everything_passes_both_checks);
+  RUN_TEST(test_a_stub_that_draws_on_top_of_the_last_frame_fails_both_checks);
+  RUN_TEST(test_flagged_hacks_do_not_read_the_canvas_they_start_from);
+  RUN_TEST(test_flagged_hacks_look_the_same_through_the_real_swap);
   return UNITY_END();
 }
