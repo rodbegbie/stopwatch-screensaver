@@ -174,11 +174,23 @@ void test_an_ineligible_present_brings_back_the_newest_frame(void) {
   uint16_t *shown = cv.px;
   paint(5);
   push_overlap_present(po, &cv, true);
-  canvas_mark_dirty(&cv, 0, 0, W, H);
   TEST_ASSERT_FALSE(push_overlap_present(po, &cv, false));
   TEST_ASSERT_TRUE(cv.px == shown);
+}
+
+void test_an_ineligible_present_keeps_a_frame_the_hack_just_drew(void) {
+  paint(0x1111);
+  push_overlap_present(po, &cv, true);
+  paint(0x2222);
+  uint32_t drawn = fnv(cv.px);
+  uint16_t *live = cv.px;
+  TEST_ASSERT_FALSE(push_overlap_present(po, &cv, false));
+  TEST_ASSERT_TRUE(cv.px == live);
+  TEST_ASSERT_EQUAL_HEX32(drawn, fnv(cv.px));
   int x0, x1;
-  TEST_ASSERT_FALSE(canvas_dirty_row(&cv, 0, &x0, &x1));
+  TEST_ASSERT_TRUE(canvas_dirty_row(&cv, 0, &x0, &x1));
+  TEST_ASSERT_FALSE(push_overlap_present(po, &cv, false));
+  TEST_ASSERT_TRUE(cv.px == live);
 }
 
 void test_an_eligible_present_with_nothing_dirty_pushes_nothing_and_shows_the_newest_frame(void) {
@@ -414,6 +426,7 @@ int main(void) {
   RUN_TEST(test_present_swaps_the_two_buffers);
   RUN_TEST(test_pushes_never_overlap_each_other);
   RUN_TEST(test_an_ineligible_present_brings_back_the_newest_frame);
+  RUN_TEST(test_an_ineligible_present_keeps_a_frame_the_hack_just_drew);
   RUN_TEST(test_an_eligible_present_with_nothing_dirty_pushes_nothing_and_shows_the_newest_frame);
   RUN_TEST(test_reset_stops_the_next_ineligible_present_swapping_back);
   RUN_TEST(test_credit_is_the_previous_pushes_duration_and_zero_after_a_fallback);

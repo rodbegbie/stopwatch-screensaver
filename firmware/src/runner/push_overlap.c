@@ -99,10 +99,9 @@ bool push_overlap_present(PushOverlap *p, Canvas *canvas, bool eligible) {
     p->ops.sem_give(p->go);
     return true;
   }
-  if (p->newest && p->newest != canvas->px) {
+  if (p->newest && p->newest != canvas->px && !any_dirty(canvas)) {
     p->spare = canvas->px;
     canvas->px = p->newest;
-    canvas_clear_dirty(canvas);
   }
   p->newest = NULL;
   p->credit_us = 0;

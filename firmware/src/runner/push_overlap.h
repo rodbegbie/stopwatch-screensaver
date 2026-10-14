@@ -40,9 +40,10 @@ PushOverlap *push_overlap_create(const Canvas *canvas, uint16_t *spare,
 
 /* Waits for the worker, then, if eligible and something is dirty, hands the
  * frame to the worker, swaps canvas->px with the spare and returns true.
- * Otherwise returns false and the caller pushes synchronously: if the canvas
- * was swapped, the newest frame is swapped back in first (and canvas's dirty
- * spans cleared, since the display already shows it). */
+ * Otherwise returns false and the caller pushes synchronously. If the canvas
+ * was swapped and the hack has drawn nothing on it since, the newest frame is
+ * swapped back in first (the display already shows it). A frame the hack did
+ * draw is kept, so the synchronous push shows it. */
 bool push_overlap_present(PushOverlap *p, Canvas *canvas, bool eligible);
 /* Blocks until the worker is idle. */
 void push_overlap_wait(PushOverlap *p);
