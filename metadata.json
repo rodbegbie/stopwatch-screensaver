@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M4Y058XPEKKMZW66QXEEP6CH",
+  "strategy": "manual-commit",
+  "branch": "feature/54-push-overlap",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "firmware/src/runner/push_overlap.c",
+    "firmware/src/runner/push_overlap.h",
+    "firmware/test/test_push_overlap/test_push_overlap.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 24,
+    "cache_creation_tokens": 12294,
+    "cache_read_tokens": 3891036,
+    "output_tokens": 7207,
+    "api_call_count": 12,
+    "subagent_tokens": {
+      "input_tokens": 0,
+      "cache_creation_tokens": 0,
+      "cache_read_tokens": 0,
+      "output_tokens": 0,
+      "api_call_count": 0
+    }
+  }
+}
