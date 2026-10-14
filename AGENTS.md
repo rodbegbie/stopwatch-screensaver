@@ -298,6 +298,11 @@ ones below apply everywhere.
   too, or pytest fails with `KeyError: 'host_ms'` or `KeyError: 'counts'`.
 - Board details (pins, power, recovery) are in
   `.claude/skills/m5stack-stopwatch/`.
+- A `python3 <<EOF` heredoc that contains backticks runs them as shell
+  commands: quote the delimiter (`<<'EOF'`) and pass paths as arguments.
+- `pio test` hides which test crashed and AddressSanitizer's report: after a
+  failure, run `.pio/build/native/program` from `firmware/` for the per-test
+  PASS/FAIL lines and the ASan stack.
 
 <!-- entire-graph:begin -->
 This repo has the entire-graph code graph installed. Before exploring code with
