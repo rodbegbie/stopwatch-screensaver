@@ -1,0 +1,25 @@
+yes
+
+---
+
+Both fixed, overlays work now.  There's some tearing, but that's always been true on this hack (and happens when the text is overlaid)
+
+---
+
+1 and 3
+
+---
+
+post it
+
+---
+
+Let's start working on the general design.
+
+---
+
+Yes, just the flagged hacks
+
+---
+
+Yes, approved, go to the plan
