@@ -1,5 +1,6 @@
 #include <M5Unified.h>
 #include <esp_heap_caps.h>
+#include <freertos/semphr.h>
 #include <string.h>
 
 #include "dcache.h"
@@ -15,6 +16,7 @@ extern "C" {
 #include "runner/button_latch.h"
 #include "runner/hack_runner.h"
 #include "runner/overlay.h"
+#include "runner/push_overlap.h"
 #include "runner/qr_layout.h"
 #include "runner/rotation.h"
 #include "runner/start_pick.h"
@@ -324,6 +326,11 @@ static void stampText(Patch *p, const char *text, int cx, int cy,
                       const lgfx::IFont *font, int scale = 1) {
   int outline = 1 + scale / 4;
   int margin = outline + 1;
+  static uint16_t *wrapped;
+  if (wrapped != canvas.px) {
+    stamp.setBuffer(canvas.px, kSize, kSize, 16);
+    wrapped = canvas.px;
+  }
   stamp.setFont(font);
   stamp.setTextSize(scale);
   stamp.setTextDatum(middle_center);
@@ -425,24 +432,81 @@ static void sinkEnd(void *) {
 #endif
   M5.Display.endWrite();
 }
+static uint16_t *sinkPx; /* the pixels a push reads: canvas.px, or the frame handed to the worker */
 static void sinkRow(void *, int y, int x0, int x1) {
-  M5.Display.pushImage(x0, y, x1 - x0 + 1, 1, canvas.px + y * kSize + x0);
+  M5.Display.pushImage(x0, y, x1 - x0 + 1, 1, sinkPx + y * kSize + x0);
 }
 static void sinkAll(void *) {
 #ifdef TE_DIAG
   /* An outer transaction holds the flush to the panel until endWrite, so the
    * copy into M5GFX's framebuffer and the flush can be timed apart. */
   M5.Display.startWrite();
-  M5.Display.pushImage(0, 0, kSize, kSize, canvas.px);
+  M5.Display.pushImage(0, 0, kSize, kSize, sinkPx);
   flushBeganUs = (uint32_t)esp_timer_get_time();
   M5.Display.endWrite();
 #else
-  M5.Display.pushImage(0, 0, kSize, kSize, canvas.px);
+  M5.Display.pushImage(0, 0, kSize, kSize, sinkPx);
 #endif
 }
 static const PushSink pushSink = {nullptr, sinkBegin, sinkRow, sinkAll, sinkEnd};
 
+/* A hack with HackEntry::repaints_all draws its next frame while core 0 pushes
+ * the last one (runner/push_overlap.h). Null when the spare canvas would not
+ * allocate or -DPUSH_NO_OVERLAP is set, and then every push is synchronous. */
+static PushOverlap *overlapper;
+
+static void *semCreate() { return xSemaphoreCreateBinary(); }
+static void semGive(void *s) { xSemaphoreGive((SemaphoreHandle_t)s); }
+static void semTake(void *s) { xSemaphoreTake((SemaphoreHandle_t)s, portMAX_DELAY); }
+static void semDestroy(void *s) { vSemaphoreDelete((SemaphoreHandle_t)s); }
+static uint32_t nowUs() { return (uint32_t)esp_timer_get_time(); }
+
+struct Boot {
+  void (*body)(void *);
+  void *arg;
+};
+static void bootTask(void *p) {
+  Boot b = *(Boot *)p;
+  free(p);
+  b.body(b.arg);
+  vTaskDelete(nullptr);
+}
+static int spawnTask(void (*body)(void *), void *arg) {
+  Boot *b = (Boot *)malloc(sizeof(Boot));
+  if (!b) return -1;
+  *b = {body, arg};
+  if (xTaskCreatePinnedToCore(bootTask, "push", 6144, b, 3, nullptr, 0) != pdPASS) {
+    free(b);
+    return -1;
+  }
+  return 0;
+}
+static const PushOverlapOps kOverlapOps = {semCreate, semGive, semTake,
+                                           spawnTask, nowUs, semDestroy};
+
+static int overlapPush(void *, Canvas *view) {
+  sinkPx = view->px;
+  return push_present(view, pushRows, &pushSink, true);
+}
+
+static bool overlayStamping() {
+  uint32_t now = millis();
+  return overlay_name_visible(&overlay, now) || overlay_badge_visible(&overlay) ||
+         (overlay_qr_visible(&overlay) && qrPixels) ||
+         overlay_fps_visible(&overlay) || overlay_battery_visible(&overlay);
+}
+
 static void present() {
+  if (overlapper) {
+    const bool eligible =
+        g_hacks[runner_index(runner)]->repaints_all && !overlayStamping();
+    if (push_overlap_present(overlapper, &canvas, eligible)) {
+      overlay_drawn(&overlay, millis());
+      lastSyncUs = 0;
+      return;
+    }
+  }
+  sinkPx = canvas.px;
   uint32_t now = millis();
   if (overlay_name_visible(&overlay, now))
     stampText(&namePatch, g_hacks[runner_index(runner)]->name, kSize / 2,
@@ -505,6 +569,7 @@ static const uint32_t kBulkLineBytes = 64;
 #endif
 
 static void hackStarted() {
+  if (overlapper) push_overlap_reset(overlapper);
   const HackEntry *hack = g_hacks[runner_index(runner)];
   const bool keep32 = hack->sync_to_refresh || hack->dcache_line32;
   dcache_set_line_size(keep32 ? 32 : kBulkLineBytes);
@@ -634,6 +699,14 @@ void setup() {
   infoPatch.saved = (uint16_t *)ps_malloc(infoPixels * sizeof(uint16_t));
   if (!namePatch.saved || !infoPatch.saved) halt("PSRAM alloc failed");
   buildQr();
+#ifndef PUSH_NO_OVERLAP
+  uint16_t *spare = (uint16_t *)ps_malloc(kSize * kSize * sizeof(uint16_t));
+  overlapper = push_overlap_create(&canvas, spare, &kOverlapOps, overlapPush, nullptr);
+  if (!overlapper) {
+    free(spare);
+    Serial.println("push overlap unavailable; pushing synchronously");
+  }
+#endif
   runner = runner_create(&canvas);
   if (!runner) halt("hack start failed");
   int first = start_pick_index(g_hacks, g_hack_count, kForcedStart, esp_random());
@@ -660,6 +733,7 @@ void loop() {
   present();
   uint32_t t2 = micros();
   frames++;
+  if (overlapper) rowsPushed += push_overlap_take_rows(overlapper);
   overlay_frame(&overlay, millis());
   stepUs += t1 - t0;
   pushUs += t2 - t1 - lastSyncUs;
@@ -668,7 +742,8 @@ void loop() {
   /* Only the push counts against the delay. A hack's delay is the pause after
    * it draws, so a hack that asks for a one-second hold must still get it
    * however long its own step took. */
-  unsigned long waitUsTarget = runner_remaining_delay_us(delayUs, t2 - t1);
+  unsigned long waitUsTarget = runner_remaining_delay_us(
+      delayUs, t2 - t1 + (overlapper ? push_overlap_credit_us(overlapper) : 0));
   uint32_t waitedUs = 0;
   bool switched = false;
   while (!switched && waitedUs < waitUsTarget) {

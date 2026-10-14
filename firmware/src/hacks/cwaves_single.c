@@ -58,4 +58,4 @@ static unsigned long cwaves_draw_rows(Display *dpy, Window window,
 }
 
 const HackEntry cwaves_hack = {"CWaves", cwaves_defaults, cwaves_init,
-                               cwaves_draw_rows, cwaves_free, NULL, NULL};
+                               cwaves_draw_rows, cwaves_free, NULL, NULL, 0, 0, 1};

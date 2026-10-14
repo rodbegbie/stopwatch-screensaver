@@ -23,4 +23,4 @@
 static const char *const k_lmorph_overrides[] = {"*delay: 10000", NULL};
 
 const HackEntry lmorph_hack = {"LMorph", lmorph_defaults, lmorph_init,
-                                lmorph_draw, lmorph_free, NULL, k_lmorph_overrides};
+                                lmorph_draw, lmorph_free, NULL, k_lmorph_overrides, 0, 0, 1};

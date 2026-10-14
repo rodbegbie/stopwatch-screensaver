@@ -26,4 +26,4 @@ static const char *const marbling_overrides[] = {"*gridsize: 6", "*iterations: 3
 
 const HackEntry marbling_hack = {"Marbling", marbling_defaults, marbling_init,
                                  marbling_draw, marbling_free, NULL,
-                                 marbling_overrides};
+                                 marbling_overrides, 0, 0, 1};

@@ -26,6 +26,9 @@ embedded-specific choices as you make them. See `README.md` for setup and
 - `firmware/src/runner/te_sync.[ch]` (ours, host-tested) times a push to the
   panel's refresh for a hack with `sync_to_refresh`; see
   `.claude/rules/device-display.md`.
+- `firmware/src/runner/push_overlap.[ch]` (ours, host-tested) pushes the
+  finished frame on core 0 beside the next step, for a hack with
+  `repaints_all`; see `.claude/rules/device-display.md`.
 - `tools/failed_ports.txt` lists abandoned ports (`name: reason`); the scorer
   marks them ❌, and ✅ comes from `g_hacks[]` in `registry.c`.
 - `.claude/skills/port-hack/`: the order of work for porting a hack, and a

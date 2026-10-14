@@ -1,20 +1,23 @@
 #include "hacks/registry.h"
 
 /* A hack built on xlockmore.h defines a function table, not a HackEntry. */
-#define XLOCKMORE_HACK_FULL(NAME, CLASS, OVERRIDES, SYNC, LINE32)        \
+#define XLOCKMORE_HACK_FULL(NAME, CLASS, OVERRIDES, SYNC, LINE32, REPAINTS) \
   extern struct xscreensaver_function_table NAME##_xscreensaver_function_table; \
   static const HackEntry NAME##_hack = {                                 \
       CLASS, NULL, NULL, NULL, NULL,                                     \
-      &NAME##_xscreensaver_function_table, OVERRIDES, SYNC, LINE32}
+      &NAME##_xscreensaver_function_table, OVERRIDES, SYNC, LINE32, REPAINTS}
 #define XLOCKMORE_HACK_WITH(NAME, CLASS, OVERRIDES) \
-  XLOCKMORE_HACK_FULL(NAME, CLASS, OVERRIDES, 0, 0)
+  XLOCKMORE_HACK_FULL(NAME, CLASS, OVERRIDES, 0, 0, 0)
 #define XLOCKMORE_HACK(NAME, CLASS) XLOCKMORE_HACK_WITH(NAME, CLASS, NULL)
 /* Pushes start at a fixed point in the panel's refresh (see HackEntry). */
 #define XLOCKMORE_HACK_SYNCED(NAME, CLASS, OVERRIDES) \
-  XLOCKMORE_HACK_FULL(NAME, CLASS, OVERRIDES, 1, 0)
+  XLOCKMORE_HACK_FULL(NAME, CLASS, OVERRIDES, 1, 0, 0)
 /* Keeps 32-byte data-cache lines (see HackEntry). */
 #define XLOCKMORE_HACK_LINE32(NAME, CLASS) \
-  XLOCKMORE_HACK_FULL(NAME, CLASS, NULL, 0, 1)
+  XLOCKMORE_HACK_FULL(NAME, CLASS, NULL, 0, 1, 0)
+/* Every step repaints the whole canvas, so the push overlaps the next step. */
+#define XLOCKMORE_HACK_REPAINTS_ALL(NAME, CLASS) \
+  XLOCKMORE_HACK_FULL(NAME, CLASS, NULL, 0, 0, 1)
 
 /* Galaxy's `count: -5` picks 2-5 galaxies, and each star is pulled by every
  * galaxy. -3 caps it at 3. Counts of -2 or above skip the hack's cleanup on
@@ -82,7 +85,7 @@ XLOCKMORE_HACK(forest, "Forest");
 XLOCKMORE_HACK(laser, "Laser");
 XLOCKMORE_HACK(lissie, "Lissie");
 XLOCKMORE_HACK(rotor, "Rotor");
-XLOCKMORE_HACK(scooter, "Scooter");
+XLOCKMORE_HACK_REPAINTS_ALL(scooter, "Scooter");
 XLOCKMORE_HACK(grav, "Grav");
 /* 1024 particles took a 53 ms step in single precision; 512 keep the flow
  * readable and the frame rate nearer 15. */

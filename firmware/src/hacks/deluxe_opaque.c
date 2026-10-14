@@ -44,4 +44,4 @@ static const char *const kDeluxeOverrides[] = {"*transparent: False",
 
 const HackEntry deluxe_hack = {"Deluxe", deluxe_defaults, deluxe_init,
                                deluxe_draw, deluxe_free, NULL,
-                               kDeluxeOverrides};
+                               kDeluxeOverrides, 0, 0, 1};

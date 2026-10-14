@@ -35,4 +35,11 @@ static Status eruption_alloc_color(Display *dpy, Colormap cmap, XColor *c) {
   lowrez_put_image(dpy, d, gc, im, sx, sy, dx, dy, w, h)
 
 #define HAVE_INTTYPES_H 1
+#undef XSCREENSAVER_MODULE
+#define XSCREENSAVER_MODULE(CLASS, PREFIX)
 #include "eruption/eruption.c"
+
+/* Each step repaints the whole image, so the push can overlap the next step. */
+const HackEntry eruption_hack = {"Eruption", eruption_defaults, eruption_init,
+                                 eruption_draw, eruption_free, NULL, NULL,
+                                 0, 0, 1};

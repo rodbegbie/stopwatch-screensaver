@@ -12,4 +12,4 @@
 #include "anemotaxis/anemotaxis.c"
 
 const HackEntry anemotaxis_hack = {"Anemotaxis", anemotaxis_defaults, anemotaxis_init,
-                                anemotaxis_draw, anemotaxis_free, NULL, NULL};
+                                anemotaxis_draw, anemotaxis_free, NULL, NULL, 0, 0, 1};

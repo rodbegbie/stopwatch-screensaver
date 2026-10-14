@@ -32,6 +32,11 @@ typedef struct HackEntry {
   /* Nonzero to keep the data cache's 32-byte lines (main.cpp sets 64 for the
    * rest): a hack that makes many short PSRAM writes runs slower with 64. */
   int dcache_line32;
+  /* Nonzero when every step repaints the whole canvas without reading what is
+   * already there. The display push then runs on another core beside the next
+   * step, which draws on a second canvas (runner/push_overlap.h). Never with
+   * sync_to_refresh; test_push_overlap checks both claims. */
+  int repaints_all;
 } HackEntry;
 
 #ifdef __cplusplus
