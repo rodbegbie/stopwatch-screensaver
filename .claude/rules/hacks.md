@@ -59,7 +59,9 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   of 32 (upstream's translucent weight) and sends full wide circles to
   `stroke_circle`. A plain screenhack's `HackEntry` has no overrides unless a
   wrapper builds it. Its step is 45-63 ms on the device against a 32.5 ms push,
-  so about 11-13 fps; ideas for more are in issue #54.
+  so about 11-13 fps (14 with 64-byte cache lines); overlapping the push with
+  the next step (`repaints_all`) takes it to 19 fps. Other ideas are in issue
+  #54.
 - Eight of the S-hack batch (Anemone, Anemotaxis, Compass, FuzzyFlakes,
   Halftone, Interaggregate, LMorph, Wormhole) are built through
   `hacks/<name>_direct.c` (pixmap double buffering, see `techniques.md`;

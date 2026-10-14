@@ -171,3 +171,30 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   pinned: a free-running lap changes random parameters per visit and showed
   false regressions of 3x on five hacks. A ROM prefetch setting (trigger 1,
   size 0) changed nothing; other settings are untried.
+- A hack with `repaints_all` (`hack_entry.h`) draws its next frame while core 0
+  pushes the last (`runner/push_overlap.[ch]`, issue #54): two canvases swap
+  each frame, the worker pushes the finished one, and the loop credits that
+  push's measured duration against the hack's delay. Pinned A/B on the board,
+  plain to overlapped: Deluxe 14.0 to 19.0 fps, Compass 18.8 to 29.1, FuzzyFlakes
+  18.4 to 28.9, Moire2 16.5 to 26.4, Scooter 22.1 to 28.4; thirteen hacks are
+  flagged (grep `repaints_all`, and `XLOCKMORE_HACK_REPAINTS_ALL`). The step
+  slows by about 5 ms (both cores share the PSRAM cache), so the frame is
+  roughly the step, not the longer of the two. Rules:
+  - Flag a hack only if it never reads the canvas it starts from. The noise
+    test and the real-swap test in `test_push_overlap` run every flagged hack
+    for 300 frames; 40 frames missed Halo, which the 300-frame run caught. GL
+    hacks fail them (TinyGL keeps `canvas->px`), as does GraphStat's swap run.
+  - Only a gain of 5% or more on a pinned A/B earns the flag. Deco and CCurve
+    are paced by their own delays and gained 0 and 2.6%.
+  - A hack whose `HackEntry` comes from `XSCREENSAVER_MODULE` in the
+    byte-identical copy (Truchet, +25%) needs a wrapper to be flagged.
+  - Any overlay (name, badge, QR, fps, battery) makes the push synchronous
+    while it shows, so the fps overlay reads the plain rate. Read `fps=` in
+    the serial log for the overlapped one.
+  - Three bugs the spike hit: a redraw from the wait loop must not dispatch a
+    second push (it blocked 25 ms), the overlay text canvas wraps one buffer
+    and must follow `canvas.px`, and the newest-frame pointer must be dropped
+    when a hack starts or Forest's first frame swapped the old picture back.
+  - `-DPUSH_NO_OVERLAP` turns it off for every hack (the A side of `ab_flash`).
+    The spare canvas is 434 KB of PSRAM; if it will not allocate the firmware
+    pushes synchronously.
