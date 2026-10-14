@@ -484,7 +484,7 @@ static const uint64_t kBaseline[] = {
     0x9fc760a330da4c12ull, /* WhirlWindWarp */
     0xf61f5bf7d5d0a647ull, /* Flame: re-pinned for float literals and frand, frames looked at */
     0x3809dd8f3972a6b2ull, /* Hopalong */
-    0x7cecada4d69a47beull, /* Vines: re-pinned for the eraser (#86) */
+    0xcac2f2a7cfe3a5c3ull, /* Vines: single precision, angles reduced in 64-bit turns; looked at, rounding moves a few pixels */
     0x81324f88137bfcf1ull, /* Sierpinski: re-pinned for the eraser (#86) */
     0x39d159495623cf2bull, /* FadePlot */
     0x574c61de3bb517afull, /* Thornbird */

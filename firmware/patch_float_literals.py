@@ -45,6 +45,7 @@ for name in ("braid",) + (
     "ccurve",
     "galaxy",
     "xspirograph",
+    "vines",
     "discrete",
     "drift",
     "flame",
