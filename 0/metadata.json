@@ -1,0 +1,175 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4W019CATGPGFX2VAWXRHP3B",
+  "session_id": "16383833-c961-4680-b44f-3feb241de877",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-14T01:22:09.988093Z",
+  "branch": "feature/hack-wrappers",
+  "checkpoints_count": 3,
+  "save_step_count": 4,
+  "files_touched": [
+    "firmware/patch_float_literals.py",
+    "firmware/test/test_hacks/test_hacks.c"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "1b559c89b5d1",
+  "checkpoint_transcript_start": 2579,
+  "transcript_lines_at_start": 2579,
+  "compact_transcript_start": 223,
+  "token_usage": {
+    "input_tokens": 138,
+    "cache_creation_tokens": 182295,
+    "cache_read_tokens": 9700153,
+    "output_tokens": 39606,
+    "api_call_count": 69
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01FKHYc8VYcowTVgS9xzTn6N",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "port-hack"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "27bcee8e2634",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 35,
+        "end": 36,
+        "entry_ids": [
+          "c8447901-cccf-4fe4-9845-c7c0e659280f"
+        ],
+        "tool_use_id": "toolu_01FKHYc8VYcowTVgS9xzTn6N"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01FKHYc8VYcowTVgS9xzTn6N"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: port-hack",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01H1uYwG9ifeJt7gfNqKR23z",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "worktree-session"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "27bcee8e2634",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 137,
+        "end": 138,
+        "entry_ids": [
+          "17652568-6f96-4eae-a406-c8aaa2e30eb6"
+        ],
+        "tool_use_id": "toolu_01H1uYwG9ifeJt7gfNqKR23z"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01H1uYwG9ifeJt7gfNqKR23z"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: worktree-session",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_014bygDnVFZ1D2AgtwGJkCxi",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "59753a064dc6",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 2412,
+        "end": 2413,
+        "entry_ids": [
+          "a00cbdde-21dc-4b8c-9859-0fd682ea716e"
+        ],
+        "tool_use_id": "toolu_014bygDnVFZ1D2AgtwGJkCxi"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_014bygDnVFZ1D2AgtwGJkCxi"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 8
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-10-14T01:22:09.859803Z",
+    "agent_lines": 7,
+    "agent_removed": 3,
+    "human_added": 160,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 167,
+    "total_lines_changed": 170,
+    "agent_percentage": 5.88235294117647,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 150,
+      "agent_lines_removed": 20
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 170,
+      "agent_lines_removed": 58
+    },
+    {
+      "checkpoint_number": 5,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
