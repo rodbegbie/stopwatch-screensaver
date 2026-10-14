@@ -472,7 +472,7 @@ static uint64_t hash_after(int index, int frames) {
 static const uint64_t kBaseline[] = {
     0xc09cdcfa9b3be138ull, /* Pyro */
     0x63c3673ca39d844full, /* HyperCube */
-    0xceb9caf334de881eull, /* XSpirograph: re-pinned for the eraser dwell and wipe (#86) */
+    0xd5e570413af6e4fdull, /* XSpirograph: single precision with angles reduced mod 360; looked at, same picture as the double build (rounding moves about 50 pixels) */
     0x9b337f3f1305e6d1ull, /* Petri */
     0x0577bf85b67da573ull, /* Helix: re-pinned for the eraser (#86) */
     0xaeed5737b8ef81e7ull, /* Rorschach: re-pinned for the eraser (#86) */

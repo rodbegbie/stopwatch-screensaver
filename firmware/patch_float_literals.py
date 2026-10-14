@@ -14,6 +14,7 @@ import celtic_patch
 import etruscanvenus_patch
 import fireworkx_patch
 import float_literals
+import xspirograph_patch
 
 generated = Path(env.subst("$BUILD_DIR")) / "generated"  # noqa: F821
 generated.mkdir(parents=True, exist_ok=True)
@@ -43,6 +44,7 @@ for name in ("braid",) + (
     "hyperball",
     "ccurve",
     "galaxy",
+    "xspirograph",
     "discrete",
     "drift",
     "flame",
@@ -57,6 +59,8 @@ for name in ("braid",) + (
         source = celtic_patch.scale_the_animation_step(source)
     if name == "etruscanvenus":
         source = etruscanvenus_patch.size_the_grid(source)
+    if name == "xspirograph":
+        source = xspirograph_patch.reduce_the_angles(source)
     if name == "binaryring":
         source = binaryring_patch.float_random_scale(source)
     patched = float_literals.float_literals(source)
