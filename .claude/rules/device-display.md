@@ -162,8 +162,12 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   Marbling +7%, WhirlWindWarp +6%, Qix and Hexadrop +4%, Gears +3%; Lisa,
   Substrate, XRaySwarm, Pyro, RotZoomer flat. A `sync_to_refresh` hack
   keeps 32 bytes (Unknown Pleasures' offset was swept against the old copy
-  time) and so does Discrete (-5% fps, step 67.9 to 72.8 ms, many short
-  spans). `-DDCACHE_LINE32` turns it off for every hack. Compare builds only
+  time) and so does a hack with `dcache_line32` set in its `HackEntry`
+  (Discrete: -5% fps, step 67.9 to 72.8 ms, many short spans). The other core
+  is parked in IRAM with interrupts off while the cache is reconfigured
+  (`dcache_with_other_core_parked`, over `esp_ipc_call`), as the SDK does for
+  flash writes: `noInterrupts()` stops only the calling core.
+  `-DDCACHE_LINE32` turns it off for every hack. Compare builds only
   pinned: a free-running lap changes random parameters per visit and showed
   false regressions of 3x on five hacks. A ROM prefetch setting (trigger 1,
   size 0) changed nothing; other settings are untried.

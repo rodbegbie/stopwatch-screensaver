@@ -496,8 +496,8 @@ static void present() {
 /* 64-byte data cache lines make every sequential PSRAM pass, the display push
  * above all, about 14% cheaper (device A/B in .claude/rules/device-display.md).
  * A TE-synced hack keeps the SDK's 32 bytes: its push offset was swept against
- * the old copy time. Discrete draws many short spans, which 64 bytes slow (-5%
- * fps). -DDCACHE_LINE32 keeps 32 bytes for every hack. */
+ * the old copy time. A hack with many short spans (Discrete, -5% fps) asks for
+ * dcache_line32. -DDCACHE_LINE32 keeps 32 bytes for every hack. */
 #ifdef DCACHE_LINE32
 static const uint32_t kBulkLineBytes = 32;
 #else
@@ -506,7 +506,7 @@ static const uint32_t kBulkLineBytes = 64;
 
 static void hackStarted() {
   const HackEntry *hack = g_hacks[runner_index(runner)];
-  const bool keep32 = hack->sync_to_refresh || strcmp(hack->name, "Discrete") == 0;
+  const bool keep32 = hack->sync_to_refresh || hack->dcache_line32;
   dcache_set_line_size(keep32 ? 32 : kBulkLineBytes);
   uint32_t now = millis();
   overlay_hack_started(&overlay, now);

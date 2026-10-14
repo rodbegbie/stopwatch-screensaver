@@ -105,22 +105,22 @@ static void row_copy(const char *name, volatile uint16_t *dst, const uint16_t *s
 #define PSRAM_BENCH_AUTOLOAD_SIZE 0
 #endif
 
-/* Switches the data cache to 64-byte lines and/or turns its prefetch on. Run
- * it first thing in setup(), before the other core does much. */
+/* Switches the data cache to 64-byte lines and/or turns its prefetch on, with
+ * the other core parked (dcache.h). */
 static void set_dcache(bool line64, bool prefetch) {
-  noInterrupts();
-  Cache_WriteBack_All();
-  const uint32_t autoload = Cache_Suspend_DCache();
-  if (line64) {
-    Cache_Set_DCache_Mode(DCACHE_SIZE_32KB, CACHE_4WAYS_ASSOC, CACHE_LINE_SIZE_64B);
-    Cache_Invalidate_DCache_All();
-  }
-  if (prefetch) {
-    autoload_config cfg = {1, 0, PSRAM_BENCH_AUTOLOAD_TRIGGER, PSRAM_BENCH_AUTOLOAD_SIZE};
-    Cache_Config_DCache_Autoload(&cfg);
-  }
-  Cache_Resume_DCache(prefetch ? 1 : autoload);
-  interrupts();
+  dcache_with_other_core_parked([line64, prefetch] {
+    Cache_WriteBack_All();
+    const uint32_t autoload = Cache_Suspend_DCache();
+    if (line64) {
+      Cache_Set_DCache_Mode(DCACHE_SIZE_32KB, CACHE_4WAYS_ASSOC, CACHE_LINE_SIZE_64B);
+      Cache_Invalidate_DCache_All();
+    }
+    if (prefetch) {
+      autoload_config cfg = {1, 0, PSRAM_BENCH_AUTOLOAD_TRIGGER, PSRAM_BENCH_AUTOLOAD_SIZE};
+      Cache_Config_DCache_Autoload(&cfg);
+    }
+    Cache_Resume_DCache(prefetch ? 1 : autoload);
+  });
 }
 
 static void apply_variant() {
