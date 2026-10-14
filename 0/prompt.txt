@@ -1,0 +1,21 @@
+There's a handful of issues open that look related to soft-double issues.  #59, 75 and 74.  Plus a couple of other performance investigations: 98, and 57.  Want to take a stab at investigating approaches to them?
+
+---
+
+Looks like 54 might also be part of this.
+
+---
+
+Great.  Yeah, start working on this.  I'm off out for the day so I'll catch up with you later. See how much progress you can make without access to the device.
+
+---
+
+/claude-md-management:revise-claude-md
+
+---
+
+Apply both straight to main
+
+---
+
+run the end session rituals
