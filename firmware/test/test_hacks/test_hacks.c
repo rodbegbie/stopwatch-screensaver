@@ -447,7 +447,7 @@ void test_substrate_draws_what_it_drew_before_pixels_were_swapped(void) {
   runner_start(r, 0);
   for (int f = 0; f < 200; f++) runner_step(r);
   runner_destroy(r);
-  TEST_ASSERT_EQUAL_UINT64(0xb0001ae2c830b47cull, frame_hash());
+  TEST_ASSERT_EQUAL_UINT64(0x71b5f5d79017c196ull, frame_hash());
 }
 
 /* A hack can be blank at any one frame (Lightning, Pedal), so fold in a frame
@@ -472,7 +472,7 @@ static uint64_t hash_after(int index, int frames) {
 static const uint64_t kBaseline[] = {
     0xc09cdcfa9b3be138ull, /* Pyro */
     0x63c3673ca39d844full, /* HyperCube */
-    0xceb9caf334de881eull, /* XSpirograph: re-pinned for the eraser dwell and wipe (#86) */
+    0xd5e570413af6e4fdull, /* XSpirograph: single precision with angles reduced mod 360; looked at, same picture as the double build (rounding moves about 50 pixels) */
     0x9b337f3f1305e6d1ull, /* Petri */
     0x0577bf85b67da573ull, /* Helix: re-pinned for the eraser (#86) */
     0xaeed5737b8ef81e7ull, /* Rorschach: re-pinned for the eraser (#86) */
@@ -482,21 +482,21 @@ static const uint64_t kBaseline[] = {
     0xc73423265e03fc8eull, /* Critical */
     0x8e607be7fad1b855ull, /* CloudLife */
     0x9fc760a330da4c12ull, /* WhirlWindWarp */
-    0x42cee3f3b8b3c778ull, /* Flame */
+    0xf61f5bf7d5d0a647ull, /* Flame: re-pinned for float literals and frand, frames looked at */
     0x3809dd8f3972a6b2ull, /* Hopalong */
-    0x7cecada4d69a47beull, /* Vines: re-pinned for the eraser (#86) */
+    0xcac2f2a7cfe3a5c3ull, /* Vines: single precision, angles reduced in 64-bit turns; looked at, rounding moves a few pixels */
     0x81324f88137bfcf1ull, /* Sierpinski: re-pinned for the eraser (#86) */
     0x39d159495623cf2bull, /* FadePlot */
     0x574c61de3bb517afull, /* Thornbird */
     0x7fa47eb9300dc9dull, /* Spiral */
     0x9748fd2017af52e5ull, /* Sphere */
-    0x1cf92001cbfc23e5ull, /* Discrete */
-    0x4815a4e22a59c710ull, /* Galaxy */
-    0x6026dc7a36bf2a59ull, /* Drift */
+    0xf515df80a322e75eull, /* Discrete: re-pinned for float literals and MAXRAND, frames looked at */
+    0x45841851b3f71f7cull, /* Galaxy: re-pinned for float literals and MAXRAND, frames looked at */
+    0x54c7b5f9d01dda85ull, /* Drift: re-pinned for float literals, MAXRAND and frand, frames looked at */
     0xe97dd56bf15d2b99ull, /* Lightning */
     0, /* Maze: see test_maze_frame_matches_main */
     0x1472437ef1d9a798ull, /* Blaster */
-    0xb90b3ccdac009a41ull, /* Substrate */
+    0x5fcacb0c5dc6c823ull, /* Substrate: re-pinned for float literals and frand, frames looked at */
     0x08a8895ef4d1943cull, /* Pacman: taken after looking at the frames; re-taken for the level pool (#32), whose pick consumes one random() */
     0x0f7959307446f1c1ull, /* Braid: taken after looking at the frames; re-pinned for the eraser (#86) */
     0xbd090f31b6b23308ull, /* Mountain: taken after looking at the frames */
@@ -518,7 +518,7 @@ static const uint64_t kBaseline[] = {
     0x3441a22a1f12785aull, /* Compass: taken after looking at the frames; re-taken for the stroker's shared-edge slack (#56) */
     0xe94fb924120c76a5ull, /* FuzzyFlakes: taken after looking at the frames */
     0xb150a7b7357aa897ull, /* IFS: taken after looking at the frames */
-    0x78c62badb21d8dddull, /* Interaggregate: after looking at the frames, pixels swapped */
+    0x355cbdc840d0e8ceull, /* Interaggregate: re-pinned for the float frand, frames looked at */
     0x7118310d47ee4197ull, /* LMorph: taken after looking at the frames */
     0xe73572fd64eef48full, /* Wormhole: taken after looking at the frames */
     0x7dd7d7130551c261ull, /* Truchet: taken after looking at the frames */
@@ -567,7 +567,7 @@ static const uint64_t kBaseline[] = {
     0x14205ec78f0eaca4ull, /* IMSMap: taken after looking at the frames */
     0xbd3f785cc1a7230full, /* Munch: taken after looking at the frames (GXxor points) */
     0x0f2f79c8e4c26e90ull, /* CCurve: taken after looking at the frames (single precision, limit 30000) */
-    0xb858d0c595de9530ull, /* BinaryHorizon: taken after looking at the frames (24-bit wrapper) */
+    0x55c1dd757123ae20ull, /* BinaryHorizon: taken after looking at the frames (24-bit wrapper, single precision; blend rounding moves a few hundred pixels) */
     0, /* RotZoomer: unpinned on purpose, it zooms the shim's grab image and has none here, so every frame is black (see test_rotzoomer_wrapper) */
     0xb67d586893812842ull, /* NerveRot: taken after looking at the frames (single precision) */
     0x8d05055b1b5d7fe5ull, /* Bouboule: taken after looking at the frames */

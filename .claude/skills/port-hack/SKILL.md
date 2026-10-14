@@ -53,7 +53,10 @@ deferred depth clear): ask before writing it, and name it in the PR body.
 ## 4. Verify on the host
 
 Run `pio test -e native`, `uv run --with pytest --with pillow pytest tools/tests`
-and `uv run tools/check_notices.py`, and dump frames at several counts. Host
+and `uv run tools/check_notices.py`, and dump frames at several counts. For a
+single-precision wrapper, also build for the device and run
+`uv run tools/softdouble_report.py <name>`: a count in a per-frame function is
+a literal, macro or struct the rename missed (`techniques.md`). Host
 frames cannot show a byte swap, which happens in the push to the display: judge
 colour on the device, on a colour you know the answer to.
 
@@ -68,7 +71,11 @@ can still go: Rod dropped Boing (8.3 fps, "pretty boring on a small screen")
 and asked for HexTrail to be tuned because it fell under 10 fps before the
 rotation moved on. Judge a hack on a 466 px round screen, and by its worst
 window as well as its mean. Record the numbers in
-`tools/assessment_measured.md.in`, marking anything unmeasured as such.
+`tools/assessment_measured.md.in`, marking anything unmeasured as such. After a
+batch, log one 20 s-a-hack rotation lap and run `tools/triage_hacks.py`
+(`hacks.md` says how): it shows which hacks are step-bound, push-bound or paced
+by their own delay, with their soft-double calls, so a slow hack is looked at
+for the right reason.
 
 ## 6. Deliver
 

@@ -30,7 +30,7 @@ static Status substrate_alloc_color(Display *dpy, Colormap cmap, XColor *c) {
 #define XSetForeground(dpy, gc, pixel) \
   XSetForeground(dpy, gc, px_swap((uint16_t)(pixel)))
 
-#undef M_PI
-#define M_PI 3.14159265358979323846f
+#include "hacks/single_constants.h"
+#include "hacks/single_frand.h"
 
-#include "substrate/substrate.c"
+#include "substrate_floatlit.c"

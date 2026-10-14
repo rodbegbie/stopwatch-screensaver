@@ -47,7 +47,20 @@ The ESP32-S3 has a single-precision FPU only, so double runs in software.
   `-fsingle-precision-constant` does the same, but Apple clang ignores it, so
   host tests would run other arithmetic than the board.
 - Galaxy, Drift, Discrete, Flame and Substrate were wrapped before this check
-  and have not been looked at for double literals.
+  and now go through it too, with `single_constants.h` (`MAXRAND`, `M_PI`) and
+  `single_frand.h`. Run `uv run tools/softdouble_report.py <name>` on the
+  wrapper's object after `pio run -e stopwatch`: any count in a per-frame
+  function means a literal, macro or `double` struct field the rename missed
+  (`x11shim.md` has the four that did). A trig argument that is a big whole
+  number is a fifth: look at a frame before trusting the float build.
+- A plain single-precision wrapper is cheap to try: include
+  `single_precision.h`, `single_constants.h` and `<name>_floatlit.c`, exclude
+  the original in the three `build_src_filter` lines and list the name in
+  `patch_float_literals.py`. Measure it on the board and drop it if it moves
+  nothing. On the board, step before to after: Hopalong 7-20 to 3.4 ms,
+  WhirlWindWarp 6-26 to 3.8 ms, BinaryHorizon 95.8 to 31.8 ms, Barcode 77.1 to
+  56.1 ms (frames byte-identical), XSpirograph 44.2 to 10.9 ms, Vines 182 to
+  10.3 ms; Bouboule stayed at 14.5 ms.
 - Hand-written `sin` and `cos` (`hacks/fast_trig.h`) moved Braid by 5%. Do the
   literals first.
 - Compare double and float frames at several counts. Early frames match; a

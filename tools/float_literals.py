@@ -25,7 +25,8 @@ _TOKEN = re.compile(
         | '(?:\\.|[^'\\\n])*'
       )
     | (?P<literal>
-          (?:\d+\.\d+|\.\d+|\d+\.(?![\w.]))(?![\w.])
+          (?<![\w.])(?:\d+\.?\d*|\.\d+)[eE][+-]?\d+(?![\w.])
+        | (?:\d+\.\d+|\.\d+|\d+\.(?![\w.]))(?![\w.])
       )
     """,
     re.VERBOSE | re.DOTALL,
@@ -34,7 +35,8 @@ _TOKEN = re.compile(
 
 def float_literals(source: str) -> str:
     """Appends `f` to each decimal literal outside strings, characters and
-    comments. A literal with a suffix or an exponent is left as it is."""
+    comments, including ones with an exponent (`1e-6`). A literal that already
+    has a suffix is left as it is."""
     count = 0
 
     def replace(match: re.Match[str]) -> str:

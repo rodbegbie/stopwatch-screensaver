@@ -67,16 +67,37 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   Anemotaxis and Wormhole, and Euler2D (`euler2d_single.c`), also use
   `single_precision.h` plus build-time float literals (`patch_float_literals.py`
   lists them). `single_precision.h` leaves `floor` and `ceil` on the double
-  versions: Euler2D's wrapper maps them itself. After the literal pass, `nm`
-  still shows soft-double helpers in Euler2D, Halftone, Interaggregate and
-  Anemone; their source was not chased.
+  versions: Euler2D's wrapper maps them itself. After the literal pass the
+  objects still showed soft-double helpers: Interaggregate's were `frand` in
+  `build_field` (fixed with `single_frand.h`); Halftone's, Anemone's and
+  Euler2D's are in `*_init` only, once a start. `tools/softdouble_report.py`
+  lists them by function.
+- To see which hacks are worth a look, flash a build with `-DROTATE_SECONDS=20`,
+  log the serial port for one lap (about 40 minutes), and run
+  `uv run tools/triage_hacks.py lap.log --soft` (after `pio run -e stopwatch`).
+  It sorts each hack into step-bound, push-bound or paced (its own delay is the
+  biggest part of the frame) and puts the soft-double calls in its object
+  beside it. A hack that is step-bound with calls is a wrapper candidate;
+  step-bound with none is in its drawing, not its maths (Braid, Marbling,
+  Discrete, BinaryRing); paced ones gain only what the step saves, down to the
+  delay (Forest 500 ms, Vines 200 ms). A wrapper that moves nothing is worth
+  dropping: Bouboule built single stayed at 14.5 ms, because its cost is
+  ellipse fills.
 - `test_frames_of_every_hack_but_maze_match_main` stops at the first hash that
   differs, in registry order, so repinning several hacks takes one test run
   each (about 85 s), earliest first. A hack whose frames do not change under a
   wrapper (Compass and Halftone in single precision) keeps its hash.
-- Anemone's step moves between 31 and 56 ms as its arms grow and shrink, so its
-  fps is 11 to 15.5 whatever one 20 s window says. Forest waits 500 ms between
-  trees by design (about 2 fps, and the push is 88 rows).
+- Anemone's step moved between 31 and 56 ms as its arms grew and shrank, so its
+  fps was 11 to 15.5 whatever one 20 s window said. Upstream opens every frame
+  by filling the whole window black, which is a full frame of PSRAM writes
+  (229,000 pixels a frame on the host, the strokes only about 16,000 of them),
+  so `anemone_direct.c` erases only where last frame's lines were
+  (`span_erase.h`, each line's box grown by its round caps): 31,000 pixels, the
+  same frames, and only those rows dirty. On the board, over one 20 s window
+  per lap: 30.5 fps mean (worst 20.4), step 25.2 ms. Counting pixels and
+  spans written a frame on the host (a temporary counter in `hspan`) is a
+  quick way to see what a hack costs before the device does. Forest waits
+  500 ms between trees by design (about 2 fps, and the push is 88 rows).
 - A hack that unpacks pixel values itself (Substrate and Interaggregate, in
   their `point2rgb`) assumes ordinary RGB565, but the canvas holds the bytes
   swapped. Its wrapper swaps pixels where they cross `XAllocColor` and
