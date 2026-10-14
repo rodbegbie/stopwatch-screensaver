@@ -1,0 +1,29 @@
+/review
+
+Review profile: general
+
+Task: Review this change for correctness, regressions, API design, missing tests, maintainability, and user-facing behavior changes. Return only real, actionable defects with concrete evidence and an exact code pointer. No praise, summaries, speculation, style preferences, or nice-to-have refactors.
+
+Output format:
+- Start with one verdict line: approve / approve with nits / request changes, plus a short reason.
+- Then list actionable findings only. Each finding MUST be a separate top-level Markdown bullet starting with [high], [medium], or [low].
+- Include an exact file:line pointer in each finding when possible, plus the bug, impact, and fix in one concise paragraph.
+- Do not combine multiple defects in one bullet or paragraph. Do not emit severity-heading paragraphs like "**[HIGH] ...**" without a leading bullet.
+- If there are no actionable findings, output only the verdict line.
+- Keep the report compact: quote only the minimal relevant snippet (a few lines) per finding. Never paste whole files, full diffs, or large logs, and skip decorative formatting like tables or ASCII art — it wastes effort and is not rendered.
+
+Scope: review the commits unique to this branch vs origin/HEAD, plus any uncommitted changes in the working tree. Ignore code outside this scope.
+
+Checkpoint context from commits in scope:
+- 01M4E3H58J58219N6Q6GRQF1MW: prompt: 1. Didn't notice anything wrong with Discrete. Drift and Flame look great too. Nice work!
+- 01M4E0D61X48APY7HSG6KJATV9: no summary or prompt recorded
+- 01M4E0CK4TRM0N4GA7N4AR16NN: no summary or prompt recorded
+- 01M4E0CGJRZX1MRZGKZ2VZEBGG: no summary or prompt recorded
+- 01M4E0CE0FN97YPW16CP2HMAXD: no summary or prompt recorded
+- 01M4E0CBBKTP9RZEACVW1N3AQ0: no summary or prompt recorded
+- 01M4E03A55RQK7JKBP9C27H2HA: prompt: Yes, push it, then end session
+
+Use `entire checkpoint explain <id>` for full checkpoint context, or `entire checkpoint explain <id> --raw-transcript` for raw transcripts.
+
+In-progress session context (uncommitted):
+  7818bbd0 Claude Code prompt: Yes, push it and open the draft PR
