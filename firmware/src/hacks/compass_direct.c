@@ -24,4 +24,4 @@
 #include "compass_floatlit.c"
 
 const HackEntry compass_hack = {"Compass", compass_defaults, compass_init,
-                                compass_draw, compass_free, NULL, NULL};
+                                compass_draw, compass_free, NULL, NULL, 0, 0, 1};
