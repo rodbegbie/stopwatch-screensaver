@@ -308,14 +308,22 @@ static void segment_quad(Canvas *c, vec2 a, vec2 b, int cap1, int cap2, int w,
  * the clip are off screen anyway. */
 static void slanted(Canvas *c, wide_t ix1, wide_t iy1, wide_t ix2, wide_t iy2,
                     int cap1, int cap2, int w, uint16_t colour) {
-  double x1 = (double)ix1, y1 = (double)iy1, x2 = (double)ix2, y2 = (double)iy2;
   /* The clip is in double, which the S3 does in software, and floats are exact
    * well past any canvas, so only ends far outside need it. */
   const wide_t near = (wide_t)1 << 20;
   const int small = ix1 > -near && ix1 < near && iy1 > -near && iy1 < near &&
                     ix2 > -near && ix2 < near && iy2 > -near && iy2 < near;
-  if (!small && !clip_to_canvas(c, (wide_t)w + 2, &x1, &y1, &x2, &y2)) return;
   const float o = centre_offset(w);
+  if (small) {
+    /* Straight from int: an int under 2^20 is exact as a float, so this is
+     * what the double detour gave, without four int64-to-double and four
+     * double-to-float calls a segment. */
+    segment_quad(c, (vec2){(float)(int)ix1 + o, (float)(int)iy1 + o},
+                 (vec2){(float)(int)ix2 + o, (float)(int)iy2 + o}, cap1, cap2, w, colour);
+    return;
+  }
+  double x1 = (double)ix1, y1 = (double)iy1, x2 = (double)ix2, y2 = (double)iy2;
+  if (!clip_to_canvas(c, (wide_t)w + 2, &x1, &y1, &x2, &y2)) return;
   segment_quad(c, (vec2){(float)x1 + o, (float)y1 + o},
                (vec2){(float)x2 + o, (float)y2 + o}, cap1, cap2, w, colour);
 }

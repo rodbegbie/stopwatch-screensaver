@@ -174,6 +174,133 @@ void test_ellipse_partly_offscreen_clips(void) {
   TEST_ASSERT_EQUAL_INT(0, count_set());
 }
 
+/* The original double-precision fill, kept as a reference: the shim now works
+ * the rows out in integers (the S3 does double in software). */
+static void reference_fill_ellipse(Canvas *cv, int x, int y, int w, int h,
+                                   uint16_t color) {
+  if (w <= 0 || h <= 0) return;
+  double cx = x + (w - 1) / 2.0, cy = y + (h - 1) / 2.0;
+  double rx = w / 2.0, ry = h / 2.0;
+  long y0 = y < 0 ? 0 : y, y1 = (long)y + h - 1;
+  if (y1 >= cv->h) y1 = cv->h - 1;
+  for (long yy = y0; yy <= y1; yy++) {
+    double ny = (yy - cy) / ry;
+    double t = 1.0 - ny * ny;
+    if (t < 0) continue;
+    double half = rx * sqrt(t);
+    long xa = (long)ceil(cx - half), xb = (long)floor(cx + half);
+    if (xa < 0) xa = 0;
+    if (xb >= cv->w) xb = cv->w - 1;
+    for (long xx = xa; xx <= xb; xx++) cv->px[yy * cv->w + xx] = color;
+  }
+}
+
+static int ellipse_differences(Canvas *got, Canvas *want, int x, int y, int w, int h) {
+  canvas_clear(got, 0);
+  canvas_clear(want, 0);
+  canvas_fill_ellipse(got, x, y, w, h, C1);
+  reference_fill_ellipse(want, x, y, w, h, C1);
+  int differing = 0;
+  for (int p = 0; p < got->w * got->h; p++) differing += got->px[p] != want->px[p];
+  return differing;
+}
+
+void test_ellipse_fill_matches_the_double_reference_for_every_small_size(void) {
+  Canvas got, want;
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&got, 70, 70, malloc));
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&want, 70, 70, malloc));
+  int wrong = 0, first_w = 0, first_h = 0;
+  for (int w = 1; w <= 48; w++)
+    for (int h = 1; h <= 48; h++)
+      for (int off = -3; off <= 3; off += 3) {
+        int d = ellipse_differences(&got, &want, 10 + off, 12 - off, w, h);
+        if (d && !wrong) first_w = w, first_h = h;
+        wrong += d != 0;
+      }
+  char msg[80];
+  snprintf(msg, sizeof msg, "%d placements differ, first %dx%d", wrong, first_w, first_h);
+  TEST_ASSERT_EQUAL_INT_MESSAGE(0, wrong, msg);
+  canvas_free(&got);
+  canvas_free(&want);
+}
+
+void test_ellipse_fill_matches_the_double_reference_for_big_and_clipped_sizes(void) {
+  Canvas got, want;
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&got, 120, 90, malloc));
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&want, 120, 90, malloc));
+  const int sizes[][2] = {{100, 100}, {101, 99}, {300, 40}, {40, 300}, {466, 466},
+                          {467, 465}, {1000, 700}, {2, 1000}, {1000, 2}, {255, 256}};
+  const int origins[][2] = {{0, 0}, {-50, -30}, {-400, -5}, {60, 45}, {-7, 80}, {119, 89}};
+  int wrong = 0;
+  for (unsigned s = 0; s < sizeof sizes / sizeof sizes[0]; s++)
+    for (unsigned o = 0; o < sizeof origins / sizeof origins[0]; o++)
+      wrong += ellipse_differences(&got, &want, origins[o][0], origins[o][1],
+                                   sizes[s][0], sizes[s][1]) != 0;
+  TEST_ASSERT_EQUAL_INT(0, wrong);
+  canvas_free(&got);
+  canvas_free(&want);
+}
+
+/* The definition itself, in whole numbers: a pixel is in when its centre is
+ * inside the ellipse. Doubled distances from the centre clear the halves. The
+ * double reference above can be wrong at an exact boundary, so this checks the
+ * rows against the arithmetic rather than against another float calculation. */
+static int pixel_is_in_ellipse(int64_t px, int64_t py, int64_t x, int64_t y, int64_t w, int64_t h) {
+  const int64_t dx2 = 2 * (px - x) - w + 1, dy2 = 2 * (py - y) - h + 1;
+  return dx2 * dx2 * h * h + dy2 * dy2 * w * w <= w * w * h * h;
+}
+
+void test_ellipse_fill_is_exact_on_random_big_sizes(void) {
+  enum { CW = 3200, CH = 4 };
+  Canvas big;
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&big, CW, CH, malloc));
+  unsigned long seed = 99;
+  int wrong = 0;
+  for (int trial = 0; trial < 4000; trial++) {
+    seed = seed * 1103515245UL + 12345UL;
+    const int w = 1 + (int)((seed >> 8) % 3000);
+    seed = seed * 1103515245UL + 12345UL;
+    const int h = 1 + (int)((seed >> 8) % 3000);
+    seed = seed * 1103515245UL + 12345UL;
+    const int y = -(int)((seed >> 8) % (unsigned)h); /* which rows show */
+    seed = seed * 1103515245UL + 12345UL;
+    const int x = (int)((seed >> 8) % 100) - 50;
+    canvas_clear(&big, 0);
+    canvas_fill_ellipse(&big, x, y, w, h, C1);
+    for (int row = 0; row < CH && !wrong; row++)
+      for (int px = 0; px < CW; px++)
+        if ((big.px[row * CW + px] == C1) != pixel_is_in_ellipse(px, row, x, y, w, h)) {
+          wrong = trial + 1;
+          break;
+        }
+  }
+  char msg[48];
+  snprintf(msg, sizeof msg, "trial %d is not exact", wrong);
+  TEST_ASSERT_EQUAL_INT_MESSAGE(0, wrong, msg);
+  canvas_free(&big);
+}
+
+/* The float square root that starts each row's search is a little off at some
+ * sizes: found by running the same float arithmetic over every size to 400,
+ * these come out one too big (220 by 21, 264 by 23, 312 by 25) or one too
+ * small (318 by 181). The correction loops must still land on the exact row. */
+void test_ellipse_fill_is_exact_where_the_float_estimate_is_off(void) {
+  const int sizes[][2] = {{220, 21}, {264, 23}, {312, 25}, {318, 181}, {21, 220}, {181, 318}};
+  Canvas big;
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&big, 330, 330, malloc));
+  int wrong = 0;
+  for (unsigned s = 0; s < sizeof sizes / sizeof sizes[0]; s++) {
+    const int w = sizes[s][0], h = sizes[s][1];
+    canvas_clear(&big, 0);
+    canvas_fill_ellipse(&big, 3, 2, w, h, C1);
+    for (int py = 0; py < big.h; py++)
+      for (int px = 0; px < big.w; px++)
+        wrong += (big.px[py * big.w + px] == C1) != pixel_is_in_ellipse(px, py, 3, 2, w, h);
+  }
+  TEST_ASSERT_EQUAL_INT(0, wrong);
+  canvas_free(&big);
+}
+
 void test_polygon_triangle_fills_interior_not_exterior(void) {
   int tri[] = {0, 0, 6, 0, 0, 6};
   canvas_fill_polygon(&c, tri, 3, C1);
@@ -217,76 +344,80 @@ void test_polygon_keeps_every_crossing_when_a_scanline_has_over_64(void) {
   canvas_free(&wide);
 }
 
-/* The original scanline fill with a plain insertion sort, kept as a reference
- * so changes to the sort can be checked for identical output. */
-static void reference_fill_polygon(Canvas *cv, const int *xy, int n,
-                                   uint16_t color) {
-  if (n < 3) return;
-  long ymin = xy[1], ymax = xy[1];
-  for (int i = 1; i < n; i++) {
-    if (xy[2 * i + 1] < ymin) ymin = xy[2 * i + 1];
-    if (xy[2 * i + 1] > ymax) ymax = xy[2 * i + 1];
-  }
-  if (ymin < 0) ymin = 0;
-  if (ymax >= cv->h) ymax = cv->h - 1;
-  double *xs = malloc((size_t)n * sizeof(double));
-  for (long yy = ymin; yy <= ymax; yy++) {
-    int nx = 0;
-    double sy = yy + 0.5;
-    for (int i = 0, j = n - 1; i < n; j = i++) {
-      double yi = xy[2 * i + 1], yj = xy[2 * j + 1];
-      if ((yi <= sy && yj > sy) || (yj <= sy && yi > sy)) {
-        double t = (sy - yi) / (yj - yi);
-        xs[nx++] = xy[2 * i] + t * (xy[2 * j] - xy[2 * i]);
-      }
+/* The fill rule in whole numbers, one pixel at a time: a pixel is in when an odd
+ * number of edges cross its row's centre line (y + 0.5) at or left of its
+ * centre (x + 0.5). An edge from (xi, yi) to (xj, yj) crosses at
+ * x = xlo + (2k + 1) * dx / (2 * dy), with k the row's offset from the edge's
+ * top; comparing that to px + 0.5 and clearing the fractions gives one integer
+ * test. Slow (every pixel looks at every edge) and independent of the fill. */
+static int pixel_is_in_polygon(const int *xy, int n, int px, int py) {
+  int crossings = 0;
+  for (int i = 0, j = n - 1; i < n; j = i++) {
+    int64_t xlo = xy[2 * i], ylo = xy[2 * i + 1], xhi = xy[2 * j], yhi = xy[2 * j + 1];
+    if (ylo > yhi) {
+      int64_t t;
+      t = xlo, xlo = xhi, xhi = t;
+      t = ylo, ylo = yhi, yhi = t;
     }
-    for (int a = 1; a < nx; a++)
-      for (int b = a; b > 0 && xs[b - 1] > xs[b]; b--) {
-        double tmp = xs[b];
-        xs[b] = xs[b - 1];
-        xs[b - 1] = tmp;
-      }
-    for (int k = 0; k + 1 < nx; k += 2) {
-      long xa = (long)ceil(xs[k] - 0.5), xb = (long)ceil(xs[k + 1] - 0.5) - 1;
-      if (xa < 0) xa = 0;
-      if (xb >= cv->w) xb = cv->w - 1;
-      for (long x = xa; x <= xb; x++) cv->px[yy * cv->w + x] = color;
-    }
+    if (py < ylo || py >= yhi) continue;
+    const int64_t dx = xhi - xlo, dy = yhi - ylo, k = py - ylo;
+    crossings += (2 * k + 1) * dx + 2 * dy * (xlo - px) - dy <= 0;
   }
-  free(xs);
+  return crossings & 1;
 }
 
-void test_polygon_fill_matches_the_reference_on_random_polygons(void) {
-  enum { W = 120, H = 100, MAXN = 1000 };
+static int polygon_differences(const int *xy, int n, Canvas *got) {
+  canvas_clear(got, 0);
+  canvas_fill_polygon(got, xy, n, C1);
+  int differing = 0;
+  for (int py = 0; py < got->h; py++)
+    for (int px = 0; px < got->w; px++)
+      differing += (got->px[py * got->w + px] == C1) != pixel_is_in_polygon(xy, n, px, py);
+  return differing;
+}
+
+void test_polygon_fill_is_exact_on_random_polygons(void) {
+  enum { W = 90, H = 70, MAXN = 1000 };
   static int xy[MAXN * 2];
-  Canvas got, want;
+  Canvas got;
   TEST_ASSERT_EQUAL_INT(0, canvas_init(&got, W, H, malloc));
-  TEST_ASSERT_EQUAL_INT(0, canvas_init(&want, W, H, malloc));
-  unsigned long seed = 12345;
+  unsigned long seed = 777;
   const int sizes[] = {3, 4, 5, 7, 12, 30, 64, 65, 100, 250, 500, 1000};
-  for (int round = 0; round < 3; round++) {
-    for (unsigned s = 0; s < sizeof(sizes) / sizeof(sizes[0]); s++) {
-      int n = sizes[s];
+  int wrong = 0, wrong_n = 0;
+  for (int round = 0; round < 12; round++)
+    for (unsigned s = 0; s < sizeof sizes / sizeof sizes[0]; s++) {
+      const int n = sizes[s];
+      const int span = round < 6 ? 8 : 60; /* few distinct values means many exact ties */
       for (int i = 0; i < n * 2; i += 2) {
         seed = seed * 1103515245UL + 12345UL;
-        xy[i] = (int)((seed >> 8) % (W + 60)) - 30;
+        xy[i] = (int)((seed >> 8) % (unsigned)(W + 2 * span)) - span;
         seed = seed * 1103515245UL + 12345UL;
-        xy[i + 1] = (int)((seed >> 8) % (H + 60)) - 30;
+        xy[i + 1] = (int)((seed >> 8) % (unsigned)(H + 2 * span)) - span;
       }
-      canvas_clear(&got, 0);
-      canvas_clear(&want, 0);
-      canvas_fill_polygon(&got, xy, n, C1);
-      reference_fill_polygon(&want, xy, n, C1);
-      for (int p = 0; p < W * H; p++)
-        if (got.px[p] != want.px[p]) {
-          char msg[64];
-          snprintf(msg, sizeof(msg), "n=%d first difference at pixel %d", n, p);
-          TEST_FAIL_MESSAGE(msg);
-        }
+      if (round < 6) /* a coarse lattice: many edges through pixel centres */
+        for (int i = 0; i < n * 2; i++) xy[i] = xy[i] / 8 * 8;
+      const int differing = polygon_differences(xy, n, &got) != 0;
+      if (differing && !wrong) wrong_n = n;
+      wrong += differing;
     }
-  }
+  char msg[64];
+  snprintf(msg, sizeof msg, "%d polygons differ, first with n=%d", wrong, wrong_n);
+  TEST_ASSERT_EQUAL_INT_MESSAGE(0, wrong, msg);
   canvas_free(&got);
-  canvas_free(&want);
+}
+
+void test_polygon_45_degree_edges_through_pixel_centres_fill_the_same_every_time(void) {
+  /* A diamond whose edges pass exactly through pixel centres. A pixel on a
+   * left edge is in, one on a right edge is out. */
+  Canvas got;
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&got, 30, 30, malloc));
+  const int diamond[] = {10, 3, 17, 10, 10, 17, 3, 10};
+  TEST_ASSERT_EQUAL_INT(0, polygon_differences(diamond, 4, &got));
+  const int triangle[] = {0, 0, 21, 0, 0, 21};
+  TEST_ASSERT_EQUAL_INT(0, polygon_differences(triangle, 3, &got));
+  const int thirds[] = {1, 1, 25, 4, 7, 27}; /* slopes with no exact float form */
+  TEST_ASSERT_EQUAL_INT(0, polygon_differences(thirds, 3, &got));
+  canvas_free(&got);
 }
 
 static void fill_pattern(void) {
@@ -658,7 +789,6 @@ int main(void) {
   RUN_TEST(test_disc_rows_are_symmetric_and_widest_in_the_middle);
   RUN_TEST(test_disc_includes_every_pixel_touching_the_circle);
   RUN_TEST(test_disc_follows_a_small_canvas);
-  RUN_TEST(test_polygon_fill_matches_the_reference_on_random_polygons);
   RUN_TEST(test_polygon_keeps_every_crossing_when_a_scanline_has_over_64);
   RUN_TEST(test_rgb565_white_black_red);
   RUN_TEST(test_rgb565_from16_matches_8bit);
@@ -680,6 +810,12 @@ int main(void) {
   RUN_TEST(test_ellipse_zero_size_draws_nothing);
   RUN_TEST(test_ellipse_5x5_is_symmetric);
   RUN_TEST(test_ellipse_partly_offscreen_clips);
+  RUN_TEST(test_ellipse_fill_matches_the_double_reference_for_every_small_size);
+  RUN_TEST(test_ellipse_fill_matches_the_double_reference_for_big_and_clipped_sizes);
+  RUN_TEST(test_ellipse_fill_is_exact_on_random_big_sizes);
+  RUN_TEST(test_ellipse_fill_is_exact_where_the_float_estimate_is_off);
+  RUN_TEST(test_polygon_fill_is_exact_on_random_polygons);
+  RUN_TEST(test_polygon_45_degree_edges_through_pixel_centres_fill_the_same_every_time);
   RUN_TEST(test_polygon_triangle_fills_interior_not_exterior);
   RUN_TEST(test_polygon_degenerate_changes_nothing);
   RUN_TEST(test_polygon_offscreen_vertices_clip);

@@ -163,8 +163,8 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   `XCopyArea` is skipped) and blends each blob in at the alpha upstream's jwxyz
   path uses. Its full-frame clear cost 15 ms, so `hacks/span_erase.h` erases
   only the bounding boxes the blobs filled last frame (pixel-identical frames):
-  14.6-15.2 fps translucent. The shared `canvas_fill_polygon` is still double
-  (Hexadrop has its own convex float fill). Goop is built through
+  14.6-15.2 fps translucent. The shared `canvas_fill_polygon` is integer now
+  (see `x11shim.md`; Hexadrop has its own convex float fill). Goop is built through
   `goop_direct.c` with `HAVE_JWXYZ`; the colour-plane path needs planes the
   canvas lacks.
 - A wrapper that does `#define double float` must include any header with a
