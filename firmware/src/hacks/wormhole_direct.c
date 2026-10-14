@@ -12,4 +12,4 @@
 #include "wormhole/wormhole.c"
 
 const HackEntry wormhole_hack = {"Wormhole", wormhole_defaults, wormhole_init,
-                                wormhole_draw, wormhole_free, NULL, NULL};
+                                wormhole_draw, wormhole_free, NULL, NULL, 0, 0, 1};
