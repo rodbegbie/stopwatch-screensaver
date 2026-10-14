@@ -23,11 +23,16 @@ Moved verbatim from AGENTS.md.
   usually checked out in Rod's main checkout, so `git fetch origin main:main`
   is refused there: run `git merge --ff-only origin/main` in it, only if
   `git status` shows no tracked changes.
-- Merge with `gh pr ready N` then `gh pr merge N --merge` once Rod approves
-  (trail PRs are drafts). His approval is enough: do not wait for the Entire
-  Gates check to finish. A stacked PR's gate
-  can fail "Up to date: 1 commit behind" once its parent merges: if approvals
-  and findings pass and the PR is mergeable, merge it, with no rebase.
+- Merge with `gh pr ready N` then `entire trail merge <trail>` (the trail
+  number, not the PR number; omit it on the trail's branch) once Rod approves
+  (trail PRs are drafts). `entire trail merge` checks the gates first and
+  merges nothing while one fails or is pending; `--dry-run` reports which.
+  Rod's approval is enough: do not wait for the Entire Gates check to finish.
+  If the only failing gates are Approvals (he approved in chat) or a stacked
+  PR's "Up to date: 1 commit behind" once its parent merges, and the PR is
+  mergeable, run `entire trail merge <trail> --force --yes` with no rebase;
+  the bypass is recorded on the trail. For any other failing gate, stop and
+  tell Rod.
 - Before merging, `git fetch` and compare the PR's `headRefOid` with your tip:
   Rod sometimes pushes to the branch (docs commits, a merge of `main`). Read
   what arrived with `git log --oneline <tip>..origin/<branch>`, and clean up
@@ -37,8 +42,7 @@ Moved verbatim from AGENTS.md.
 - A review of fixed code can raise a new finding on the fix itself (a clamp
   that did not stop a wrap). Reproduce it with a failing test before changing
   the code, and mutation-check each branch of the new guard.
-- `entire agent-help` says trails are unavailable; `entire trail create` works.
-  Write a PR body to a file for `gh pr edit --body-file` (an apostrophe in an
+- Write a PR body to a file for `gh pr edit --body-file` (an apostrophe in an
   inline `--body '...'` must be `'"'"'`).
 - `gh pr edit N --body-file` replaces the whole body, including the
   `<!-- entire-trail-link-start -->` ... `-end -->` block at the top. Keep that
@@ -92,6 +96,7 @@ Moved verbatim from AGENTS.md.
   says to, even once the gates are green.
 - If `entire trail create` reports "failed to push branch", run
   `git push -u origin <branch>` and rerun it: the trail is then created.
-- Run `gh pr ready N` and `gh pr merge N --merge` as separate commands: on a
-  PR that is already ready, `ready` exits non-zero and skips a chained merge.
+- Run `gh pr ready N` and `entire trail merge <trail>` as separate commands:
+  on a PR that is already ready, `ready` exits non-zero and skips a chained
+  merge.
   Confirm with `gh pr view N --json state`.
