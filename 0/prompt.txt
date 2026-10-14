@@ -1,0 +1,1 @@
+There's a bug -- after I flip through the overlays, clicking to go to the next hack (Forest) doesn't clear the screen first.  Also, sometimes tapping through the overlays, the text ones don't appear (although the QR code does)
