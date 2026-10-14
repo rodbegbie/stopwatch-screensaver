@@ -1,0 +1,25 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M4Y1B0084P58NX7X6DEDSTCP",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 390,
+    "cache_creation_tokens": 380162,
+    "cache_read_tokens": 45074192,
+    "output_tokens": 206351,
+    "api_call_count": 193
+  },
+  "imported": true
+}
