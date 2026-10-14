@@ -151,3 +151,19 @@ Moved verbatim from the Gotchas section of AGENTS.md.
 - A hack's returned delay is waited after the push, and only the push counts
   against it, so its own step adds to the frame time: to hold a rate, return
   the target minus the step (`ad_flyingtoasters.c`: 19.5 fps became 28.9).
+- PSRAM cost model (`diag/psram_bench.h`, `-DPSRAM_BENCH`): the data cache is
+  32 KB, 8-way, 32-byte lines over 80 MHz octal PSRAM, and every miss costs
+  about 0.92 us whatever the write size (sequential about 35 MB/s). Firmware
+  switches to 64-byte lines (4-way) when a hack starts (`dcache.h`, through
+  ROM calls the SDK header says an application should not make): sequential
+  passes get about 28% faster and the full-frame push drops from 29 to
+  24.8 ms, but a lone short write costs 1.3 us a miss. Pinned A/B, two
+  rounds each: Deluxe, Interference, Kumppa, Abstractile +9%, HexTrail +17%,
+  Marbling +7%, WhirlWindWarp +6%, Qix and Hexadrop +4%, Gears +3%; Lisa,
+  Substrate, XRaySwarm, Pyro, RotZoomer flat. A `sync_to_refresh` hack
+  keeps 32 bytes (Unknown Pleasures' offset was swept against the old copy
+  time) and so does Discrete (-5% fps, step 67.9 to 72.8 ms, many short
+  spans). `-DDCACHE_LINE32` turns it off for every hack. Compare builds only
+  pinned: a free-running lap changes random parameters per visit and showed
+  false regressions of 3x on five hacks. A ROM prefetch setting (trigger 1,
+  size 0) changed nothing; other settings are untried.

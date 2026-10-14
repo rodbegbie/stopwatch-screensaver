@@ -76,6 +76,12 @@ Moved verbatim from AGENTS.md.
   change, put it behind a temporary `-D` switch (as `-DPUSH_NO_DISC` does).
   It takes one `--hack` per run: loop several from a scratchpad script run
   with `run_in_background`, and `touch` a done file at the end.
+- `-DDCACHE_LINE32` keeps the SDK's 32-byte data-cache lines for every hack
+  (the default is 64 bytes, see `device-display.md`), so it is the A side of an
+  `ab_flash` comparison. `-DPSRAM_BENCH` boots into `diag/psram_bench.h`
+  instead of the runner and prints cost per cache miss, sequential rates and a
+  working-set sweep; `-DPSRAM_BENCH_VARIANT=0..3` picks the line size and
+  prefetch setting.
 - `esptool` reads of the 16 MB flash need `--baud 921600` (about 3.5 minutes)
   and show no progress when piped.
 - Another session may be using the board. Before flashing, run `lsof
