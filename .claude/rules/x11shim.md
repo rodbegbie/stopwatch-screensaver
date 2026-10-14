@@ -63,8 +63,32 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   that draws wide lines (random width 1-7; Maze's width 2 is under
   `HAVE_JWXYZ`). A round-capped segment draws a disc at each end, so
   `stroke.c` keeps each width's rows in a table (widths to 16) rather than
-  calling `canvas_fill_ellipse`, whose `double` maths is software on the S3. A
-  test pins the pixels to `canvas_fill_ellipse`.
+  calling `canvas_fill_ellipse` (which used to do `double` maths per row, in
+  software on the S3; see below). A test pins the pixels to
+  `canvas_fill_ellipse`.
+- `canvas_fill_ellipse` and `canvas_fill_polygon` work in whole numbers, not
+  double (the S3 does double in software). The ellipse is exact: a pixel is in
+  when `dx2^2 * h^2 <= w^2 * (h^2 - dy2^2)` with distances doubled, and a float
+  `sqrt` only starts the search for each row (it is wrong by one at 220 by 21,
+  264 by 23, 312 by 25 and 318 by 181, which the tests pin). The polygon steps
+  each edge's crossing with a quotient and remainder, no division per row, and
+  a pixel on a left edge is in and one on a right edge is out. The old double
+  fill was not consistent at exact ties (a 45 degree edge through integer
+  vertices): it left stray hatch marks on Qix's thin sliver polygons, so Qix
+  (612 pixels) and Pedal (3) re-pinned. Sizes or coordinates past 32768 and
+  2^24 keep the double code. On the board (step, before to after): Bouboule
+  14.5 to 5.2 ms (27.4 to 36.8 fps), Qix 14.6 to 1.9 ms (37.3 to 70.1 fps),
+  Pedal 21.8 to 8.6 ms (it then holds the picture for 5 s).
+- Lisa is the counter-example to "the stroker maths is the cost" (#98).
+  `stroke.c`'s hot path was already float, and converting a slanted segment's
+  ends from int straight to float moved Lisa by nothing (52.1 ms before and
+  after). With the line calls compiled out its step is 5.2 ms, so 47 ms of 52
+  is drawing: 1,396 segments, 6.7k spans and 16k pixels a frame at width 2 and
+  13k spans and 65k pixels at width 8. About 3.6 us a span against about 0.1
+  us a pixel in a sequential full-frame write suggests each scattered span pays
+  a PSRAM cache-line miss (a cost per line touched, not per pixel). Not
+  proved: the way to test it is the PSRAM and data-cache settings (speed, line
+  size, cache size), which no hack can change.
 - `single_precision.h` renames the keyword `double`, not literals: `0.5 * x`
   is still software double. Braid's wrapper includes a copy of the hack with
   every decimal literal suffixed `f`, written at build time by
