@@ -70,8 +70,32 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   every decimal literal suffixed `f`, written at build time by
   `firmware/patch_float_literals.py` (`tools/float_literals.py`). Check a
   wrapper's object for `__muldf3` and friends with `xtensa-esp32s3-elf-nm`.
-  The older wrappers (Galaxy, Drift, Discrete, Flame, Substrate) have not been
-  checked.
+  `uv run tools/softdouble_report.py <name>` does that for every object in
+  the device build, by function: a count in a per-frame function is a literal
+  or a macro the header could not reach. It lists none in Galaxy, Discrete,
+  Drift, Flame, Substrate or Interaggregate now.
+- Four things hide soft double from `single_precision.h`, each found by that
+  report. `frand` (`single_frand.h`) and `MAXRAND`, `M_PI`, `M_PI_2` and
+  `M_PI_4` (`single_constants.h`) are macros with a decimal literal in their
+  body, past the literal pass; both headers are opt-in, since each moves the
+  wrapper's frames and pins. Exponent literals (`1e-6`, `1.0E5`) were skipped
+  by `float_literals.py` until Drift and Flame showed one each. A struct
+  declared with `double` fields before the rename keeps them, so a float
+  `corners[j].x * size` plus a `double` `pos.x` is a software add: HexTrail's
+  `XYZ` (from `normals.h`) was 94 calls in `draw_hextrail`. Give the hack its
+  own float struct under the same name, and `normals.h` another name for the
+  double one (`hextrail_single_gl.c`; frames byte-identical). And a trig
+  argument that is a big whole number cannot be a float: XSpirograph's second
+  angle is millions of degrees and Vines' is an `int` in the billions, so a
+  plain `double` to `float` turned both pictures to noise. XSpirograph reduces
+  its angles mod 360 in integers at build time (`tools/xspirograph_patch.py`);
+  Vines builds `(double) a` as `(long) a`, so its `cos` macro gets the exact
+  integer and takes the phase as a 64-bit multiply by 2^64 / 2 pi, wrapping
+  into whole turns (`vines_single.c`). Look at a frame before trusting a
+  float build of anything whose angles grow. To find the line of a stray
+  promotion, add `-Wdouble-promotion -fsyntax-only` to a file's compile
+  command in `firmware/compile_commands.json` (`pio run -e stopwatch -t
+  compiledb`; delete the file afterwards, it upsets the editor).
 - A colour pixmap is a `Canvas`, and every drawing primitive draws on the
   drawable it is given (`xshim_target` in `pixmap.c`); `None` draws nothing,
   and a bitmap takes only `XCopyArea`, `XCopyPlane` and filled rectangles and
