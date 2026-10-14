@@ -1,0 +1,85 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M4Y1B4WEC70DT95087F2GVGQ",
+  "session_id": "8f345155-1bb4-452e-b0dc-3edc9f713a24",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-14T20:23:29.607629Z",
+  "branch": "main",
+  "checkpoints_count": 5,
+  "save_step_count": 1,
+  "files_touched": [
+    ".private-journal/2026-10-13/08-14-09-000000-1d69e6f3.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "05649b5f0fc0",
+  "checkpoint_transcript_start": 322,
+  "transcript_lines_at_start": 322,
+  "compact_transcript_start": 38,
+  "token_usage": {
+    "input_tokens": 22,
+    "cache_creation_tokens": 6074,
+    "cache_read_tokens": 1129701,
+    "output_tokens": 3096,
+    "api_call_count": 11
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_011UxoLRJEfoeDjVHP5r2FYd",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "deliver-branch"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "c19223fdac56",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 147,
+        "end": 148,
+        "entry_ids": [
+          "1fff9d93-3ec4-4f4f-b429-ff9585e83262"
+        ],
+        "tool_use_id": "toolu_011UxoLRJEfoeDjVHP5r2FYd"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_011UxoLRJEfoeDjVHP5r2FYd"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: deliver-branch",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "prompt-skill-claude-code-address-findings-2026-10-13T15:04:19.31033Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "address-findings"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "c8a1ae3c9d7f",
+      "timestamp": "2026-10-13T15:04:19.31033Z",
+      "native": {
+        "command": "/address-findings"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/address-findings",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 9
+  }
+}
