@@ -46,4 +46,4 @@ static void piecewise_free(Display *dpy, Window window, void *closure) {
 }
 
 const HackEntry piecewise_hack = {"Piecewise", piecewise_defaults, piecewise_init,
-                                  piecewise_draw, piecewise_free, NULL, NULL};
+                                  piecewise_draw, piecewise_free, NULL, NULL, 0, 0, 1};
