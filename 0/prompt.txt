@@ -1,0 +1,89 @@
+yes
+
+---
+
+Both fixed, overlays work now.  There's some tearing, but that's always been true on this hack (and happens when the text is overlaid)
+
+---
+
+1 and 3
+
+---
+
+post it
+
+---
+
+Let's start working on the general design.
+
+---
+
+Yes, just the flagged hacks
+
+---
+
+Yes, approved, go to the plan
+
+---
+
+Native, go ahead
+
+---
+
+<task-notification>
+<task-id>bcq9kwu7l</task-id>
+<tool-use-id>toolu_01HSp7Apoa2NKbLRaS7kSTvY</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/26a59402-13a1-41f3-b00e-bfe625a6bf7d/tasks/bcq9kwu7l.output</output-file>
+<status>completed</status>
+<summary>Background command "Run the full host suite in the background" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bwfh26tks</task-id>
+<tool-use-id>toolu_01JNWRDPMPPUMetkHTidwnEf</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/26a59402-13a1-41f3-b00e-bfe625a6bf7d/tasks/bwfh26tks.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for the full suite to finish" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+You can flash for Tasks 5 and 6.
+
+---
+
+<task-notification>
+<task-id>b6weckgqp</task-id>
+<tool-use-id>toolu_01Twv7uCW2fXg7U39Dke8pHa</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/26a59402-13a1-41f3-b00e-bfe625a6bf7d/tasks/b6weckgqp.output</output-file>
+<status>completed</status>
+<summary>Background command "Start the sweep detached" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+how's it going so far?
+
+---
+
+Carry on, let me know when the sweep's done
+
+---
+
+<task-notification>
+<task-id>bz2vy6ra8</task-id>
+<tool-use-id>toolu_01NDWhJp1xNcKM3qj5BSUSHd</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/26a59402-13a1-41f3-b00e-bfe625a6bf7d/tasks/bz2vy6ra8.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for the sweep to finish" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Very cool.  Yes, reflash the device and then I'll look at the board locally
+
+---
+
+Everything looks good on the device.  fps readout is usually closer to the "Plain fps" number, but I think that makes sense since the fps display is switching it from Overlap mode?
