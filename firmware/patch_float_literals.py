@@ -46,6 +46,8 @@ for name in ("braid",) + (
     "galaxy",
     "xspirograph",
     "vines",
+    "hopalong",
+    "whirlwindwarp",
     "discrete",
     "drift",
     "flame",
