@@ -49,6 +49,7 @@ for name in ("braid",) + (
     "hopalong",
     "whirlwindwarp",
     "binaryhorizon",
+    "barcode",
     "discrete",
     "drift",
     "flame",
