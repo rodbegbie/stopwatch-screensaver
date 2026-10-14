@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4W3WTQRRQAYC2P1X1QZKE08",
+  "strategy": "manual-commit",
+  "branch": "feature/hack-wrappers",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "firmware/patch_float_literals.py",
+    "firmware/test/test_hacks/test_hacks.c",
+    "tools/tests/test_triage_hacks.py",
+    "tools/triage_hacks.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 120,
+    "cache_creation_tokens": 52390,
+    "cache_read_tokens": 13112352,
+    "output_tokens": 26728,
+    "api_call_count": 60
+  }
+}
