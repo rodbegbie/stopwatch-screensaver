@@ -1,0 +1,22 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M4Y02MV28RT9A76PK2AP0883",
+  "session_id": "fc2c6f80-b6ad-4846-814a-ceddf7f16f03",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-14T20:01:22.675771Z",
+  "branch": "feature/54-push-overlap",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": null,
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 10,
+    "cache_creation_tokens": 33155,
+    "cache_read_tokens": 156659,
+    "output_tokens": 1619,
+    "api_call_count": 5
+  },
+  "kind": "imported"
+}
