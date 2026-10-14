@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.11.4",
+  "checkpoint_id": "01M4WGTQ8AQK4H4Q9E4K19WJBF",
+  "strategy": "manual-commit",
+  "branch": "feature/dcache-64-byte-lines",
+  "checkpoints_count": 10,
+  "files_touched": [
+    "firmware/src/dcache.h",
+    "firmware/src/diag/psram_bench.h",
+    "firmware/src/main.cpp"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 168,
+    "cache_creation_tokens": 137421,
+    "cache_read_tokens": 23763985,
+    "output_tokens": 55810,
+    "api_call_count": 84
+  }
+}
