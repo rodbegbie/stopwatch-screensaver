@@ -1,0 +1,55 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M4Y1B1EW9G6G5DR2A9DN6KSW",
+  "session_id": "55911a95-94f2-4d02-bde2-fa3ebd532a21",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-14T20:23:26.255618Z",
+  "branch": "main",
+  "checkpoints_count": 1,
+  "save_step_count": 28,
+  "files_touched": null,
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 284,
+    "cache_creation_tokens": 182631,
+    "cache_read_tokens": 18925577,
+    "output_tokens": 93544,
+    "api_call_count": 140
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01W7EyHLQUNPCshsgfk7ihzm",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 312,
+        "end": 313,
+        "entry_ids": [
+          "3b46cdd1-1f24-48da-854f-89737928fe09"
+        ],
+        "tool_use_id": "toolu_01W7EyHLQUNPCshsgfk7ihzm"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01W7EyHLQUNPCshsgfk7ihzm"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "kind": "imported"
+}
