@@ -29,6 +29,9 @@ typedef struct HackEntry {
    * out the hack's delay, is not counted against that delay, so a synced hack
    * with a long delay could overrun it. Unknown Pleasures never does. */
   int sync_to_refresh;
+  /* Nonzero to keep the data cache's 32-byte lines (main.cpp sets 64 for the
+   * rest): a hack that makes many short PSRAM writes runs slower with 64. */
+  int dcache_line32;
 } HackEntry;
 
 #ifdef __cplusplus

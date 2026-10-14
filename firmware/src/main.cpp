@@ -2,6 +2,11 @@
 #include <esp_heap_caps.h>
 #include <string.h>
 
+#include "dcache.h"
+#ifdef PSRAM_BENCH
+#include "diag/psram_bench.h"
+#endif
+
 extern "C" {
 #include "core/canvas.h"
 #include "core/push_plan.h"
@@ -488,7 +493,21 @@ static void present() {
 
 /* Whatever started the hack, the name shows again, the rotation countdown
  * restarts and the stats begin afresh. */
+/* 64-byte data cache lines make every sequential PSRAM pass, the display push
+ * above all, about 14% cheaper (device A/B in .claude/rules/device-display.md).
+ * A TE-synced hack keeps the SDK's 32 bytes: its push offset was swept against
+ * the old copy time. A hack with many short spans (Discrete, -5% fps) asks for
+ * dcache_line32. -DDCACHE_LINE32 keeps 32 bytes for every hack. */
+#ifdef DCACHE_LINE32
+static const uint32_t kBulkLineBytes = 32;
+#else
+static const uint32_t kBulkLineBytes = 64;
+#endif
+
 static void hackStarted() {
+  const HackEntry *hack = g_hacks[runner_index(runner)];
+  const bool keep32 = hack->sync_to_refresh || hack->dcache_line32;
+  dcache_set_line_size(keep32 ? 32 : kBulkLineBytes);
   uint32_t now = millis();
   overlay_hack_started(&overlay, now);
   rotation_reset(&rotation, now);
@@ -585,6 +604,11 @@ void setup() {
   auto cfg = M5.config();
   M5.begin(cfg);
   Serial.begin(115200);
+#ifdef PSRAM_BENCH
+  delay(3000);
+  psram_bench::run();
+  for (;;) delay(1000);
+#endif
   M5.Display.setSwapBytes(false);
 #ifdef HAVE_GRAB_IMAGE
   xshim_set_grab_image(grab_image_blob, sizeof(grab_image_blob));
