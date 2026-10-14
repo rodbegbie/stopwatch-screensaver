@@ -1,0 +1,41 @@
+commit and push the AGENTS.md change on main.  Then end session.
+
+---
+
+/learning-opportunities
+
+---
+
+yes
+
+---
+
+The level was changing and was somewhere between "low" and "high"?
+
+---
+
+The order it was seeing the values.  4710-4583 > 30
+
+---
+
+Register that it's fired, but then wait a bit for it to settle before reading the value
+
+---
+
+It runs on each interrupt, and evaluates if things are settled.
+
+---
+
+Ah, it's checking both buttons' values every 5ms
+
+---
+
+You wouldn't know how long it had been held for if it was held for less than 100ms
+
+---
+
+Not sure.
+
+---
+
+OK, I'm good. Let's wrap it up.
