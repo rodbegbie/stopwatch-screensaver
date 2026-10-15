@@ -543,6 +543,10 @@ single precision, opaque), with the first two windows (one or two bubbles) at
 depth test on and moved nothing measurable: the same capture without it read
 mean 11.5, step 27-102 ms.
 
+Bubbles is not measured on the board yet. On the host a step takes 0.06 ms,
+and its 44 deflated bubble images and code add about 70 KB of flash (52.0% of
+the app partition with it).
+
 ## Buttons
 
 M5Unified reads the StopWatch buttons (GPIO2 for A and GPIO1 for B, active

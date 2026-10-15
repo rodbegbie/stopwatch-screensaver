@@ -481,3 +481,15 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   bubble (found by the trail review): the registry overrides `*transparent:
   False`, which enables the depth test. It cost nothing measurable on the
   board (mean 11.5 before, 11.4 after).
+- Bubbles (`bubbles_safe.c`, `bubbles_sprites.py`) is three copied files and
+  44 PNGs (four sets of eleven sizes: blood, blue, glass, jade) that the
+  pre-script deflates into the build dir with `make_logo_blob.py --deflate`,
+  never committed. Upstream's free leaks every live bubble in the mesh lists
+  and one extra step pixmap: the wrapper frees both, and the leak test fails
+  if either free is removed (checked by mutation). `bubbles.h` includes
+  `<X11/Xlib.h>`, which the shim now answers with a header that pulls in
+  `xshim.h`. A host dump always shows the same set, so seed `random()` to see
+  the others (jade, blue and glass came up in six seeds, blood did not). A
+  single frame can show a bubble with a bite out of it while neighbours merge
+  and are redrawn; the bite is gone a few frames later. Flash and device fps
+  are unmeasured at the time of the port.
