@@ -1,0 +1,78 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M4YQPX59GKT9DGVXFX6AT3FT",
+  "session_id": "01a13d39-4993-72e0-8026-a45e0690e3ad",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-15T02:54:23.706196Z",
+  "branch": "port-bubbles",
+  "checkpoints_count": 2,
+  "save_step_count": 1,
+  "files_touched": [
+    "THIRD_PARTY_NOTICES.md",
+    "firmware/bubbles_sprites.py",
+    "firmware/test/test_hacks/test_hacks.c"
+  ],
+  "agent": "Pi",
+  "model": "Beam-1.0-501B-A23B",
+  "turn_id": "7af890e188eb",
+  "checkpoint_transcript_start": 373,
+  "transcript_lines_at_start": 373,
+  "compact_transcript_start": 188,
+  "token_usage": {
+    "input_tokens": 197776,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1489856,
+    "output_tokens": 2909,
+    "api_call_count": 15
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "pi-skill-hunk-review-2026-10-15T02:37:08.708Z-0",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "hunk-review"
+      },
+      "source": {
+        "agent": "pi",
+        "signal": "input_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "5078dec39f3c",
+      "timestamp": "2026-10-15T02:37:08.708Z",
+      "native": {
+        "command": "/skill:hunk-review"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/skill:hunk-review",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "pi-skill-address-findings-2026-10-15T02:44:04.383Z-0",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "address-findings"
+      },
+      "source": {
+        "agent": "pi",
+        "signal": "input_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "e5d7c21ba644",
+      "timestamp": "2026-10-15T02:44:04.383Z",
+      "native": {
+        "command": "/skill:address-findings"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/skill:address-findings",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 13
+  }
+}
