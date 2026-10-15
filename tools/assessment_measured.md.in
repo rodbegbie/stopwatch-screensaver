@@ -192,7 +192,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Barcode | 14.0-16.2 | 42.5-52.2 ms | 17.8-18.9 ms | 0.0 ms | about 1.4 MB |
 | Bubble3D (sphere depth 3, double) | 2.6-5.2 | 188-390 ms | 0.2-5.4 ms | 5.9-11.2 ms | about 0.78 MB |
 | Bubble3D (sphere depth 3, single precision) | 4.0-10.0 | 88-241 ms | 0.2-13.7 ms | 0-11.2 ms | about 0.78 MB |
-| Bubble3D | 8.2-26.4, mean 11.5 | 27-102 ms | 3.3-23.7 ms | 0-8.1 ms | about 0.65 MB |
+| Bubble3D | 8.2-26.4 | 27-101 ms | 3.3-23.7 ms | 0-8.1 ms | about 0.65 MB |
 | Marbling (as copied, gridsize 2, 5 iterations) | 0.6 | 1785 ms | 29.1 ms | 0 ms | about 430 KB |
 | CCurve (as copied, double, `limit` 200,000) | 0.2-2.2 | 49-2927 ms | 29.1 ms | 411-3292 ms | about 420 KB |
 | Droste (full size) | 1.6 | 630 ms | 29.1 ms | 0 ms | about 1.7 MB |
@@ -536,6 +536,12 @@ large local arrays can hit the same limit.
 
 Pyro's `init` builds two 6284-entry sine and cosine tables in double
 precision, so restarting it dips to about 17 fps for a few seconds.
+
+Bubble3D's mean over 130 s on the board was 11.4 fps (25 windows, depth 2,
+single precision, opaque), with the first two windows (one or two bubbles) at
+26 and 16 fps and the worst window 8.2 fps. The opaque override turns the
+depth test on and moved nothing measurable: the same capture without it read
+mean 11.5, step 27-102 ms.
 
 ## Buttons
 

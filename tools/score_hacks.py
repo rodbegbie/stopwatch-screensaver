@@ -190,6 +190,12 @@ def registered_hacks(registry: str) -> set[str]:
     return {SOURCE_STEMS.get(n, n) for n in names}
 
 
+def measured_by_source_stem(measured: dict) -> dict:
+    """The measured notes name a hack as the registry does; the scorer's rows
+    use the source stem (see SOURCE_STEMS)."""
+    return {SOURCE_STEMS.get(name, name): steps for name, steps in measured.items()}
+
+
 def read_failed_ports(text: str) -> dict[str, str]:
     """Parses failed_ports.txt: one `name: reason` per line, # for comments."""
     failed = {}
@@ -441,7 +447,12 @@ def run(args: argparse.Namespace, vendor: Path, root: Path) -> int:
         + "needing few additions come first.\n\n"
         + render_ranking(rank_missing(rows, 10))
         + "\n## All hacks\n\n"
-        + render_table(rows, ported, set(failed), probe_hacks.parse_measured(measured))
+        + render_table(
+            rows,
+            ported,
+            set(failed),
+            measured_by_source_stem(probe_hacks.parse_measured(measured)),
+        )
         + render_failed(failed)
         + "\n## Excluded files\n\n"
         + "These files in `hacks/` and `hacks/glx/` have no `XSCREENSAVER_MODULE`\n"

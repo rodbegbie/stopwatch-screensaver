@@ -475,5 +475,9 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   the sphere from 1,280 to 320 triangles: 4-5 fps became mean 11.5, worst
   window 8.2, with the push (12-24 ms, a full frame) now a fifth of the frame.
   `XLOCKMORE_HACK_REPAINTS_ALL` fails both `test_push_overlap` checks, because
-  TinyGL keeps drawing into the original `canvas->px` (issue #118). The dark
-  wedge inside each bubble is in the host frames too, and is not understood.
+  TinyGL keeps drawing into the original `canvas->px` (issue #118). Upstream's
+  default `transparent` skips the depth test and expects a blend TinyGL's fill
+  does not do, so back faces overwrote front faces as a dark wedge in each
+  bubble (found by the trail review): the registry overrides `*transparent:
+  False`, which enables the depth test. It cost nothing measurable on the
+  board (mean 11.5 before, 11.4 after).
