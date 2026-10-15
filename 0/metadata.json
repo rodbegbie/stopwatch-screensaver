@@ -1,0 +1,59 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M4Z5TDWSVXG4S7W910XAEMJH",
+  "session_id": "77c32aef-0d38-4388-9ce6-bd376ebd7414",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-15T07:01:01.212626Z",
+  "branch": "feature/118-gl-push-overlap",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/test/test_push_overlap/test_push_overlap.c"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-opus-5-5",
+  "turn_id": "4f121381cf13",
+  "checkpoint_transcript_start": 331,
+  "transcript_lines_at_start": 331,
+  "compact_transcript_start": 26,
+  "token_usage": {
+    "input_tokens": 40,
+    "cache_creation_tokens": 23759,
+    "cache_read_tokens": 3727436,
+    "output_tokens": 8634,
+    "api_call_count": 20
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01WoTodBkAU6pDiNpg2tdZFV",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "device-run"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "4f121381cf13",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 378,
+        "end": 379,
+        "entry_ids": [
+          "20edd8f6-e430-4b40-9051-11a9b58ab27f"
+        ],
+        "tool_use_id": "toolu_01WoTodBkAU6pDiNpg2tdZFV"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01WoTodBkAU6pDiNpg2tdZFV"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: device-run",
+        "default_collapsed": true
+      }
+    }
+  ]
+}

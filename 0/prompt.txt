@@ -1,0 +1,27 @@
+<task-notification>
+<task-id>b50o0b75a</task-id>
+<tool-use-id>toolu_01SKAEM25Bmzk28dkascuz3X</tool-use-id>
+<output-file>/private/tmp/claude-502/-Users-rod-build-stopwatch-screensaver/77c32aef-0d38-4388-9ce6-bd376ebd7414/tasks/b50o0b75a.output</output-file>
+<status>completed</status>
+<summary>Background command "Run full host test suite" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bojg6jbbk</task-id>
+<tool-use-id>toolu_01DL3q7RFRNvPkBc2xYVY9Ca</tool-use-id>
+<output-file>/private/tmp/claude-502/-Users-rod-build-stopwatch-screensaver/77c32aef-0d38-4388-9ce6-bd376ebd7414/tasks/bojg6jbbk.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for full host suite result" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bwre6u7c8</task-id>
+<tool-use-id>toolu_01RpGQRyJet3aEvYWA2CPdur</tool-use-id>
+<output-file>/private/tmp/claude-502/-Users-rod-build-stopwatch-screensaver/77c32aef-0d38-4388-9ce6-bd376ebd7414/tasks/bwre6u7c8.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for the A/B run to finish" completed (exit code 0)</summary>
+</task-notification>
