@@ -162,6 +162,13 @@ When: a ported hack runs under about 10 fps and the push is not the cause
   an `#ifndef` default in `registry.c` (`HEXTRAIL_COUNT`) so one flash tests
   another value, and measure two or three values: count 6 gave a mean of 12.7,
   10 gave 9.1 and 20 gave 5.7, in double precision.
+- Before writing a speed override, grep the hack's header and glue for the
+  author's own knob (`GLB_SLOW_GL` in `bubble3d.h`, set from the wrapper with
+  `#undef` and `#define` after the header). It keeps the copy byte-identical
+  and is the trade the author intended: Bubble3D went from 4-5 fps to a mean
+  of 11.4. A hack split over several files (entry point in one, work in
+  another) gets one `<name>_*gl.c` wrapper per file, and only the file that
+  does the maths needs `single_precision.h`.
 
 ## Thin lines in a GL hack
 

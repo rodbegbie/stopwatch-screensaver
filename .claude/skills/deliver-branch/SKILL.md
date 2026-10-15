@@ -100,3 +100,10 @@ Moved verbatim from AGENTS.md.
   on a PR that is already ready, `ready` exits non-zero and skips a chained
   merge.
   Confirm with `gh pr view N --json state`.
+- `entire trail merge <trail> --dry-run` can say "findings pending: Waiting
+  for the agent review of the current head" with "bypass policy (nobody)".
+  Rod merging `main` into the branch makes a new head and the review runs
+  again (it cleared in under 20 minutes). `--force` is refused: poll the dry
+  run from a script under a Monitor, then merge when it reads "Mergeable:
+  yes". First `git fetch`, compare the PR's `headRefOid` with the tip, and
+  check `finding list --status open`.
