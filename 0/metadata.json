@@ -1,0 +1,62 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M50AHMBS66YX6DG290709HKC",
+  "session_id": "172b7336-45c1-4ba2-a3d8-2e165ba5d194",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-15T17:42:50.413603Z",
+  "branch": "chore/ty-dev-dependency",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".pre-commit-config.yaml"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "da4dca587f53",
+  "checkpoint_transcript_start": 186,
+  "transcript_lines_at_start": 186,
+  "compact_transcript_start": 18,
+  "token_usage": {
+    "input_tokens": 10,
+    "cache_creation_tokens": 2292,
+    "cache_read_tokens": 382623,
+    "output_tokens": 1159,
+    "api_call_count": 5
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01QPQjHund51vCUAa3jYvuZe",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "deliver-branch"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "8b881bebb6ca",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 85,
+        "end": 86,
+        "entry_ids": [
+          "33916a7e-4b8c-45cb-9e90-f245a307a6a3"
+        ],
+        "tool_use_id": "toolu_01QPQjHund51vCUAa3jYvuZe"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01QPQjHund51vCUAa3jYvuZe"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: deliver-branch",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 3
+  }
+}
