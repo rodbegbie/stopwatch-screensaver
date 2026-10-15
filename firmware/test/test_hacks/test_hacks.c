@@ -576,7 +576,7 @@ static const uint64_t kBaseline[] = {
     0x2a4ebe0336988260ull, /* HyperBall: taken after looking at the frames (single precision) */
     0xcfc4f1fadbfb593dull, /* Demon: taken after looking at the frames */
     0xd453fd2e5e9af439ull, /* Polyominoes: taken after looking at the frames */
-    0ull, /* Bubbles: unpinned */
+    0xae237080f46db32full, /* Bubbles: pinned */
     0xce51885618135265ull, /* Barcode: taken after looking at the frames */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */

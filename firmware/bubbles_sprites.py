@@ -21,9 +21,6 @@ for stem in ("blood", "blue", "glass", "jade"):
     for n in range(1, 12):
         names.append(f"{stem}{n}")
 
-uv = shutil.which("uv")
-if not uv:
-    raise SystemExit("bubbles_sprites.py needs uv on PATH")
 
 for name in names:
     image = images_dir / f"{name}.png"
@@ -36,6 +33,9 @@ for name in names:
         and header.stat().st_mtime >= converter.stat().st_mtime
     ):
         continue
+    uv = shutil.which("uv")
+    if not uv:
+        raise SystemExit("bubbles_sprites.py needs uv on PATH")
     header.parent.mkdir(parents=True, exist_ok=True)
     partial = header.with_name(header.name + ".partial")
     partial.unlink(missing_ok=True)

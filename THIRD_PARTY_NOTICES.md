@@ -165,6 +165,7 @@ implied warranty.
 | `firmware/src/hacks/flow/flow.c` | Copyright (c) 1996 Tim Auckland; code from Stephen Davies 2000 | xlock permission notice (below) |
 | `firmware/src/hacks/bouboule/bouboule.c` | Copyright (c) 1988-91 Patrick J. Naughton; ported to xscreensaver by Jamie Zawinski, 1997 | xlock permission notice (below) |
 | `firmware/src/hacks/bubbles/bubbles.c` | Copyright (C) 1995-1996 James Macnicol | jwz permission notice (above) |
+| `firmware/src/hacks/bubbles/bubbles.h` | Copyright (C) 1995-1996 James Macnicol | jwz permission notice (above) |
 | `firmware/src/hacks/bubbles/bubbles-default.c` | Copyright (c) 1998 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/ant/ant.c` | Copyright (c) 1995 David Bagley | xlock permission notice (below) |
 | `firmware/src/hacks/hyperball/hyperball.c` | Copyright (c) 1992-2000 Jamie Zawinski; derived from TI Explorer Lisp code by Joe Keane, Fritz Mueller and Jamie Zawinski | jwz permission notice (above) |
