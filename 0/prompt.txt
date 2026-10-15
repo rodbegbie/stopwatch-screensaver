@@ -1,0 +1,9 @@
+I've connected my device to the laptop. Can you flash it and validate the fps improvement this change made?
+
+---
+
+This is a different laptop than the one I've used previously, so I think it just has a different mount point.
+
+---
+
+Great.  Update the performance markdown file with this info

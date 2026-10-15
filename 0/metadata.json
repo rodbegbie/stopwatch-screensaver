@@ -1,0 +1,73 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M4YGP3T3DC61AE1JTW6NQACQ",
+  "session_id": "01a13cee-c15c-701c-9e7e-06a8d064b419",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-15T00:51:37.690505Z",
+  "branch": "truchet-push-overlap",
+  "checkpoints_count": 3,
+  "files_touched": [],
+  "agent": "Pi",
+  "model": "Beam-1.0-501B-A23B",
+  "turn_id": "01e2c820fdde",
+  "checkpoint_transcript_start": 173,
+  "transcript_lines_at_start": 173,
+  "compact_transcript_start": 86,
+  "token_usage": {
+    "input_tokens": 27291,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2838080,
+    "output_tokens": 7129,
+    "api_call_count": 35
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "pi-skill-using-entire-2026-10-15T00:25:11.688Z-0",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "using-entire"
+      },
+      "source": {
+        "agent": "pi",
+        "signal": "input_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "d06ebb5898e6",
+      "timestamp": "2026-10-15T00:25:11.688Z",
+      "native": {
+        "command": "/skill:using-entire"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/skill:using-entire",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "pi-skill-m5stack-stopwatch-2026-10-15T00:29:26.119Z-0",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "m5stack-stopwatch"
+      },
+      "source": {
+        "agent": "pi",
+        "signal": "input_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "cb71ec15000d",
+      "timestamp": "2026-10-15T00:29:26.119Z",
+      "native": {
+        "command": "/skill:m5stack-stopwatch"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/skill:m5stack-stopwatch",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 8
+  }
+}
