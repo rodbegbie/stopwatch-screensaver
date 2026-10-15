@@ -164,7 +164,8 @@ implied warranty.
 | `firmware/src/hacks/nerverot/nerverot.c` | Copyright (c) 2000-2001 Dan Bornstein | jwz permission notice (above) |
 | `firmware/src/hacks/flow/flow.c` | Copyright (c) 1996 Tim Auckland; code from Stephen Davies 2000 | xlock permission notice (below) |
 | `firmware/src/hacks/bouboule/bouboule.c` | Copyright (c) 1988-91 Patrick J. Naughton; ported to xscreensaver by Jamie Zawinski, 1997 | xlock permission notice (below) |
-| `firmware/src/hacks/bubbles/bubbles.c` | Copyright (C) 1995-1996 James Macnicol | Macnicol permission notice (below?) |
+| `firmware/src/hacks/bubbles/bubbles.c` | Copyright (C) 1995-1996 James Macnicol | jwz permission notice (above) |
+| `firmware/src/hacks/bubbles/bubbles-default.c` | Copyright (c) 1998 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/ant/ant.c` | Copyright (c) 1995 David Bagley | xlock permission notice (below) |
 | `firmware/src/hacks/hyperball/hyperball.c` | Copyright (c) 1992-2000 Jamie Zawinski; derived from TI Explorer Lisp code by Joe Keane, Fritz Mueller and Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/demon/demon.c` | Copyright (c) 1995 David Bagley | xlock permission notice (below) |
@@ -505,5 +506,3 @@ has not checked what terms GUIdebook Gallery offers; it is included at Rod's
 request. `firmware/grab_image.py` converts it to the raw blob described in
 `ximage-loader.h` at build time. To use another picture, set `XS_GRAB_IMAGE`
 to its file, or `none` for no picture.
-
-`bubbles.c` `bubbles.h` `bubbles-default.c`
