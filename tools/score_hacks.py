@@ -56,6 +56,9 @@ EFFORT_ORDER = {"S": 0, "M": 1, "L": 2, "XL": 3}
 REGISTRY_ARRAY = re.compile(r"\bg_hacks\s*\[\s*\]\s*=\s*\{(.*?)\}\s*;", re.DOTALL)
 REGISTRY_ENTRY = re.compile(r"&(\w+)_hack\b")
 OWN_HACKS = frozenset({"ad_flyingtoasters"})
+# Registry names that differ from the stem of the file with XSCREENSAVER_MODULE:
+# Bubble3D's entry point is in b_lockglue.c, beside bubble3d.c's bubbles.
+SOURCE_STEMS = {"bubble3d": "b_lockglue"}
 PORTED = "\u2705"
 FAILED = "\u274c"
 
@@ -183,7 +186,8 @@ def registered_hacks(registry: str) -> set[str]:
     array = REGISTRY_ARRAY.search(strip_noise(registry))
     if not array:
         raise ScoreError("no g_hacks[] array found in the registry source")
-    return set(REGISTRY_ENTRY.findall(array.group(1)))
+    names = REGISTRY_ENTRY.findall(array.group(1))
+    return {SOURCE_STEMS.get(n, n) for n in names}
 
 
 def read_failed_ports(text: str) -> dict[str, str]:
