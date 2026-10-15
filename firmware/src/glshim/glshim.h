@@ -50,8 +50,16 @@ Bool glXMakeCurrent(Display *dpy, GLXDrawable drawable, GLXContext ctx);
  * that it measures exactly the boxes the dirty rectangle sees. */
 extern void (*glshim_box_observer)(int x0, int y0, int x1, int y1);
 
+/* Something other than TinyGL has written the canvas's pixels: the next clear
+ * clears all of it. The dirty rectangle otherwise trusts that only TinyGL
+ * writes there (test_push_overlap's noise run is the one caller). */
+void glshim_canvas_overwritten(void);
+
 /* TinyGL has drawn into the canvas already; this marks what it drew since the
- * last swap, and what the last clear erased, dirty. */
+ * last swap, and what the last clear erased, dirty. When canvas->px has
+ * changed since TinyGL last drew (the push overlap swaps two buffers), TinyGL
+ * follows it before its next clear or primitive, and the box last drawn in the
+ * other buffer, which is what the display shows, is marked erased too. */
 void glXSwapBuffers(Display *dpy, GLXDrawable drawable);
 
 void gluPerspective(GLdouble fovy, GLdouble aspect, GLdouble znear,
