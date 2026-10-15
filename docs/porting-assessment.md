@@ -288,6 +288,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Bubble3D (sphere depth 3, double) | 2.6-5.2 | 188-390 ms | 0.2-5.4 ms | 5.9-11.2 ms | about 0.78 MB |
 | Bubble3D (sphere depth 3, single precision) | 4.0-10.0 | 88-241 ms | 0.2-13.7 ms | 0-11.2 ms | about 0.78 MB |
 | Bubble3D | 8.2-26.4 | 27-101 ms | 3.3-23.7 ms | 0-8.1 ms | about 0.65 MB |
+| Bubbles | 54.4-61.6 | 4.9-7.1 ms | 1.5-1.9 ms | 9.4-9.9 ms | none measurable |
 | Marbling (as copied, gridsize 2, 5 iterations) | 0.6 | 1785 ms | 29.1 ms | 0 ms | about 430 KB |
 | CCurve (as copied, double, `limit` 200,000) | 0.2-2.2 | 49-2927 ms | 29.1 ms | 411-3292 ms | about 420 KB |
 | Droste (full size) | 1.6 | 630 ms | 29.1 ms | 0 ms | about 1.7 MB |
@@ -638,9 +639,14 @@ single precision, opaque), with the first two windows (one or two bubbles) at
 depth test on and moved nothing measurable: the same capture without it read
 mean 11.5, step 27-102 ms.
 
-Bubbles is not measured on the board yet. On the host a step takes 0.06 ms,
-and its 44 deflated bubble images and code add about 70 KB of flash (52.0% of
-the app partition with it).
+Bubbles on the board, over a 90 s capture of a pinned build (16 windows after
+the first): mean 57.4 fps, worst window 54.4, step 4.9-7.1 ms, pushing about
+100 of 466 rows a frame. The step is not what limits it: the hack waits about
+9.5 ms between frames by its own delay. PSRAM read 6,495,443 bytes free at
+boot and in every window, and internal heap sat at 218-222 KB against 234 KB
+at boot, with no downward drift. A boot is deterministic, so this is one
+bubble set; the other three are unmeasured. Its 44 deflated bubble images and
+code add about 70 KB of flash (52.0% of the app partition with it).
 
 ## Buttons
 
@@ -968,7 +974,7 @@ needing few additions come first.
 | Hack | Kind | Effort | Speed | Ported | Shim gaps | Flags | LOC |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | droste | 2d | S | crashed on the host | - | - | pixmaps, readback | 686 |
-| flow | 2d | S | high (0.93 ms) | - | - | pixmaps | 1216 |
+| flow | 2d | S | high (0.91 ms) | - | - | pixmaps | 1216 |
 | halftone | 2d | S | high (0.72 ms) | ❌ | - | pixmaps | 413 |
 | twang | 2d | S | crashed on the host | - | - | pixmaps, readback | 791 |
 | metaballs | 2d | M | - | - | `XFree`, `XListPixmapFormats` | - | 438 |
@@ -1233,7 +1239,7 @@ needing few additions come first.
 | eruption | 2d | - | 39-39.1 ms measured | ✅ | `error: typedef redefinition with different types ('unsigned long' vs 'unsigned int')` | - | 608 |
 | triangle | 2d | - | 3.6-6 ms measured | ✅ | `free_colors`, `make_smooth_colormap` | - | 355 |
 | xrayswarm | 2d | - | 21.2-21.6 ms measured | ✅ | `initTime` | - | 1235 |
-| bubbles | 2d | - | - | ✅ | `BUBBLE_MAGIC`, `Bubble`, `Bubble_Step`, `DELETE_BUBBLE`, `KEEP_BUBBLE`, `MAX`, `MAX_DROPPAGE`, `MIN`, `bubbles.h`, `default_bubbles`, `error: expected expression`, `head`, `init_default_bubbles`, `least`, `newpix`, `nextbub`, `num_default_bubbles`, `pixmap_list`, `rv`, `tmp`, `tmppix`, `touch` | pixmaps, clipmask | 1468 |
+| bubbles | 2d | - | 4.9-7.1 ms measured | ✅ | `BUBBLE_MAGIC`, `Bubble`, `Bubble_Step`, `DELETE_BUBBLE`, `KEEP_BUBBLE`, `MAX`, `MAX_DROPPAGE`, `MIN`, `bubbles.h`, `default_bubbles`, `error: expected expression`, `head`, `init_default_bubbles`, `least`, `newpix`, `nextbub`, `num_default_bubbles`, `pixmap_list`, `rv`, `tmp`, `tmppix`, `touch` | pixmaps, clipmask | 1468 |
 | goop | 2d | - | - | ✅ | `AllPlanes`, `GXclear`, `XSetPlaneMask` | pixmaps, xor | 651 |
 | interference | 2d | - | 67.9-68 ms measured | ✅ | `XShmGetEventBase`, `error: too few arguments to function call, expected 2, have 1` | pixmaps | 1002 |
 | pacman | 2d | - | 1.3-1.9 ms measured | ✅ | `BLUE`, `GHOSTS`, `GHOST_DANGER`, `JAILHEIGHT`, `LEVHEIGHT`, `LEVWIDTH`, `MAXGDIR`, `MAXGFLASH`, `MAXGWAG`, `MAXMOUTH`, `MINGRIDSIZE`, `MINSIZE`, `NOWHERE`, `NUM_BONUS_DOTS`, `PAC_DEATH_FRAMES`, `START`, `XDrawString`, `XLoadQueryFont`, `chasing`, `error: expected expression`, `error: invalid application of 'sizeof' to an incomplete type 'argtype[]'`, `ghoststruct`, `goingin`, `goingout`, `hiding`, `images/gen/pacman_png.h`, `inbox`, `pacman.h`, `pacman_ai.h`, `pacman_bonus_dot_eaten`, `pacman_bonus_dot_pos`, `pacman_createnewlevel`, `pacman_eat_bonus_dot`, `pacman_ghost_update`, `pacman_is_bonus_dot`, `pacman_level.h`, `pacman_png`, `pacman_trackmouse`, `pacman_update`, `pacmangamestruct`, `pp`, `ps_chasing`, `ps_dieing`, `ps_eating` | pixmaps, text, clipmask | 1479 |
