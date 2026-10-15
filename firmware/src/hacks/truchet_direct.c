@@ -9,6 +9,9 @@
 #include "truchet/truchet.c"
 
 /* Each step repaints the whole image, so the push can overlap the next step. */
+static const char *const k_truchet_overrides[] = {"*randomize: False",
+                                                   "*erase: True", NULL};
+
 const HackEntry truchet_hack = {"Truchet", truchet_defaults, truchet_init,
-                                truchet_draw, truchet_free, NULL, NULL,
-                                0, 0, 1};
+                                truchet_draw, truchet_free, NULL,
+                                k_truchet_overrides, 0, 0, 1};

@@ -173,6 +173,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Halftone | 4.5-5.2 | 163-193 ms | 32.5 ms | 0 ms | none measurable |
 | Truchet | 0.8-1.0 | 652-900 ms | 34.4-36.1 ms | 404-406 ms | about 1.5 MB |
 | Truchet (scrolling mode) | 7.2-8.0 | 19.8-36.0 ms | 31.5-39.9 ms | 66-75 ms | about 1.5 MB |
+| Truchet (push overlap) | 9.8-10.2 | 16.7-22.2 ms | 0.1 ms (worker) | 80-82 ms | about 1.5 MB |
 | UnknownPleasures | 5.0-5.2 | 162-169 ms | 32.3-37.1 ms | 0 ms | about 0.93 MB |
 | UnknownPleasures (first flash: aliased lines, additive quads) | 3.6-3.8 | 226-237 ms | 32.3-48.3 ms | 0 ms | about 0.93 MB |
 | UnknownPleasures (20 rows of 50 points, final code; not registered) | 7.4-7.6 | 90-92 ms | 41.6-43.0 ms | 0 ms | 6.27 MB free, with the QR overlay's buffers |
