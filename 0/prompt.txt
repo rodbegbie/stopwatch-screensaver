@@ -1,0 +1,9 @@
+Port the Bubble3D hack
+
+---
+
+/claude-md-management:revise-claude-md
+
+---
+
+apply all four
