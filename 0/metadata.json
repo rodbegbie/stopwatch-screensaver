@@ -1,0 +1,61 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M50DV6K615NTY6KQ2EGB0QW8",
+  "session_id": "4f6ad54c-acc6-4fac-bb0f-a982bf9fd00b",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-15T18:40:27.695165Z",
+  "branch": "feature/port-bubbles",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/porting-assessment.md",
+    "tools/assessment_measured.md.in"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "a0726528727a",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 34,
+    "cache_creation_tokens": 65334,
+    "cache_read_tokens": 1384862,
+    "output_tokens": 8825,
+    "api_call_count": 17
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_0117LksshEQHFDHWYB4ahpAS",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "port-hack"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "a0726528727a",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 41,
+        "end": 42,
+        "entry_ids": [
+          "aa51f8eb-d107-44e9-a442-387ecec78ff9"
+        ],
+        "tool_use_id": "toolu_0117LksshEQHFDHWYB4ahpAS"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_0117LksshEQHFDHWYB4ahpAS"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: port-hack",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 1
+  }
+}
