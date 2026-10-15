@@ -1,0 +1,400 @@
+WHy are you adding that Co-Authored-By line to th commit messages?
+
+---
+
+Can you amend the commits you added to credit the model.  The way this plugin proposes it makes sense to me.
+
+---
+
+STOP! NEVER use `find /` to find a file!  My hard drive has a lot of stuff on it!  I just ran `pi install npm:pi-co-authored-by` so you should be able to find it now.
+
+---
+
+Post a comment on Issue 113 explaining the reason why you're not making the changes to Halo or Graphstat
+
+---
+
+<skill name="rod-voice" location="/Users/rod/.agents/skills/rod-voice/SKILL.md">
+References are relative to /Users/rod/.agents/skills/rod-voice.
+
+# Rod's Professional Voice
+
+Rod writes formal docs and casual Slack messages in the *same personality at different volumes*. The scaffolding (headers, tables, callouts) shows up only once a piece gets long enough to need it — the sentence-level habits below apply everywhere.
+
+Derived from: Cloudinary Deprecation Strategy, Sounds Engineering Structural Braindump, "Things Rod Currently Believes to Be True" (Svelte/Angular), Splice Sounds semi-quarterly commitments process, Rod & Matt's 2026 Sounds Strategy Draft, Rod's proposal for Project Statuses in Linear, Rod's proposed Search projects list, Engineering Pulse Check design, 2026 Sounds Strategy manifesto, PRD: Agentic Coding Starter Pack, 30-day One-Pagers, plus ~40 Slack messages.
+
+## Before drafting, calibrate the register
+
+Ask: is this a **doc** (Notion strategy/process/PRD/DACI) or a **message** (Slack, quick update, comment)?
+
+- **Docs** get the full structural toolkit in section 1.
+- **Messages** skip headers/ToC/callouts but keep every voice habit in section 2 — hedging, specific numbers, dry parentheticals, credit-giving — plus the diction rules in section 3 and the Slack-specific notes (short punchy sign-offs, explicit rollback notes) in section 4.
+
+If genuinely unsure which register fits, default to the lighter one — Rod's docs are notable for restraint, not for reaching for structure they don't need.
+
+## 1. Structural signature (docs only)
+
+Apply these in roughly this order when building a doc:
+
+- **Open with the decision or belief, not the background.** DACIs open with "What decision needs to be made?" Proposals open with the ask, not the history.
+- **Name Non-Goals explicitly, as their own section**, and make them do real work (pre-empt a specific likely misreading, not a generic disclaimer). E.g. "Velocity is seen as the arbiter of what plugins people can/should use" as an explicit non-goal.
+- **Use hypothesis → prediction framing for anything proposing an experiment or bet**: "We believe X. Prediction: if we do Y, Z will happen." Follow with "What do you have to believe to endorse this plan?" for higher-stakes bets.
+- **Bury detail in toggles, not in the main flow.** Meeting notes, edge cases, and "most readers can ignore this" content go under a `{toggle="true"}` block. Say explicitly that it's skippable.
+- **Tables for anything comparative** — pricing, ownership, priority definitions. Put a number on things people usually leave vague (e.g. "85% of these projects should be delivered," not "most").
+- **One callout box near the top** (💡, ℹ️, or ⭐ icon) giving the reader the one thing they need before the rest makes sense.
+- **Table of contents on anything over ~800 words.**
+- **Name your own rhetorical device when you use one**, with a link if there's a source: Cunningham's Law, DACI, Hofstadter's Law, Stepping Stones not Milestones, Strangler Fig, "5 So-Whats" (Rod's own remix of 5 Whys).
+- **Close on one short sentence that reframes the whole doc** — not a summary paragraph. ("The best time to start was last year, the second best time is now!")
+
+## 2. Voice habits (everywhere — docs and Slack)
+
+- **Hedge visibly rather than assert past your actual knowledge.** "I currently believe, low confidence," "AFAICT," "I don't have a good sense right now," "I suspect." This is a feature, not a weakness — Rod's docs read as more credible because of it, not less.
+- **Quantify instead of gesturing.** Not "a lot of the bill" — "58.5% of our AWS bill is now tagged." Not "search is broken sometimes" — "milestone rate is 20–30% per search."
+- **Dry humour lives in parentheses, never in the topic sentence.** "(Or maybe not if we're moving the catalogue to a CMS?)" The main clause stays flat and informative; the joke is the aside.
+- **Credit people by name, inline, even when driving the doc yourself.** "As Jenn pointed out..." / "@so-and-so, does anyone have context for...?"
+- **Frame drafts as drafts, out loud, so nobody over-reads them.** "It's a strawman proposal — please don't read too much into just the words in this doc."
+- **Blunt when the content calls for it, but never padded.** Direct critical assessments are delivered plainly, without corporate softening *and* without unnecessary harshness — state the observation, don't decorate it.
+- **No swearing in anything shared, drafted, or sent.** It has appeared exactly once across the whole corpus, in the single most private, least-shared personal doc, used for emphasis rather than decoration. Default: never swear in output. If Rod explicitly asks for it in a specific throwaway/personal note, that's his call, not the default.
+
+## 3. Diction
+
+- British spelling throughout: organised, favour, recognise, licence (noun) — including in fast Slack messages, not just polished docs.
+- Reach-for words: *cadence, friction, ladder up, shepherd, muscle (as in "build new muscle"), toil, papercuts, blast radius, force multiplier, boring technology, portfolio-based approach.*
+- Coin a compact label for a recurring concept rather than using a generic noun: "Friction Shepherd," "Fresh Socks," "junk drawer team," "hyperobject flailing."
+- Precise engineering/product jargon is fine and expected — this is written by and for engineers — but decorative jargon with no added precision is not Rod's style.
+
+## 4. Slack-specific notes
+
+- Short. Rarely more than a paragraph unless it's an incident/status update.
+- Status and incident updates keep bullets even in Slack — e.g. a root-cause bullet, a fix bullet, a caveat bullet.
+- Common sign-offs: "Thanks all!", "LMK if anyone sees issues," "Have a great weekend," "Happy break, friends!"
+- Rollback/verification plans get stated explicitly and briefly even in a casual channel post: what changed, expected impact (usually "none"), how to flag a problem.
+- Questions to the team are genuinely open, not rhetorical: "Does anyone ever use X?" rather than assuming the answer.
+
+## 5. Quick self-check before sending
+
+- [ ] Does the first sentence say the decision/ask/belief, not the throat-clearing?
+- [ ] Is there at least one specific number instead of a vague quantifier?
+- [ ] Is uncertainty flagged where it exists, rather than smoothed over?
+- [ ] Is anyone else's contribution credited by name if relevant?
+- [ ] Does it end on a line that lands, not a recap?
+- [ ] No swearing, no unearned jargon, no corporate padding?
+
+If drafting a long doc (>800 words), also check: ToC present, Non-Goals section present if scope could be misread, one framing callout near the top, detail pushed into toggles rather than inline.
+</skill>
+
+---
+
+Edit that comment to use the rods-voice skill
+
+---
+
+<skill name="address-findings" location="/Users/rod/.pi/agent/skills/address-findings/SKILL.md">
+References are relative to /Users/rod/.pi/agent/skills/address-findings.
+
+# Address Findings
+
+Fix and resolve the open review findings on an Entire trail. A finding is a
+review comment posted to a trail on entire.io: it has a file/line location, a
+body, a severity, and sometimes a suggested unified-diff patch. This skill
+fetches the open findings, applies or hand-fixes each one in the current
+worktree, and marks it resolved on the trail.
+
+## When to use / not use
+
+Use when the user points at a trail — a URL like
+`https://<host>/<forge>/<owner>/<repo>/trails/<number>/<slug>`, or a bare trail
+number or branch — and asks to **address / fix / resolve** its findings or
+review comments.
+
+Do **not** use this skill for:
+
+- A code review of the current diff — that is the `review` skill (read-only).
+- Creating new findings — use `entire trail finding add`.
+
+## Response Format
+
+Begin the first response to this skill invocation with the line:
+
+`Entire Address Findings:`
+
+followed by a blank line, then the content. Apply the header to the **first
+response only**. Omit it on error / early-exit responses (CLI missing, not
+authenticated, trail not found, branch mismatch, no open findings).
+
+## Rules
+
+1. Make the smallest correct change that addresses each finding. Do not expand scope.
+2. Only mark a finding resolved when you actually addressed it. If a finding is
+   ambiguous or needs a human decision, leave it open and report it.
+3. Do not commit or push. Leave changes in the working tree for the user to review.
+4. Never weaken a test or assertion just to clear a finding.
+
+## Process
+
+### 1. Verify the CLI
+
+Run `entire version`. If the command is not found, stop and tell the user:
+"The Entire CLI is required but not installed. Install it from
+https://entire.io/docs/cli and try again."
+
+### 2. Resolve the trail selector
+
+- If the argument is a trail URL, take the number from the `/trails/<number>/`
+  path segment and use that number.
+- If it is a bare trail number, id, or branch name, use it as-is.
+- If you cannot determine a trail, stop and ask the user for the trail URL or number.
+
+Use this value as the `<trail>` selector for every command below. `entire trail`
+accepts a trail number, id, or branch name interchangeably, so no number lookup
+is needed — a branch name works directly.
+
+### 3. Fetch open findings
+
+```bash
+entire trail finding list <trail> --json --status open
+```
+
+- If the output reports that authentication is required, stop and tell the user:
+  "`entire trail finding list` requires authentication. Run `entire login` and try again."
+- If the `trail finding` subcommand is unavailable, or the API reports the
+  feature is not enabled, stop and tell the user that trail findings may not be
+  enabled for this account or repository. Do not invent findings.
+- Parse the JSON. Each finding has an id, a severity, a status, a body, a
+  location (file path + line range), and may include a suggested change (a
+  unified diff).
+- If there are no open findings, report "No open findings on this trail." and stop.
+
+### 4. Branch guard (you must be on the trail's branch)
+
+`entire trail finding apply` edits the local worktree, so you must be on the
+trail's branch before changing files.
+
+```bash
+git rev-parse --abbrev-ref HEAD                # current branch
+entire trail list --json --status any -n 200   # locate the trail's branch
+```
+
+Find the trail whose `number` or `branch` matches your selector and read its `branch`.
+
+- If the trail's branch differs from the current branch, stop and tell the user:
+  "Trail `<trail>` targets branch `<trail-branch>`, but you are on
+  `<current-branch>`. Check it out first (`entire trail checkout <trail>`) and
+  re-run." Do not edit files.
+- If you cannot find the trail in the list (e.g. pagination), do not hard-fail:
+  warn that you could not verify the branch, and ask the user to confirm they are
+  on the trail's branch before you continue.
+
+### 5. Address each finding
+
+Process findings highest severity first (high → medium → low). For each:
+
+1. **If it has a suggested unified-diff change**, dry-run it first:
+
+   ```bash
+   entire trail finding apply <trail> <finding-id> --check
+   ```
+
+   If it applies cleanly, apply and resolve in one step:
+
+   ```bash
+   entire trail finding apply <trail> <finding-id> --resolve
+   ```
+
+2. **Otherwise** (no patch, the patch conflicts, or the fix needs reasoning):
+   read the finding body, open the file at its location, and make the smallest
+   correct edit that addresses it. If a fast, relevant local check exists for the
+   touched code (a build or a focused test), run it. Then resolve:
+
+   ```bash
+   entire trail finding resolve <trail> <finding-id> -m "<one line: what you changed>"
+   ```
+
+3. **If you cannot confidently address it** (ambiguous, needs a product/design
+   decision, or out of scope): leave it open, do not resolve it, and record it
+   for the report.
+
+### 6. Report
+
+Summarize:
+
+- Resolved via suggested patch — list finding ids and files.
+- Resolved via manual edit — list finding ids, files, and a one-line of what changed.
+- Left open for your decision — list finding ids and why.
+- Any errors encountered.
+
+Remind the user the changes are uncommitted and ready for review.
+
+## Failure modes
+
+- **CLI not installed** → install message (step 1).
+- **Not authenticated** → "`entire trail finding list` requires authentication. Run `entire login` and try again."
+- **Trail findings not enabled / API error** → tell the user the feature may be
+  unavailable; do not fabricate findings.
+- **Trail not found** → tell the user to check the URL or number; suggest
+  `entire trail list --status any`.
+- **Wrong branch** → stop with the checkout instruction (step 4).
+- **Patch does not apply** → fall back to a manual edit; if you cannot fix it
+  confidently, leave the finding open and report it.
+- **Not a git repository** → stop and tell the user to run from inside the trail's repo.
+</skill>
+
+---
+
+<skill name="address-findings" location="/Users/rod/.pi/agent/skills/address-findings/SKILL.md">
+References are relative to /Users/rod/.pi/agent/skills/address-findings.
+
+# Address Findings
+
+Fix and resolve the open review findings on an Entire trail. A finding is a
+review comment posted to a trail on entire.io: it has a file/line location, a
+body, a severity, and sometimes a suggested unified-diff patch. This skill
+fetches the open findings, applies or hand-fixes each one in the current
+worktree, and marks it resolved on the trail.
+
+## When to use / not use
+
+Use when the user points at a trail — a URL like
+`https://<host>/<forge>/<owner>/<repo>/trails/<number>/<slug>`, or a bare trail
+number or branch — and asks to **address / fix / resolve** its findings or
+review comments.
+
+Do **not** use this skill for:
+
+- A code review of the current diff — that is the `review` skill (read-only).
+- Creating new findings — use `entire trail finding add`.
+
+## Response Format
+
+Begin the first response to this skill invocation with the line:
+
+`Entire Address Findings:`
+
+followed by a blank line, then the content. Apply the header to the **first
+response only**. Omit it on error / early-exit responses (CLI missing, not
+authenticated, trail not found, branch mismatch, no open findings).
+
+## Rules
+
+1. Make the smallest correct change that addresses each finding. Do not expand scope.
+2. Only mark a finding resolved when you actually addressed it. If a finding is
+   ambiguous or needs a human decision, leave it open and report it.
+3. Do not commit or push. Leave changes in the working tree for the user to review.
+4. Never weaken a test or assertion just to clear a finding.
+
+## Process
+
+### 1. Verify the CLI
+
+Run `entire version`. If the command is not found, stop and tell the user:
+"The Entire CLI is required but not installed. Install it from
+https://entire.io/docs/cli and try again."
+
+### 2. Resolve the trail selector
+
+- If the argument is a trail URL, take the number from the `/trails/<number>/`
+  path segment and use that number.
+- If it is a bare trail number, id, or branch name, use it as-is.
+- If you cannot determine a trail, stop and ask the user for the trail URL or number.
+
+Use this value as the `<trail>` selector for every command below. `entire trail`
+accepts a trail number, id, or branch name interchangeably, so no number lookup
+is needed — a branch name works directly.
+
+### 3. Fetch open findings
+
+```bash
+entire trail finding list <trail> --json --status open
+```
+
+- If the output reports that authentication is required, stop and tell the user:
+  "`entire trail finding list` requires authentication. Run `entire login` and try again."
+- If the `trail finding` subcommand is unavailable, or the API reports the
+  feature is not enabled, stop and tell the user that trail findings may not be
+  enabled for this account or repository. Do not invent findings.
+- Parse the JSON. Each finding has an id, a severity, a status, a body, a
+  location (file path + line range), and may include a suggested change (a
+  unified diff).
+- If there are no open findings, report "No open findings on this trail." and stop.
+
+### 4. Branch guard (you must be on the trail's branch)
+
+`entire trail finding apply` edits the local worktree, so you must be on the
+trail's branch before changing files.
+
+```bash
+git rev-parse --abbrev-ref HEAD                # current branch
+entire trail list --json --status any -n 200   # locate the trail's branch
+```
+
+Find the trail whose `number` or `branch` matches your selector and read its `branch`.
+
+- If the trail's branch differs from the current branch, stop and tell the user:
+  "Trail `<trail>` targets branch `<trail-branch>`, but you are on
+  `<current-branch>`. Check it out first (`entire trail checkout <trail>`) and
+  re-run." Do not edit files.
+- If you cannot find the trail in the list (e.g. pagination), do not hard-fail:
+  warn that you could not verify the branch, and ask the user to confirm they are
+  on the trail's branch before you continue.
+
+### 5. Address each finding
+
+Process findings highest severity first (high → medium → low). For each:
+
+1. **If it has a suggested unified-diff change**, dry-run it first:
+
+   ```bash
+   entire trail finding apply <trail> <finding-id> --check
+   ```
+
+   If it applies cleanly, apply and resolve in one step:
+
+   ```bash
+   entire trail finding apply <trail> <finding-id> --resolve
+   ```
+
+2. **Otherwise** (no patch, the patch conflicts, or the fix needs reasoning):
+   read the finding body, open the file at its location, and make the smallest
+   correct edit that addresses it. If a fast, relevant local check exists for the
+   touched code (a build or a focused test), run it. Then resolve:
+
+   ```bash
+   entire trail finding resolve <trail> <finding-id> -m "<one line: what you changed>"
+   ```
+
+3. **If you cannot confidently address it** (ambiguous, needs a product/design
+   decision, or out of scope): leave it open, do not resolve it, and record it
+   for the report.
+
+### 6. Report
+
+Summarize:
+
+- Resolved via suggested patch — list finding ids and files.
+- Resolved via manual edit — list finding ids, files, and a one-line of what changed.
+- Left open for your decision — list finding ids and why.
+- Any errors encountered.
+
+Remind the user the changes are uncommitted and ready for review.
+
+## Failure modes
+
+- **CLI not installed** → install message (step 1).
+- **Not authenticated** → "`entire trail finding list` requires authentication. Run `entire login` and try again."
+- **Trail findings not enabled / API error** → tell the user the feature may be
+  unavailable; do not fabricate findings.
+- **Trail not found** → tell the user to check the URL or number; suggest
+  `entire trail list --status any`.
+- **Wrong branch** → stop with the checkout instruction (step 4).
+- **Patch does not apply** → fall back to a manual edit; if you cannot fix it
+  confidently, leave the finding open and report it.
+- **Not a git repository** → stop and tell the user to run from inside the trail's repo.
+</skill>
+
+---
+
+Yes, look at Trail 65's findings
+
+---
+
+commit and push the changes
