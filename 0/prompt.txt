@@ -1,5 +1,1 @@
-Another agent had a go at porting the "bubbles" hack but it did a bad job of following the standards of this repo (See trail 66).  Can you take a look at the work it did and see if it's worth keeping?
-
----
-
-Yes, finish it on a fresh branch
+Flash it to the board so we can measure Bubbles
