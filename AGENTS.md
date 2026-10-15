@@ -304,9 +304,8 @@ ones below apply everywhere.
   failure, run `.pio/build/native/program` from `firmware/` for the per-test
   PASS/FAIL lines and the ASan stack.
 
-<!-- entire-graph:begin -->
-This repo has the entire-graph code graph installed. Before exploring code with
-grep/find/whole-file reads, read .entire/graph-agent.md — resolution-first guidance
-for using graph retrieval, focused source inspection, and verification.
-@.entire/graph-agent.md
-<!-- entire-graph:end -->
+<!-- entire-agent:begin -->
+Read .entire/agent-guide.md for this repository's workflow, source
+inspection, and verification guidance.
+@.entire/agent-guide.md
+<!-- entire-agent:end -->
