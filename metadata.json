@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M4YK4TRY2JJYJ0ZET81CFXFV",
+  "strategy": "manual-commit",
+  "branch": "truchet-push-overlap",
+  "checkpoints_count": 7,
+  "files_touched": [
+    "docs/porting-assessment.md",
+    "firmware/platformio.ini",
+    "firmware/src/hacks/truchet_direct.c",
+    "firmware/test/test_hacks/test_hacks.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 251587,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2267840,
+    "output_tokens": 6722,
+    "api_call_count": 20
+  }
+}
