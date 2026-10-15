@@ -1011,6 +1011,48 @@ void test_a_swap_with_nothing_drawn_in_the_new_buffer_marks_nothing(void) {
   free(spare);
 }
 
+/* Triangles in the two lower corners never reach the middle row, so with one
+ * background a swap between the buffers must not push it. */
+void test_a_swap_between_buffers_of_one_background_marks_only_the_drawing(void) {
+  uint16_t *own = cv.px, *spare = malloc(SIZE * SIZE * sizeof(uint16_t));
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glClearColor(1, 0, 0, 0);
+  for (int f = 0; f < SWAP_FRAMES; f++) {
+    canvas_clear_dirty(&cv);
+    corner_frame(f % 2);
+    int x0, x1;
+    if (f >= 2)
+      TEST_ASSERT_FALSE_MESSAGE(canvas_dirty_row(&cv, SIZE / 2, &x0, &x1),
+                                "the middle row was pushed");
+    cv.px = cv.px == own ? spare : own;
+  }
+  glshim_close();
+  cv.px = own;
+  free(spare);
+}
+
+/* Red, green, red: the third clear finds its buffer already red and rewrites
+ * nothing, but the display still shows the green one. */
+void test_a_buffer_with_another_background_is_pushed_in_full(void) {
+  uint16_t *own = cv.px, *spare = malloc(SIZE * SIZE * sizeof(uint16_t));
+  uint16_t *display = malloc(SIZE * SIZE * sizeof(uint16_t));
+  for (int i = 0; i < SIZE * SIZE; i++) spare[i] = display[i] = 0x1234;
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  for (int f = 0; f < 4; f++) {
+    glClearColor(f % 2 ? 0 : 1, f % 2 ? 1 : 0, 0, 0);
+    clear_all();
+    glXSwapBuffers(dpy, 0);
+    push_into(display);
+    TEST_ASSERT_EQUAL_HEX32_MESSAGE(hash_px(cv.px), hash_px(display),
+                                    "the display kept the other background");
+    cv.px = cv.px == own ? spare : own;
+  }
+  glshim_close();
+  cv.px = own;
+  free(spare);
+  free(display);
+}
+
 void test_a_canvas_overwritten_from_outside_is_cleared_in_full(void) {
   TEST_ASSERT_NOT_NULL(glshim_open(&cv));
   glClearColor(1, 0, 0, 0);
@@ -2087,6 +2129,8 @@ int main(void) {
   RUN_TEST(test_a_primitive_drawn_before_any_clear_lands_in_the_new_buffer);
   RUN_TEST(test_a_buffer_it_has_not_drawn_in_is_cleared_in_full);
   RUN_TEST(test_a_swap_with_nothing_drawn_in_the_new_buffer_marks_nothing);
+  RUN_TEST(test_a_swap_between_buffers_of_one_background_marks_only_the_drawing);
+  RUN_TEST(test_a_buffer_with_another_background_is_pushed_in_full);
   RUN_TEST(test_a_canvas_overwritten_from_outside_is_cleared_in_full);
   RUN_TEST(test_a_one_value_light_model_is_not_over_read);
   RUN_TEST(test_is_enabled_reports_texturing_off);

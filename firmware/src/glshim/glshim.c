@@ -97,7 +97,8 @@ static void reset_dirty_rectangle(void) {
 }
 
 /* The display shows the other buffer, whose drawing lies inside its colour box
- * once that buffer has had a clear; until then nothing about it is known. */
+ * once that buffer has had a clear; until then nothing about it is known. If
+ * the two buffers were cleared to different colours, every pixel differs. */
 static void follow_canvas(void) {
   if (!g_canvas || g_scale != 1) return;
   PIXEL *now = (PIXEL *)g_canvas->px;
@@ -108,6 +109,7 @@ static void follow_canvas(void) {
     g_color_box = g_other_buffer.color_box;
     g_color_valid = g_other_buffer.color_valid;
     g_clear_color = g_other_buffer.clear_color;
+    if (g_clear_color != left.clear_color) box_add(&g_swap_erased, whole_canvas());
   } else {
     g_color_box = kEmptyBox;
     g_color_valid = false;
