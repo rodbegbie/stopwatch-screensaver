@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M4YPSXSSCPGMH15JN2G7RXM1",
+  "strategy": "manual-commit",
+  "branch": "port-bubbles",
+  "checkpoints_count": 8,
+  "files_touched": [
+    "THIRD_PARTY_NOTICES.md",
+    "firmware/platformio.ini",
+    "firmware/src/hacks/bubbles_safe.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 290,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 105152,
+    "output_tokens": 198,
+    "api_call_count": 1
+  }
+}
