@@ -6,7 +6,7 @@ default_install_hook_types:
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: 44b5042edab9382aba712eed4f9c7bab7a3d6a3e  # frozen: v0.17.0
+    rev: 38bfb07c0c64c304f47eb52090f8288150c77730  # frozen: v0.17.1
     hooks:
       # Run the linter.
       - id: ruff-check
@@ -27,12 +27,12 @@ repos:
       - id: markdownlint-fix
         exclude: ^(\.claude/skills/m5stack-stopwatch/|\.entire/)
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 2e145a365871c9fef3715d38b9b7393ce4174c85  # frozen: 0.13.0
+    rev: d4acaec07ac3bc6017fba3c3b8e9810af1b615db  # frozen: 0.13.1
     hooks:
       - id: uv-lock
       - id: uv-sync
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: 4b2e70d08cb2ccd26d1fba73588de41c7a5d50b7  # frozen: v0.25
+    rev: 17e12779811926f000bdfa1795f9e3735dd71ac3  # frozen: 0.26
     hooks:
       - id: validate-pyproject
   - repo: https://github.com/gitleaks/gitleaks

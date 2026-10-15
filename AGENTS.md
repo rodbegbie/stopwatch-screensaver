@@ -283,6 +283,11 @@ ones below apply everywhere.
   `firmware/*.py` (`ty.toml`): SCons injects `Import` and `env` at build time.
   `tools/assessment_measured.md.in` is a fragment that `score_hacks.py` splices
   into the assessment, so it is not named `.md`.
+- `uvx pre-commit autoupdate` needs `--freeze`: the config pins hooks to SHAs
+  with `# frozen: vX` comments, and a plain run replaces them with mutable tags.
+- Dev tools: `uv add --dev <pkg>`; refresh with `uv lock --upgrade` then
+  `uv sync`, and check with `uv run pytest tools/tests`. `platformio` is
+  pinned `==6.2.0`, so an upgrade leaves it alone.
 - `ty` 0.0.24 does not narrow `str | None` after `sys.exit(...)`; write
   `raise SystemExit(...)` for a guard (`shutil.which("uv")` in `firmware/*.py`).
 - When a hack's colours look suspect, dump the same index and frame count
