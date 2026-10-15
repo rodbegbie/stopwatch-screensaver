@@ -5,7 +5,13 @@ requires-python = ">=3.13"
 dependencies = []
 
 [dependency-groups]
-dev = ["machfs", "pillow", "platformio==6.2.0", "pytest"]
+dev = [
+    "machfs",
+    "pillow",
+    "platformio==6.2.0",
+    "pytest",
+    "ty>=0.0.88",
+]
 
 [tool.uv]
 package = false
