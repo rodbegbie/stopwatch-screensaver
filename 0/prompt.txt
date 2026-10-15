@@ -1,0 +1,25 @@
+Another agent had a go at porting the "bubbles" hack but it did a bad job of following the standards of this repo (See trail 66).  Can you take a look at the work it did and see if it's worth keeping?
+
+---
+
+Yes, finish it on a fresh branch
+
+---
+
+clean up the old branch.  Is there an issue open for the speed backtest problem?
+
+---
+
+yes, file it.
+
+---
+
+Quick question.  Do you have access to the Entire session for the agent that struggled with Bubbles?  (01a13d39-4993-72e0-8026-a45e0690e3ad).  I'm curious if you review it and are able to spot things that meant it wasn't able to complete the task.  It was a completely different model and harness than you.
+
+---
+
+yes, draft those as a PR.  (Since then, I'd also installed a plugin to pi to find and follow rules files in a .pi/rules/ directory and added a symlink, so I think that will help too).  Also, do your regular revise-claude-md skill work on that branch.
+
+---
+
+no worktree -- create a branch, apply the changes, and the open a trail.
