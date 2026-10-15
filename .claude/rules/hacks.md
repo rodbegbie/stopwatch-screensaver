@@ -463,3 +463,17 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   single-precision build gave identical frames and no device gain (step
   45.06 vs 45.12 ms, pinned, 2 rounds). Skip it; the step is the blend, the
   mask and the strokes.
+- Bubble3D is four files (`b_lockglue.c` holds `XSCREENSAVER_MODULE`, so the
+  scorer knows it as `b_lockglue`; `SOURCE_STEMS` in `score_hacks.py` maps the
+  registry name `bubble3d` to it), each built as its own `USE_GL` unit by
+  `bubble3d_*gl.c`. Only `bubble3d.c` has a licence text; Rod chose to list the
+  other four under its notice. The glue's `init()` builds a sphere and drops it
+  (leaked on every start: the wrapper makes that call return NULL). A GL
+  profile put 220 of a 300-390 ms step in a software-double `cos` per nudge
+  axis per vertex: `bubble3d_bubble_gl.c` is single precision (frames
+  byte-identical). Upstream's own `GLB_SLOW_GL` (set in `bubble3d_gl.c`) takes
+  the sphere from 1,280 to 320 triangles: 4-5 fps became mean 11.5, worst
+  window 8.2, with the push (12-24 ms, a full frame) now a fifth of the frame.
+  `XLOCKMORE_HACK_REPAINTS_ALL` fails both `test_push_overlap` checks, because
+  TinyGL keeps drawing into the original `canvas->px` (issue #118). The dark
+  wedge inside each bubble is in the host frames too, and is not understood.
