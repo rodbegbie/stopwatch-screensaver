@@ -1,0 +1,13 @@
+Try porting the Bubbles screensaver to the device
+
+---
+
+flash the device and measure its performance
+
+---
+
+It's connected on a different location on this laptop
+
+---
+
+open a trail for this work
