@@ -1,0 +1,115 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M50AKNG2TXG0P5HKZ70P5YAJ",
+  "session_id": "172b7336-45c1-4ba2-a3d8-2e165ba5d194",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-15T17:43:57.173067Z",
+  "branch": "chore/ty-dev-dependency",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "AGENTS.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "b7f1b9b70055",
+  "checkpoint_transcript_start": 244,
+  "transcript_lines_at_start": 244,
+  "compact_transcript_start": 24,
+  "token_usage": {
+    "input_tokens": 16,
+    "cache_creation_tokens": 5934,
+    "cache_read_tokens": 565385,
+    "output_tokens": 2021,
+    "api_call_count": 7
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01QPQjHund51vCUAa3jYvuZe",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "deliver-branch"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "8b881bebb6ca",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 85,
+        "end": 86,
+        "entry_ids": [
+          "33916a7e-4b8c-45cb-9e90-f245a307a6a3"
+        ],
+        "tool_use_id": "toolu_01QPQjHund51vCUAa3jYvuZe"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01QPQjHund51vCUAa3jYvuZe"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: deliver-branch",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "prompt-skill-claude-code-claude-md-management:revise-claude-md-2026-10-15T17:43:09.562274Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "claude-md-management:revise-claude-md"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "cbe9c3fb77bf",
+      "timestamp": "2026-10-15T17:43:09.562274Z",
+      "native": {
+        "command": "/claude-md-management:revise-claude-md"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/claude-md-management:revise-claude-md",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01QPvMGf561FVnY9Ce6WUmUz",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "b7f1b9b70055",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 275,
+        "end": 276,
+        "entry_ids": [
+          "366211e4-40ab-46a7-a695-a7ffd2a5c628"
+        ],
+        "tool_use_id": "toolu_01QPvMGf561FVnY9Ce6WUmUz"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01QPvMGf561FVnY9Ce6WUmUz"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 5
+  }
+}
