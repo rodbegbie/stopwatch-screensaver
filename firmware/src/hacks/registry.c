@@ -256,6 +256,8 @@ XLOCKMORE_HACK(demon, "Demon");
 
 XLOCKMORE_HACK(polyominoes, "Polyominoes");
 
+extern const HackEntry bubbles_hack;
+
 extern const HackEntry barcode_hack;
 
 const HackEntry *const g_hacks[] = {
@@ -354,6 +356,7 @@ const HackEntry *const g_hacks[] = {
     &hyperball_hack,
     &demon_hack,
     &polyominoes_hack,
+    &bubbles_hack,
     &barcode_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,

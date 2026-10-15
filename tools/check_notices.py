@@ -23,6 +23,7 @@ PACKAGE_LICENCE_FILES = frozenset(
         "xs_support/glx/pipeobjs.c",
         "xs_support/glx/teapot.h",
         "xs_support/glx/teapot2.h",
+        "hacks/bubbles/bubbles.h",
     }
 )
 HEADER_LINES = 100
