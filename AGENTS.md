@@ -137,7 +137,9 @@ Set `NO_COLOR=1` on `pio` output you parse.
 - **Never flash, erase or write the device without asking Rod.** The
   conference firmware was backed up to `backups/` (git-ignored, one copy).
   Keep the `app3M_fat9M_16MB` partition scheme and never touch `ffat`. Serial
-  port is `/dev/cu.usbmodem112401`; leave `/dev/cu.usbmodem14201` alone.
+  port is `/dev/cu.usbmodem112401` unless the board moved to another USB
+  socket (the `device-run` skill says how to find it); leave
+  `/dev/cu.usbmodem14201` alone.
 - Report "compiles", "host tests pass" and "runs on the device" separately.
   Only Rod can confirm what the screen shows: say when you want him to look,
   which hack, and what to check (colours on a picture whose colours you know).
