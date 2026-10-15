@@ -58,3 +58,14 @@ Moved verbatim from AGENTS.md.
   worktree. `pio test -f test_x` runs the whole suite (`test_hacks` takes 3
   minutes, the full native run 7), and a failing summary reads "2 failed, 101
   succeeded": match `[FAILED]` or the return code, not "succeeded".
+- `uv run ty check` (the pre-commit `ty` hook) fails in a worktree with
+  "Failed to spawn: ty": the shared `.venv` has no `ty`. Run
+  `uvx ty check --python .venv` instead (it passes on a clean tree), then
+  commit with `SKIP=ty git commit ...`, and say in the PR that the hook was
+  skipped. `ruff-format` rewrites a file and aborts the commit when a line is
+  too long: restage the file and commit again.
+- Also refused in a worktree session: a shell variable used as a program's
+  argument (`S=...; prog $S/x`), a `for` loop that runs `uv` or `pio`, and
+  `entire trail finding resolve -m "..."` text containing `*` or backticks.
+  Spell out absolute paths, run one command per call, and keep `-m` text to
+  plain words.
