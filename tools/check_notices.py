@@ -29,6 +29,9 @@ PACKAGE_LICENCE_FILES = frozenset(
         "hacks/bubble3d/b_draw.c",
         "hacks/bubble3d/b_sphere.c",
         "hacks/bubble3d/bubble3d.h",
+        # Bubbles's header: no header text at all, part of the program whose
+        # bubbles.c carries the jwz-style notice.
+        "hacks/bubbles/bubbles.h",
     }
 )
 HEADER_LINES = 100

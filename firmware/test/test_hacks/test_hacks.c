@@ -157,6 +157,7 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Polyominoes",
                                          "Barcode",
                                          "Bubble3D",
+                                         "Bubbles",
 #ifdef HAVE_AFTER_DARK_TOASTERS
                                          "ad-flyingtoasters",
 #endif
@@ -578,6 +579,7 @@ static const uint64_t kBaseline[] = {
     0xd453fd2e5e9af439ull, /* Polyominoes: taken after looking at the frames */
     0xce51885618135265ull, /* Barcode: taken after looking at the frames */
     0x31abd823a3dd5ce1ull, /* Bubble3D: taken after looking at the frames (sphere depth 2, single precision, opaque) */
+    0xae237080f46db32full, /* Bubbles: taken after looking at the frames */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -1645,6 +1647,10 @@ void test_bubble3d_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("Bubble3D", 1);
 }
 
+void test_bubbles_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Bubbles", 0);
+}
+
 /* Bubble3D's default (transparent) skips the depth test, and TinyGL's fill
  * does not blend, so back faces overwrote front faces as dark wedges inside
  * each bubble. Opaque turns the depth test on. */
@@ -1779,6 +1785,7 @@ int main(void) {
   RUN_TEST(test_polyominoes_stops_do_not_leak);
   RUN_TEST(test_barcode_stops_do_not_leak);
   RUN_TEST(test_bubble3d_stops_do_not_leak);
+  RUN_TEST(test_bubbles_stops_do_not_leak);
   RUN_TEST(test_bubble3d_registers_opaque_bubbles);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
