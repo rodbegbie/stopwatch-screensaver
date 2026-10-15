@@ -176,14 +176,15 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   each frame, the worker pushes the finished one, and the loop credits that
   push's measured duration against the hack's delay. Pinned A/B on the board,
   plain to overlapped: Deluxe 14.0 to 19.0 fps, Compass 18.8 to 29.1, FuzzyFlakes
-  18.4 to 28.9, Moire2 16.5 to 26.4, Scooter 22.1 to 28.4; thirteen hacks are
-  flagged (grep `repaints_all`, and `XLOCKMORE_HACK_REPAINTS_ALL`). The step
-  slows by about 5 ms (both cores share the PSRAM cache), so the frame is
-  roughly the step, not the longer of the two. Rules:
+  18.4 to 28.9, Moire2 16.5 to 26.4, Scooter 22.1 to 28.4; eighteen hacks are
+  flagged, five of them GL (grep `repaints_all`, and
+  `XLOCKMORE_HACK_REPAINTS_ALL`). The step slows by about 5 ms (both cores
+  share the PSRAM cache), so the frame is roughly the step, not the longer of
+  the two. Rules:
   - Flag a hack only if it never reads the canvas it starts from. The noise
     test and the real-swap test in `test_push_overlap` run every flagged hack
     for 300 frames; 40 frames missed Halo, which the 300-frame run caught. GL
-    hacks fail them (TinyGL keeps `canvas->px`), as does GraphStat's swap run.
+    hacks pass since #118 (see `gl.md`); GraphStat's swap run still fails.
   - Only a gain of 5% or more on a pinned A/B earns the flag. Deco and CCurve
     are paced by their own delays and gained 0 and 2.6%.
   - A hack whose `HackEntry` comes from `XSCREENSAVER_MODULE` in the
