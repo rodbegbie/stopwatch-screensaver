@@ -1,0 +1,5 @@
+Add `ty` to the dev packages installed in the venv for this project.
+
+---
+
+yeah, let's create a trail for this.
