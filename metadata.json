@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M4YTJEY8RW599XZ7F9CXGVFK",
+  "strategy": "manual-commit",
+  "branch": "feature/port-bubble3d",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/porting-assessment.md",
+    "tools/score_hacks.py",
+    "tools/tests/test_score.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 136,
+    "cache_creation_tokens": 142233,
+    "cache_read_tokens": 8511178,
+    "output_tokens": 28645,
+    "api_call_count": 68
+  }
+}
