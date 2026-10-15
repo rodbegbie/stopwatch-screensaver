@@ -175,6 +175,9 @@ implied warranty.
 | `firmware/src/hacks/bubble3d/b_draw.c` | Copyright (C) 1998 Richard W.M. Jones; no licence text of its own | xlock permission notice (below), as in `bubble3d.c` |
 | `firmware/src/hacks/bubble3d/b_sphere.c` | Copyright (C) 1998 Richard W.M. Jones; no licence text of its own | xlock permission notice (below), as in `bubble3d.c` |
 | `firmware/src/hacks/bubble3d/bubble3d.h` | Copyright (C) 1998 Richard W.M. Jones; no licence text of its own | xlock permission notice (below), as in `bubble3d.c` |
+| `firmware/src/hacks/bubbles/bubbles.c` | Copyright (C) 1995-1996 James Macnicol | jwz permission notice (above) |
+| `firmware/src/hacks/bubbles/bubbles.h` | No header; part of James Macnicol's Bubbles | jwz permission notice (above), as in `bubbles.c` |
+| `firmware/src/hacks/bubbles/bubbles-default.c` | By Jamie Zawinski, 1998; no copyright line | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/sphere.c` | Copyright (c) 2002 Paul Bourke, Copyright (c) 2010-2026 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/sphere.h` | Copyright (c) 2001-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/teapot.c` | Copyright (c) Mark J. Kilgard, 1994; (c) Copyright 1993, Silicon Graphics, Inc. | Silicon Graphics notice (below) |
@@ -217,6 +220,12 @@ copyright line. Its other four files (`b_lockglue.c`, `b_draw.c`,
 `b_sphere.c`, `bubble3d.h`) have only the author's copyright line: they are
 parts of the same program, so they are listed under that notice (Rod's
 decision), and `tools/check_notices.py` lists them by name.
+
+Bubbles's `bubbles.c` carries the same text under James Macnicol's copyright
+line, and `bubbles-default.c` carries it with "By Jamie Zawinski, 20-Jan-98"
+in place of a copyright line. `bubbles.h` has no header at all: it is part of
+the same program, so it is listed under `bubbles.c`'s notice and named in
+`tools/check_notices.py`.
 
 ### ozymandias G desiderata notice (Cynosure)
 
