@@ -56,6 +56,9 @@ EFFORT_ORDER = {"S": 0, "M": 1, "L": 2, "XL": 3}
 REGISTRY_ARRAY = re.compile(r"\bg_hacks\s*\[\s*\]\s*=\s*\{(.*?)\}\s*;", re.DOTALL)
 REGISTRY_ENTRY = re.compile(r"&(\w+)_hack\b")
 OWN_HACKS = frozenset({"ad_flyingtoasters"})
+# Registry names that differ from the stem of the file with XSCREENSAVER_MODULE:
+# Bubble3D's entry point is in b_lockglue.c, beside bubble3d.c's bubbles.
+SOURCE_STEMS = {"bubble3d": "b_lockglue"}
 PORTED = "\u2705"
 FAILED = "\u274c"
 
@@ -183,7 +186,14 @@ def registered_hacks(registry: str) -> set[str]:
     array = REGISTRY_ARRAY.search(strip_noise(registry))
     if not array:
         raise ScoreError("no g_hacks[] array found in the registry source")
-    return set(REGISTRY_ENTRY.findall(array.group(1)))
+    names = REGISTRY_ENTRY.findall(array.group(1))
+    return {SOURCE_STEMS.get(n, n) for n in names}
+
+
+def measured_by_source_stem(measured: dict) -> dict:
+    """The measured notes name a hack as the registry does; the scorer's rows
+    use the source stem (see SOURCE_STEMS)."""
+    return {SOURCE_STEMS.get(name, name): steps for name, steps in measured.items()}
 
 
 def read_failed_ports(text: str) -> dict[str, str]:
@@ -437,7 +447,12 @@ def run(args: argparse.Namespace, vendor: Path, root: Path) -> int:
         + "needing few additions come first.\n\n"
         + render_ranking(rank_missing(rows, 10))
         + "\n## All hacks\n\n"
-        + render_table(rows, ported, set(failed), probe_hacks.parse_measured(measured))
+        + render_table(
+            rows,
+            ported,
+            set(failed),
+            measured_by_source_stem(probe_hacks.parse_measured(measured)),
+        )
         + render_failed(failed)
         + "\n## Excluded files\n\n"
         + "These files in `hacks/` and `hacks/glx/` have no `XSCREENSAVER_MODULE`\n"

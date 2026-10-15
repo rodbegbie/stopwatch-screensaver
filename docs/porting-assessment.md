@@ -34,8 +34,8 @@ it with `uv run tools/score_hacks.py`.
 | S | 2D, and the unmodified source compiles against the shim | 4 |
 | M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 1 |
 | L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 41 |
-| XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 131 |
-| Ported | Already running on the device, so no rating | 106 |
+| XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 130 |
+| Ported | Already running on the device, so no rating | 107 |
 
 ## Speed
 
@@ -285,6 +285,9 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Droste | 4.6 | 192.1-194.1 ms | 29.1 ms | 0.0 ms | about 1.4 MB |
 | Polyominoes | 16.8-18.0 | 33.1-37.1 ms | 21.4 ms | 0.0 ms | none measurable |
 | Barcode | 14.0-16.2 | 42.5-52.2 ms | 17.8-18.9 ms | 0.0 ms | about 1.4 MB |
+| Bubble3D (sphere depth 3, double) | 2.6-5.2 | 188-390 ms | 0.2-5.4 ms | 5.9-11.2 ms | about 0.78 MB |
+| Bubble3D (sphere depth 3, single precision) | 4.0-10.0 | 88-241 ms | 0.2-13.7 ms | 0-11.2 ms | about 0.78 MB |
+| Bubble3D | 8.2-26.4 | 27-101 ms | 3.3-23.7 ms | 0-8.1 ms | about 0.65 MB |
 | Marbling (as copied, gridsize 2, 5 iterations) | 0.6 | 1785 ms | 29.1 ms | 0 ms | about 430 KB |
 | CCurve (as copied, double, `limit` 200,000) | 0.2-2.2 | 49-2927 ms | 29.1 ms | 411-3292 ms | about 420 KB |
 | Droste (full size) | 1.6 | 630 ms | 29.1 ms | 0 ms | about 1.7 MB |
@@ -629,6 +632,12 @@ large local arrays can hit the same limit.
 Pyro's `init` builds two 6284-entry sine and cosine tables in double
 precision, so restarting it dips to about 17 fps for a few seconds.
 
+Bubble3D's mean over 130 s on the board was 11.4 fps (25 windows, depth 2,
+single precision, opaque), with the first two windows (one or two bubbles) at
+26 and 16 fps and the worst window 8.2 fps. The opaque override turns the
+depth test on and moved nothing measurable: the same capture without it read
+mean 11.5, step 27-102 ms.
+
 ## Buttons
 
 M5Unified reads the StopWatch buttons (GPIO2 for A and GPIO1 for B, active
@@ -955,8 +964,8 @@ needing few additions come first.
 | Hack | Kind | Effort | Speed | Ported | Shim gaps | Flags | LOC |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | droste | 2d | S | crashed on the host | - | - | pixmaps, readback | 686 |
-| flow | 2d | S | high (0.92 ms) | - | - | pixmaps | 1216 |
-| halftone | 2d | S | high (0.66 ms) | ❌ | - | pixmaps | 413 |
+| flow | 2d | S | high (0.93 ms) | - | - | pixmaps | 1216 |
+| halftone | 2d | S | high (0.73 ms) | ❌ | - | pixmaps | 413 |
 | twang | 2d | S | crashed on the host | - | - | pixmaps, readback | 791 |
 | metaballs | 2d | M | - | - | `XFree`, `XListPixmapFormats` | - | 438 |
 | apollonian | 2d | L | - | - | `FcChar8`, `XColor.color`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall` | - | 820 |
@@ -1005,7 +1014,6 @@ needing few additions come first.
 | antspotlight | gl | XL | - | - | - | - | 797 |
 | atlantis | gl | XL | - | - | - | - | 607 |
 | atunnel | gl | XL | - | - | - | - | 315 |
-| b_lockglue | gl | XL | - | - | - | - | 240 |
 | beats | gl | XL | - | - | - | - | 439 |
 | blinkbox | gl | XL | - | - | - | - | 615 |
 | blocktube | gl | XL | - | ❌ | - | - | 454 |
@@ -1228,6 +1236,7 @@ needing few additions come first.
 | shadebobs | 2d | - | 2-2.3 ms measured | ✅ | `XFree`, `XListPixmapFormats` | readback | 474 |
 | xjack | 2d | - | 0.1-13.8 ms measured | ✅ | `FcChar8`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall`, `screen_number` | pixmaps | 508 |
 | xmatrix | 2d | - | - | ✅ | `images/gen/matrix1_png.h`, `images/gen/matrix1b_png.h`, `images/gen/matrix2_png.h`, `images/gen/matrix2b_png.h`, `matrix1_png`, `matrix1b_png`, `matrix2_png`, `matrix2b_png` | pixmaps, readback | 1915 |
+| b_lockglue | gl | - | 27-101 ms measured | ✅ | - | - | 240 |
 | cubicgrid | gl | - | - | ✅ | - | - | 322 |
 | etruscanvenus | gl | - | 53.2-78.6 ms measured | ✅ | - | - | 2761 |
 | gears | gl | - | 65-330 ms measured | ✅ | - | - | 953 |

@@ -311,6 +311,11 @@ def test_registered_hacks_are_the_entries_of_g_hacks():
     assert sh.registered_hacks(REGISTRY) == {"pyro", "hopalong", "galaxy"}
 
 
+def test_a_hack_registered_under_another_name_than_its_source_stem_is_renamed():
+    registry = "const HackEntry *const g_hacks[] = {&bubble3d_hack, &galaxy_hack};\n"
+    assert sh.registered_hacks(registry) == {"b_lockglue", "galaxy"}
+
+
 def test_registered_hacks_without_the_array_is_an_error():
     with pytest.raises(sh.ScoreError, match="g_hacks"):
         sh.registered_hacks("int x;")
@@ -621,6 +626,17 @@ def test_a_ported_hack_shows_the_step_measured_on_the_device():
         )
     )
     assert [c["Speed"] for c in cells] == ["0.7 ms measured", "0.8-1.1 ms measured"]
+
+
+def test_a_measurement_under_the_registry_name_reaches_the_source_stem_row():
+    measured = sh.measured_by_source_stem({"bubble3d": (27.0, 102.0), "pyro": (1, 2)})
+    assert measured == {"b_lockglue": (27.0, 102.0), "pyro": (1, 2)}
+    cells = _cells(
+        sh.render_table(
+            [_row("b_lockglue", "XL")], ported={"b_lockglue"}, measured=measured
+        )
+    )
+    assert [c["Speed"] for c in cells] == ["27-102 ms measured"]
 
 
 def test_a_ported_hack_with_no_measurement_has_a_dash():

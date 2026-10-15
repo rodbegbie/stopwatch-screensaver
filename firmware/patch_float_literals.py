@@ -54,6 +54,7 @@ for name in ("braid",) + (
     "drift",
     "flame",
     "substrate",
+    "bubble3d",
 ):
     source = (project / "src" / "hacks" / name / f"{name}.c").read_text()
     if name == "fireworkx":
@@ -64,6 +65,10 @@ for name in ("braid",) + (
         source = celtic_patch.scale_the_animation_step(source)
     if name == "etruscanvenus":
         source = etruscanvenus_patch.size_the_grid(source)
+    if name == "bubble3d":
+        source = source.replace(
+            '#include "bubble3d.h"', '#include "hacks/bubble3d/bubble3d.h"'
+        )
     if name == "xspirograph":
         source = xspirograph_patch.reduce_the_angles(source)
     if name in ("binaryring", "binaryhorizon"):

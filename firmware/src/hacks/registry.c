@@ -258,6 +258,12 @@ XLOCKMORE_HACK(polyominoes, "Polyominoes");
 
 extern const HackEntry barcode_hack;
 
+/* Upstream's default `transparent` skips the depth test and expects a blend
+ * that TinyGL's fill does not do, so back faces overwrote front faces as dark
+ * wedges inside each bubble. Opaque turns the depth test on. */
+static const char *const kBubble3DOverrides[] = {"*transparent: False", NULL};
+XLOCKMORE_HACK_WITH(bubble3d, "Bubble3D", kBubble3DOverrides);
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -355,6 +361,7 @@ const HackEntry *const g_hacks[] = {
     &demon_hack,
     &polyominoes_hack,
     &barcode_hack,
+    &bubble3d_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif

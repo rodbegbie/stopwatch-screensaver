@@ -84,6 +84,20 @@ Moved verbatim from AGENTS.md.
   prefetch setting.
 - `esptool` reads of the 16 MB flash need `--baud 921600` (about 3.5 minutes)
   and show no progress when piped.
+- The port name changes with the USB socket the board is plugged into
+  (`/dev/cu.usbmodem112401` became `/dev/cu.usbmodem101` on 2026-10-14). When
+  it is missing, find the board without touching it:
+  `ioreg -p IOUSB -l -w0 | grep -E "\+-o|idVendor|idProduct|USB Product
+  Name|USB Serial Number"` lists USB devices, and
+  `ioreg -r -c IOSerialBSDClient -l | grep IOCalloutDevice` lists the serial
+  ports. The StopWatch is the "USB JTAG/serial debug unit" from Espressif
+  (`idVendor` 12346, `idProduct` 4097). Its USB serial number is its MAC:
+  Rod's board is `28:84:85:43:B2:70`, so check that before flashing a port
+  you have not used before. Pass `--upload-port <port>` to `pio run -t upload`
+  and read the same port for the serial log, and leave `platformio.ini`'s
+  `upload_port` alone. Still ask Rod before each flash. The auto-mode
+  classifier refused a flash to an overridden port once: give Rod the command
+  to run with `!`.
 - Another session may be using the board. Before flashing, run `lsof
   /dev/cu.usbmodem112401`: a "multiple access on port" upload error was
   another session's serial capture, and esptool's connect resets the board
