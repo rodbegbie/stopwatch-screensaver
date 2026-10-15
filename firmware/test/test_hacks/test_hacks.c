@@ -521,7 +521,7 @@ static const uint64_t kBaseline[] = {
     0x355cbdc840d0e8ceull, /* Interaggregate: re-pinned for the float frand, frames looked at */
     0x7118310d47ee4197ull, /* LMorph: taken after looking at the frames */
     0xe73572fd64eef48full, /* Wormhole: taken after looking at the frames */
-    0x936cf56e7add9815ull, /* Truchet: taken after looking at the frames */
+    0x7dd7d7130551c261ull, /* Truchet: taken after looking at the frames */
     0x03670369cb12c2deull, /* UnknownPleasures: after looking at the frames, with the fake clock, smooth lines and the offset margin */
     0x32dbba1459c7753ull, /* Hexadrop: taken after looking at the frames */
     0xa4895fcbd5d235feull, /* StonerView: taken after looking at the frames (saturating additive blend); re-taken for the square outlines (GL_LINE_LOOP, #80) */

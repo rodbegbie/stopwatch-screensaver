@@ -176,8 +176,7 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   each frame, the worker pushes the finished one, and the loop credits that
   push's measured duration against the hack's delay. Pinned A/B on the board,
   plain to overlapped: Deluxe 14.0 to 19.0 fps, Compass 18.8 to 29.1, FuzzyFlakes
-  18.4 to 28.9, Moire2 16.5 to 26.4, Scooter 22.1 to 28.4;
-  Truchet 8.0 to 10.0; fourteen hacks are
+  18.4 to 28.9, Moire2 16.5 to 26.4, Scooter 22.1 to 28.4; thirteen hacks are
   flagged (grep `repaints_all`, and `XLOCKMORE_HACK_REPAINTS_ALL`). The step
   slows by about 5 ms (both cores share the PSRAM cache), so the frame is
   roughly the step, not the longer of the two. Rules:
