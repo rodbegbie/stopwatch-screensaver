@@ -156,6 +156,7 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Demon",
                                          "Polyominoes",
                                          "Barcode",
+                                         "Bubble3D",
 #ifdef HAVE_AFTER_DARK_TOASTERS
                                          "ad-flyingtoasters",
 #endif
@@ -576,6 +577,7 @@ static const uint64_t kBaseline[] = {
     0xcfc4f1fadbfb593dull, /* Demon: taken after looking at the frames */
     0xd453fd2e5e9af439ull, /* Polyominoes: taken after looking at the frames */
     0xce51885618135265ull, /* Barcode: taken after looking at the frames */
+    0x7fec6ac37052ca0dull, /* Bubble3D: taken after looking at the frames */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -1639,6 +1641,10 @@ void test_barcode_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("Barcode", 0);
 }
 
+void test_bubble3d_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Bubble3D", 1);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -1760,6 +1766,7 @@ int main(void) {
   RUN_TEST(test_demon_stops_do_not_leak);
   RUN_TEST(test_polyominoes_stops_do_not_leak);
   RUN_TEST(test_barcode_stops_do_not_leak);
+  RUN_TEST(test_bubble3d_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);

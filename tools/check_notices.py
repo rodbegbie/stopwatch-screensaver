@@ -23,6 +23,12 @@ PACKAGE_LICENCE_FILES = frozenset(
         "xs_support/glx/pipeobjs.c",
         "xs_support/glx/teapot.h",
         "xs_support/glx/teapot2.h",
+        # Bubble3D's other files: the author's copyright line only, part of
+        # the program whose bubble3d.c carries the xlock notice.
+        "hacks/bubble3d/b_lockglue.c",
+        "hacks/bubble3d/b_draw.c",
+        "hacks/bubble3d/b_sphere.c",
+        "hacks/bubble3d/bubble3d.h",
     }
 )
 HEADER_LINES = 100

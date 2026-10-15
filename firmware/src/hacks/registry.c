@@ -258,6 +258,8 @@ XLOCKMORE_HACK(polyominoes, "Polyominoes");
 
 extern const HackEntry barcode_hack;
 
+XLOCKMORE_HACK(bubble3d, "Bubble3D");
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -355,6 +357,7 @@ const HackEntry *const g_hacks[] = {
     &demon_hack,
     &polyominoes_hack,
     &barcode_hack,
+    &bubble3d_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif

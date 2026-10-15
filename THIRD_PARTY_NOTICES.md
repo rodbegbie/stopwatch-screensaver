@@ -170,6 +170,11 @@ implied warranty.
 | `firmware/src/hacks/droste/droste.c` | Copyright © 2023-2025 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/polyominoes/polyominoes.c` | Copyright (c) 2000 Stephen Montgomery-Smith | xlock permission notice (below) |
 | `firmware/src/hacks/barcode/barcode.c` | Copyright (c) 2003 Dan Bornstein | jwz permission notice (above) |
+| `firmware/src/hacks/bubble3d/bubble3d.c` | Copyright (C) 1998 Richard W.M. Jones | xlock permission notice (below) |
+| `firmware/src/hacks/bubble3d/b_lockglue.c` | Copyright (C) 1998 Richard W.M. Jones; no licence text of its own | xlock permission notice (below), as in `bubble3d.c` |
+| `firmware/src/hacks/bubble3d/b_draw.c` | Copyright (C) 1998 Richard W.M. Jones; no licence text of its own | xlock permission notice (below), as in `bubble3d.c` |
+| `firmware/src/hacks/bubble3d/b_sphere.c` | Copyright (C) 1998 Richard W.M. Jones; no licence text of its own | xlock permission notice (below), as in `bubble3d.c` |
+| `firmware/src/hacks/bubble3d/bubble3d.h` | Copyright (C) 1998 Richard W.M. Jones; no licence text of its own | xlock permission notice (below), as in `bubble3d.c` |
 | `firmware/src/xs_support/glx/sphere.c` | Copyright (c) 2002 Paul Bourke, Copyright (c) 2010-2026 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/sphere.h` | Copyright (c) 2001-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/teapot.c` | Copyright (c) Mark J. Kilgard, 1994; (c) Copyright 1993, Silicon Graphics, Inc. | Silicon Graphics notice (below) |
@@ -206,6 +211,12 @@ trade secrets or any patents by this file or any part thereof.  In no
 event will the author be liable for any lost revenue or profits or
 other special, indirect and consequential damages.
 ```
+
+Bubble3D's `bubble3d.c` carries the same text under Richard W.M. Jones's
+copyright line. Its other four files (`b_lockglue.c`, `b_draw.c`,
+`b_sphere.c`, `bubble3d.h`) have only the author's copyright line: they are
+parts of the same program, so they are listed under that notice (Rod's
+decision), and `tools/check_notices.py` lists them by name.
 
 ### ozymandias G desiderata notice (Cynosure)
 
