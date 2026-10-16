@@ -89,12 +89,18 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   64-bit conversion, so its per-row loop (two divides, `fminf`, `fmaxf`, two
   `floorf` and two `__fixsfdi` calls a row) was about 3 us a span. It now
   divides each edge's slope once per polygon and uses compares and 32-bit
-  `floor_int`. Output is pixel-identical (no pinned frame moved;
-  `test_wide_strokes_of_random_lines_match_the_pinned_hash` hashes 3,000 random
-  strokes), and on the board Lisa's step went 52.3 to 34.6 ms at width 2 (14.2
-  to 19.0 fps) and 85.4 to 52.2 ms at width 8 (9.8 to 14.3 fps). Braid and
-  Deluxe gain too: Braid 124.6 to 95.2 ms (8.1 to 9.7 fps) and Deluxe 51.6 to
-  49.0 ms (19.0 to 20.0 fps), two rounds each. The width
+  `floor_int`. That rounds a few ulps differently from dividing first, which
+  moved pixels on a boundary (review of #128): a row whose span ends are within
+  rounding of a boundary decision is worked out the old way, and the pixels
+  match main's. Test it with each stroke on a cleared canvas
+  (`test_wide_strokes_of_random_lines_match_the_pinned_hash`, pinned from main's
+  rasteriser): a hash of strokes drawn together missed it, because later strokes
+  covered the pixels that differed. Checking every edge of every row cost most
+  of the gain (Lisa 43 ms at width 2); checking the two span ends and reusing
+  their floors keeps it. On the board Lisa's step went 52.3 to 38.5 ms at width
+  2 (14.2 to 17.7 fps) and 85.4 to 60.1 ms at width 8 (9.7 to 12.9 fps), Braid
+  125.4 to about 94 ms (8.1 to 9.7 fps) and Deluxe 51.9 to 49.2 ms (19.0 to
+  19.9 fps), two rounds each. The width
   sweep on the host (`-DLW=N` with `LINEWIDTH` edited, temporarily) shows the
   cliff is thin to wide: width 1 takes the `canvas_line` path at 0.09 ms, width
   2 is 0.52 ms and width 8 0.85 ms. Look for the same library calls in a
