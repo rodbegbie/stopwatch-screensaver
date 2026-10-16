@@ -145,14 +145,36 @@ def test_a_shelved_hack_without_a_measured_step_or_source_is_skipped(tmp_path):
     assert got == {}
 
 
-def test_a_shelved_hack_that_cannot_be_probed_is_an_error(tmp_path):
+def test_a_shelved_hack_that_cannot_be_probed_is_skipped_with_a_note(tmp_path, capsys):
     _hack_source(tmp_path, "celtic")
+    _hack_source(tmp_path, "braid")
 
     def fake(name, source, root):
-        return {"error": "does not link: XFoo"}
+        if name == "celtic":
+            return {"error": "does not link: XFoo"}
+        return {"host_ms": 2.0}
 
-    with pytest.raises(sb.BacktestError, match="celtic: does not link"):
-        sb.probe_shelved(["celtic"], {"celtic": (1.0, 2.0)}, tmp_path, fake)
+    measured = {"celtic": (1.0, 2.0), "braid": (1.0, 2.0)}
+    got = sb.probe_shelved(["celtic", "braid"], measured, tmp_path, fake)
+    assert got == {"braid": 2.0}
+    assert "celtic: does not link: XFoo, left out" in capsys.readouterr().err
+
+
+def test_a_shelved_gl_hack_is_timed_with_the_gl_layer(tmp_path):
+    path = tmp_path / "firmware" / "src" / "hacks" / "hypnowheel" / "hypnowheel.c"
+    path.parent.mkdir(parents=True)
+    path.write_text('#include "rotator.h"\n#ifdef USE_GL\n#endif\n')
+
+    def plain(name, source, root):
+        raise AssertionError("a GL hack needs the GL layer")
+
+    def gl(name, source, root):
+        return {"host_ms": 5.5, "frames": 300}
+
+    got = sb.probe_shelved(
+        ["hypnowheel"], {"hypnowheel": (1.4, 720.0)}, tmp_path, plain, gl
+    )
+    assert got == {"hypnowheel": 5.5}
 
 
 def _script(tmp_path, body):

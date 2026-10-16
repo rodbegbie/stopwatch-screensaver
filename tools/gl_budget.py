@@ -10,6 +10,8 @@ contention, and the figures are only as good as its calibration against Gears.
 """
 
 import argparse
+import contextlib
+import io
 import re
 import subprocess
 import sys
@@ -18,6 +20,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
+import make_logo_blob
 import probe_hacks
 import teapot_table
 import tinygl_patch
@@ -252,6 +255,24 @@ def write_tinygl(root: Path, generated: Path) -> None:
     (generated / "tinygl_unity.c").write_text(tinygl_patch.unity_source(tree))
 
 
+TEXTURE_INCLUDE = re.compile(r'#\s*include\s*"images/gen/(\w+)_png\.h"')
+
+
+def write_textures(source: str, root: Path, generated: Path) -> None:
+    """The raw blobs a hack includes as images/gen/<name>_png.h, converted from
+    the vendored images/<name>.png as firmware/gl_textures.py does."""
+    images = xs_vendor.upstream(root) / "hacks" / "images"
+    for name in sorted(set(TEXTURE_INCLUDE.findall(source))):
+        image = images / f"{name}.png"
+        if not image.is_file():
+            continue
+        header = generated / "images" / "gen" / f"{name}_png.h"
+        with contextlib.redirect_stdout(io.StringIO()):
+            make_logo_blob.main(
+                [str(image), "--name", f"{name}_png", "-o", str(header)]
+            )
+
+
 def measure(
     name: str,
     source: str,
@@ -279,6 +300,7 @@ def measure(
                     str(generated / "teapot"),
                 ]
             )
+            write_textures(source, root, generated)
             (tmp / f"{name}.c").write_text("#define USE_GL\n" + source)
             registry = tmp / "probe_registry.c"
             registry.write_text(
