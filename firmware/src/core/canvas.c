@@ -184,17 +184,17 @@ static int clip_line(const Canvas *c, double *x0, double *y0, double *x1,
 }
 
 void canvas_line(Canvas *c, int x0, int y0, int x1, int y1, uint16_t color) {
-  double ax = x0, ay = y0, bx = x1, by = y1;
+  int ix0 = x0, iy0 = y0, ix1 = x1, iy1 = y1;
   int clipped = x0 < 0 || y0 < 0 || x0 >= c->w || y0 >= c->h || x1 < 0 ||
                 y1 < 0 || x1 >= c->w || y1 >= c->h;
   if (clipped) {
+    double ax = x0, ay = y0, bx = x1, by = y1;
     if (!clip_line(c, &ax, &ay, &bx, &by)) return;
-    ax = floor(ax + 0.5);
-    ay = floor(ay + 0.5);
-    bx = floor(bx + 0.5);
-    by = floor(by + 0.5);
+    ix0 = (int)floor(ax + 0.5);
+    iy0 = (int)floor(ay + 0.5);
+    ix1 = (int)floor(bx + 0.5);
+    iy1 = (int)floor(by + 0.5);
   }
-  int ix0 = (int)ax, iy0 = (int)ay, ix1 = (int)bx, iy1 = (int)by;
   int dx = abs(ix1 - ix0), sx = ix0 < ix1 ? 1 : -1;
   int dy = -abs(iy1 - iy0), sy = iy0 < iy1 ? 1 : -1;
   int err = dx + dy;
