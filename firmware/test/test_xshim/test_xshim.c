@@ -2497,26 +2497,29 @@ void test_polyline_with_alpha_blends_a_join_once(void) {
   XFreeGC(dpy, gc);
 }
 
-/* Pins every pixel of many random wide segments and polylines, so a change to
- * how fill_convex finds each row's span shows up as a moved hash. */
+/* Pins the pixels of many random wide segments and polylines, each drawn on a
+ * cleared canvas and hashed alone: drawn together, a later stroke covers the
+ * pixels where an earlier one would differ. A change to how fill_convex finds
+ * each row's span shows up as a moved hash. */
 void test_wide_strokes_of_random_lines_match_the_pinned_hash(void) {
   use_canvas(200);
-  canvas_clear(&cv, 0);
   srandom(1);
-  for (int i = 0; i < 3000; i++) {
+  uint64_t h = 1469598103934665603ull;
+  for (int i = 0; i < 6000; i++) {
+    canvas_clear(&cv, 0);
     const int width = 2 + (int)(random() % 7);
+    const int cap = (int)(random() % 3);
     const int join = (int)(random() % 3);
-    GC gc = wide_gc(width, CapRound, join);
-    gc->foreground = (uint16_t)(random() & 0xFFFF);
+    GC gc = wide_gc(width, cap, join);
+    gc->foreground = 0xFFFF;
     int xy[8];
     for (int k = 0; k < 8; k++) xy[k] = (int)(random() % 260) - 30;
     if (i % 2) stroke_segment(&cv, gc, xy[0], xy[1], xy[2], xy[3]);
     else stroke_polyline(&cv, gc, xy, 4, i % 3 == 0);
     XFreeGC(dpy, gc);
+    for (size_t k = 0; k < (size_t)cv.w * cv.h; k++) h = (h ^ cv.px[k]) * 1099511628211ull;
   }
-  uint64_t h = 1469598103934665603ull;
-  for (size_t i = 0; i < (size_t)cv.w * cv.h; i++) h = (h ^ cv.px[i]) * 1099511628211ull;
-  TEST_ASSERT_EQUAL_UINT64(0x66a3ad6e46d5390eull, h);
+  TEST_ASSERT_EQUAL_UINT64(0x275c89dc98bc3901ull, h);
 }
 
 void test_polyline_with_alpha_blends_a_self_crossing_once(void) {

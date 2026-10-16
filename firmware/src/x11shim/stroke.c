@@ -243,6 +243,19 @@ static int floor_int(float v) {
   return (float)t > v ? t - 1 : t;
 }
 
+/* Whether a crossing at x lies within rounding error of a pixel boundary:
+ * where fill_convex's left edge (x - 0.5 reaching a whole number) or right edge
+ * (the same with EDGE_SLACK added) changes pixel. The error is a few ulps of
+ * the larger terms, so the margin grows with their size. */
+static bool near_boundary(float x, float x0) {
+  const float tol = 2e-4f + 5e-7f * (fabsf(x) + fabsf(x0));
+  const float f = x - 0.5f;
+  float d = f - (float)floor_int(f);
+  if (d < tol || d > 1.0f - tol) return true;
+  d -= 1.0f - EDGE_SLACK;
+  return d < tol && d > -tol;
+}
+
 /* Fills a convex polygon whose vertices are in pixel coordinates, where the
  * pixel at x, y has its centre at x + 0.5, y + 0.5. A pixel is drawn when its
  * centre is inside, the left and top edges excluded and the right and bottom
@@ -251,11 +264,16 @@ static int floor_int(float v) {
  *
  * Each edge's slope is divided out once per polygon, not twice per row, and
  * the min, max and floor calls are compares. The S3 has no float divide,
- * min, max, floor or 64-bit conversion: each is a library call. */
+ * min, max, floor or 64-bit conversion: each is a library call.
+ *
+ * The slope shortcut rounds a few ulps differently from dividing first, which
+ * can flip a pixel whose centre is within rounding of an edge. When a row's x
+ * is that close to either boundary decision it is worked out the long way
+ * (divide, then multiply), so the pixels match the plain version exactly. */
 static void fill_convex(Canvas *c, const float pts[][2], int n,
                         uint16_t colour) {
   float ymin = pts[0][1], ymax = ymin;
-  float ya[4], xa[4], top[4], bot[4], slope[4];
+  float ya[4], xa[4], yb[4], xb[4], top[4], bot[4], slope[4];
   int edges = 0;
   for (int i = 0, j = n - 1; i < n; j = i++) {
     const float yi = pts[i][1], yj = pts[j][1];
@@ -264,6 +282,8 @@ static void fill_convex(Canvas *c, const float pts[][2], int n,
     if (yi == yj) continue;
     ya[edges] = yi;
     xa[edges] = pts[i][0];
+    yb[edges] = yj;
+    xb[edges] = pts[j][0];
     top[edges] = yi < yj ? yi : yj;
     bot[edges] = yi < yj ? yj : yi;
     slope[edges] = (pts[j][0] - pts[i][0]) / (yj - yi);
@@ -277,7 +297,9 @@ static void fill_convex(Canvas *c, const float pts[][2], int n,
     bool hit = false;
     for (int e = 0; e < edges; e++) {
       if (!(top[e] < sy && bot[e] >= sy)) continue;
-      const float x = xa[e] + (sy - ya[e]) * slope[e];
+      float x = xa[e] + (sy - ya[e]) * slope[e];
+      if (near_boundary(x, xa[e]))
+        x = xa[e] + (sy - ya[e]) / (yb[e] - ya[e]) * (xb[e] - xa[e]);
       if (!hit) {
         xl = xr = x;
         hit = true;
