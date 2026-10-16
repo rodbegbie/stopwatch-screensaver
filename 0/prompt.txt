@@ -1,0 +1,80 @@
+Investigate issue #98
+
+---
+
+Yes: prototype an integer/incremental edge stepper in fill_convex, A/B it on the board at Lisa widths 2 and 8 with ab_flash.py, and report pinned-frame changes before committing anything. You have my approval to flash for this.
+
+---
+
+<task-notification>
+<task-id>bjzog12p9</task-id>
+<tool-use-id>toolu_013qo7sP5DK2x8GBP1qj8YXi</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/tasks/bjzog12p9.output</output-file>
+<status>completed</status>
+<summary>Background command "sed -i.bak 's/^#define  LINEWIDTH    -8 /#define  LINEWIDTH    LW /' firmware/src/hacks/lisa/lisa.c &amp;&amp; rm firmware/src/hacks/lisa/lisa.c.bak &amp;&amp; git diff --stat firmware/src/hacks/lisa/lisa.c | tail -1; source tools/env.sh; (.venv/bin/python -I tools/ab_flash.py --hack Lisa --seconds 60 --rounds 2 --out /private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/scratchpad/ab98 "old2=-DLW=2 -DFILL_CONVEX_OLD" "new2=-DLW=2" "old8=-DLW=8 -DFILL_CONVEX_OLD" "new8=-DLW=8" &gt; /private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/scratchpad/ab98.log 2&gt;&amp;1; touch /private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/scratchpad/ab98.done) &lt;/dev/null &gt;/dev/null 2&gt;&amp;1 &amp;
+sleep 2; echo started" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+How's it going?
+
+---
+
+<task-notification>
+<task-id>bpth0kb1t</task-id>
+<tool-use-id>toolu_01RajaW3ppDVUgWynvnEryjA</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/tasks/bpth0kb1t.output</output-file>
+<status>completed</status>
+<summary>Background command "S=/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/scratchpad; until [ -f $S/ab98.done ]; do sleep 15; done; tail -30 $S/ab98.log" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Commit and push it. Re-run the full native suite first, update the Lisa/#98 notes in rules/x11shim.md, then I'll say merge.
+
+---
+
+Check /private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/scratchpad/ab98.log and ab98.done for the #98 Lisa A/B result
+
+---
+
+Are there any other hacks that you think would benefit from this change?
+
+---
+
+Yeah, run that A/B test on the board.
+
+---
+
+<task-notification>
+<task-id>b310b693a</task-id>
+<tool-use-id>toolu_01To7x73UFscaB6QdCixUNf2</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/tasks/b310b693a.output</output-file>
+<status>completed</status>
+<summary>Background command "S=/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/scratchpad; rm -f $S/ab98b.done; cd /Users/rod/build/stopwatch-screensaver &amp;&amp; source tools/env.sh &amp;&amp; for H in Braid Deluxe; do .venv/bin/python -I tools/ab_flash.py --hack $H --seconds 60 --rounds 2 --out $S/ab98_$H "old=-DFILL_CONVEX_OLD" "new=" &gt; $S/ab98_$H.log 2&gt;&amp;1; done; touch $S/ab98b.done" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Add the Braid and Deluxe numbers to the x11shim.md note, commit, push, and open the PR with the deliver-branch skill (Refs #98).
+
+---
+
+/address-findings 74
+
+---
+
+Commit and push it.
+
+---
+
+/address-findings
+
+---
+
+Check scratchpad ab98_Braid.log and ab98_Deluxe.log and ab98b.done for the Braid/Deluxe fill_convex A/B
+
+---
+
+Commit and push it, then re-flash and re-run the A/B on Lisa (widths 2 and 8), Braid and Deluxe against main's fill_convex, and update the PR numbers. You have my approval to flash for this.
