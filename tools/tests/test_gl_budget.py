@@ -425,3 +425,24 @@ def test_an_override_changes_what_the_hack_reads():
     over = gb.measure("stub", source, ROOT, frames=5, overrides=["*tris: 6"])
     assert plain["counts"].triangles == 1
     assert over["counts"].triangles == 6
+
+
+def test_textures_a_hack_includes_are_converted_from_the_vendored_images(tmp_path):
+    pytest.importorskip("PIL")
+    from PIL import Image
+
+    images = tmp_path / "vendor" / f"xscreensaver-{gb.xs_vendor.VERSION}"
+    images = images / "hacks" / "images"
+    images.mkdir(parents=True)
+    Image.new("RGBA", (2, 2), (255, 0, 0, 255)).save(images / "tex.png")
+    generated = tmp_path / "generated"
+
+    gb.write_textures('#include "images/gen/tex_png.h"\n', tmp_path, generated)
+
+    header = generated / "images" / "gen" / "tex_png.h"
+    assert "tex_png" in header.read_text()
+
+
+def test_a_hack_without_texture_includes_converts_nothing(tmp_path):
+    gb.write_textures("int x;\n", tmp_path, tmp_path / "generated")
+    assert not (tmp_path / "generated").exists()

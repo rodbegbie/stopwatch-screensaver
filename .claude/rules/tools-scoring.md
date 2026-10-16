@@ -34,13 +34,13 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   in the text of `g_hacks[]`, `#ifdef` or not, and then refuses one that
   `failed_ports.txt` also lists. A probe-only entry (Hypnowheel's
   `HYPNOWHEEL_PROBE`) goes through a macro defined above the array.
-- `speed_backtest.py` stops with "hypnowheel: does not compile ... 'rotator.h'
-  file not found": a dropped GL port counts in the backtest and is probed
-  standalone, without the GL helpers' include path. `docs/speed-backtest.md`
-  was last regenerated before Hypnowheel was ported, and was not regenerated
-  for the CWaves batch either (issue #124). The scorer also lists calls inside
-  code that is never compiled (`XCreateBitmapFromData` in Cynosure's
-  `DO_STIPPLE` block) as gaps.
+- `speed_backtest.py` probes a dropped (shelved) hack standalone. A GL one
+  (its source has `USE_GL`: Hypnowheel) is built with the GL layer through
+  `gl_budget.measure`, which also converts the `images/gen/<n>_png.h` textures
+  it includes. One that still cannot be built (BlockTube needs `glFogi`, which
+  the GL layer lacks) is left out with a `note:` on stderr, so read the run's
+  output for notes. The scorer also lists calls inside code that is never
+  compiled (`XCreateBitmapFromData` in Cynosure's `DO_STIPPLE` block) as gaps.
 - `score_hacks.py` skips the names in `OWN_HACKS` (our own hacks with no
   xscreensaver source, now `ad_flyingtoasters`) and still reports any other
   registry name it cannot scan as a typo. `speed_backtest.py` runs on the host

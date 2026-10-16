@@ -15,6 +15,7 @@ import sys
 import textwrap
 from pathlib import Path
 
+import gl_budget
 import probe_hacks
 import score_hacks
 
@@ -91,19 +92,25 @@ def probe_shelved(
     measured: dict[str, tuple[float, float]],
     root: Path,
     probe=probe_hacks.probe,
+    probe_gl=gl_budget.measure,
 ) -> dict[str, float]:
     """Host times for hacks that were ported, measured on the device and then
     taken out of the registry (tools/failed_ports.txt). The harness cannot run
     them, but their source is still in firmware/src/hacks, and the standalone
-    probe agrees with the harness (0.73-1.43x on 20 hacks)."""
+    probe agrees with the harness (0.73-1.43x on 20 hacks). One that cannot be
+    built is left out with a note, so a single dropped port cannot block the
+    run. A GL hack (its source has `USE_GL`) is built with the GL layer, as
+    tools/gl_budget.py does."""
     host = {}
     for name in names:
         source = root / "firmware" / "src" / "hacks" / name / f"{name}.c"
         if name not in measured or not source.exists():
             continue
-        result = probe(name, source.read_text(errors="replace"), root)
+        text = source.read_text(errors="replace")
+        result = (probe_gl if "USE_GL" in text else probe)(name, text, root)
         if "error" in result:
-            raise BacktestError(f"{name}: {result['error']}")
+            print(f"note: {name}: {result['error']}, left out", file=sys.stderr)
+            continue
         host[name] = result["host_ms"]
     return host
 
