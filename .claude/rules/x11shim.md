@@ -92,9 +92,9 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   `floor_int`. Output is pixel-identical (no pinned frame moved;
   `test_wide_strokes_of_random_lines_match_the_pinned_hash` hashes 3,000 random
   strokes), and on the board Lisa's step went 52.3 to 34.6 ms at width 2 (14.2
-  to 19.0 fps) and 85.4 to 52.2 ms at width 8 (9.8 to 14.3 fps). Every other
-  wide-line hack gains too: Braid 124.6 to 95.2 ms (8.1 to 9.7 fps) and
-  Deluxe 51.6 to 49.0 ms (19.0 to 20.0 fps), two rounds each. The width
+  to 19.0 fps) and 85.4 to 52.2 ms at width 8 (9.8 to 14.3 fps). Braid and
+  Deluxe gain too: Braid 124.6 to 95.2 ms (8.1 to 9.7 fps) and Deluxe 51.6 to
+  49.0 ms (19.0 to 20.0 fps), two rounds each. The width
   sweep on the host (`-DLW=N` with `LINEWIDTH` edited, temporarily) shows the
   cliff is thin to wide: width 1 takes the `canvas_line` path at 0.09 ms, width
   2 is 0.52 ms and width 8 0.85 ms. Look for the same library calls in a
