@@ -59,6 +59,17 @@ static GLint g_clear_z;
 static bool g_z_deferred; /* a depth clear is waiting for the depth test */
 static GLint g_deferred_z;
 
+/* The push overlap gives the canvas a second buffer; this is the colour state
+ * of the one TinyGL is not drawing into. */
+typedef struct {
+  PIXEL *px;
+  Box color_box;
+  bool color_valid;
+  PIXEL clear_color;
+} BufferState;
+
+static BufferState g_other_buffer;
+
 static bool box_empty(Box b) { return b.x0 > b.x1 || b.y0 > b.y1; }
 
 TGL_HOT static void box_add(Box *b, Box o) {
@@ -82,6 +93,36 @@ static void reset_dirty_rectangle(void) {
   g_z_deferred = false;
   g_swap_drawn = kEmptyBox;
   g_swap_erased = g_canvas ? whole_canvas() : kEmptyBox;
+  g_other_buffer = (BufferState){0};
+}
+
+/* The display shows the other buffer, whose drawing lies inside its colour box
+ * once that buffer has had a clear; until then nothing about it is known. If
+ * the two buffers were cleared to different colours, every pixel differs. */
+static void follow_canvas(void) {
+  if (!g_canvas || g_scale != 1) return;
+  PIXEL *now = (PIXEL *)g_canvas->px;
+  if (g_zb->pbuf == now) return;
+  const BufferState left = {g_zb->pbuf, g_color_box, g_color_valid, g_clear_color};
+  box_add(&g_swap_erased, left.color_valid ? left.color_box : whole_canvas());
+  if (g_other_buffer.px == now) {
+    g_color_box = g_other_buffer.color_box;
+    g_color_valid = g_other_buffer.color_valid;
+    g_clear_color = g_other_buffer.clear_color;
+    if (g_clear_color != left.clear_color) box_add(&g_swap_erased, whole_canvas());
+  } else {
+    g_color_box = kEmptyBox;
+    g_color_valid = false;
+  }
+  g_other_buffer = left;
+  g_zb->pbuf = now;
+}
+
+void glshim_canvas_overwritten(void) {
+  if (!g_zb) return;
+  g_color_valid = false;
+  g_other_buffer.color_valid = false;
+  box_add(&g_swap_erased, whole_canvas());
 }
 
 /* Puts a box in order, clamps it to a w by h canvas and stores it as
@@ -118,6 +159,7 @@ void (*glshim_box_observer)(int x0, int y0, int x1, int y1);
 TGL_HOT void glshim_note_box(GLint x0, GLint y0, GLint x1, GLint y1) {
   if (!g_zb) return;
   int c[4];
+  follow_canvas();
   if (!glshim_clamp_box(x0, y0, x1, y1, g_zb->xsize, g_zb->ysize, c)) return;
   const Box b = {c[0], c[1], c[2], c[3]};
   if (glshim_box_observer) glshim_box_observer(c[0], c[1], c[2], c[3]);
@@ -178,6 +220,7 @@ void glshim_clear(ZBuffer *zb, GLint clear_z, GLint z, GLint clear_color,
 #ifdef GL_PROFILE
   const uint32_t prof_start = glshim_prof_now();
 #endif
+  follow_canvas();
   const Box all = whole_canvas();
   if (clear_color) {
     const PIXEL color = RGB_TO_PIXEL(r, g, b);

@@ -209,9 +209,29 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   its early frames at count 20 and the first window on the board read 15.0,
   but the model reads one early frame and the hack's cost grows over its
   cycle (the step reached 293 ms).
-- Overlapping the push with the next frame (core 0 pushing while core 1
-  renders) is untried; it needs a second 434 KB buffer, a lock around M5GFX, and
-  the PSRAM bandwidth may limit the gain.
+- The push overlap (`repaints_all`, issue #118): before each clear or
+  primitive, `follow_canvas` points TinyGL's `pbuf` at the current
+  `canvas->px`. The colour dirty rectangle is kept per buffer (the buffer
+  just left keeps its box, valid flag and clear colour), so a clear still
+  rewrites only what was drawn in that buffer; a buffer TinyGL never drew in
+  gets a full clear. The box last drawn in the buffer just left is marked
+  erased, since that is what the display shows. The swap does not follow:
+  a frame that draws nothing must mark nothing, or the push would send the
+  older frame the new buffer holds. If the two buffers' clear colours
+  differ, the switch marks the whole canvas: the clear finds its own buffer
+  already that colour and rewrites nothing (red, green, red left the
+  display green). `glshim_canvas_overwritten()` forces a full clear for
+  writers other than TinyGL (`test_push_overlap`'s noise
+  run). Not for a scale-2 hack (`double_into_canvas` writes only the box) or
+  Pipes (skips clears). Pinned A/B, plain to overlapped: Bubble3D 11.2 to
+  12.0 fps, Gears 15.2 to 16.5, CubicGrid 15.3 to 19.5, StonerView 36.4 to
+  43.8, HexTrail 15.2 to 20.5 before its first restart; Morph3D about 3%
+  (small push), unflagged. The step grew 5 to 10 ms with both cores on
+  PSRAM.
+- The swap marks two bounding boxes (erased, drawn), not a list of
+  regions: a drawing in the top half and an erase in the bottom one mark
+  every row between. A test that asserts a row stays clean must keep both
+  frames' drawings on one side of it (`corner_frame(f % 2)`).
 - Board profiles (issue #43): `-DGL_PROFILE` prints a `glprof` line after
   each `run` line with cycle counts per stage (clear, list, vertex, shade,
   tri, fill, point, line; nested, so vertex includes tri and fill), and

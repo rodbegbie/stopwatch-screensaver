@@ -474,8 +474,8 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   byte-identical). Upstream's own `GLB_SLOW_GL` (set in `bubble3d_gl.c`) takes
   the sphere from 1,280 to 320 triangles: 4-5 fps became mean 11.5, worst
   window 8.2, with the push (12-24 ms, a full frame) now a fifth of the frame.
-  `XLOCKMORE_HACK_REPAINTS_ALL` fails both `test_push_overlap` checks, because
-  TinyGL keeps drawing into the original `canvas->px` (issue #118). Upstream's
+  It is flagged `repaints_all` since the GL layer follows the canvas swap
+  (issue #118): 11.2 to 12.0 fps, worst window 8.0 to 8.8. Upstream's
   default `transparent` skips the depth test and expects a blend TinyGL's fill
   does not do, so back faces overwrote front faces as a dark wedge in each
   bubble (found by the trail review): the registry overrides `*transparent:

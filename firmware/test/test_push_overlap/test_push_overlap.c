@@ -7,6 +7,7 @@
 #include <unity.h>
 
 #include "core/canvas.h"
+#include "glshim/glshim.h"
 #include "hacks/registry.h"
 #include "runner/hack_runner.h"
 #include "runner/push_overlap.h"
@@ -284,12 +285,19 @@ static uint32_t disc_hash(const uint16_t *px) {
   return h;
 }
 
-static void add_noise(void) {
+static void fill_noise(uint16_t *px) {
   static uint32_t lcg = 12345;
   for (int i = 0; i < BW * BW; i++) {
     lcg = lcg * 1664525u + 1013904223u;
-    big.px[i] = (uint16_t)(lcg >> 16);
+    px[i] = (uint16_t)(lcg >> 16);
   }
+}
+
+/* A GL hack's clear trusts that only TinyGL writes the canvas, so it is told
+ * about the noise; the swapped run checks that trust against the real swap. */
+static void add_noise(void) {
+  fill_noise(big.px);
+  glshim_canvas_overwritten();
 }
 
 static void run_plain(const HackEntry *e, int frames, bool noise, uint32_t *out) {
@@ -320,7 +328,8 @@ static int shadow_push(void *ctx, Canvas *view) {
 static void run_swapped(const HackEntry *e, int frames, uint32_t *out) {
   const HackEntry *const hacks[] = {e};
   HackRunner *r = runner_create_with(&big, hacks, 1);
-  uint16_t *spare_px = calloc((size_t)BW * BW, sizeof(uint16_t));
+  uint16_t *spare_px = malloc((size_t)BW * BW * sizeof(uint16_t));
+  fill_noise(spare_px);
   PushOverlap *p = push_overlap_create(&big, spare_px, &kOps, shadow_push, NULL);
   TEST_ASSERT_NOT_NULL(p);
   srandom(1);

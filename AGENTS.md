@@ -243,6 +243,9 @@ ones below apply everywhere.
   file, check `$?`, then read the summary line.
 - Mutation-checking wrap-around code: a mutation that just reorders unsigned
   arithmetic can be equivalent and survive. Use `int64_t` to break it for real.
+- A guard condition already implied elsewhere (`color_valid &&` where an
+  invalid side is fully cleared anyway) leaves an equivalent mutant that
+  survives: drop it, so every part of the guard can be killed.
 - After a mutation check, `grep` that the change applied: a `sed` that matches
   nothing leaves the tests green and proves nothing. Restore the file and
   confirm with `cmp` or `git diff`.
@@ -312,6 +315,11 @@ ones below apply everywhere.
   `.claude/skills/m5stack-stopwatch/`.
 - A `python3 <<EOF` heredoc that contains backticks runs them as shell
   commands: quote the delimiter (`<<'EOF'`) and pass paths as arguments.
+- Never `git commit` while `ab_flash` (or any build) is compiling from the
+  working tree: pre-commit stashes unstaged files for a moment, and a
+  `registry.c` compiled in that second dropped a variant's flags (Gears' B
+  side read `push=8.18`, as plain). Check an overlapped variant reads
+  `push=0.1`.
 - `pio test` hides which test crashed and AddressSanitizer's report: after a
   failure, run `.pio/build/native/program` from `firmware/` for the per-test
   PASS/FAIL lines and the ASan stack.

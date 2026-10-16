@@ -883,6 +883,194 @@ void test_the_swap_marks_only_the_old_and_new_boxes_dirty(void) {
                             "a row between the two boxes was marked");
 }
 
+/* The push overlap (runner/push_overlap.h) swaps canvas->px for a second
+ * buffer after each frame. Frame f draws one triangle in corner f % 4 on a red
+ * clear; each frame's canvas, and a shadow display that gets only the rows the
+ * swap marked, must match a run on one buffer. */
+#define SWAP_FRAMES 6
+
+static uint32_t hash_px(const uint16_t *px) {
+  uint32_t h = 2166136261u;
+  for (int i = 0; i < SIZE * SIZE; i++) h = (h ^ px[i]) * 16777619u;
+  return h;
+}
+
+static void corner_frame(int f) {
+  const float sx = f % 2 ? 1 : -1, sy = f / 2 % 2 ? 1 : -1;
+  clear_all();
+  triangle(0.5f * sx, 0.5f * sy, 0.9f * sx, 0.5f * sy, 0.9f * sx, 0.9f * sy, 0, 0,
+           0, 1);
+  glXSwapBuffers(dpy, 0);
+}
+
+static void push_into(uint16_t *shown) {
+  int x0, x1;
+  for (int y = 0; y < SIZE; y++)
+    if (canvas_dirty_row(&cv, y, &x0, &x1))
+      memcpy(shown + y * SIZE + x0, cv.px + y * SIZE + x0,
+             (size_t)(x1 - x0 + 1) * sizeof(uint16_t));
+  canvas_clear_dirty(&cv);
+}
+
+static void run_corner_frames(bool swapping, uint32_t drawn[], uint32_t shown[]) {
+  uint16_t *own = cv.px, *spare = malloc(SIZE * SIZE * sizeof(uint16_t));
+  uint16_t *display = malloc(SIZE * SIZE * sizeof(uint16_t));
+  for (int i = 0; i < SIZE * SIZE; i++) spare[i] = display[i] = 0x1234;
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glClearColor(1, 0, 0, 0);
+  for (int f = 0; f < SWAP_FRAMES; f++) {
+    corner_frame(f);
+    drawn[f] = hash_px(cv.px);
+    push_into(display);
+    shown[f] = hash_px(display);
+    if (swapping) cv.px = cv.px == own ? spare : own;
+  }
+  glshim_close();
+  cv.px = own;
+  free(spare);
+  free(display);
+}
+
+void test_drawing_follows_the_canvas_to_its_other_buffer(void) {
+  uint32_t plain[SWAP_FRAMES], plain_shown[SWAP_FRAMES];
+  uint32_t swapped[SWAP_FRAMES], swapped_shown[SWAP_FRAMES];
+  run_corner_frames(false, plain, plain_shown);
+  run_corner_frames(true, swapped, swapped_shown);
+  TEST_ASSERT_EQUAL_HEX32_ARRAY_MESSAGE(plain, swapped, SWAP_FRAMES,
+                                        "a buffer's frame differs");
+  TEST_ASSERT_EQUAL_HEX32_ARRAY_MESSAGE(plain_shown, swapped_shown, SWAP_FRAMES,
+                                        "what reached the display differs");
+}
+
+/* Each buffer keeps its own dirty rectangle, so once both have had a full
+ * clear a clear rewrites only what was drawn in that buffer. */
+void test_each_buffer_keeps_its_own_partial_clear(void) {
+  uint16_t *own = cv.px, *spare = malloc(SIZE * SIZE * sizeof(uint16_t));
+  const int centre_px = (SIZE / 2) * SIZE + SIZE / 2;
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glClearColor(1, 0, 0, 0);
+  for (int f = 0; f < SWAP_FRAMES; f++) {
+    if (f == 2) own[centre_px] = spare[centre_px] = 0x1234;
+    corner_frame(f);
+    cv.px = cv.px == own ? spare : own;
+  }
+  TEST_ASSERT_EQUAL_HEX16_MESSAGE(0x1234, own[centre_px], "the first buffer was cleared in full");
+  TEST_ASSERT_EQUAL_HEX16_MESSAGE(0x1234, spare[centre_px], "the second buffer was cleared in full");
+  glshim_close();
+  cv.px = own;
+  free(spare);
+}
+
+void test_a_primitive_drawn_before_any_clear_lands_in_the_new_buffer(void) {
+  uint16_t *own = cv.px, *spare = calloc(SIZE * SIZE, sizeof(uint16_t));
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glClearColor(1, 0, 0, 0);
+  corner_frame(0);
+  const uint32_t before = hash_px(own);
+  cv.px = spare;
+  triangle(-0.5f, -0.5f, 0.5f, -0.5f, 0.0f, 0.5f, 0, 0, 0, 1);
+  TEST_ASSERT_EQUAL_HEX32_MESSAGE(before, hash_px(own), "it drew into the old buffer");
+  TEST_ASSERT_EQUAL_HEX16(rgb565(0, 0, 255), spare[(SIZE / 2) * SIZE + SIZE / 2]);
+  glshim_close();
+  cv.px = own;
+  free(spare);
+}
+
+void test_a_buffer_it_has_not_drawn_in_is_cleared_in_full(void) {
+  uint16_t *own = cv.px, *b = malloc(SIZE * SIZE * sizeof(uint16_t)),
+           *c = malloc(SIZE * SIZE * sizeof(uint16_t));
+  for (int i = 0; i < SIZE * SIZE; i++) b[i] = c[i] = 0x1234;
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glClearColor(1, 0, 0, 0);
+  corner_frame(0);
+  cv.px = b;
+  corner_frame(1);
+  cv.px = c;
+  clear_all();
+  assert_canvas_is(rgb565(255, 0, 0), "a third buffer was trusted");
+  glshim_close();
+  cv.px = own;
+  free(b);
+  free(c);
+}
+
+/* The new buffer holds an older frame: marking it would push that frame. */
+void test_a_swap_with_nothing_drawn_in_the_new_buffer_marks_nothing(void) {
+  uint16_t *own = cv.px, *spare = calloc(SIZE * SIZE, sizeof(uint16_t));
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glClearColor(1, 0, 0, 0);
+  corner_frame(0);
+  canvas_clear_dirty(&cv);
+  cv.px = spare;
+  glXSwapBuffers(dpy, 0);
+  int x0, x1;
+  for (int y = 0; y < SIZE; y++)
+    TEST_ASSERT_FALSE_MESSAGE(canvas_dirty_row(&cv, y, &x0, &x1), "a row was marked");
+  glshim_close();
+  cv.px = own;
+  free(spare);
+}
+
+/* Triangles in the two lower corners never reach the middle row, so with one
+ * background a swap between the buffers must not push it. */
+void test_a_swap_between_buffers_of_one_background_marks_only_the_drawing(void) {
+  uint16_t *own = cv.px, *spare = malloc(SIZE * SIZE * sizeof(uint16_t));
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glClearColor(1, 0, 0, 0);
+  for (int f = 0; f < SWAP_FRAMES; f++) {
+    canvas_clear_dirty(&cv);
+    corner_frame(f % 2);
+    int x0, x1;
+    if (f >= 2)
+      TEST_ASSERT_FALSE_MESSAGE(canvas_dirty_row(&cv, SIZE / 2, &x0, &x1),
+                                "the middle row was pushed");
+    cv.px = cv.px == own ? spare : own;
+  }
+  glshim_close();
+  cv.px = own;
+  free(spare);
+}
+
+/* Red, green, red: the third clear finds its buffer already red and rewrites
+ * nothing, but the display still shows the green one. */
+void test_a_buffer_with_another_background_is_pushed_in_full(void) {
+  uint16_t *own = cv.px, *spare = malloc(SIZE * SIZE * sizeof(uint16_t));
+  uint16_t *display = malloc(SIZE * SIZE * sizeof(uint16_t));
+  for (int i = 0; i < SIZE * SIZE; i++) spare[i] = display[i] = 0x1234;
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  for (int f = 0; f < 4; f++) {
+    glClearColor(f % 2 ? 0 : 1, f % 2 ? 1 : 0, 0, 0);
+    clear_all();
+    glXSwapBuffers(dpy, 0);
+    push_into(display);
+    TEST_ASSERT_EQUAL_HEX32_MESSAGE(hash_px(cv.px), hash_px(display),
+                                    "the display kept the other background");
+    cv.px = cv.px == own ? spare : own;
+  }
+  glshim_close();
+  cv.px = own;
+  free(spare);
+  free(display);
+}
+
+void test_a_canvas_overwritten_from_outside_is_cleared_in_full(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  glClearColor(1, 0, 0, 0);
+  clear_all();
+  glXSwapBuffers(dpy, 0);
+  for (int i = 0; i < SIZE * SIZE; i++) cv.px[i] = 0x1234;
+  canvas_clear_dirty(&cv);
+  glshim_canvas_overwritten();
+  clear_all();
+  glXSwapBuffers(dpy, 0);
+  assert_canvas_is(rgb565(255, 0, 0), "the clear trusted an overwritten canvas");
+  int x0, x1;
+  for (int y = 0; y < SIZE; y++)
+    TEST_ASSERT_TRUE_MESSAGE(canvas_dirty_row(&cv, y, &x0, &x1) && x0 == 0 &&
+                                 x1 == SIZE - 1,
+                             "the swap did not mark the whole canvas");
+}
+
 void test_line_width_is_accepted_and_changes_nothing(void) {
   open_flat_red_scene();
   take_reference_and_clear();
@@ -1936,6 +2124,14 @@ int main(void) {
   RUN_TEST(test_a_depth_clear_made_with_the_test_off_applies_once_it_is_on);
   RUN_TEST(test_a_clear_rewrites_only_the_region_that_was_drawn);
   RUN_TEST(test_the_swap_marks_only_the_old_and_new_boxes_dirty);
+  RUN_TEST(test_drawing_follows_the_canvas_to_its_other_buffer);
+  RUN_TEST(test_each_buffer_keeps_its_own_partial_clear);
+  RUN_TEST(test_a_primitive_drawn_before_any_clear_lands_in_the_new_buffer);
+  RUN_TEST(test_a_buffer_it_has_not_drawn_in_is_cleared_in_full);
+  RUN_TEST(test_a_swap_with_nothing_drawn_in_the_new_buffer_marks_nothing);
+  RUN_TEST(test_a_swap_between_buffers_of_one_background_marks_only_the_drawing);
+  RUN_TEST(test_a_buffer_with_another_background_is_pushed_in_full);
+  RUN_TEST(test_a_canvas_overwritten_from_outside_is_cleared_in_full);
   RUN_TEST(test_a_one_value_light_model_is_not_over_read);
   RUN_TEST(test_is_enabled_reports_texturing_off);
   RUN_TEST(test_swap_buffers_marks_every_row_dirty);
