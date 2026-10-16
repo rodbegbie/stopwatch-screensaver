@@ -13,6 +13,11 @@ numbered steps are in `adding-a-hack.md` and the recipes it names are in
 
 ## 1. Pick, then read the source
 
+Before copying anything, read `techniques.md` and every file in
+`.claude/rules/` (`hacks.md`, `x11shim.md`, `device-display.md`, `gl.md`,
+`tools-scoring.md`) in full. The gotchas live there, and a harness may not load
+them for you (`.pi/rules` links to the same directory for pi).
+
 Take S-rated rows from `docs/porting-assessment.md` first, and prefer a low
 **Speed** band: the table runs each unported S hack on the host. The effort
 rating counts missing shim calls, not memory, speed or stack (Braid was S, and
@@ -86,6 +91,13 @@ fast-forward `main`. New gotchas go in the matching `.claude/rules/` file (or
 `AGENTS.md` if they apply everywhere) in the same PR, and deferred
 ideas become issues.
 
+## Done means
+
+A port is done on the host only when all of these hold: a dumped frame viewed
+at two or more frame counts (with seeds forced if the hack picks a mode); a
+leak test, mutation-checked; the largest stack frame measured; the hash pinned
+from a frame you looked at; and a notices row that matches each file's header.
+
 ## Red flags
 
 | Thought | Reality |
@@ -98,3 +110,6 @@ ideas become issues.
 | "Rod approved flashing earlier" | Ask again for each flash. |
 | "Single precision is done, so the hack is as fast as it gets" | HexTrail gained 0.3 fps from it and 2.3 from a depth clear in the GL layer. Read what the shared code does each frame. |
 | "The mean is above 10 fps" | HexTrail's mean was 15.3 and its worst window 10.8; its step grew all cycle. Read the lowest window. |
+| "Dump with 0 and 5 frames exits cleanly, so it works" | That shows it starts and stops, not what it draws. Convert a frame to PNG and look. |
+| "A `0` in `kBaseline` keeps the suite green" | It also stops the suite checking a single frame. Use `0x1ull` until you have looked, then pin. |
+| "A hook will not run, so `--no-verify`" | That skips ruff, markdownlint and gitleaks. `SKIP=<hook>`, and say so in the PR. |

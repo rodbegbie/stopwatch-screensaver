@@ -38,6 +38,8 @@ embedded-specific choices as you make them. See `README.md` for setup and
   use; `tools/vendor_diff.py` lists what it changes for us).
 - `.agents/skills/`: symlinks to `.claude/skills/` so non-Claude agents find
   the skills. Leave it alone.
+- `.pi/rules`: a symlink to `.claude/rules/` for the pi harness. Leave it
+  alone.
 - `vendor/`, `backups/`, `.venv/`, `.platformio/` are git-ignored and local.
 
 ## Commands
@@ -145,7 +147,8 @@ Set `NO_COLOR=1` on `pio` output you parse.
   which hack, and what to check (colours on a picture whose colours you know).
 - Python: 3.13+, `uv`, ruff, pytest. Markdown: invoke the `/markdown` skill.
 - Commits end with the `Co-Authored-By` trailer from the session reminder.
-  Use named paths with `git add`, never `-A`.
+  Use named paths with `git add`, never `-A`. Never `git commit --no-verify`:
+  skip one hook with `SKIP=<hook>` and say so in the PR.
 
 ## Adding a hack
 
@@ -264,7 +267,9 @@ ones below apply everywhere.
   2m20s and the whole `pio test -e native` about 5 minutes.
 - A hack's `-e dump` index: `grep -o '&[a-z0-9_]*_hack'
   firmware/src/hacks/registry.c | grep -n ""` (1-based: subtract one).
-  `grep -on` on the file counts lines, not matches.
+  `grep -on` on the file counts lines, not matches. That recipe was off by two
+  for Bubbles in one checkout: confirm with
+  `.pio/build/dump/program stats <index>`, which prints the hack's name.
 - Count hacks from `g_hacks[]`, not from a list in a message or a note: a PR
   body said 14 where the registry had 15, and a review list had left one out.
   `grep -c` counts lines, and a line can hold several entries: use
