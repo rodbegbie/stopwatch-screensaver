@@ -18,6 +18,8 @@
 /* Every step repaints the whole canvas, so the push overlaps the next step. */
 #define XLOCKMORE_HACK_REPAINTS_ALL(NAME, CLASS) \
   XLOCKMORE_HACK_FULL(NAME, CLASS, NULL, 0, 0, 1)
+#define XLOCKMORE_HACK_REPAINTS_ALL_WITH(NAME, CLASS, OVERRIDES) \
+  XLOCKMORE_HACK_FULL(NAME, CLASS, OVERRIDES, 0, 0, 1)
 
 /* Galaxy's `count: -5` picks 2-5 galaxies, and each star is pulled by every
  * galaxy. -3 caps it at 3. Counts of -2 or above skip the hack's cleanup on
@@ -66,7 +68,7 @@ extern const HackEntry deluxe_hack;
  * 13 fps once the dirty rectangle made a frame 44 to 63 ms; 10 ms removes it. */
 static const char *const kGearsOverrides[] = {"*ncolors: 64", "*cycles: 0",
                                               "*delay: 10000", NULL};
-XLOCKMORE_HACK_WITH(gears, "Gears", kGearsOverrides);
+XLOCKMORE_HACK_REPAINTS_ALL_WITH(gears, "Gears", kGearsOverrides);
 /* The hack asks for a 40 ms pause after each frame, which held it to 10 fps
  * once a frame took 57 ms; 10 ms gives 14.6 fps. */
 static const char *const kMorph3dOverrides[] = {"*ncolors: 64", "*cycles: 0",
@@ -76,11 +78,11 @@ XLOCKMORE_HACK_WITH(morph3d, "Morph3D", kMorph3dOverrides);
  * to 6 fps. 20 gives 8,000. */
 static const char *const kCubicGridOverrides[] = {"*ncolors: 64", "*cycles: 0",
                                                   "*ticks: 20", NULL};
-XLOCKMORE_HACK_WITH(cubicgrid, "CubicGrid", kCubicGridOverrides);
+XLOCKMORE_HACK_REPAINTS_ALL_WITH(cubicgrid, "CubicGrid", kCubicGridOverrides);
 static const char *const kStonerViewOverrides[] = {"*ncolors: 64", "*cycles: 0",
                                                    "*count: 1", "*delay: 10000",
                                                    NULL};
-XLOCKMORE_HACK_WITH(stonerview, "StonerView", kStonerViewOverrides);
+XLOCKMORE_HACK_REPAINTS_ALL_WITH(stonerview, "StonerView", kStonerViewOverrides);
 XLOCKMORE_HACK(forest, "Forest");
 XLOCKMORE_HACK(laser, "Laser");
 XLOCKMORE_HACK(lissie, "Lissie");
@@ -140,7 +142,7 @@ extern const HackEntry moire2_hack;
 static const char *const kHexTrailOverrides[] = {
     "*ncolors: 64", "*cycles: 0", "*delay: 10000",
     "*count: " HEXTRAIL_STR(HEXTRAIL_COUNT), NULL};
-XLOCKMORE_HACK_WITH(hextrail, "HexTrail", kHexTrailOverrides);
+XLOCKMORE_HACK_REPAINTS_ALL_WITH(hextrail, "HexTrail", kHexTrailOverrides);
 #ifdef HYPNOWHEEL_PROBE
 /* Dropped from the rotation (issue #73); built only to measure it on the
  * board, as the last entry, with the overrides it had when registered. */
@@ -264,7 +266,7 @@ extern const HackEntry bubbles_hack;
  * that TinyGL's fill does not do, so back faces overwrote front faces as dark
  * wedges inside each bubble. Opaque turns the depth test on. */
 static const char *const kBubble3DOverrides[] = {"*transparent: False", NULL};
-XLOCKMORE_HACK_WITH(bubble3d, "Bubble3D", kBubble3DOverrides);
+XLOCKMORE_HACK_REPAINTS_ALL_WITH(bubble3d, "Bubble3D", kBubble3DOverrides);
 
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,

@@ -312,6 +312,11 @@ ones below apply everywhere.
   `.claude/skills/m5stack-stopwatch/`.
 - A `python3 <<EOF` heredoc that contains backticks runs them as shell
   commands: quote the delimiter (`<<'EOF'`) and pass paths as arguments.
+- Never `git commit` while `ab_flash` (or any build) is compiling from the
+  working tree: pre-commit stashes unstaged files for a moment, and a
+  `registry.c` compiled in that second dropped a variant's flags (Gears' B
+  side read `push=8.18`, as plain). Check an overlapped variant reads
+  `push=0.1`.
 - `pio test` hides which test crashed and AddressSanitizer's report: after a
   failure, run `.pio/build/native/program` from `firmware/` for the per-test
   PASS/FAIL lines and the ASan stack.
