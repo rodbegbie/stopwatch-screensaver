@@ -39,6 +39,14 @@ Moved verbatim from AGENTS.md.
   from the merge commit, not your last push. After `ExitWorktree keep` the
   tool names the branch `worktree-<name>`; the real branch is
   `git worktree list`'s.
+- A trail's "N commits behind" can understate: trail 66 said 1 and its branch
+  was 17 behind. Count with `git rev-list --count <branch>..origin/main`
+  before a cherry-pick, and re-apply by hand if the files conflict.
+- To read another agent's session, run `entire checkpoint explain <checkpoint>
+  --full` (or `--transcript` for the JSONL) from the repo root: elsewhere it
+  says "not a git repository". `entire session info <id>` knows only local
+  sessions, so find the checkpoint with `entire checkpoint explain <sha>` on
+  one of the agent's commits.
 - A review of fixed code can raise a new finding on the fix itself (a clamp
   that did not stop a wrap). Reproduce it with a failing test before changing
   the code, and mutation-check each branch of the new guard.

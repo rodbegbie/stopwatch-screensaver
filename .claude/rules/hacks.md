@@ -489,8 +489,11 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   if either free is removed (checked by mutation). `bubbles.h` includes
   `<X11/Xlib.h>`, which the shim now answers with a header that pulls in
   `xshim.h`. A host dump always shows the same set, so seed `random()` to see
-  the others (jade, blue and glass came up in six seeds, blood did not). A
-  single frame can show a bubble with a bite out of it while neighbours merge
-  and are redrawn; the bite is gone a few frames later. On the board it ran
-  at 54-62 fps (mean 57.4), a 5-7 ms step under its own 9.5 ms wait, and
-  held nothing in PSRAM: it is paced by its delay, not by the work.
+  the others (jade, blue and glass came up in six seeds, blood did not).
+  Blood is teal with red mottling in the source art, not red: Rod saw cyan
+  with red spots on the panel and it matches `blood11.png`, so it is not a
+  byte swap. A single frame can show a bubble with a bite out of it while
+  neighbours merge and are redrawn; the bite is gone a few frames later. On
+  the board it ran at 54-62 fps (mean 57.4), a 5-7 ms step under its own
+  9.5 ms wait, and held nothing in PSRAM: it is paced by its delay, not by the
+  work.

@@ -8,7 +8,8 @@ hack, and holds a recipe per trap. The steps:
 1. Check its row in `docs/porting-assessment.md` (effort and Speed band) and
    read its licence header.
 2. Update the expected list in `firmware/test/test_hacks/test_hacks.c` and see
-   it fail.
+   it fail. Add `test_<name>_stops_do_not_leak` beside the others, and
+   mutation-check it: remove each free a wrapper adds and watch it fail.
 3. Copy the file to `firmware/src/hacks/<name>/<name>.c`, add the notices row
    and an `extern` plus entry in `hacks/registry.c`.
 4. Fill shim gaps test-first in `firmware/test/test_xshim/`. The compile
@@ -17,7 +18,9 @@ hack, and holds a recipe per trap. The steps:
    flash and measure fps and free heap/PSRAM over serial. To pin its frame
    hash after looking at the frame, put `0x1ull` in `kBaseline`, run
    `pio test -e native -f test_hacks`, convert the "Was N" in the failure line
-   with `python3 -c "print(hex(N))"`, and run it again.
+   with `python3 -c "print(hex(N))"`, and run it again. A new hack never gets
+   `0` in `kBaseline`: `0` is for a hack left unpinned on purpose, with the
+   reason in its comment (DecayScreen, RotZoomer).
 6. Regenerate the assessment and add measurements to
    `tools/assessment_measured.md.in`, then re-run the speed backtest: each port
    adds a point to the check of the Speed bands, which were fitted to the first
