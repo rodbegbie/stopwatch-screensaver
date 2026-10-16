@@ -79,16 +79,25 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   2^24 keep the double code. On the board (step, before to after): Bouboule
   14.5 to 5.2 ms (27.4 to 36.8 fps), Qix 14.6 to 1.9 ms (37.3 to 70.1 fps),
   Pedal 21.8 to 8.6 ms (it then holds the picture for 5 s).
-- Lisa is the counter-example to "the stroker maths is the cost" (#98).
-  `stroke.c`'s hot path was already float, and converting a slanted segment's
-  ends from int straight to float moved Lisa by nothing (52.1 ms before and
-  after). With the line calls compiled out its step is 5.2 ms, so 47 ms of 52
-  is drawing: 1,396 segments, 6.7k spans and 16k pixels a frame at width 2 and
-  13k spans and 65k pixels at width 8. About 3.6 us a span against about 0.1
-  us a pixel in a sequential full-frame write suggests each scattered span pays
-  a PSRAM cache-line miss (a cost per line touched, not per pixel). Not
-  proved: the way to test it is the PSRAM and data-cache settings (speed, line
-  size, cache size), which no hack can change.
+- Lisa was the counter-example to "the stroker maths is the cost" (#98), and
+  then the maths turned out to be the cost after all. Converting a slanted
+  segment's ends from int to float moved it by nothing (52.1 ms either way),
+  and with the line calls compiled out its step is 5.2 ms, so 47 ms of 52 was
+  drawing: 1,396 segments and 6.7k spans a frame at width 2, 13k spans at
+  width 8. The guess was a PSRAM cache miss per scattered span. The real
+  cost was `fill_convex`: the S3 has no float divide, min, max, floor or
+  64-bit conversion, so its per-row loop (two divides, `fminf`, `fmaxf`, two
+  `floorf` and two `__fixsfdi` calls a row) was about 3 us a span. It now
+  divides each edge's slope once per polygon and uses compares and 32-bit
+  `floor_int`. Output is pixel-identical (no pinned frame moved;
+  `test_wide_strokes_of_random_lines_match_the_pinned_hash` hashes 3,000 random
+  strokes), and on the board Lisa's step went 52.3 to 34.6 ms at width 2 (14.2
+  to 19.0 fps) and 85.4 to 52.2 ms at width 8 (9.8 to 14.3 fps). The width
+  sweep on the host (`-DLW=N` with `LINEWIDTH` edited, temporarily) shows the
+  cliff is thin to wide: width 1 takes the `canvas_line` path at 0.09 ms, width
+  2 is 0.52 ms and width 8 0.85 ms. Look for the same library calls in a
+  per-row or per-pixel loop of any hack: `nm` on the object lists them
+  (`__divsf3`, `__fixsfdi`, `floorf`, `sqrtf`).
 - `single_precision.h` renames the keyword `double`, not literals: `0.5 * x`
   is still software double. Braid's wrapper includes a copy of the hack with
   every decimal literal suffixed `f`, written at build time by

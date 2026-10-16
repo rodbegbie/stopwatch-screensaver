@@ -2497,6 +2497,26 @@ void test_polyline_with_alpha_blends_a_join_once(void) {
   XFreeGC(dpy, gc);
 }
 
+/* Pins every pixel of many random wide segments and polylines, so a change to
+ * how fill_convex finds each row's span shows up as a moved hash. */
+void test_wide_strokes_of_random_lines_match_the_pinned_hash(void) {
+  use_canvas(200);
+  canvas_clear(&cv, 0);
+  srandom(1);
+  for (int i = 0; i < 3000; i++) {
+    GC gc = wide_gc(2 + (int)(random() % 7), CapRound, (int)(random() % 3));
+    gc->foreground = (uint16_t)(random() & 0xFFFF);
+    int xy[8];
+    for (int k = 0; k < 8; k++) xy[k] = (int)(random() % 260) - 30;
+    if (i % 2) stroke_segment(&cv, gc, xy[0], xy[1], xy[2], xy[3]);
+    else stroke_polyline(&cv, gc, xy, 4, i % 3 == 0);
+    XFreeGC(dpy, gc);
+  }
+  uint64_t h = 1469598103934665603ull;
+  for (size_t i = 0; i < (size_t)cv.w * cv.h; i++) h = (h ^ cv.px[i]) * 1099511628211ull;
+  TEST_ASSERT_EQUAL_UINT64(0x66a3ad6e46d5390eull, h);
+}
+
 void test_polyline_with_alpha_blends_a_self_crossing_once(void) {
   use_canvas(64);
   canvas_clear(&cv, px_swap(0x001F));
@@ -4188,6 +4208,7 @@ int main(void) {
   RUN_TEST(test_wide_line_with_alpha_blends_over_the_canvas);
   RUN_TEST(test_wide_line_without_alpha_still_overwrites);
   RUN_TEST(test_stroke_circle_with_alpha_blends_each_pixel_once);
+  RUN_TEST(test_wide_strokes_of_random_lines_match_the_pinned_hash);
   RUN_TEST(test_alpha_does_not_leak_into_the_next_gc);
   RUN_TEST(test_polyline_with_alpha_blends_a_join_once);
   RUN_TEST(test_polyline_with_alpha_blends_a_self_crossing_once);

@@ -233,34 +233,62 @@ static int clip_to_canvas(const Canvas *c, wide_t margin, double *x1,
  * this much (issue #56). */
 #define EDGE_SLACK 1e-3f
 
+/* floorf without the library call or the 64-bit conversion. Past a billion a
+ * value is clamped: it is far off any canvas, and (int) of it would be
+ * undefined. */
+static int floor_int(float v) {
+  if (v < -1e9f) return -1000000000;
+  if (v > 1e9f) return 1000000000;
+  const int t = (int)v;
+  return (float)t > v ? t - 1 : t;
+}
+
 /* Fills a convex polygon whose vertices are in pixel coordinates, where the
  * pixel at x, y has its centre at x + 0.5, y + 0.5. A pixel is drawn when its
  * centre is inside, the left and top edges excluded and the right and bottom
  * edges included. The vertices stay floats: canvas_fill_polygon takes ints,
- * which would move the edges of a thin line by up to half a pixel. */
+ * which would move the edges of a thin line by up to half a pixel.
+ *
+ * Each edge's slope is divided out once per polygon, not twice per row, and
+ * the min, max and floor calls are compares. The S3 has no float divide,
+ * min, max, floor or 64-bit conversion: each is a library call. */
 static void fill_convex(Canvas *c, const float pts[][2], int n,
                         uint16_t colour) {
   float ymin = pts[0][1], ymax = ymin;
-  for (int i = 1; i < n; i++) {
-    ymin = fminf(ymin, pts[i][1]);
-    ymax = fmaxf(ymax, pts[i][1]);
+  float ya[4], xa[4], top[4], bot[4], slope[4];
+  int edges = 0;
+  for (int i = 0, j = n - 1; i < n; j = i++) {
+    const float yi = pts[i][1], yj = pts[j][1];
+    if (yi < ymin) ymin = yi;
+    if (yi > ymax) ymax = yi;
+    if (yi == yj) continue;
+    ya[edges] = yi;
+    xa[edges] = pts[i][0];
+    top[edges] = yi < yj ? yi : yj;
+    bot[edges] = yi < yj ? yj : yi;
+    slope[edges] = (pts[j][0] - pts[i][0]) / (yj - yi);
+    edges++;
   }
-  const wide_t y0 = max_w(0, (wide_t)floorf(ymin));
-  const wide_t y1 = min_w((wide_t)c->h - 1, (wide_t)ceilf(ymax));
+  const wide_t y0 = max_w(0, floor_int(ymin));
+  const wide_t y1 = min_w((wide_t)c->h - 1, -(wide_t)floor_int(-ymax));
   for (wide_t y = y0; y <= y1; y++) {
-    const float sy = (float)y + 0.5f;
-    float xl = INFINITY, xr = -INFINITY;
-    for (int i = 0, j = n - 1; i < n; j = i++) {
-      const float yi = pts[i][1], yj = pts[j][1];
-      if ((yi < sy && yj >= sy) || (yj < sy && yi >= sy)) {
-        const float x = pts[i][0] + (sy - yi) / (yj - yi) * (pts[j][0] - pts[i][0]);
-        xl = fminf(xl, x);
-        xr = fmaxf(xr, x);
+    const float sy = (float)(int)y + 0.5f;
+    float xl = 0, xr = 0;
+    bool hit = false;
+    for (int e = 0; e < edges; e++) {
+      if (!(top[e] < sy && bot[e] >= sy)) continue;
+      const float x = xa[e] + (sy - ya[e]) * slope[e];
+      if (!hit) {
+        xl = xr = x;
+        hit = true;
+      } else {
+        if (x < xl) xl = x;
+        if (x > xr) xr = x;
       }
     }
-    if (xl > xr) continue;
-    fill_box(c, (wide_t)floorf(xl - 0.5f) + 1, y,
-             (wide_t)floorf(xr - 0.5f + EDGE_SLACK), y, colour);
+    if (!hit) continue;
+    fill_box(c, (wide_t)floor_int(xl - 0.5f) + 1, y,
+             (wide_t)floor_int(xr - 0.5f + EDGE_SLACK), y, colour);
   }
 }
 
