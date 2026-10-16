@@ -243,6 +243,9 @@ ones below apply everywhere.
   file, check `$?`, then read the summary line.
 - Mutation-checking wrap-around code: a mutation that just reorders unsigned
   arithmetic can be equivalent and survive. Use `int64_t` to break it for real.
+- A guard condition already implied elsewhere (`color_valid &&` where an
+  invalid side is fully cleared anyway) leaves an equivalent mutant that
+  survives: drop it, so every part of the guard can be killed.
 - After a mutation check, `grep` that the change applied: a `sed` that matches
   nothing leaves the tests green and proves nothing. Restore the file and
   confirm with `cmp` or `git diff`.

@@ -217,14 +217,21 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   gets a full clear. The box last drawn in the buffer just left is marked
   erased, since that is what the display shows. The swap does not follow:
   a frame that draws nothing must mark nothing, or the push would send the
-  older frame the new buffer holds. `glshim_canvas_overwritten()` forces a
-  full clear for writers other than TinyGL (`test_push_overlap`'s noise
+  older frame the new buffer holds. If the two buffers' clear colours
+  differ, the switch marks the whole canvas: the clear finds its own buffer
+  already that colour and rewrites nothing (red, green, red left the
+  display green). `glshim_canvas_overwritten()` forces a full clear for
+  writers other than TinyGL (`test_push_overlap`'s noise
   run). Not for a scale-2 hack (`double_into_canvas` writes only the box) or
   Pipes (skips clears). Pinned A/B, plain to overlapped: Bubble3D 11.2 to
   12.0 fps, Gears 15.2 to 16.5, CubicGrid 15.3 to 19.5, StonerView 36.4 to
   43.8, HexTrail 15.2 to 20.5 before its first restart; Morph3D about 3%
   (small push), unflagged. The step grew 5 to 10 ms with both cores on
   PSRAM.
+- The swap marks two bounding boxes (erased, drawn), not a list of
+  regions: a drawing in the top half and an erase in the bottom one mark
+  every row between. A test that asserts a row stays clean must keep both
+  frames' drawings on one side of it (`corner_frame(f % 2)`).
 - Board profiles (issue #43): `-DGL_PROFILE` prints a `glprof` line after
   each `run` line with cycle counts per stage (clear, list, vertex, shade,
   tri, fill, point, line; nested, so vertex includes tri and fill), and
