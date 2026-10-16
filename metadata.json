@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M531589F3TJHNQ5G3EQPN5MC",
+  "strategy": "manual-commit",
+  "branch": "fix/124-backtest-gl-include",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "docs/speed-backtest.md",
+    "tools/gl_budget.py",
+    "tools/speed_backtest.py",
+    "tools/tests/test_gl_budget.py",
+    "tools/tests/test_speed_backtest.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 80,
+    "cache_creation_tokens": 90677,
+    "cache_read_tokens": 4950399,
+    "output_tokens": 18542,
+    "api_call_count": 40
+  }
+}
