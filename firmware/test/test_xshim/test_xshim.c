@@ -2504,7 +2504,9 @@ void test_wide_strokes_of_random_lines_match_the_pinned_hash(void) {
   canvas_clear(&cv, 0);
   srandom(1);
   for (int i = 0; i < 3000; i++) {
-    GC gc = wide_gc(2 + (int)(random() % 7), CapRound, (int)(random() % 3));
+    const int width = 2 + (int)(random() % 7);
+    const int join = (int)(random() % 3);
+    GC gc = wide_gc(width, CapRound, join);
     gc->foreground = (uint16_t)(random() & 0xFFFF);
     int xy[8];
     for (int k = 0; k < 8; k++) xy[k] = (int)(random() % 260) - 30;
