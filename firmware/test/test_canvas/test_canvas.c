@@ -127,6 +127,34 @@ void test_line_with_offscreen_endpoint_draws_visible_part(void) {
   TEST_ASSERT_EQUAL_INT(8, count_set());
 }
 
+/* Draws many random lines, each alone on a cleared canvas, and hashes every
+ * result: drawn together, later lines cover the pixels where an earlier one
+ * would differ. `margin` is how far past the canvas an endpoint can fall (0
+ * keeps every line inside, so none is clipped). */
+static uint64_t hash_of_random_lines(int margin, int count) {
+  Canvas big;
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&big, 100, 100, malloc));
+  srandom(1);
+  uint64_t h = 1469598103934665603ull;
+  for (int i = 0; i < count; i++) {
+    canvas_clear(&big, 0);
+    int xy[4];
+    for (int k = 0; k < 4; k++) xy[k] = (int)(random() % (100 + 2 * margin)) - margin;
+    canvas_line(&big, xy[0], xy[1], xy[2], xy[3], 0xFFFF);
+    for (int k = 0; k < big.w * big.h; k++) h = (h ^ big.px[k]) * 1099511628211ull;
+  }
+  canvas_free(&big);
+  return h;
+}
+
+void test_lines_inside_the_canvas_match_the_pinned_hash(void) {
+  TEST_ASSERT_EQUAL_UINT64(0xa35fe764afda7305ull, hash_of_random_lines(0, 20000));
+}
+
+void test_lines_running_off_the_canvas_match_the_pinned_hash(void) {
+  TEST_ASSERT_EQUAL_UINT64(0x14963b42e024426ull, hash_of_random_lines(60, 20000));
+}
+
 void test_line_far_offscreen_changes_nothing_and_terminates(void) {
   canvas_line(&c, -1000000, -1000000, -999000, 1000000, C1);
   canvas_line(&c, 1000000, 1000000, -1000000, 1000001, C1);
@@ -804,6 +832,8 @@ int main(void) {
   RUN_TEST(test_fill_rect_zero_or_negative_size_changes_nothing);
   RUN_TEST(test_line_horizontal_vertical_diagonal);
   RUN_TEST(test_line_with_offscreen_endpoint_draws_visible_part);
+  RUN_TEST(test_lines_inside_the_canvas_match_the_pinned_hash);
+  RUN_TEST(test_lines_running_off_the_canvas_match_the_pinned_hash);
   RUN_TEST(test_line_far_offscreen_changes_nothing_and_terminates);
   RUN_TEST(test_line_diagonal_crossing_canvas_from_far_away);
   RUN_TEST(test_ellipse_diameter_1_is_one_pixel);
