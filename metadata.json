@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M53VFXEK9Y9TN3WMXY25P7E9",
+  "strategy": "manual-commit",
+  "branch": "perf/clip-line-integer",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "firmware/src/core/canvas.c",
+    "firmware/test/test_canvas/test_canvas.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 28,
+    "cache_creation_tokens": 23862,
+    "cache_read_tokens": 4653080,
+    "output_tokens": 17758,
+    "api_call_count": 13
+  }
+}

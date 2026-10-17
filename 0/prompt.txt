@@ -1,0 +1,188 @@
+Investigate issue #98
+
+---
+
+Yes: prototype an integer/incremental edge stepper in fill_convex, A/B it on the board at Lisa widths 2 and 8 with ab_flash.py, and report pinned-frame changes before committing anything. You have my approval to flash for this.
+
+---
+
+<task-notification>
+<task-id>bjzog12p9</task-id>
+<tool-use-id>toolu_013qo7sP5DK2x8GBP1qj8YXi</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/tasks/bjzog12p9.output</output-file>
+<status>completed</status>
+<summary>Background command "sed -i.bak 's/^#define  LINEWIDTH    -8 /#define  LINEWIDTH    LW /' firmware/src/hacks/lisa/lisa.c &amp;&amp; rm firmware/src/hacks/lisa/lisa.c.bak &amp;&amp; git diff --stat firmware/src/hacks/lisa/lisa.c | tail -1; source tools/env.sh; (.venv/bin/python -I tools/ab_flash.py --hack Lisa --seconds 60 --rounds 2 --out /private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/scratchpad/ab98 "old2=-DLW=2 -DFILL_CONVEX_OLD" "new2=-DLW=2" "old8=-DLW=8 -DFILL_CONVEX_OLD" "new8=-DLW=8" &gt; /private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/scratchpad/ab98.log 2&gt;&amp;1; touch /private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/scratchpad/ab98.done) &lt;/dev/null &gt;/dev/null 2&gt;&amp;1 &amp;
+sleep 2; echo started" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+How's it going?
+
+---
+
+<task-notification>
+<task-id>bpth0kb1t</task-id>
+<tool-use-id>toolu_01RajaW3ppDVUgWynvnEryjA</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/tasks/bpth0kb1t.output</output-file>
+<status>completed</status>
+<summary>Background command "S=/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/scratchpad; until [ -f $S/ab98.done ]; do sleep 15; done; tail -30 $S/ab98.log" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Commit and push it. Re-run the full native suite first, update the Lisa/#98 notes in rules/x11shim.md, then I'll say merge.
+
+---
+
+Check /private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/scratchpad/ab98.log and ab98.done for the #98 Lisa A/B result
+
+---
+
+Are there any other hacks that you think would benefit from this change?
+
+---
+
+Yeah, run that A/B test on the board.
+
+---
+
+<task-notification>
+<task-id>b310b693a</task-id>
+<tool-use-id>toolu_01To7x73UFscaB6QdCixUNf2</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/tasks/b310b693a.output</output-file>
+<status>completed</status>
+<summary>Background command "S=/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/scratchpad; rm -f $S/ab98b.done; cd /Users/rod/build/stopwatch-screensaver &amp;&amp; source tools/env.sh &amp;&amp; for H in Braid Deluxe; do .venv/bin/python -I tools/ab_flash.py --hack $H --seconds 60 --rounds 2 --out $S/ab98_$H "old=-DFILL_CONVEX_OLD" "new=" &gt; $S/ab98_$H.log 2&gt;&amp;1; done; touch $S/ab98b.done" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Add the Braid and Deluxe numbers to the x11shim.md note, commit, push, and open the PR with the deliver-branch skill (Refs #98).
+
+---
+
+/address-findings 74
+
+---
+
+Commit and push it.
+
+---
+
+/address-findings
+
+---
+
+Check scratchpad ab98_Braid.log and ab98_Deluxe.log and ab98b.done for the Braid/Deluxe fill_convex A/B
+
+---
+
+Commit and push it, then re-flash and re-run the A/B on Lisa (widths 2 and 8), Braid and Deluxe against main's fill_convex, and update the PR numbers. You have my approval to flash for this.
+
+---
+
+<task-notification>
+<task-id>b1ql7ated</task-id>
+<tool-use-id>toolu_01EGbtwixdw8nk46xdhbx8kJ</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/tasks/b1ql7ated.output</output-file>
+<status>completed</status>
+<summary>Background command "S=/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/scratchpad; rm -f $S/ab98c.done; cd /Users/rod/build/stopwatch-screensaver &amp;&amp; source tools/env.sh &amp;&amp; PY=.venv/bin/python; $PY -I tools/ab_flash.py --hack Lisa --seconds 60 --rounds 2 --out $S/c_Lisa "old2=-DLW=2 -DFILL_CONVEX_OLD" "new2=-DLW=2" "old8=-DLW=8 -DFILL_CONVEX_OLD" "new8=-DLW=8" &gt; $S/c_Lisa.log 2&gt;&amp;1; for H in Braid Deluxe; do $PY -I tools/ab_flash.py --hack $H --seconds 60 --rounds 2 --out $S/c_$H "old=-DFILL_CONVEX_OLD" "new=" &gt; $S/c_$H.log 2&gt;&amp;1; done; touch $S/ab98c.done" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bnf4vhpyv</task-id>
+<tool-use-id>toolu_015ejzJSLN5TtNDfzoHLQVKT</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/tasks/bnf4vhpyv.output</output-file>
+<status>completed</status>
+<summary>Background command "S=/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/scratchpad; rm -f $S/ab98d.done; cd /Users/rod/build/stopwatch-screensaver &amp;&amp; source tools/env.sh &amp;&amp; PY=.venv/bin/python; $PY -I tools/ab_flash.py --hack Lisa --seconds 60 --rounds 2 --out $S/d_Lisa "old2=-DLW=2 -DFILL_CONVEX_OLD" "new2=-DLW=2" "old8=-DLW=8 -DFILL_CONVEX_OLD" "new8=-DLW=8" &gt; $S/d_Lisa.log 2&gt;&amp;1; for H in Braid Deluxe; do $PY -I tools/ab_flash.py --hack $H --seconds 60 --rounds 2 --out $S/d_$H "old=-DFILL_CONVEX_OLD" "new=" &gt; $S/d_$H.log 2&gt;&amp;1; done; touch $S/ab98d.done" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>b3uv79p4l</task-id>
+<tool-use-id>toolu_01Ra8vUSzn2DNvQ4wLusnGX2</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/tasks/b3uv79p4l.output</output-file>
+<status>completed</status>
+<summary>Background command "cd /Users/rod/build/stopwatch-screensaver/firmware &amp;&amp; python3 - &lt;&lt;'EOF'
+p='src/x11shim/stroke.c'
+s=open(p).read()
+old=" * can flip a pixel whose centre is within rounding of an edge. When a row's x\n * is that close to either boundary decision it is worked out the long way\n * (divide, then multiply), so the pixels match the plain version exactly. */"
+new=" * can flip a pixel whose centre is within rounding of an edge. When either end\n * of a row's span is that close to a boundary decision, the row is worked out\n * the long way (divide, then multiply), so the pixels match the plain version\n * exactly. */"
+assert old in s
+open(p,'w').write(s.replace(old,new))
+EOF
+cp src/x11shim/stroke.c /tmp/stroke.final
+sed -i.bak 's/float tol = 2e-4f + 5e-7f/float tol = -1.0f + 0.0f * 5e-7f/' src/x11shim/stroke.c &amp;&amp; rm src/x11shim/stroke.c.bak; grep -c "tol = -1.0f" src/x11shim/stroke.c
+source ../tools/env.sh; NO_COLOR=1 pio test -e native -f test_xshim &gt;/tmp/t11 2&gt;&amp;1; grep -E "pinned_hash" /tmp/t11 | cut -c1-140
+cp /tmp/stroke.final src/x11shim/stroke.c; grep -c "tol = -1.0f" src/x11shim/stroke.c
+NO_COLOR=1 pio test -e native &gt;/tmp/full4 2&gt;&amp;1; echo exit=$?; grep -E "FAILED|test cases" /tmp/full4 | cut -c1-160" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+merge first, then reflash with main
+
+---
+
+Yes
+
+---
+
+Do this task here: “Audit shim hot loops for soft-float calls”
+
+---
+
+Yes: on a new branch, make canvas_line's unclipped path integer-only (pixel-identical, test first with a differential test against the current code on isolated lines), then A/B XRaySwarm, Wormhole and NerveRot on the board. You have my approval to flash for that A/B.
+
+---
+
+<task-notification>
+<task-id>bh68p5o67</task-id>
+<tool-use-id>toolu_01TVdFeiq6Ayp8yHXpqWhwqM</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/tasks/bh68p5o67.output</output-file>
+<status>completed</status>
+<summary>Background command "source ../tools/env.sh &amp;&amp; NO_COLOR=1 pio test -e native &gt;/tmp/full5 2&gt;&amp;1; echo exit=$?; grep -E "FAILED|test cases" /tmp/full5 | cut -c1-160" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bz3ierv6p</task-id>
+<tool-use-id>toolu_013UqhtsoXhoNrvZFLw8haU4</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/tasks/bz3ierv6p.output</output-file>
+<status>completed</status>
+<summary>Background command "cd /Users/rod/build/stopwatch-screensaver &amp;&amp; lsof /dev/cu.usbmodem112401 2&gt;&amp;1 | head -2; ls /dev/cu.usbmodem112401; S=/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/scratchpad; rm -f $S/ab_line.done; source tools/env.sh; PY=.venv/bin/python; for H in XRaySwarm Wormhole NerveRot; do $PY -I tools/ab_flash.py --hack $H --seconds 60 --rounds 2 --out $S/line_$H "old=-DCANVAS_LINE_OLD" "new=" &gt; $S/line_$H.log 2&gt;&amp;1; done; touch $S/ab_line.done" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Check scratchpad line_XRaySwarm.log, line_Wormhole.log, line_NerveRot.log and ab_line.done for the canvas_line A/B on branch perf/canvas-line-integer-unclipped; then revert the temporary CANVAS_LINE_OLD edit (git checkout firmware/src/core/canvas.c) and report
+
+---
+
+Yes, open a PR for this.  We'll do the clip_line things next.
+
+---
+
+/address-findings
+
+---
+
+commit and push the fix
+
+---
+
+Merge it, re-flash the device, and start on clip_line
+
+---
+
+<task-notification>
+<task-id>bu6wfkkm6</task-id>
+<tool-use-id>toolu_01YMbiEbfAFFnmSZQyRjy8Rs</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/1a233356-0694-4e17-b912-280bdb9a8490/tasks/bu6wfkkm6.output</output-file>
+<status>completed</status>
+<summary>Background command "git status --short &amp;&amp; source ../tools/env.sh &amp;&amp; NO_COLOR=1 pio test -e native &gt;/tmp/full6 2&gt;&amp;1; echo exit=$?; grep -E "FAILED|test cases" /tmp/full6 | cut -c1-160" completed (exit code 0)</summary>
+</task-notification>
