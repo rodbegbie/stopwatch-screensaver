@@ -64,7 +64,11 @@ int arc_points(int x, int y, unsigned w, unsigned h, int angle1, int angle2,
                      radius < ROTATE_COORD_LIMIT;
   const float step = sweep / (float)(n - 1);
   const float cos_step = rotate ? cosf(step) : 0.0f, sin_step = rotate ? sinf(step) : 0.0f;
-  const float tol = 2e-3f + 4e-5f * radius;
+  const float reach = (cx < 0 ? -cx : cx) + (cy < 0 ? -cy : cy) + radius;
+  /* Past a few thousand, float's own spacing (up to 1.2e-7 of the value) is
+   * coarser than the rotation's error, and the sum cx + rx * c can round to a
+   * neighbouring float: the tolerance covers three spacings. */
+  const float tol = 2e-3f + 4e-5f * radius + 4e-7f * reach;
   float c = 0, sn = 0;
   for (int i = 0; i < n; i++) {
     if (rotate && i % RUN_LENGTH != 0) {
