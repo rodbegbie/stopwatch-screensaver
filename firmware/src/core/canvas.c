@@ -183,17 +183,79 @@ static int clip_line(const Canvas *c, double *x0, double *y0, double *x1,
   return 1;
 }
 
+/* Coordinates under this keep the double clip's rounding error (about 1e-10)
+ * far below the distance (at least 1 / 2^22) from any rational answer that is
+ * not exactly on a rounding boundary. */
+#define CLIP_INT_LIMIT ((int64_t)1 << 20)
+
+static int64_t floor_div_i64(int64_t a, int64_t b) {
+  const int64_t q = a / b;
+  return a % b < 0 ? q - 1 : q;
+}
+
+/* floor(base + (n / d) * delta + 0.5), worked out exactly. False when
+ * the value is exactly on a boundary (a half pixel): the double clip's rounding
+ * decides those, so they are left to it. */
+static int rounded_clip_end(int64_t base, int64_t n, int64_t d, int64_t delta,
+                            int *out) {
+  const int64_t v = 2 * (base * d + n * delta) + d, den = 2 * d;
+  const int64_t q = floor_div_i64(v, den);
+  if (v - q * den == 0) return 0;
+  *out = (int)q;
+  return 1;
+}
+
+/* clip_line and the rounding of its ends in whole numbers (the S3 does double
+ * in software: about thirty operations and four divides a line). Returns 0 for
+ * a line outside the canvas, 1 with the rounded ends set, and -1 when the
+ * double clip must decide: a coordinate past CLIP_INT_LIMIT, or an end exactly
+ * on a rounding boundary. The comparisons are exact: the double code's
+ * quotients of whole numbers this small are ordered the same way. */
+static int clip_line_integer(const Canvas *c, int x0, int y0, int x1, int y1,
+                             int *ox0, int *oy0, int *ox1, int *oy1) {
+  if (x0 <= -CLIP_INT_LIMIT || x0 >= CLIP_INT_LIMIT || y0 <= -CLIP_INT_LIMIT ||
+      y0 >= CLIP_INT_LIMIT || x1 <= -CLIP_INT_LIMIT || x1 >= CLIP_INT_LIMIT ||
+      y1 <= -CLIP_INT_LIMIT || y1 >= CLIP_INT_LIMIT)
+    return -1;
+  const int64_t dx = (int64_t)x1 - x0, dy = (int64_t)y1 - y0;
+  const int64_t p[4] = {-dx, dx, -dy, dy};
+  const int64_t q[4] = {x0, (int64_t)(c->w - 1) - x0, y0, (int64_t)(c->h - 1) - y0};
+  int64_t n0 = 0, d0 = 1, n1 = 1, d1 = 1;
+  for (int i = 0; i < 4; i++) {
+    if (p[i] == 0) {
+      if (q[i] < 0) return 0;
+      continue;
+    }
+    const int64_t n = p[i] < 0 ? -q[i] : q[i], d = p[i] < 0 ? -p[i] : p[i];
+    if (p[i] < 0) {
+      if (n * d1 > n1 * d) return 0;
+      if (n * d0 > n0 * d) n0 = n, d0 = d;
+    } else {
+      if (n * d0 < n0 * d) return 0;
+      if (n * d1 < n1 * d) n1 = n, d1 = d;
+    }
+  }
+  if (!rounded_clip_end(x0, n0, d0, dx, ox0) || !rounded_clip_end(y0, n0, d0, dy, oy0) ||
+      !rounded_clip_end(x0, n1, d1, dx, ox1) || !rounded_clip_end(y0, n1, d1, dy, oy1))
+    return -1;
+  return 1;
+}
+
 void canvas_line(Canvas *c, int x0, int y0, int x1, int y1, uint16_t color) {
   int ix0 = x0, iy0 = y0, ix1 = x1, iy1 = y1;
   int clipped = x0 < 0 || y0 < 0 || x0 >= c->w || y0 >= c->h || x1 < 0 ||
                 y1 < 0 || x1 >= c->w || y1 >= c->h;
   if (clipped) {
-    double ax = x0, ay = y0, bx = x1, by = y1;
-    if (!clip_line(c, &ax, &ay, &bx, &by)) return;
-    ix0 = (int)floor(ax + 0.5);
-    iy0 = (int)floor(ay + 0.5);
-    ix1 = (int)floor(bx + 0.5);
-    iy1 = (int)floor(by + 0.5);
+    const int exact = clip_line_integer(c, x0, y0, x1, y1, &ix0, &iy0, &ix1, &iy1);
+    if (exact == 0) return;
+    if (exact < 0) {
+      double ax = x0, ay = y0, bx = x1, by = y1;
+      if (!clip_line(c, &ax, &ay, &bx, &by)) return;
+      ix0 = (int)floor(ax + 0.5);
+      iy0 = (int)floor(ay + 0.5);
+      ix1 = (int)floor(bx + 0.5);
+      iy1 = (int)floor(by + 0.5);
+    }
   }
   int dx = abs(ix1 - ix0), sx = ix0 < ix1 ? 1 : -1;
   int dy = -abs(iy1 - iy0), sy = iy0 < iy1 ? 1 : -1;

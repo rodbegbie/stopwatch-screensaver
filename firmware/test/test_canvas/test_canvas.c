@@ -216,6 +216,55 @@ static int lines_that_differ_from_the_reference(int margin, int count) {
   return differing;
 }
 
+/* As above, but one end is on the canvas and the other as far off as `reach`,
+ * so every line crosses the canvas and its clip depends on a long run of
+ * arithmetic: where double rounding starts to show. */
+static int far_lines_that_differ_from_the_reference(int reach, int count) {
+  Canvas a, b;
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&a, 100, 100, malloc));
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&b, 100, 100, malloc));
+  srandom(1);
+  int differing = 0;
+  for (int i = 0; i < count; i++) {
+    canvas_clear(&a, 0);
+    canvas_clear(&b, 0);
+    const int x0 = (int)(random() % 100), y0 = (int)(random() % 100);
+    const int x1 = (int)(random() % (2 * reach + 1)) - reach;
+    const int y1 = (int)(random() % (2 * reach + 1)) - reach;
+    canvas_line(&a, x0, y0, x1, y1, 0xFFFF);
+    reference_canvas_line(&b, x0, y0, x1, y1, 0xFFFF);
+    differing += memcmp(a.px, b.px, sizeof(uint16_t) * 100 * 100) != 0;
+  }
+  canvas_free(&a);
+  canvas_free(&b);
+  return differing;
+}
+
+/* Both ends far off, on either side of a point on the canvas, so the line
+ * crosses it: the clip then subtracts two huge numbers, where double rounding
+ * is worst. The ends are the point plus and minus k times a small vector, so
+ * `reach` bounds how far out they go. */
+static int through_lines_that_differ_from_the_reference(int reach, int count) {
+  Canvas a, b;
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&a, 100, 100, malloc));
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&b, 100, 100, malloc));
+  srandom(1);
+  int differing = 0;
+  for (int i = 0; i < count; i++) {
+    canvas_clear(&a, 0);
+    canvas_clear(&b, 0);
+    const int px = (int)(random() % 100), py = (int)(random() % 100);
+    const int vx = (int)(random() % 2001) - 1000, vy = (int)(random() % 2001) - 1000;
+    const int k = reach / 1000;
+    canvas_line(&a, px - k * vx, py - k * vy, px + k * vx, py + k * vy, 0xFFFF);
+    reference_canvas_line(&b, px - k * vx, py - k * vy, px + k * vx, py + k * vy, 0xFFFF);
+    differing += memcmp(a.px, b.px, sizeof(uint16_t) * 100 * 100) != 0;
+  }
+  canvas_free(&a);
+  canvas_free(&b);
+  return differing;
+}
+
 void test_lines_inside_the_canvas_match_the_reference(void) {
   TEST_ASSERT_EQUAL_INT(0, lines_that_differ_from_the_reference(0, 20000));
 }
@@ -231,6 +280,18 @@ void test_lines_far_off_the_canvas_match_the_reference(void) {
 void test_lines_with_huge_coordinates_match_the_reference(void) {
   TEST_ASSERT_EQUAL_INT(0, lines_that_differ_from_the_reference(700000, 20000));
   TEST_ASSERT_EQUAL_INT(0, lines_that_differ_from_the_reference(3000000, 20000));
+}
+
+void test_lines_from_the_canvas_to_far_away_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, far_lines_that_differ_from_the_reference(1000, 20000));
+  TEST_ASSERT_EQUAL_INT(0, far_lines_that_differ_from_the_reference(1000000, 20000));
+  TEST_ASSERT_EQUAL_INT(0, far_lines_that_differ_from_the_reference(1000000000, 20000));
+}
+
+void test_lines_through_the_canvas_from_far_both_sides_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, through_lines_that_differ_from_the_reference(1000, 20000));
+  TEST_ASSERT_EQUAL_INT(0, through_lines_that_differ_from_the_reference(1000000, 20000));
+  TEST_ASSERT_EQUAL_INT(0, through_lines_that_differ_from_the_reference(1000000000, 20000));
 }
 
 void test_line_far_offscreen_changes_nothing_and_terminates(void) {
@@ -914,6 +975,8 @@ int main(void) {
   RUN_TEST(test_lines_running_off_the_canvas_match_the_reference);
   RUN_TEST(test_lines_far_off_the_canvas_match_the_reference);
   RUN_TEST(test_lines_with_huge_coordinates_match_the_reference);
+  RUN_TEST(test_lines_from_the_canvas_to_far_away_match_the_reference);
+  RUN_TEST(test_lines_through_the_canvas_from_far_both_sides_match_the_reference);
   RUN_TEST(test_line_far_offscreen_changes_nothing_and_terminates);
   RUN_TEST(test_line_diagonal_crossing_canvas_from_far_away);
   RUN_TEST(test_ellipse_diameter_1_is_one_pixel);
