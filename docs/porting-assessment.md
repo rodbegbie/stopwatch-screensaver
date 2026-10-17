@@ -34,8 +34,8 @@ it with `uv run tools/score_hacks.py`.
 | S | 2D, and the unmodified source compiles against the shim | 4 |
 | M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 1 |
 | L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 40 |
-| XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 130 |
-| Ported | Already running on the device, so no rating | 108 |
+| XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 129 |
+| Ported | Already running on the device, so no rating | 109 |
 
 ## Speed
 
@@ -148,6 +148,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Gears (final code, overnight, 29 windows, many layouts) | 4.0-19.8 | 39-241 ms | 6.1-23.7 ms | 0-5.2 ms | 0 (PSRAM identical; heap falls 388 B a lap, its known leak) |
 | CubicGrid (ticks 30, 27,000 points; not registered) | 5.6-6.0 | 137-148 ms | 32.3-36.0 ms | 0 ms | 1.66 MB more than Morph3D (display list) |
 | CubicGrid (ticks 20, 8,000 points; registered) | 11.2-12.4 | 48-52 ms | 32.2-36.1 ms | 0 ms | 0.49 MB more than Morph3D (display list) |
+| Rubik | 14.2-27.0 | 14.9-48.7 ms | 3.5-7.3 ms | 15.0-18.7 ms | 0 (PSRAM constant; heap fell 1.1 KB over the run) |
 | Celtic (as copied; first port) | 1.0-20.4 | 29-1025 ms | 0.1-5.5 ms | 7.9-928 ms | none measurable |
 | Celtic (single precision, upstream graph sizes) | 1.0-20.2 | 5.6-151 ms | 0.8-6.6 ms | 9.4-1110 ms | 16 KB in one window (heap ran out) |
 | Celtic (single precision, graph sized to the screen, step scale 1) | 1.2-20.2 | 13.5-129 ms | 1.1-6.4 ms | 9.2-929 ms | none measurable |
@@ -975,7 +976,7 @@ needing few additions come first.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | droste | 2d | S | crashed on the host | - | - | pixmaps, readback | 686 |
 | flow | 2d | S | high (0.91 ms) | - | - | pixmaps | 1216 |
-| halftone | 2d | S | high (0.72 ms) | ❌ | - | pixmaps | 413 |
+| halftone | 2d | S | high (0.73 ms) | ❌ | - | pixmaps | 413 |
 | twang | 2d | S | crashed on the host | - | - | pixmaps, readback | 791 |
 | metaballs | 2d | M | - | - | `XFree`, `XListPixmapFormats` | - | 438 |
 | apollonian | 2d | L | - | - | `FcChar8`, `XColor.color`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall` | - | 820 |
@@ -1121,7 +1122,6 @@ needing few additions come first.
 | raverhoop | gl | XL | - | - | - | - | 771 |
 | razzledazzle | gl | XL | - | - | - | - | 728 |
 | romanboy | gl | XL | - | - | - | - | 2565 |
-| rubik | gl | XL | - | - | - | - | 2156 |
 | rubikblocks | gl | XL | - | - | - | - | 651 |
 | sballs | gl | XL | - | - | - | - | 830 |
 | sierpinski3d | gl | XL | - | - | - | - | 579 |
@@ -1254,6 +1254,7 @@ needing few additions come first.
 | hextrail | gl | - | - | ✅ | - | - | 782 |
 | morph3d | gl | - | 48-86 ms measured | ✅ | - | - | 841 |
 | pipes | gl | - | 2-7.8 ms measured | ✅ | - | - | 1208 |
+| rubik | gl | - | 14.9-48.7 ms measured | ✅ | - | - | 2156 |
 | stonerview | gl | - | 12.6-15.6 ms measured | ✅ | - | - | 156 |
 | unknownpleasures | gl | - | 162-169 ms measured | ✅ | - | readback | 736 |
 

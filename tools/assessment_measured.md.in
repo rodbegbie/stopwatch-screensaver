@@ -53,6 +53,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Gears (final code, overnight, 29 windows, many layouts) | 4.0-19.8 | 39-241 ms | 6.1-23.7 ms | 0-5.2 ms | 0 (PSRAM identical; heap falls 388 B a lap, its known leak) |
 | CubicGrid (ticks 30, 27,000 points; not registered) | 5.6-6.0 | 137-148 ms | 32.3-36.0 ms | 0 ms | 1.66 MB more than Morph3D (display list) |
 | CubicGrid (ticks 20, 8,000 points; registered) | 11.2-12.4 | 48-52 ms | 32.2-36.1 ms | 0 ms | 0.49 MB more than Morph3D (display list) |
+| Rubik | 14.2-27.0 | 14.9-48.7 ms | 3.5-7.3 ms | 15.0-18.7 ms | 0 (PSRAM constant; heap fell 1.1 KB over the run) |
 | Celtic (as copied; first port) | 1.0-20.4 | 29-1025 ms | 0.1-5.5 ms | 7.9-928 ms | none measurable |
 | Celtic (single precision, upstream graph sizes) | 1.0-20.2 | 5.6-151 ms | 0.8-6.6 ms | 9.4-1110 ms | 16 KB in one window (heap ran out) |
 | Celtic (single precision, graph sized to the screen, step scale 1) | 1.2-20.2 | 13.5-129 ms | 1.1-6.4 ms | 9.2-929 ms | none measurable |
