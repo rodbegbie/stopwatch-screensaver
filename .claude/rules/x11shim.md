@@ -108,8 +108,7 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   (`__divsf3`, `__fixsfdi`, `floorf`, `sqrtf`).
 - `canvas_line` (thin lines, width 0 and 1) keeps its endpoints as ints when
   nothing is clipped: it used to convert all four to double and back, which
-  the S3 does in software, on every call. Only the clipped path
-  (`clip_line`, Liang-Barsky in double) still uses double. Pixels are
+  the S3 does in software, on every call. Pixels are
   unchanged (`test_lines_inside_the_canvas_match_the_reference` and the
   off-canvas twin draw 20,000 lines each, alone, with `canvas_line` and with a
   copy of the old one in the test file). Compare against a reference copy, not
@@ -121,12 +120,28 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   they draw far fewer lines and clip some.
   Counting calls on the host (a scratch copy with counters in `canvas_line`,
   `arc_points`, `compute_closed_spline`) put 29 of 109 hacks on `canvas_line`.
-  Still soft double and not yet changed: `clip_line` (XSpirograph clips 404
-  of 722 lines a step, Laser 52%, Deco 27%), `arc_points` (a `sinf`, `cosf`
-  and float divide a point: Piecewise draws about 3,200 arc points a step,
-  BoxFit about 660) and `compute_closed_spline` (Goop, about 500 points a
-  step, all in double). The colour-map builders in `helpers.c` run at start
+  Still soft float or double and not yet changed: `arc_points` (a `sinf`,
+  `cosf` and float divide a point: Piecewise draws about 3,200 arc points a
+  step, BoxFit about 660) and `compute_closed_spline` (Goop, about 500 points
+  a step, all in double). The colour-map builders in `helpers.c` run at start
   only.
+- `canvas_line`'s clip (`clip_line_integer`, `canvas.c`) is the Liang-Barsky
+  clip in exact `int64` rationals: it compares the quotients by
+  cross-multiplying and rounds each end with one integer divide. The double
+  clip (`clip_line`) still decides two cases, and `canvas_line` falls back to
+  it for them: an end exactly on a half pixel, where double rounding can land
+  either side, and a coordinate past 2^20. The limit comes from an error bound
+  (double's error stays near 1e-10, while a rational answer that is not
+  exactly on a boundary is at least 1 / 2^22 from it), not from a test: a
+  raised limit survives the random tests, since a miss at 10^9 is about one
+  in ten million lines. A clipped end sits on the canvas border, so one
+  coordinate is an integer and only the other can tie. Pixels match the old
+  clip in every reference test, with FMA contraction on and off (a mutant that
+  treats every integer as a tie falls back every time and so also passes). On
+  the board XSpirograph's step went 11.4 to 7.45 ms (15.2 to 16.8 fps: its
+  push, 18.3 to 16.3 ms, now sets the frame) with 404 of 722 lines a step
+  clipped; Laser 21.3 to 20.8 ms (52% clipped, but about 270 pixels a line);
+  Deco unchanged at 34.3 ms (its own delay holds it at 0.2 fps).
 - `single_precision.h` renames the keyword `double`, not literals: `0.5 * x`
   is still software double. Braid's wrapper includes a copy of the hack with
   every decimal literal suffixed `f`, written at build time by
