@@ -75,6 +75,10 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   vertices, and the fifth overwrote the matrices and colours after
   `c->vertex` (Pipes' `buildlwo.c` crashed the host); `tinygl_patch.py` now
   holds it at the first slot. Check a new hack for both.
+- A decal drawn a hair above a surface z-fights with it at 16-bit depth, and a
+  test that only asks whether something drew passes. Count the decal's
+  coloured pixels, and mutation-check the offset (`test_hacks.c`'s Rubik
+  sticker test fails at 7,152 without it).
 - TinyGL lacks `glTexGeni`, `glFog*` and `glInterleavedArrays` (#46). The
   header declares `glFog*` and the `GL_SPHERE_MAP` enum; the library defines
   neither.

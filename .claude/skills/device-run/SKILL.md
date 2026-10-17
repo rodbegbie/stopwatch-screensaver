@@ -30,9 +30,10 @@ Moved verbatim from AGENTS.md.
   `$(cat file)`. Use `PLATFORMIO_BUILD_FLAGS="'-DBADGE_NAME=\"Rod B.\"'
   '-DSTART_HACK=\"gears\"' -DROTATE_SECONDS=0"` with `.venv/bin/pio run -d
   firmware -e stopwatch -t upload` from the worktree root.
-- Serial log: read `/dev/cu.usbmodem112401` at 115200 for N seconds into a file
-  (a pyserial script run with `.venv/bin/python -I`). Run it in the background
-  with absolute paths, since background shells ignore `cd`. Lines to read:
+- Serial log: `.venv/bin/python -I tools/serial_capture.py <out-file>
+  <seconds> [port]` reads `/dev/cu.usbmodem112401` at 115200 into a file and
+  reopens the port when it goes away. Run it in the background with absolute
+  paths, since background shells ignore `cd`. Lines to read:
   `run <hack> fps= step= push= sync= wait= rows=` (ms per frame in the hack,
   the push, the wait for the panel's TE edge before a synced push (only
   Unknown Pleasures; not counted in `push=`) and the wait; mean canvas rows
@@ -46,8 +47,9 @@ Moved verbatim from AGENTS.md.
   pinned build (`START_HACK` plus `ROTATE_SECONDS=0`), start the capture, then
   tap during it: the early windows are the baseline, the later ones have the
   overlay.
-  Set `dtr` and `rts` to False on an unopened `serial.Serial()` before
-  `open()`: a reopen loop without that once parked the chip in its bootloader
+  `serial_capture.py` sets `dtr` and `rts` to False on an unopened
+  `serial.Serial()` before `open()`, as any script of your own must: a reopen
+  loop without that once parked the chip in its bootloader
   (`boot:0x3 ... waiting for download`, screen frozen). Recover, or reset just
   before a capture to log from boot (a hack's `fprintf(stderr)` reaches the
   log), with `.venv/bin/python .platformio/packages/tool-esptoolpy/esptool.py
