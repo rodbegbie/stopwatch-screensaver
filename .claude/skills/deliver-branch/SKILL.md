@@ -30,9 +30,12 @@ Moved verbatim from AGENTS.md.
   Rod's approval is enough: do not wait for the Entire Gates check to finish.
   If the only failing gates are Approvals (he approved in chat) or a stacked
   PR's "Up to date: 1 commit behind" once its parent merges, and the PR is
-  mergeable, run `entire trail merge <trail> --force --yes` with no rebase;
-  the bypass is recorded on the trail. For any other failing gate, stop and
-  tell Rod.
+  mergeable, try `entire trail merge <trail> --force --yes` with no rebase;
+  the bypass is recorded on the trail. The repo's bypass policy is now
+  "nobody", so it is refused ("does not allow bypassing gates", PR #132):
+  do not merge round it with `gh pr merge`. Ask Rod to approve the trail in
+  the Entire UI, then run a plain `entire trail merge`. For any other failing
+  gate, stop and tell Rod.
 - Before merging, `git fetch` and compare the PR's `headRefOid` with your tip:
   Rod sometimes pushes to the branch (docs commits, a merge of `main`). Read
   what arrived with `git log --oneline <tip>..origin/<branch>`, and clean up

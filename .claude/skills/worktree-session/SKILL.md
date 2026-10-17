@@ -35,8 +35,12 @@ Moved verbatim from AGENTS.md.
   `ExitWorktree keep` names a branch (`worktree-<name>`) that may not exist:
   remove the worktree with `git worktree remove --force <path>` and delete the
   real branch, as separate commands, because a failed `&&` link skips the rest
-  silently. Check `git worktree list` afterwards. In a session resumed from a
-  summary, `ExitWorktree` is a no-op ("no active EnterWorktree session"):
+  silently. Check `git worktree list` afterwards. `git worktree remove --force`
+  fails on a worktree this session's harness locked ("cannot remove a locked
+  working tree, lock reason: claude session"): once the tip is an ancestor of
+  `origin/main`, `ExitWorktree remove` with `discard_changes: true` works, and
+  its "discarded N commits" are the merged ones. In a session resumed from a
+  summary, `ExitWorktree` can be a no-op ("no active EnterWorktree session"):
   remove the worktree with `git worktree remove --force <path>` from the main
   checkout instead. To delete the merged branch
   you are standing on, `git switch --detach origin/main` in the worktree first.
