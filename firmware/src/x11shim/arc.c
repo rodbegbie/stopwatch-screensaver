@@ -23,6 +23,30 @@ int arc_point_count(unsigned w, unsigned h, int angle2) {
   return n > (float)ARC_MAX_POINTS ? ARC_MAX_POINTS : (int)n;
 }
 
+/* Points between a full sinf and cosf (and a divide) each. The S3 has no float
+ * divide, sin or cos, so each is a library call. A run of RUN_LENGTH points is
+ * worked out from its first by rotating through the step between points, which
+ * is four multiplies and two adds a point, and a point is kept unless it lies
+ * within the rotation's error of a rounding boundary; there, and for the first
+ * of each run, it is worked out as it always was. The error is about 3e-6 of the
+ * radius after RUN_LENGTH steps, from sinf and cosf's own and the rounding of
+ * each step: the tolerance below is generous. Angles past ROTATE_ANGLE_LIMIT
+ * radians (where float's own spacing is near a millionth of a radian) and
+ * coordinates past ROTATE_COORD_LIMIT take the plain loop. */
+#define RUN_LENGTH 16
+#define ROTATE_ANGLE_LIMIT 32.0f
+#define ROTATE_COORD_LIMIT 1.0e6f
+
+/* The int lrintf would give, for a value clear of a rounding boundary. */
+static int rounded(float v) { return (int)(v + (v < 0 ? -0.5f : 0.5f)); }
+
+/* Whether v is within tol of a half, where lrintf's choice flips. */
+static int near_half(float v, float tol) {
+  const float frac = v - (float)(int)v;
+  const float off = (frac < 0 ? -frac : frac) - 0.5f;
+  return off <= tol && off >= -tol;
+}
+
 int arc_points(int x, int y, unsigned w, unsigned h, int angle1, int angle2,
                int *xy, int max_points) {
   int n = arc_point_count(w, h, angle2);
@@ -32,10 +56,37 @@ int arc_points(int x, int y, unsigned w, unsigned h, int angle1, int angle2,
   const float rx = (float)w / 2.0f, ry = (float)h / 2.0f;
   const float start = (float)angle1 / 64.0f * DEGREES_TO_RADIANS;
   const float sweep = (float)sweep_of(angle2) / 64.0f * DEGREES_TO_RADIANS;
+  const float radius = rx > ry ? rx : ry;
+  const int rotate = n > 2 && start > -ROTATE_ANGLE_LIMIT && start < ROTATE_ANGLE_LIMIT &&
+                     sweep > -ROTATE_ANGLE_LIMIT && sweep < ROTATE_ANGLE_LIMIT &&
+                     cx > -ROTATE_COORD_LIMIT && cx < ROTATE_COORD_LIMIT &&
+                     cy > -ROTATE_COORD_LIMIT && cy < ROTATE_COORD_LIMIT &&
+                     radius < ROTATE_COORD_LIMIT;
+  const float step = sweep / (float)(n - 1);
+  const float cos_step = rotate ? cosf(step) : 0.0f, sin_step = rotate ? sinf(step) : 0.0f;
+  const float reach = (cx < 0 ? -cx : cx) + (cy < 0 ? -cy : cy) + radius;
+  /* Past a few thousand, float's own spacing (up to 1.2e-7 of the value) is
+   * coarser than the rotation's error, and the sum cx + rx * c can round to a
+   * neighbouring float: the tolerance covers three spacings. */
+  const float tol = 2e-3f + 4e-5f * radius + 4e-7f * reach;
+  float c = 0, sn = 0;
   for (int i = 0; i < n; i++) {
+    if (rotate && i % RUN_LENGTH != 0) {
+      const float next_c = c * cos_step - sn * sin_step;
+      sn = sn * cos_step + c * sin_step;
+      c = next_c;
+      const float vx = cx + rx * c, vy = cy - ry * sn;
+      if (!near_half(vx, tol) && !near_half(vy, tol)) {
+        xy[2 * i] = rounded(vx);
+        xy[2 * i + 1] = rounded(vy);
+        continue;
+      }
+    }
     const float a = start + sweep * (float)i / (float)(n - 1);
-    xy[2 * i] = (int)lrintf(cx + rx * cosf(a));
-    xy[2 * i + 1] = (int)lrintf(cy - ry * sinf(a));
+    c = cosf(a);
+    sn = sinf(a);
+    xy[2 * i] = (int)lrintf(cx + rx * c);
+    xy[2 * i + 1] = (int)lrintf(cy - ry * sn);
   }
   return n;
 }

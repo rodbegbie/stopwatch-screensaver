@@ -120,11 +120,8 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   they draw far fewer lines and clip some.
   Counting calls on the host (a scratch copy with counters in `canvas_line`,
   `arc_points`, `compute_closed_spline`) put 29 of 109 hacks on `canvas_line`.
-  Still soft float or double and not yet changed: `arc_points` (a `sinf`,
-  `cosf` and float divide a point: Piecewise draws about 3,200 arc points a
-  step, BoxFit about 660) and `compute_closed_spline` (Goop, about 500 points
-  a step, all in double). The colour-map builders in `helpers.c` run at start
-  only.
+  The colour-map builders in `helpers.c` run at start only, so their double
+  maths does not matter per frame.
 - `canvas_line`'s clip (`clip_line_integer`, `canvas.c`) is the Liang-Barsky
   clip in exact `int64` rationals: it compares the quotients by
   cross-multiplying and rounds each end with one integer divide. The double
@@ -142,6 +139,33 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   push, 18.3 to 16.3 ms, now sets the frame) with 404 of 722 lines a step
   clipped; Laser 21.3 to 20.8 ms (52% clipped, but about 270 pixels a line);
   Deco unchanged at 34.3 ms (its own delay holds it at 0.2 fps).
+- `arc_points` (`arc.c`) and `compute_closed_spline` (`spline.c`) take a fast
+  path and keep the old arithmetic for what the fast path cannot settle. Both
+  match the old code point for point in the reference tests, with FMA
+  contraction on and off; the pinned frame of every hack is unchanged.
+  - `compute_closed_spline` works each point's blend of four controls in
+    float (the weights are worked out once, in double, then kept as float) and
+    keeps it unless it is within about 1e-3 plus 2e-6 of the largest control
+    from a half pixel, where `lround` could go either way; then the original
+    double expression decides. Controls past 1e6 in size take the double path
+    throughout. The controls are `double` because hacks fill them in, so the
+    conversion to float is once a call, not once a point. Goop: step 45.3 to
+    35.4 ms (15.9 to 18.9 fps), about 500 points a step.
+  - `arc_points` works a run of 16 points from the first by rotating through
+    the step between points (four multiplies and two adds, not a divide, `sinf`
+    and `cosf`), and a point within 2e-3 plus 4e-5 of the radius from a rounding
+    boundary is worked out as before, and the rotation reseeded from it. Angles
+    past 32 radians (float's spacing is then near a millionth of a radian) and
+    coordinates or radii past 1e6 take the plain loop. The run length is a
+    margin: the real drift over a thousand points is about 1e-3 px against a
+    tolerance of 0.02 px, so a longer run passes the tests too. Piecewise:
+    step 43.4 to 38.6 ms (22.4 to 25.0 fps, about 3,200 arc points a step);
+    BoxFit 14.1 to 12.9 ms, with its fps flat (19.1 to 19.2) because its own
+    delay sets the frame.
+  - A mutant that drops the near-half fallback, one that flips a rotation
+    sign, and ones that remove the angle or coordinate limits are each killed
+    by the reference tests; a pinned hash would not do here either, since the
+    float and double paths can round a half pixel differently.
 - `single_precision.h` renames the keyword `double`, not literals: `0.5 * x`
   is still software double. Braid's wrapper includes a copy of the hack with
   every decimal literal suffixed `f`, written at build time by

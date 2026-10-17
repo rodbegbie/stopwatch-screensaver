@@ -2268,6 +2268,105 @@ static void reference_ellipse_check(int x, int y, unsigned w, unsigned h) {
   TEST_ASSERT_TRUE_MESSAGE(worst_x100 <= 75, "a point is more than 0.75 px off the ellipse");
 }
 
+/* arc_points as it was before it learned to rotate instead of calling sinf
+ * and cosf at every point, copied from main: every arc below is compared with
+ * it, point for point. arc_point_count is unchanged, so both use it. */
+#define REFERENCE_FULL_SWEEP (360 * 64)
+#define REFERENCE_DEGREES_TO_RADIANS 0.017453292519943295f
+static int reference_sweep_of(int angle2) {
+  if (angle2 > REFERENCE_FULL_SWEEP) return REFERENCE_FULL_SWEEP;
+  if (angle2 < -REFERENCE_FULL_SWEEP) return -REFERENCE_FULL_SWEEP;
+  return angle2;
+}
+
+
+static int reference_arc_points(int x, int y, unsigned w, unsigned h, int angle1, int angle2,
+               int *xy, int max_points) {
+  int n = arc_point_count(w, h, angle2);
+  if (n > max_points) n = max_points;
+  if (n < 2) return n < 0 ? 0 : n;
+  const float cx = (float)x + (float)w / 2.0f, cy = (float)y + (float)h / 2.0f;
+  const float rx = (float)w / 2.0f, ry = (float)h / 2.0f;
+  const float start = (float)angle1 / 64.0f * REFERENCE_DEGREES_TO_RADIANS;
+  const float sweep = (float)reference_sweep_of(angle2) / 64.0f * REFERENCE_DEGREES_TO_RADIANS;
+  for (int i = 0; i < n; i++) {
+    const float a = start + sweep * (float)i / (float)(n - 1);
+    xy[2 * i] = (int)lrintf(cx + rx * cosf(a));
+    xy[2 * i + 1] = (int)lrintf(cy - ry * sinf(a));
+  }
+  return n;
+}
+
+/* Random arcs, by `kind`: 0 small boxes like a hack's dots and petals, 1 boxes
+ * of any size up to the canvas, 2 huge angles, 3 huge coordinates and sizes, 4
+ * coordinates up to a million, where float's own spacing is coarse.
+ * Returns how many arcs differed from the reference. */
+static int arcs_that_differ_from_the_reference(int kind, int count) {
+  srandom(1);
+  int differing = 0;
+  static int fast[2 * ARC_MAX_POINTS], ref[2 * ARC_MAX_POINTS];
+  for (int i = 0; i < count; i++) {
+    int x = (int)(random() % 600) - 100, y = (int)(random() % 600) - 100;
+    unsigned w = 1 + (unsigned)(random() % 60), h = 1 + (unsigned)(random() % 60);
+    int angle1 = (int)(random() % (720 * 64)) - 360 * 64;
+    int angle2 = (int)(random() % (800 * 64)) - 400 * 64;
+    if (kind == 1) {
+      w = 1 + (unsigned)(random() % 900);
+      h = 1 + (unsigned)(random() % 900);
+    } else if (kind == 2) {
+      angle1 = (int)(random() % 2000000000) - 1000000000;
+      angle2 = (int)(random() % 2000000000) - 1000000000;
+    } else if (kind == 4) {
+      x = (int)(random() % 2000000) - 1000000;
+      y = (int)(random() % 2000000) - 1000000;
+      w = 1 + (unsigned)(random() % 1000);
+      h = 1 + (unsigned)(random() % 1000);
+    } else if (kind == 3) {
+      x = (int)(random() % 2000000000) - 1000000000;
+      y = (int)(random() % 2000000000) - 1000000000;
+      w = 1 + (unsigned)(random() % 2000000000);
+      h = 1 + (unsigned)(random() % 2000000000);
+    }
+    const int nf = arc_points(x, y, w, h, angle1, angle2, fast, ARC_MAX_POINTS);
+    const int nr = reference_arc_points(x, y, w, h, angle1, angle2, ref, ARC_MAX_POINTS);
+    differing += nf != nr || memcmp(fast, ref, sizeof(int) * 2 * (size_t)(nr > 0 ? nr : 0)) != 0;
+  }
+  return differing;
+}
+
+void test_small_arcs_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, arcs_that_differ_from_the_reference(0, 40000));
+}
+
+void test_arcs_of_any_size_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, arcs_that_differ_from_the_reference(1, 4000));
+}
+
+void test_arcs_with_huge_angles_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, arcs_that_differ_from_the_reference(2, 10000));
+}
+
+void test_arcs_with_coordinates_up_to_a_million_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, arcs_that_differ_from_the_reference(4, 20000));
+}
+
+/* Found in review of #131: float spacing near 9e5 is about 0.06, which the
+ * tolerance did not allow for, so point 582 came out a pixel off. */
+void test_an_arc_far_from_the_canvas_matches_the_reference_at_every_point(void) {
+  static int fast[2 * ARC_MAX_POINTS], ref[2 * ARC_MAX_POINTS];
+  const int nf = arc_points(901474, -723879, 859, 396, -88971, 14837, fast, ARC_MAX_POINTS);
+  const int nr = reference_arc_points(901474, -723879, 859, 396, -88971, 14837, ref, ARC_MAX_POINTS);
+  TEST_ASSERT_EQUAL_INT(nr, nf);
+  for (int i = 0; i < nr; i++) {
+    TEST_ASSERT_EQUAL_INT_MESSAGE(ref[2 * i], fast[2 * i], "x");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(ref[2 * i + 1], fast[2 * i + 1], "y");
+  }
+}
+
+void test_arcs_with_huge_coordinates_and_sizes_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, arcs_that_differ_from_the_reference(3, 10000));
+}
+
 void test_arc_points_lie_within_a_pixel_of_the_ellipse(void) {
   reference_ellipse_check(10, 10, 40, 40);
   reference_ellipse_check(5, 5, 60, 30);
@@ -3765,6 +3864,116 @@ void test_a_closed_spline_of_a_square_is_a_smooth_loop_inside_it(void) {
   free_spline(sp);
 }
 
+/* compute_closed_spline as it was before it learned to skip the double
+ * arithmetic, copied from main: every spline below is compared against it,
+ * point for point. */
+#define REFERENCE_SPLINE_STEPS 6
+static void reference_compute_closed_spline(spline *s) {
+  const unsigned n = s->n_controls;
+  s->n_points = 0;
+  if (n == 0) return;
+  const unsigned total = n * REFERENCE_SPLINE_STEPS;
+  if (s->allocated_points < total) {
+    XPoint *grown = (XPoint *)realloc(s->points, (size_t)total * sizeof(XPoint));
+    if (!grown) return;
+    s->points = grown;
+    s->allocated_points = total;
+  }
+  unsigned k = 0;
+  for (unsigned i = 0; i < n; i++) {
+    const unsigned a = (i + n - 1) % n, b = i, c = (i + 1) % n, d = (i + 2) % n;
+    for (int j = 0; j < REFERENCE_SPLINE_STEPS; j++) {
+      const double t = (double)j / REFERENCE_SPLINE_STEPS, t2 = t * t, t3 = t2 * t;
+      const double w0 = (1 - t) * (1 - t) * (1 - t) / 6;
+      const double w1 = (3 * t3 - 6 * t2 + 4) / 6;
+      const double w2 = (-3 * t3 + 3 * t2 + 3 * t + 1) / 6;
+      const double w3 = t3 / 6;
+      s->points[k].x = (short)lround(w0 * s->control_x[a] + w1 * s->control_x[b] +
+                                     w2 * s->control_x[c] + w3 * s->control_x[d]);
+      s->points[k].y = (short)lround(w0 * s->control_y[a] + w1 * s->control_y[b] +
+                                     w2 * s->control_y[c] + w3 * s->control_y[d]);
+      k++;
+    }
+  }
+  s->n_points = k;
+}
+
+
+/* Random control points, drawn by `kind`: 0 whole numbers on the canvas (the
+ * weights are sixths, so many results fall exactly on a half pixel), 1 fractions
+ * on the canvas, 2 far off it, 3 huge, 4 up to a million, where float's spacing is coarse. Returns how many splines differed from
+ * the reference. */
+static int splines_that_differ_from_the_reference(int kind, int count) {
+  srandom(1);
+  int differing = 0;
+  for (int i = 0; i < count; i++) {
+    const unsigned n = 3 + (unsigned)(random() % 12);
+    spline *fast = make_spline(n), *ref = make_spline(n);
+    for (unsigned k = 0; k < n; k++) {
+      double x, y;
+      switch (kind) {
+        case 0: x = (double)(random() % 466); y = (double)(random() % 466); break;
+        case 1: x = (double)(random() % 466000) / 1000.0; y = (double)(random() % 466000) / 1000.0; break;
+        case 2: x = (double)(random() % 2000000) / 10.0 - 100000.0; y = (double)(random() % 2000000) / 10.0 - 100000.0; break;
+        case 4: x = (double)(random() % 20000000) / 10.0 - 1000000.0; y = (double)(random() % 20000000) / 10.0 - 1000000.0; break;
+        default: x = (double)(random() % 2000000) * 1e5 - 1e11; y = (double)(random() % 2000000) * 1e5 - 1e11; break;
+      }
+      fast->control_x[k] = ref->control_x[k] = x;
+      fast->control_y[k] = ref->control_y[k] = y;
+    }
+    compute_closed_spline(fast);
+    reference_compute_closed_spline(ref);
+    int same = fast->n_points == ref->n_points;
+    for (unsigned k = 0; same && k < ref->n_points; k++)
+      same = fast->points[k].x == ref->points[k].x && fast->points[k].y == ref->points[k].y;
+    differing += !same;
+    free_spline(fast);
+    free_spline(ref);
+  }
+  return differing;
+}
+
+void test_splines_of_whole_number_controls_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, splines_that_differ_from_the_reference(0, 5000));
+}
+
+void test_splines_of_fractional_controls_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, splines_that_differ_from_the_reference(1, 5000));
+}
+
+void test_splines_of_far_off_controls_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, splines_that_differ_from_the_reference(2, 5000));
+}
+
+void test_a_spline_of_more_than_64_controls_matches_the_reference(void) {
+  srandom(1);
+  for (int round = 0; round < 50; round++) {
+    const unsigned n = 65 + (unsigned)(random() % 80);
+    spline *fast = make_spline(n), *ref = make_spline(n);
+    for (unsigned k = 0; k < n; k++) {
+      fast->control_x[k] = ref->control_x[k] = (double)(random() % 466000) / 1000.0;
+      fast->control_y[k] = ref->control_y[k] = (double)(random() % 466000) / 1000.0;
+    }
+    compute_closed_spline(fast);
+    reference_compute_closed_spline(ref);
+    TEST_ASSERT_EQUAL_UINT(ref->n_points, fast->n_points);
+    for (unsigned k = 0; k < ref->n_points; k++) {
+      TEST_ASSERT_EQUAL_INT(ref->points[k].x, fast->points[k].x);
+      TEST_ASSERT_EQUAL_INT(ref->points[k].y, fast->points[k].y);
+    }
+    free_spline(fast);
+    free_spline(ref);
+  }
+}
+
+void test_splines_of_controls_up_to_a_million_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, splines_that_differ_from_the_reference(4, 20000));
+}
+
+void test_splines_of_huge_controls_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, splines_that_differ_from_the_reference(3, 5000));
+}
+
 void test_a_closed_spline_reuses_its_points_and_grows_them_for_more_controls(void) {
   spline *sp = square_spline();
   compute_closed_spline(sp);
@@ -4034,6 +4243,12 @@ int main(void) {
   RUN_TEST(test_the_server_byte_order_is_least_significant_first);
   RUN_TEST(test_a_new_spline_has_zeroed_controls_and_no_points);
   RUN_TEST(test_a_closed_spline_of_a_square_is_a_smooth_loop_inside_it);
+  RUN_TEST(test_splines_of_whole_number_controls_match_the_reference);
+  RUN_TEST(test_splines_of_fractional_controls_match_the_reference);
+  RUN_TEST(test_splines_of_far_off_controls_match_the_reference);
+  RUN_TEST(test_splines_of_controls_up_to_a_million_match_the_reference);
+  RUN_TEST(test_splines_of_huge_controls_match_the_reference);
+  RUN_TEST(test_a_spline_of_more_than_64_controls_matches_the_reference);
   RUN_TEST(test_a_closed_spline_reuses_its_points_and_grows_them_for_more_controls);
   RUN_TEST(test_a_closed_spline_of_one_point_is_that_point);
   RUN_TEST(test_fill_rule_constants_and_the_even_odd_fill_of_a_pentagram);
@@ -4198,6 +4413,12 @@ int main(void) {
   RUN_TEST(test_draw_segments_draws_each_segment_independently);
   RUN_TEST(test_draw_segments_with_zero_count_draws_nothing);
   RUN_TEST(test_draw_segments_wide_uses_caps_not_joins);
+  RUN_TEST(test_small_arcs_match_the_reference);
+  RUN_TEST(test_arcs_of_any_size_match_the_reference);
+  RUN_TEST(test_arcs_with_huge_angles_match_the_reference);
+  RUN_TEST(test_arcs_with_huge_coordinates_and_sizes_match_the_reference);
+  RUN_TEST(test_arcs_with_coordinates_up_to_a_million_match_the_reference);
+  RUN_TEST(test_an_arc_far_from_the_canvas_matches_the_reference_at_every_point);
   RUN_TEST(test_arc_points_lie_within_a_pixel_of_the_ellipse);
   RUN_TEST(test_arc_points_start_and_end_at_the_requested_angles);
   RUN_TEST(test_negative_angle2_runs_clockwise);
