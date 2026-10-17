@@ -3845,6 +3845,27 @@ void test_splines_of_far_off_controls_match_the_reference(void) {
   TEST_ASSERT_EQUAL_INT(0, splines_that_differ_from_the_reference(2, 5000));
 }
 
+void test_a_spline_of_more_than_64_controls_matches_the_reference(void) {
+  srandom(1);
+  for (int round = 0; round < 50; round++) {
+    const unsigned n = 65 + (unsigned)(random() % 80);
+    spline *fast = make_spline(n), *ref = make_spline(n);
+    for (unsigned k = 0; k < n; k++) {
+      fast->control_x[k] = ref->control_x[k] = (double)(random() % 466000) / 1000.0;
+      fast->control_y[k] = ref->control_y[k] = (double)(random() % 466000) / 1000.0;
+    }
+    compute_closed_spline(fast);
+    reference_compute_closed_spline(ref);
+    TEST_ASSERT_EQUAL_UINT(ref->n_points, fast->n_points);
+    for (unsigned k = 0; k < ref->n_points; k++) {
+      TEST_ASSERT_EQUAL_INT(ref->points[k].x, fast->points[k].x);
+      TEST_ASSERT_EQUAL_INT(ref->points[k].y, fast->points[k].y);
+    }
+    free_spline(fast);
+    free_spline(ref);
+  }
+}
+
 void test_splines_of_huge_controls_match_the_reference(void) {
   TEST_ASSERT_EQUAL_INT(0, splines_that_differ_from_the_reference(3, 5000));
 }
@@ -4122,6 +4143,7 @@ int main(void) {
   RUN_TEST(test_splines_of_fractional_controls_match_the_reference);
   RUN_TEST(test_splines_of_far_off_controls_match_the_reference);
   RUN_TEST(test_splines_of_huge_controls_match_the_reference);
+  RUN_TEST(test_a_spline_of_more_than_64_controls_matches_the_reference);
   RUN_TEST(test_a_closed_spline_reuses_its_points_and_grows_them_for_more_controls);
   RUN_TEST(test_a_closed_spline_of_one_point_is_that_point);
   RUN_TEST(test_fill_rule_constants_and_the_even_odd_fill_of_a_pentagram);
