@@ -224,6 +224,15 @@ void test_lines_running_off_the_canvas_match_the_reference(void) {
   TEST_ASSERT_EQUAL_INT(0, lines_that_differ_from_the_reference(60, 20000));
 }
 
+void test_lines_far_off_the_canvas_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, lines_that_differ_from_the_reference(1000, 20000));
+}
+
+void test_lines_with_huge_coordinates_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, lines_that_differ_from_the_reference(700000, 20000));
+  TEST_ASSERT_EQUAL_INT(0, lines_that_differ_from_the_reference(3000000, 20000));
+}
+
 void test_line_far_offscreen_changes_nothing_and_terminates(void) {
   canvas_line(&c, -1000000, -1000000, -999000, 1000000, C1);
   canvas_line(&c, 1000000, 1000000, -1000000, 1000001, C1);
@@ -903,6 +912,8 @@ int main(void) {
   RUN_TEST(test_line_with_offscreen_endpoint_draws_visible_part);
   RUN_TEST(test_lines_inside_the_canvas_match_the_reference);
   RUN_TEST(test_lines_running_off_the_canvas_match_the_reference);
+  RUN_TEST(test_lines_far_off_the_canvas_match_the_reference);
+  RUN_TEST(test_lines_with_huge_coordinates_match_the_reference);
   RUN_TEST(test_line_far_offscreen_changes_nothing_and_terminates);
   RUN_TEST(test_line_diagonal_crossing_canvas_from_far_away);
   RUN_TEST(test_ellipse_diameter_1_is_one_pixel);
