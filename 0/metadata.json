@@ -146,6 +146,37 @@
         "label": "Skill: device-run",
         "default_collapsed": true
       }
+    },
+    {
+      "id": "claude-skill-toolu_01KGy7CeFfxDJD28FPsJxogp",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "deliver-branch"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "66671bffd797",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 1738,
+        "end": 1739,
+        "entry_ids": [
+          "f3f6621e-8fd6-4f09-89cd-be2edaacf3d3"
+        ],
+        "tool_use_id": "toolu_01KGy7CeFfxDJD28FPsJxogp"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01KGy7CeFfxDJD28FPsJxogp"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: deliver-branch",
+        "default_collapsed": true
+      }
     }
   ],
   "session_metrics": {
