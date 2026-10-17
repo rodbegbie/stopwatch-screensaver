@@ -131,6 +131,11 @@ Set `NO_COLOR=1` on `pio` output you parse.
   overflow on an inner canvas row wraps into the next row unseen, so a clip
   test must assert pixels, not just survive (`test_glshim`'s edge test missed
   the right and bottom guards).
+- Test a rewrite of float or double code against a copy of the old function
+  kept in the test, each shape alone on a cleared canvas. A pinned hash fails
+  under `PLATFORMIO_BUILD_FLAGS=-ffp-contract=off` (run the suite both ways),
+  and shapes drawn together hide each other. Sweep the magnitude (small, mid,
+  large, huge): float spacing bites at mid range (#131).
 - Changing what every hack sees (the runner, a default, a shared helper) is not
   filling a shim gap: ask Rod first.
 - Verify a delegated port yourself: `cmp` the hack, run the full suite, build
@@ -169,6 +174,11 @@ files there: `device-display.md` (main.cpp, core, runner), `x11shim.md`,
 Add a new gotcha to the matching file. The
 ones below apply everywhere.
 
+- A mutant that sends every case to the fallback path is equivalent, not a
+  gap: it passes because the old arithmetic runs. Change the rounding without
+  forcing the fallback. A guard justified by an error bound (a limit, a
+  reseed interval) can survive a mutant when failures are one in millions:
+  say so in the PR rather than hunting for a test.
 - In `platformio.ini` use `platform = platformio/native`; plain `native`
   breaks `pio run`. Native tests need `test_build_src = yes`.
 - Quoted includes resolve beside the including file first, so compile hack
