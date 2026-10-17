@@ -127,32 +127,101 @@ void test_line_with_offscreen_endpoint_draws_visible_part(void) {
   TEST_ASSERT_EQUAL_INT(8, count_set());
 }
 
-/* Draws many random lines, each alone on a cleared canvas, and hashes every
- * result: drawn together, later lines cover the pixels where an earlier one
- * would differ. `margin` is how far past the canvas an endpoint can fall (0
- * keeps every line inside, so none is clipped). */
-static uint64_t hash_of_random_lines(int margin, int count) {
-  Canvas big;
-  TEST_ASSERT_EQUAL_INT(0, canvas_init(&big, 100, 100, malloc));
+/* The canvas_line this repo had before the unclipped path stopped converting
+ * its endpoints to double, copied from main: the reference every line below is
+ * compared against. Compiled with the test's flags, so a clip that rounds
+ * differently under another compiler setting (FMA contraction) does so in the
+ * reference too, which a pinned hash could not allow for. */
+/* Liang-Barsky clip of the segment to [0,w-1]x[0,h-1]; false if outside. */
+static int reference_clip_line(const Canvas *c, double *x0, double *y0, double *x1,
+                     double *y1) {
+  double dx = *x1 - *x0, dy = *y1 - *y0, t0 = 0, t1 = 1;
+  double p[4] = {-dx, dx, -dy, dy};
+  double q[4] = {*x0, (c->w - 1) - *x0, *y0, (c->h - 1) - *y0};
+  for (int i = 0; i < 4; i++) {
+    if (p[i] == 0) {
+      if (q[i] < 0) return 0;
+    } else {
+      double t = q[i] / p[i];
+      if (p[i] < 0) {
+        if (t > t1) return 0;
+        if (t > t0) t0 = t;
+      } else {
+        if (t < t0) return 0;
+        if (t < t1) t1 = t;
+      }
+    }
+  }
+  double ax = *x0, ay = *y0;
+  *x0 = ax + t0 * dx;
+  *y0 = ay + t0 * dy;
+  *x1 = ax + t1 * dx;
+  *y1 = ay + t1 * dy;
+  return 1;
+}
+
+static void reference_canvas_line(Canvas *c, int x0, int y0, int x1, int y1, uint16_t color) {
+  double ax = x0, ay = y0, bx = x1, by = y1;
+  int clipped = x0 < 0 || y0 < 0 || x0 >= c->w || y0 >= c->h || x1 < 0 ||
+                y1 < 0 || x1 >= c->w || y1 >= c->h;
+  if (clipped) {
+    if (!reference_clip_line(c, &ax, &ay, &bx, &by)) return;
+    ax = floor(ax + 0.5);
+    ay = floor(ay + 0.5);
+    bx = floor(bx + 0.5);
+    by = floor(by + 0.5);
+  }
+  int ix0 = (int)ax, iy0 = (int)ay, ix1 = (int)bx, iy1 = (int)by;
+  int dx = abs(ix1 - ix0), sx = ix0 < ix1 ? 1 : -1;
+  int dy = -abs(iy1 - iy0), sy = iy0 < iy1 ? 1 : -1;
+  int err = dx + dy;
+  for (;;) {
+    canvas_point(c, ix0, iy0, color);
+    if (ix0 == ix1 && iy0 == iy1) break;
+    int e2 = 2 * err;
+    if (e2 >= dy) {
+      err += dy;
+      ix0 += sx;
+    }
+    if (e2 <= dx) {
+      err += dx;
+      iy0 += sy;
+    }
+  }
+}
+
+
+/* Draws many random lines, each alone on a cleared canvas, with canvas_line and
+ * with the reference, and counts the lines whose pixels differ. Drawn together,
+ * later lines would cover the pixels where an earlier one differs. `margin` is
+ * how far past the canvas an endpoint can fall (0 keeps every line inside, so
+ * none is clipped). */
+static int lines_that_differ_from_the_reference(int margin, int count) {
+  Canvas a, b;
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&a, 100, 100, malloc));
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&b, 100, 100, malloc));
   srandom(1);
-  uint64_t h = 1469598103934665603ull;
+  int differing = 0;
   for (int i = 0; i < count; i++) {
-    canvas_clear(&big, 0);
+    canvas_clear(&a, 0);
+    canvas_clear(&b, 0);
     int xy[4];
     for (int k = 0; k < 4; k++) xy[k] = (int)(random() % (100 + 2 * margin)) - margin;
-    canvas_line(&big, xy[0], xy[1], xy[2], xy[3], 0xFFFF);
-    for (int k = 0; k < big.w * big.h; k++) h = (h ^ big.px[k]) * 1099511628211ull;
+    canvas_line(&a, xy[0], xy[1], xy[2], xy[3], 0xFFFF);
+    reference_canvas_line(&b, xy[0], xy[1], xy[2], xy[3], 0xFFFF);
+    differing += memcmp(a.px, b.px, sizeof(uint16_t) * 100 * 100) != 0;
   }
-  canvas_free(&big);
-  return h;
+  canvas_free(&a);
+  canvas_free(&b);
+  return differing;
 }
 
-void test_lines_inside_the_canvas_match_the_pinned_hash(void) {
-  TEST_ASSERT_EQUAL_UINT64(0xa35fe764afda7305ull, hash_of_random_lines(0, 20000));
+void test_lines_inside_the_canvas_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, lines_that_differ_from_the_reference(0, 20000));
 }
 
-void test_lines_running_off_the_canvas_match_the_pinned_hash(void) {
-  TEST_ASSERT_EQUAL_UINT64(0x14963b42e024426ull, hash_of_random_lines(60, 20000));
+void test_lines_running_off_the_canvas_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, lines_that_differ_from_the_reference(60, 20000));
 }
 
 void test_line_far_offscreen_changes_nothing_and_terminates(void) {
@@ -832,8 +901,8 @@ int main(void) {
   RUN_TEST(test_fill_rect_zero_or_negative_size_changes_nothing);
   RUN_TEST(test_line_horizontal_vertical_diagonal);
   RUN_TEST(test_line_with_offscreen_endpoint_draws_visible_part);
-  RUN_TEST(test_lines_inside_the_canvas_match_the_pinned_hash);
-  RUN_TEST(test_lines_running_off_the_canvas_match_the_pinned_hash);
+  RUN_TEST(test_lines_inside_the_canvas_match_the_reference);
+  RUN_TEST(test_lines_running_off_the_canvas_match_the_reference);
   RUN_TEST(test_line_far_offscreen_changes_nothing_and_terminates);
   RUN_TEST(test_line_diagonal_crossing_canvas_from_far_away);
   RUN_TEST(test_ellipse_diameter_1_is_one_pixel);
