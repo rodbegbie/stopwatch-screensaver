@@ -3765,6 +3765,90 @@ void test_a_closed_spline_of_a_square_is_a_smooth_loop_inside_it(void) {
   free_spline(sp);
 }
 
+/* compute_closed_spline as it was before it learned to skip the double
+ * arithmetic, copied from main: every spline below is compared against it,
+ * point for point. */
+#define REFERENCE_SPLINE_STEPS 6
+static void reference_compute_closed_spline(spline *s) {
+  const unsigned n = s->n_controls;
+  s->n_points = 0;
+  if (n == 0) return;
+  const unsigned total = n * REFERENCE_SPLINE_STEPS;
+  if (s->allocated_points < total) {
+    XPoint *grown = (XPoint *)realloc(s->points, (size_t)total * sizeof(XPoint));
+    if (!grown) return;
+    s->points = grown;
+    s->allocated_points = total;
+  }
+  unsigned k = 0;
+  for (unsigned i = 0; i < n; i++) {
+    const unsigned a = (i + n - 1) % n, b = i, c = (i + 1) % n, d = (i + 2) % n;
+    for (int j = 0; j < REFERENCE_SPLINE_STEPS; j++) {
+      const double t = (double)j / REFERENCE_SPLINE_STEPS, t2 = t * t, t3 = t2 * t;
+      const double w0 = (1 - t) * (1 - t) * (1 - t) / 6;
+      const double w1 = (3 * t3 - 6 * t2 + 4) / 6;
+      const double w2 = (-3 * t3 + 3 * t2 + 3 * t + 1) / 6;
+      const double w3 = t3 / 6;
+      s->points[k].x = (short)lround(w0 * s->control_x[a] + w1 * s->control_x[b] +
+                                     w2 * s->control_x[c] + w3 * s->control_x[d]);
+      s->points[k].y = (short)lround(w0 * s->control_y[a] + w1 * s->control_y[b] +
+                                     w2 * s->control_y[c] + w3 * s->control_y[d]);
+      k++;
+    }
+  }
+  s->n_points = k;
+}
+
+
+/* Random control points, drawn by `kind`: 0 whole numbers on the canvas (the
+ * weights are sixths, so many results fall exactly on a half pixel), 1 fractions
+ * on the canvas, 2 far off it, 3 huge. Returns how many splines differed from
+ * the reference. */
+static int splines_that_differ_from_the_reference(int kind, int count) {
+  srandom(1);
+  int differing = 0;
+  for (int i = 0; i < count; i++) {
+    const unsigned n = 3 + (unsigned)(random() % 12);
+    spline *fast = make_spline(n), *ref = make_spline(n);
+    for (unsigned k = 0; k < n; k++) {
+      double x, y;
+      switch (kind) {
+        case 0: x = (double)(random() % 466); y = (double)(random() % 466); break;
+        case 1: x = (double)(random() % 466000) / 1000.0; y = (double)(random() % 466000) / 1000.0; break;
+        case 2: x = (double)(random() % 2000000) / 10.0 - 100000.0; y = (double)(random() % 2000000) / 10.0 - 100000.0; break;
+        default: x = (double)(random() % 2000000) * 1e5 - 1e11; y = (double)(random() % 2000000) * 1e5 - 1e11; break;
+      }
+      fast->control_x[k] = ref->control_x[k] = x;
+      fast->control_y[k] = ref->control_y[k] = y;
+    }
+    compute_closed_spline(fast);
+    reference_compute_closed_spline(ref);
+    int same = fast->n_points == ref->n_points;
+    for (unsigned k = 0; same && k < ref->n_points; k++)
+      same = fast->points[k].x == ref->points[k].x && fast->points[k].y == ref->points[k].y;
+    differing += !same;
+    free_spline(fast);
+    free_spline(ref);
+  }
+  return differing;
+}
+
+void test_splines_of_whole_number_controls_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, splines_that_differ_from_the_reference(0, 5000));
+}
+
+void test_splines_of_fractional_controls_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, splines_that_differ_from_the_reference(1, 5000));
+}
+
+void test_splines_of_far_off_controls_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, splines_that_differ_from_the_reference(2, 5000));
+}
+
+void test_splines_of_huge_controls_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, splines_that_differ_from_the_reference(3, 5000));
+}
+
 void test_a_closed_spline_reuses_its_points_and_grows_them_for_more_controls(void) {
   spline *sp = square_spline();
   compute_closed_spline(sp);
@@ -4034,6 +4118,10 @@ int main(void) {
   RUN_TEST(test_the_server_byte_order_is_least_significant_first);
   RUN_TEST(test_a_new_spline_has_zeroed_controls_and_no_points);
   RUN_TEST(test_a_closed_spline_of_a_square_is_a_smooth_loop_inside_it);
+  RUN_TEST(test_splines_of_whole_number_controls_match_the_reference);
+  RUN_TEST(test_splines_of_fractional_controls_match_the_reference);
+  RUN_TEST(test_splines_of_far_off_controls_match_the_reference);
+  RUN_TEST(test_splines_of_huge_controls_match_the_reference);
   RUN_TEST(test_a_closed_spline_reuses_its_points_and_grows_them_for_more_controls);
   RUN_TEST(test_a_closed_spline_of_one_point_is_that_point);
   RUN_TEST(test_fill_rule_constants_and_the_even_odd_fill_of_a_pentagram);
