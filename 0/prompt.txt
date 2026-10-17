@@ -1,0 +1,13 @@
+Try porting the Rubiks Cube hack
+
+---
+
+Reflash the board with plain main
+
+---
+
+/claude-md-management:revise-claude-md
+
+---
+
+apply the first few, build that reusable serial_capture tool and then update the skill to use it.  Do all this on a branch.
