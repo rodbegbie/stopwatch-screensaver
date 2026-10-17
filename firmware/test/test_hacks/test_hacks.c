@@ -158,6 +158,7 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Barcode",
                                          "Bubble3D",
                                          "Bubbles",
+                                         "Rubik",
 #ifdef HAVE_AFTER_DARK_TOASTERS
                                          "ad-flyingtoasters",
 #endif
@@ -580,6 +581,7 @@ static const uint64_t kBaseline[] = {
     0xce51885618135265ull, /* Barcode: taken after looking at the frames */
     0x31abd823a3dd5ce1ull, /* Bubble3D: taken after looking at the frames (sphere depth 2, single precision, opaque) */
     0xae237080f46db32full, /* Bubbles: taken after looking at the frames */
+    0x9b6b0c1c2d889dcaull, /* Rubik: taken after looking at the frames */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -622,6 +624,34 @@ void test_hacks_that_use_the_spline_draw_a_real_picture(void) {
     TEST_ASSERT_TRUE_MESSAGE(distinct_colours() >= 8, names[k]);
     runner_destroy(r);
   }
+}
+
+/* Rubik's stickers are GL_POLYGON octagons, which TinyGL draws as nothing
+ * (issue #80): the first frames were a grey cube with no colours. The cube
+ * bodies are lit grey, so a sticker shows as a pixel whose channels differ. */
+static int coloured_pixels(void) {
+  int n = 0;
+  for (long i = 0; i < (long)cv.w * cv.h; i++) {
+    const uint16_t v = px_swap(cv.px[i]);
+    const int r = (v >> 11) << 3, g = ((v >> 5) & 63) << 2, b = (v & 31) << 3;
+    const int hi = r > g ? (r > b ? r : b) : (g > b ? g : b);
+    const int lo = r < g ? (r < b ? r : b) : (g < b ? g : b);
+    n += hi - lo > 40;
+  }
+  return n;
+}
+
+/* The stickers also sit 0.01 above their faces, about two depth steps, so
+ * without a polygon offset the face showed through them: this frame (seed 1,
+ * 100 frames) has 7,152 coloured pixels that way, 8,678 with the offset and
+ * none of the fan. */
+void test_rubik_stickers_are_coloured(void) {
+  srandom(1);
+  HackRunner *r = runner_create(&cv);
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("Rubik")));
+  for (int f = 0; f < 100; f++) runner_step(r);
+  TEST_ASSERT_TRUE_MESSAGE(coloured_pixels() >= 8000, "stickers missing or cut by the cube");
+  runner_destroy(r);
 }
 
 /* DecayScreen smears the picture the shim paints for a "screen grab"
@@ -1663,6 +1693,10 @@ void test_bubble3d_registers_opaque_bubbles(void) {
   TEST_ASSERT_TRUE_MESSAGE(found, "Bubble3D does not override *transparent");
 }
 
+void test_rubik_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Rubik", 1);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -1787,6 +1821,8 @@ int main(void) {
   RUN_TEST(test_bubble3d_stops_do_not_leak);
   RUN_TEST(test_bubbles_stops_do_not_leak);
   RUN_TEST(test_bubble3d_registers_opaque_bubbles);
+  RUN_TEST(test_rubik_stops_do_not_leak);
+  RUN_TEST(test_rubik_stickers_are_coloured);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);

@@ -268,6 +268,9 @@ extern const HackEntry bubbles_hack;
 static const char *const kBubble3DOverrides[] = {"*transparent: False", NULL};
 XLOCKMORE_HACK_REPAINTS_ALL_WITH(bubble3d, "Bubble3D", kBubble3DOverrides);
 
+static const char *const kRubikOverrides[] = {"*ncolors: 64", NULL};
+XLOCKMORE_HACK_WITH(rubik, "Rubik", kRubikOverrides);
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -367,6 +370,7 @@ const HackEntry *const g_hacks[] = {
     &barcode_hack,
     &bubble3d_hack,
     &bubbles_hack,
+    &rubik_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif

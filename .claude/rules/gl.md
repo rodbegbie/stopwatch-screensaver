@@ -65,12 +65,16 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
 - TinyGL is built without `GL_POLYGON` (`TGL_FEATURE_GL_POLYGON 0`), which
   upstream also uses to compile out `GL_LINE_LOOP`. `tinygl_patch.py` puts the
   line loop back (issue #80): StonerView's squares now have their outlines.
-  `GL_POLYGON` still draws nothing. Unknown Pleasures' rim loop is drawn too,
-  but sits at depth -0.015 behind the slab's top face (-0.01), so no frame
-  changed. An unhandled primitive used to keep counting vertices, and the fifth
-  overwrote the matrices and colours after `c->vertex` (Pipes' `buildlwo.c`
-  crashed the host); `tinygl_patch.py` now holds it at the first slot. Check a
-  new hack for both.
+  `GL_POLYGON` still draws nothing: Rubik's wrapper (`rubik_gl.c`) draws its
+  convex octagon stickers as a triangle fan, and with a polygon offset, since
+  a sticker is 0.01 above its cube face, about two 16-bit depth steps at the
+  cube's distance, and the face showed through in patches (7,152 coloured
+  pixels in the pinned frame, 8,678 with the offset). Unknown Pleasures' rim
+  loop is drawn too, but sits at depth -0.015 behind the slab's top face
+  (-0.01), so no frame changed. An unhandled primitive used to keep counting
+  vertices, and the fifth overwrote the matrices and colours after
+  `c->vertex` (Pipes' `buildlwo.c` crashed the host); `tinygl_patch.py` now
+  holds it at the first slot. Check a new hack for both.
 - TinyGL lacks `glTexGeni`, `glFog*` and `glInterleavedArrays` (#46). The
   header declares `glFog*` and the `GL_SPHERE_MAP` enum; the library defines
   neither.

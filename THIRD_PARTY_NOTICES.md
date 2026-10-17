@@ -178,6 +178,7 @@ implied warranty.
 | `firmware/src/hacks/bubbles/bubbles.c` | Copyright (C) 1995-1996 James Macnicol | jwz permission notice (above) |
 | `firmware/src/hacks/bubbles/bubbles.h` | No header; part of James Macnicol's Bubbles | jwz permission notice (above), as in `bubbles.c` |
 | `firmware/src/hacks/bubbles/bubbles-default.c` | By Jamie Zawinski, 1998; no copyright line | jwz permission notice (above) |
+| `firmware/src/hacks/rubik/rubik.c` | Marcelo F. Vianna (1997), later changes by the xlockmore and xscreensaver authors | xlock permission notice (below) |
 | `firmware/src/xs_support/glx/sphere.c` | Copyright (c) 2002 Paul Bourke, Copyright (c) 2010-2026 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/sphere.h` | Copyright (c) 2001-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/teapot.c` | Copyright (c) Mark J. Kilgard, 1994; (c) Copyright 1993, Silicon Graphics, Inc. | Silicon Graphics notice (below) |
