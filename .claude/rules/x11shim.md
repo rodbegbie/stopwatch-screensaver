@@ -106,6 +106,27 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   2 is 0.52 ms and width 8 0.85 ms. Look for the same library calls in a
   per-row or per-pixel loop of any hack: `nm` on the object lists them
   (`__divsf3`, `__fixsfdi`, `floorf`, `sqrtf`).
+- `canvas_line` (thin lines, width 0 and 1) keeps its endpoints as ints when
+  nothing is clipped: it used to convert all four to double and back, which
+  the S3 does in software, on every call. Only the clipped path
+  (`clip_line`, Liang-Barsky in double) still uses double. Pixels are
+  unchanged (`test_lines_inside_the_canvas_match_the_reference` and the
+  off-canvas twin draw 20,000 lines each, alone, with `canvas_line` and with a
+  copy of the old one in the test file). Compare against a reference copy, not
+  a pinned hash, for anything that goes through `clip_line`: its double
+  arithmetic rounds differently when the compiler contracts to FMA, and a hash
+  taken on one setting fails on the other. On the board XRaySwarm's step went
+  21.05 to 13.20 ms (23.2 to 28.3 fps; about 9,700 short lines a step);
+  Wormhole 26.9 to 26.0 ms and NerveRot 48.2 to 46.7 ms barely move, since
+  they draw far fewer lines and clip some.
+  Counting calls on the host (a scratch copy with counters in `canvas_line`,
+  `arc_points`, `compute_closed_spline`) put 29 of 109 hacks on `canvas_line`.
+  Still soft double and not yet changed: `clip_line` (XSpirograph clips 404
+  of 722 lines a step, Laser 52%, Deco 27%), `arc_points` (a `sinf`, `cosf`
+  and float divide a point: Piecewise draws about 3,200 arc points a step,
+  BoxFit about 660) and `compute_closed_spline` (Goop, about 500 points a
+  step, all in double). The colour-map builders in `helpers.c` run at start
+  only.
 - `single_precision.h` renames the keyword `double`, not literals: `0.5 * x`
   is still software double. Braid's wrapper includes a copy of the hack with
   every decimal literal suffixed `f`, written at build time by
