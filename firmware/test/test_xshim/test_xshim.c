@@ -2268,6 +2268,82 @@ static void reference_ellipse_check(int x, int y, unsigned w, unsigned h) {
   TEST_ASSERT_TRUE_MESSAGE(worst_x100 <= 75, "a point is more than 0.75 px off the ellipse");
 }
 
+/* arc_points as it was before it learned to rotate instead of calling sinf
+ * and cosf at every point, copied from main: every arc below is compared with
+ * it, point for point. arc_point_count is unchanged, so both use it. */
+#define REFERENCE_FULL_SWEEP (360 * 64)
+#define REFERENCE_DEGREES_TO_RADIANS 0.017453292519943295f
+static int reference_sweep_of(int angle2) {
+  if (angle2 > REFERENCE_FULL_SWEEP) return REFERENCE_FULL_SWEEP;
+  if (angle2 < -REFERENCE_FULL_SWEEP) return -REFERENCE_FULL_SWEEP;
+  return angle2;
+}
+
+
+static int reference_arc_points(int x, int y, unsigned w, unsigned h, int angle1, int angle2,
+               int *xy, int max_points) {
+  int n = arc_point_count(w, h, angle2);
+  if (n > max_points) n = max_points;
+  if (n < 2) return n < 0 ? 0 : n;
+  const float cx = (float)x + (float)w / 2.0f, cy = (float)y + (float)h / 2.0f;
+  const float rx = (float)w / 2.0f, ry = (float)h / 2.0f;
+  const float start = (float)angle1 / 64.0f * REFERENCE_DEGREES_TO_RADIANS;
+  const float sweep = (float)reference_sweep_of(angle2) / 64.0f * REFERENCE_DEGREES_TO_RADIANS;
+  for (int i = 0; i < n; i++) {
+    const float a = start + sweep * (float)i / (float)(n - 1);
+    xy[2 * i] = (int)lrintf(cx + rx * cosf(a));
+    xy[2 * i + 1] = (int)lrintf(cy - ry * sinf(a));
+  }
+  return n;
+}
+
+/* Random arcs, by `kind`: 0 small boxes like a hack's dots and petals, 1 boxes
+ * of any size up to the canvas, 2 huge angles, 3 huge coordinates and sizes.
+ * Returns how many arcs differed from the reference. */
+static int arcs_that_differ_from_the_reference(int kind, int count) {
+  srandom(1);
+  int differing = 0;
+  static int fast[2 * ARC_MAX_POINTS], ref[2 * ARC_MAX_POINTS];
+  for (int i = 0; i < count; i++) {
+    int x = (int)(random() % 600) - 100, y = (int)(random() % 600) - 100;
+    unsigned w = 1 + (unsigned)(random() % 60), h = 1 + (unsigned)(random() % 60);
+    int angle1 = (int)(random() % (720 * 64)) - 360 * 64;
+    int angle2 = (int)(random() % (800 * 64)) - 400 * 64;
+    if (kind == 1) {
+      w = 1 + (unsigned)(random() % 900);
+      h = 1 + (unsigned)(random() % 900);
+    } else if (kind == 2) {
+      angle1 = (int)(random() % 2000000000) - 1000000000;
+      angle2 = (int)(random() % 2000000000) - 1000000000;
+    } else if (kind == 3) {
+      x = (int)(random() % 2000000000) - 1000000000;
+      y = (int)(random() % 2000000000) - 1000000000;
+      w = 1 + (unsigned)(random() % 2000000000);
+      h = 1 + (unsigned)(random() % 2000000000);
+    }
+    const int nf = arc_points(x, y, w, h, angle1, angle2, fast, ARC_MAX_POINTS);
+    const int nr = reference_arc_points(x, y, w, h, angle1, angle2, ref, ARC_MAX_POINTS);
+    differing += nf != nr || memcmp(fast, ref, sizeof(int) * 2 * (size_t)(nr > 0 ? nr : 0)) != 0;
+  }
+  return differing;
+}
+
+void test_small_arcs_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, arcs_that_differ_from_the_reference(0, 40000));
+}
+
+void test_arcs_of_any_size_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, arcs_that_differ_from_the_reference(1, 4000));
+}
+
+void test_arcs_with_huge_angles_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, arcs_that_differ_from_the_reference(2, 10000));
+}
+
+void test_arcs_with_huge_coordinates_and_sizes_match_the_reference(void) {
+  TEST_ASSERT_EQUAL_INT(0, arcs_that_differ_from_the_reference(3, 10000));
+}
+
 void test_arc_points_lie_within_a_pixel_of_the_ellipse(void) {
   reference_ellipse_check(10, 10, 40, 40);
   reference_ellipse_check(5, 5, 60, 30);
@@ -4308,6 +4384,10 @@ int main(void) {
   RUN_TEST(test_draw_segments_draws_each_segment_independently);
   RUN_TEST(test_draw_segments_with_zero_count_draws_nothing);
   RUN_TEST(test_draw_segments_wide_uses_caps_not_joins);
+  RUN_TEST(test_small_arcs_match_the_reference);
+  RUN_TEST(test_arcs_of_any_size_match_the_reference);
+  RUN_TEST(test_arcs_with_huge_angles_match_the_reference);
+  RUN_TEST(test_arcs_with_huge_coordinates_and_sizes_match_the_reference);
   RUN_TEST(test_arc_points_lie_within_a_pixel_of_the_ellipse);
   RUN_TEST(test_arc_points_start_and_end_at_the_requested_angles);
   RUN_TEST(test_negative_angle2_runs_clockwise);
