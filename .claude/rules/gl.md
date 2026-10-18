@@ -96,9 +96,15 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   after each push by an amount that grows with the scroll per push, see
   `device-display.md` and issue #68). The hack halves `*count` at displays of
   480 pixels or less, so the default of 80 draws 40 rows and `*count: 40` draws
-  20. Every new row is added by `tick_unk` (about every 1.2 s at full speed),
-  and the step occasionally stalls (issue #134). `glLineWidth` is a no-op in
-  the shim.
+  20. Every new row is added by `tick_unk` (about every 1.2 s at full speed).
+  Upstream adds it at the end of a draw and restarts its clock at that frame's
+  time, and the frame was drawn at the scroll's clamp, so the time past the
+  interval never scrolled: the picture stood still for a push (issue #134,
+  filmed as a 190 ms stall every seventh push at 40 rows of 50 points).
+  `unknownpleasures_gl.c` adds the row before the draw and moves the clock on
+  by one interval. The tick is 12 to 35 ms (software `double` `cos`) and the
+  TE sync wait absorbs it, so it never stretched a frame. `glLineWidth` is a
+  no-op in the shim.
 - TinyGL has no alpha: the blend macro adds colours, ignores the blend
   function's alpha, and decodes pixels as if they were not byte-swapped, so
   it is only right for black and white. A white-on-black frame hides this, and
