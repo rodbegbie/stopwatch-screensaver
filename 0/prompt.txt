@@ -1,0 +1,29 @@
+Yes, flash it
+
+---
+
+Video is recorded. Transferring it to my Mac now and I'll let you know when it's in the scratchpad.  You can connect to the serial port if you want.
+
+---
+
+IMG_5867.MOV is there
+
+---
+
+Yup, try test 1
+
+---
+
+build and flash
+
+---
+
+No jitter, and Dip is present!  Copying over the video now.
+
+---
+
+IMG_5868.MOV
+
+---
+
+build and flash
