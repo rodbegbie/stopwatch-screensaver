@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M58J0JB2870RZWWK3ZFZR9GN",
+  "strategy": "manual-commit",
+  "branch": "fix/68-slower-scroll",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "firmware/src/hacks/registry.c",
+    "firmware/test/test_hacks/test_hacks.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 193062,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 5352320,
+    "output_tokens": 22010,
+    "api_call_count": 49,
+    "subagent_tokens_complete": true
+  }
+}

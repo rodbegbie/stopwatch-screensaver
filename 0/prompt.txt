@@ -1,0 +1,25 @@
+I'm investigating a display issue with the attached M5 board and display.  When a certain screensaver (unknownpleasures) is running on it, the display dims causing visible flicker. Slowing down the push rate seems to reduce the visibility of the flicker, but I would love to have it running as fast as possible on the board.
+
+You can see more details around the investigation so far in Github issue #68.  You can also use entire to read the content of other agents' sessions or search for information in entire brain.  Session 4c516cba-60f9-4ecc-8569-06298f6abd52 is the most recent one that has been investigating.  Recent files related to it (including videos I've recorded of the screen) are in this "scratchpad" folder if you would like to analyse them: /private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/4c516cba-60f9-4ecc-8569-06298f6abd52/scratchpad 
+
+Can you take a look and see if you have any ideas on what might be happening, or ways to investigate further?  Are there any decisions or inferences made my other agents that might be worth pushing back on?  There are markdown files in this repo that can help you understand the hardware and code, but feel free to search the internet for useful information.  The context-mode skills can help you with that.
+
+---
+
+I'm investigating a display issue with the attached M5 board and display.  When a certain screensaver (unknownpleasures) is running on it, the display dims causing visible flicker. Slowing down the push rate seems to reduce the visibility of the flicker, but I would love to have it running as fast as possible on the board.
+
+You can see more details around the investigation so far in Github issue #68.  You can also use entire to read the content of other agents' sessions or search for information in entire brain.  Session 4c516cba-60f9-4ecc-8569-06298f6abd52 is the most recent one that has been investigating.  Recent files related to it (including videos I've recorded of the screen) are in this "scratchpad" folder if you would like to analyse them: /private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/4c516cba-60f9-4ecc-8569-06298f6abd52/scratchpad 
+
+Can you take a look and see if you have any ideas on what might be happening, or ways to investigate further?  Are there any decisions or inferences made my other agents that might be worth pushing back on?  There are markdown files in this repo that can help you understand the hardware and code, but feel free to search the internet for useful information.  The context-mode skills can help you with that.
+
+---
+
+I gave that to the other agent and it continued the investigation.  Read the most recent output in that session. Are you satisfied with its conclusions and recommendation for wrapping up the investigation?
+
+---
+
+OK, the other reviewer completed its review and you should be able to see it in the session.  Please write up your recommendation for next steps to a temporary markdown file so I can pass it along.  Provide specific instructions or evidence to that agent.
+
+---
+
+OK, I'm wrapping up the investigation for now.  Read the session log for where we got to.  If you have suggestions for next steps, please leave a comment on the Github issue #68 for a future agent to pick up.  (Also, leave any comments on the newly created issue #134 if you have suggestions of work to be done on that front)
