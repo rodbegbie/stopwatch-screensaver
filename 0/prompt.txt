@@ -1,0 +1,13 @@
+Yes, flash it
+
+---
+
+IMG_5865.MOV is there
+
+---
+
+yes, open the serial port and check
+
+---
+
+build and flash the device

@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M587QY01DDX8B0M6AMV2DYFE",
+  "strategy": "manual-commit",
+  "branch": "fix/68-cabc-off-probe",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "firmware/src/hacks/registry.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 30,
+    "cache_creation_tokens": 12917,
+    "cache_read_tokens": 2440746,
+    "output_tokens": 10478,
+    "api_call_count": 15
+  }
+}
