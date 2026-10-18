@@ -92,6 +92,13 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   Unknown Pleasures' per-row fade (`glColor4f` with an eased alpha) does not
   happen and every ridge draws at full intensity. Rod approved that look on the
   device and closed the review finding as wontfix.
+- Unknown Pleasures runs at `*speed: 0.3` (a registry override; the panel dims
+  after each push by an amount that grows with the scroll per push, see
+  `device-display.md` and issue #68). The hack halves `*count` at displays of
+  480 pixels or less, so the default of 80 draws 40 rows and `*count: 40` draws
+  20. Every new row is added by `tick_unk` (about every 1.2 s at full speed),
+  and the step occasionally stalls (issue #134). `glLineWidth` is a no-op in
+  the shim.
 - TinyGL has no alpha: the blend macro adds colours, ignores the blend
   function's alpha, and decodes pixels as if they were not byte-swapped, so
   it is only right for black and white. A white-on-black frame hides this, and

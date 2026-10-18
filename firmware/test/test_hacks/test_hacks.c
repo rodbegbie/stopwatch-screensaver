@@ -525,7 +525,7 @@ static const uint64_t kBaseline[] = {
     0x7118310d47ee4197ull, /* LMorph: taken after looking at the frames */
     0xe73572fd64eef48full, /* Wormhole: taken after looking at the frames */
     0x7dd7d7130551c261ull, /* Truchet: taken after looking at the frames */
-    0x03670369cb12c2deull, /* UnknownPleasures: after looking at the frames, with the fake clock, smooth lines and the offset margin */
+    0x5c626e9006fb4248ull, /* UnknownPleasures: after looking at the frames, with the fake clock, smooth lines and the offset margin; re-taken for speed 0.3 (#68) */
     0x32dbba1459c7753ull, /* Hexadrop: taken after looking at the frames */
     0xa4895fcbd5d235feull, /* StonerView: taken after looking at the frames (saturating additive blend); re-taken for the square outlines (GL_LINE_LOOP, #80) */
     0x6312d77d82216fc7ull, /* Halo: taken after looking at the frames, with GCBackground honoured */
@@ -1267,6 +1267,17 @@ void test_gears_registers_a_shorter_pause(void) {
   TEST_ASSERT_TRUE_MESSAGE(found, "Gears does not override *delay");
 }
 
+/* The panel dims after each push by an amount that grows with how far the
+ * picture scrolled since the last one (#68). Upstream's speed dims it by about
+ * 14%; 0.3 of it, about 2%, is not visible. */
+void test_unknownpleasures_scrolls_at_a_slower_speed(void) {
+  const char *const *o = g_hacks[index_of("UnknownPleasures")]->overrides;
+  int found = 0;
+  for (; o && *o; o++)
+    if (strcmp(*o, "*speed: 0.3") == 0) found++;
+  TEST_ASSERT_EQUAL_INT(1, found);
+}
+
 /* UnknownPleasures holds 40 rows of two display lists each, and the context. */
 void test_unknownpleasures_start_and_stop_do_not_leak(void) {
   const int unk = index_of("UnknownPleasures");
@@ -1742,6 +1753,7 @@ int main(void) {
   RUN_TEST(test_morph3d_start_and_stop_do_not_leak);
   RUN_TEST(test_morph3d_registers_a_shorter_pause);
   RUN_TEST(test_cubicgrid_start_and_stop_do_not_leak);
+  RUN_TEST(test_unknownpleasures_scrolls_at_a_slower_speed);
   RUN_TEST(test_unknownpleasures_start_and_stop_do_not_leak);
   RUN_TEST(test_hexadrop_stops_do_not_leak);
   RUN_TEST(test_stonerview_start_and_stop_do_not_leak);

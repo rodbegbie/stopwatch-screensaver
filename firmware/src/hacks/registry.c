@@ -112,9 +112,11 @@ extern const HackEntry goop_hack;
 /* The xlockmore framework reads ncolors and cycles, which the hack does not
  * define. The override cuts its own 30 ms pause to 10 ms, as for Gears. Its
  * thin lines move a few pixels a frame, so a seam between the old and the
- * new picture made lines vanish for a frame: it asks for synced pushes. */
+ * new picture made lines vanish for a frame: it asks for synced pushes. The
+ * panel also dims after each push by an amount that grows with the scroll since
+ * the last one (about 14% at upstream's speed, 2% at 0.3 of it, #68). */
 static const char *const kUnknownPleasuresOverrides[] = {
-    "*ncolors: 64", "*cycles: 0", "*delay: 10000", NULL};
+    "*ncolors: 64", "*cycles: 0", "*delay: 10000", "*speed: 0.3", NULL};
 XLOCKMORE_HACK_SYNCED(unknownpleasures, "UnknownPleasures",
                       kUnknownPleasuresOverrides);
 

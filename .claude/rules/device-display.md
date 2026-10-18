@@ -141,13 +141,63 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   same update. A detector that finds nothing must also find the event you know
   is there: mine reported zero until a known vanish was used as a control, and
   reported many false events on steep line stretches until settled frames were.
-- Every push also dims the screen: the dimmest band falls to 0.86 of its
-  settled brightness for about 25 ms (three camera frames at 120 fps), at 5 Hz,
-  with or without TE sync (0.860 synced, 0.870 unsynced). It is probably the
-  "whole screen redraws" flicker. Its cause is not known. Rod sees no dimming
-  with the sparser build (20 rows of 50 points, a step of about 91 ms against
-  165), so it may track how much is lit or how long the copy runs; not yet
-  filmed (issue #68).
+- Every push also dims the screen, by an amount that grows with how far the
+  picture scrolled since the last push (issue #68). Unknown Pleasures at
+  upstream's speed: the dimmest of 12 bands falls to 0.86 of its settled value
+  for about 25 ms (three camera frames at 120 fps) at each push, with or without
+  TE sync. Rod sees it as pulsing. The dip by `*speed`, net of a noise floor
+  taken inside the quiet part of each cycle:
+
+  | Speed | Dip (points) | Rod |
+  | --- | --- | --- |
+  | 0.2 | 1.0 | invisible, "really slow" |
+  | 0.3 | 2.3 | invisible |
+  | 0.4 | 4.0 | visible |
+  | 0.5 | 5.6 | visible |
+  | 1.0 | 14.5 | visible |
+
+  - Shipped: `*speed: 0.3` in the registry override, about 0.75 px of scroll per
+    push (derived from the hack's timing formula and the push rate, not
+    measured). A faster push cannot reach the same step: 1.2 px at full speed
+    needs about 10 Hz, and a push is 32 ms beside a 143 to 168 ms step. Rows,
+    points and rate matter only through the step: 40 by 50 and 30 by 100 dip
+    13 to 14% like the default. The 20-row sparse build (5.7% at about 1.56 px)
+    sits about four points under the trend and is unexplained.
+  - What it is not, each filmed: the write itself, bus or CPU load (a
+    near-static scene pushes the same 466 rows at 5 Hz and does not dip), the
+    push path (a copy of the canvas before each push still dips), a global
+    dimming (stationary reference patches in the same frame stay steady while
+    the strokes dip), and the picture's average level (on the host it changes
+    under 1% from one pushed frame to the next in the default build, and more
+    in the sparse one, which dips less). CABC was switched off with
+    `0x55 = 0` and the dip stayed, but the panel's acceptance could not be
+    checked (a review reads the datasheet as calling `0x55` Auto Current Limit;
+    M5GFX's `readCommand` is a stub).
+  - What it looks like: after a change a pixel takes frames to settle, and a
+    rise is slower than a fall. Toggle patches, median over 14 events, 1.00 is
+    settled, at the crossing and +1 to +3 frames: black to mid grey 0.69, 0.74,
+    0.92, 0.98; mid grey to black 1.00 straight away; dark to mid grey 0.79,
+    0.92, 0.93, 0.96. These are camera values, not calibrated luminance. The
+    cause is not established: it is a transition-dependent loss, consistent
+    with a local display response.
+  - Overdrive did not help: newly lit pixels at 120% then the nominal frame gave
+    a shallower dip with bright pulses before and after (peak to peak 9 to
+    10%, against 8.8%) at a lower push rate. RGB565 clips the boost (an
+    effective 1.146, and 7.9% of lit pixels have no headroom), so this is not
+    a verdict on overdrive in general.
+  - Measuring it: a noise-floor window must sit inside the quiet part of a
+    cycle (a reference that runs into the next push's dip inflates the null),
+    and a fold over integer periods shorter than its bins leaves empty bins.
+    A shift probe must be counted on the host: 1 px sideways along near-
+    horizontal lines relit only 20% of the lit pixels, 2 px vertically 94%.
+    `dump_main.c` writes ordinary RGB565, so do not swap bytes again when
+    reading its dumps. Do not let a reference patch reach the camera's ceiling
+    (white read 252 to 255); mid grey read 212. Phone slo-mo files declare
+    30 fps: the push period against the serial log's fps gave 120.
+  - The probe builds (CABC off, a canvas copy with a vertical shift, reference
+    and toggle patches, overdrive, row, point and speed overrides) were
+    throwaway build flags on a branch that was not pushed; the comments on
+    issue #68 describe each one.
 - A hack's returned delay is waited after the push, and only the push counts
   against it, so its own step adds to the frame time: to hold a rate, return
   the target minus the step (`ad_flyingtoasters.c`: 19.5 fps became 28.9).
