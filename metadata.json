@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M58PSS2FYJ9TX4NFZ6CAHMWG",
+  "strategy": "manual-commit",
+  "branch": "fix/134-up-tick-stall",
+  "checkpoints_count": 6,
+  "files_touched": [
+    "firmware/src/hacks/unknownpleasures_gl.c",
+    "firmware/test/test_hacks/test_hacks.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 174,
+    "cache_creation_tokens": 226895,
+    "cache_read_tokens": 15959878,
+    "output_tokens": 80347,
+    "api_call_count": 85
+  }
+}
