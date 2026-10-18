@@ -1,0 +1,5 @@
+Let's pick up issue #68.  I'd love to see if we can figure out making the Unknown Pleasures hack less flickery
+
+---
+
+Yes, go ahead and build the CABC-off variant
