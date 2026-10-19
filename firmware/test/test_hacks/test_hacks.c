@@ -160,6 +160,14 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Bubble3D",
                                          "Bubbles",
                                          "Rubik",
+                                         "CubeStack",
+                                         "Kaleidocycle",
+                                         "DangerBall",
+                                         "Cubenetic",
+                                         "DeepStars",
+                                         "GLMatrix",
+                                         "Superquadrics",
+                                         "Menger",
 #ifdef HAVE_AFTER_DARK_TOASTERS
                                          "ad-flyingtoasters",
 #endif
@@ -584,6 +592,14 @@ static const uint64_t kBaseline[] = {
     0x31abd823a3dd5ce1ull, /* Bubble3D: taken after looking at the frames (sphere depth 2, single precision, opaque) */
     0xae237080f46db32full, /* Bubbles: taken after looking at the frames */
     0x9b6b0c1c2d889dcaull, /* Rubik: taken after looking at the frames */
+    0x739e59ba26c803d3ull, /* CubeStack: taken after looking at the frames */
+    0xf14cbffca8750e46ull, /* Kaleidocycle: taken after looking at the frames */
+    0xf5f32a849773f120ull, /* DangerBall: taken after looking at the frames */
+    0xe3e33f0a85f4adf7ull, /* Cubenetic: taken after looking at the frames */
+    0x7aac185703905810ull, /* DeepStars: taken after looking at the frames */
+    0x19ded426e16f3fd1ull, /* GLMatrix: taken after looking at the frames */
+    0x48cf40bfdc581fb9ull, /* Superquadrics: taken after looking at the frames */
+    0x55d4faaa474ed1c9ull, /* Menger: taken after looking at the frames */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -1765,6 +1781,78 @@ void test_rubik_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("Rubik", 1);
 }
 
+void test_cubestack_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("CubeStack", 1);
+}
+
+void test_kaleidocycle_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Kaleidocycle", 1);
+}
+
+void test_dangerball_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("DangerBall", 1);
+}
+
+void test_cubenetic_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Cubenetic", 1);
+}
+
+void test_deepstars_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("DeepStars", 1);
+}
+
+void test_glmatrix_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("GLMatrix", 1);
+}
+
+void test_superquadrics_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Superquadrics", 1);
+}
+
+void test_menger_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Menger", 1);
+}
+
+
+/* GLMatrix keeps its look in alpha: the glyph texture's alpha is the original
+ * green channel and each glyph's brightness is the vertex alpha. TinyGL has
+ * none, so `glmatrix_single_gl.c` folds both into colour. Without that the
+ * shim's `glTexImage2D` drops the alpha and every glyph cell is a flat bright
+ * green square (17,028 pixels with a green of 40 or more in this frame, against
+ * 2,550 with it). */
+static int bright_green_pixels(void) {
+  int n = 0;
+  for (long i = 0; i < (long)cv.w * cv.h; i++) {
+    const uint16_t v = px_swap(cv.px[i]);
+    n += ((v >> 5) & 63) >= 40;
+  }
+  return n;
+}
+
+void test_glmatrix_glyphs_are_dark_between_their_strokes(void) {
+  srandom(1);
+  HackRunner *r = runner_create(&cv);
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("GLMatrix")));
+  for (int f = 0; f < 1000; f++) runner_step(r);
+  TEST_ASSERT_TRUE_MESSAGE(non_black() > 20000, "the rain did not fall");
+  TEST_ASSERT_TRUE_MESSAGE(bright_green_pixels() < 6000, "glyph cells are solid green");
+  runner_destroy(r);
+}
+
+/* Superquadrics and Menger draw every face as a GL_POLYGON quad, which TinyGL
+ * draws as nothing (issue #80): both were black. */
+static void check_a_polygon_hack_draws(const char *name) {
+  srandom(1);
+  HackRunner *r = runner_create(&cv);
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of(name)));
+  for (int f = 0; f < 100; f++) runner_step(r);
+  TEST_ASSERT_TRUE_MESSAGE(non_black() > 5000, name);
+  runner_destroy(r);
+}
+
+void test_superquadrics_draws_its_polygons(void) { check_a_polygon_hack_draws("Superquadrics"); }
+void test_menger_draws_its_polygons(void) { check_a_polygon_hack_draws("Menger"); }
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -1894,6 +1982,17 @@ int main(void) {
   RUN_TEST(test_bubble3d_registers_opaque_bubbles);
   RUN_TEST(test_rubik_stops_do_not_leak);
   RUN_TEST(test_rubik_stickers_are_coloured);
+  RUN_TEST(test_cubestack_stops_do_not_leak);
+  RUN_TEST(test_kaleidocycle_stops_do_not_leak);
+  RUN_TEST(test_dangerball_stops_do_not_leak);
+  RUN_TEST(test_cubenetic_stops_do_not_leak);
+  RUN_TEST(test_deepstars_stops_do_not_leak);
+  RUN_TEST(test_glmatrix_stops_do_not_leak);
+  RUN_TEST(test_superquadrics_stops_do_not_leak);
+  RUN_TEST(test_menger_stops_do_not_leak);
+  RUN_TEST(test_glmatrix_glyphs_are_dark_between_their_strokes);
+  RUN_TEST(test_superquadrics_draws_its_polygons);
+  RUN_TEST(test_menger_draws_its_polygons);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);

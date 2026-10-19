@@ -11,6 +11,7 @@ project = Path(env["PROJECT_DIR"])  # noqa: F821
 sys.path.insert(0, str(project.parent / "tools"))
 import binaryring_patch
 import celtic_patch
+import cubenetic_patch
 import etruscanvenus_patch
 import fireworkx_patch
 import float_literals
@@ -55,6 +56,9 @@ for name in ("braid",) + (
     "flame",
     "substrate",
     "bubble3d",
+    "glmatrix",
+    "cubenetic",
+    "superquadrics",
 ):
     source = (project / "src" / "hacks" / name / f"{name}.c").read_text()
     if name == "fireworkx":
@@ -65,6 +69,8 @@ for name in ("braid",) + (
         source = celtic_patch.scale_the_animation_step(source)
     if name == "etruscanvenus":
         source = etruscanvenus_patch.size_the_grid(source)
+    if name == "cubenetic":
+        source = cubenetic_patch.size_the_texture(source)
     if name == "bubble3d":
         source = source.replace(
             '#include "bubble3d.h"', '#include "hacks/bubble3d/bubble3d.h"'
