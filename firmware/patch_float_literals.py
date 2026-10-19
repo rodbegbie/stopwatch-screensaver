@@ -16,6 +16,7 @@ import etruscanvenus_patch
 import fireworkx_patch
 import float_literals
 import glmatrix_patch
+import kaleidocycle_patch
 import superquadrics_patch
 import xspirograph_patch
 
@@ -87,6 +88,14 @@ for name in ("braid",) + (
         source = binaryring_patch.float_random_scale(source)
     patched = float_literals.float_literals(source)
     target = generated / f"{name}_floatlit.c"
+    if not target.exists() or target.read_text() != patched:
+        target.write_text(patched)
+
+# Patched copies that keep their double precision and their literals: only the
+# one change.
+for name, patch in (("kaleidocycle", kaleidocycle_patch.guard_the_zero_count),):
+    patched = patch((project / "src" / "hacks" / name / f"{name}.c").read_text())
+    target = generated / f"{name}_patched.c"
     if not target.exists() or target.read_text() != patched:
         target.write_text(patched)
 

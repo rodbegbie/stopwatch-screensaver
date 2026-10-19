@@ -512,6 +512,14 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   after about 12,900 frames it reads `colors[32]` of 32 (an AddressSanitizer
   overflow in a 13,500 frame test): the wrapper wraps it before each draw.
   Kaleidocycle also blends but its faces are opaque, so it was not folded.
+- Kaleidocycle starts with `count = 0`, so its first frame computes a piece's
+  angle as 0 / 0: a NaN that reaches TinyGL's viewport conversion and is cast to
+  an int (the trail review found it with `-fsanitize=float-cast-overflow`:
+  `PLATFORMIO_BUILD_FLAGS='-fsanitize=float-cast-overflow
+  -fno-sanitize-recover=all' pio run -e dump`, then dump one frame).
+  `tools/kaleidocycle_patch.py` guards the denominator; `kaleidocycle_gl.c`
+  includes the build's patched copy (`generated/kaleidocycle_patched.c`, written
+  by `patch_float_literals.py` with no literal pass), and frames are unchanged.
 - Superquadrics' `myrand` multiplies in `float` (upstream too), so the largest
   `LRAND()` rounds up and `myrand(4)` is 4, one past `pats[4][4]`.
   `tools/superquadrics_patch.py` clamps it at build time; its test compiles the
