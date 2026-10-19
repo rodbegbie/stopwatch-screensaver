@@ -5,11 +5,7 @@
  * Every frame it works out each mesh vertex in `double`, which the ESP32-S3's
  * FPU does in software, and the fill of its big shaded shape was 37 of a
  * 70 ms step: half the width and height (glshim_set_render_scale) cuts that
- * to a quarter. `-DSUPERQUADRICS_FULL` keeps full size.
- *
- * TinyGL is built without GL_POLYGON and draws nothing for it (issue #80),
- * which left the screen black. Every polygon here is a convex quad, so a
- * triangle fan draws it exactly as GL_POLYGON would (as in rubik_gl.c). */
+ * to a quarter. `-DSUPERQUADRICS_FULL` keeps full size. */
 #define USE_GL
 #include <math.h>
 #include <stdio.h>
@@ -18,13 +14,7 @@
 
 #include "xlockmore.h"
 
-static void superquadrics_begin(GLenum mode) {
-  glBegin(mode == GL_POLYGON ? GL_TRIANGLE_FAN : mode);
-}
-
 #include "hacks/single_precision.h"
-
-#define glBegin superquadrics_begin
 
 #include "superquadrics_floatlit.c"
 

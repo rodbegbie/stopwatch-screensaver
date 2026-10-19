@@ -68,11 +68,14 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
 - TinyGL is built without `GL_POLYGON` (`TGL_FEATURE_GL_POLYGON 0`), which
   upstream also uses to compile out `GL_LINE_LOOP`. `tinygl_patch.py` puts the
   line loop back (issue #80): StonerView's squares now have their outlines.
-  `GL_POLYGON` still draws nothing: Rubik's wrapper (`rubik_gl.c`) draws its
-  convex octagon stickers as a triangle fan, and with a polygon offset, since
-  a sticker is 0.01 above its cube face, about two 16-bit depth steps at the
-  cube's distance, and the face showed through in patches (7,152 coloured
-  pixels in the pinned frame, 8,678 with the offset). Unknown Pleasures' rim
+  `GL_POLYGON` is patched in too (ARS-18): `glopBegin` draws it as a
+  triangle fan from the first vertex, where the op runs, so a display list
+  that records it replays a fan. A fan is exact for convex polygons only:
+  check a new hack's polygons for concave shapes. Rubik's wrapper
+  (`rubik_gl.c`) adds a polygon offset around its stickers, since a sticker is
+  0.01 above its cube face, about two 16-bit depth steps at the cube's
+  distance, and the face showed through in patches (7,152 coloured pixels in
+  the pinned frame, 8,678 with the offset). Unknown Pleasures' rim
   loop is drawn too, but sits at depth -0.015 behind the slab's top face
   (-0.01), so no frame changed. An unhandled primitive used to keep counting
   vertices, and the fifth overwrote the matrices and colours after
@@ -332,9 +335,7 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   `glshim/glx_teapot.c` renames upstream's `unit_teapot` and unpacks the table
   into 227 KB of PSRAM only while it runs (Pipes calls it once, compiling a
   list); with no memory the teapot is an empty list. `test_glshim` compares
-  the unpacked floats with upstream's. `buildlwo.c` maps `GL_POLYGON` to
-  `GL_TRIANGLE_FAN` in its own wrapper only (issue #80 is the general
-  question).
+  the unpacked floats with upstream's.
 - Sanitizer sweep for a GL batch (issue #141): build `-e dump` with
   `PLATFORMIO_BUILD_FLAGS='-g -fsanitize=address,undefined,float-cast-overflow,array-bounds
   -fsanitize-recover=undefined,float-cast-overflow,array-bounds

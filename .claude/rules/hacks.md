@@ -558,8 +558,8 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   `double` locals to `get_position` and `get_rotation`, so it has the adapters
   HexTrail has.
 - Superquadrics and Menger draw every face as a `GL_POLYGON`, which TinyGL
-  draws as nothing (issue #80): both were black. Each wrapper maps it to a
-  triangle fan, as Rubik does. Both render at half size
+  drew as nothing until ARS-18 (both were black, and each wrapper mapped it
+  to a triangle fan). Both render at half size
   (`-DSUPERQUADRICS_FULL`, `-DMENGER_FULL`); Superquadrics is single precision
   (13 to 19 fps, 8 to 11 before). Menger's depth 3 is 36,000 triangles and 920
   ms a frame, so the registry caps `*maxDepth` at 2 (11 to 44 fps, the low end
