@@ -1,0 +1,9 @@
+Take a look at issue ARS-18.  Let's analyse if this work is worth doing.  Load your context-mode and using-entire skills -- Entire is probably helpful for searching previous sessions to find how decisions got made that got us here.
+
+---
+
+Why not enable the native path?
+
+---
+
+OK, let's create a branch to test this out.  Create the fan mapping and remove the local ones, and make sure that all still works.  Then let's port another hack to see it in action.  Maybe circuit or sproingies?
