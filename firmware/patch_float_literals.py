@@ -15,6 +15,7 @@ import cubenetic_patch
 import etruscanvenus_patch
 import fireworkx_patch
 import float_literals
+import glmatrix_patch
 import superquadrics_patch
 import xspirograph_patch
 
@@ -72,6 +73,8 @@ for name in ("braid",) + (
         source = etruscanvenus_patch.size_the_grid(source)
     if name == "cubenetic":
         source = cubenetic_patch.size_the_texture(source)
+    if name == "glmatrix":
+        source = glmatrix_patch.keep_the_wave_index_in_range(source)
     if name == "superquadrics":
         source = superquadrics_patch.keep_myrand_in_range(source)
     if name == "bubble3d":

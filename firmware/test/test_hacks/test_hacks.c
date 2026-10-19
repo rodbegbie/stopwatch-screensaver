@@ -595,7 +595,7 @@ static const uint64_t kBaseline[] = {
     0xf14cbffca8750e46ull, /* Kaleidocycle: taken after looking at the frames */
     0xf5f32a849773f120ull, /* DangerBall: taken after looking at the frames */
     0xe3e33f0a85f4adf7ull, /* Cubenetic: taken after looking at the frames */
-    0x19ded426e16f3fd1ull, /* GLMatrix: taken after looking at the frames */
+    0x9b9fab38bc9ac1a1ull, /* GLMatrix: taken after looking at the frames */
     0x48cf40bfdc581fb9ull, /* Superquadrics: taken after looking at the frames */
     0x55d4faaa474ed1c9ull, /* Menger: taken after looking at the frames */
 #ifdef HAVE_AFTER_DARK_TOASTERS

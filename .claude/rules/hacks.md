@@ -528,6 +528,12 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   and fill is 100 of 145 ms: it renders at half size (`-DGLMATRIX_FULL` keeps
   full size) with `*density: 12` (26 strips, not 44) and `*delay: 10000`, about
   17 fps once full. Single precision gave byte-identical frames and about 3 ms.
+  Upstream's brightness wave index runs 1 to `WAVE_SIZE` and the table has
+  `WAVE_SIZE` entries, so a zero remainder read the next screen's state, a
+  glyph at a junk brightness now and then (the trail review found it);
+  `tools/glmatrix_patch.py` wraps it to 0, the brightest entry, which follows 1
+  in the cycle. Its test compiles the hack's own statement over every row and
+  wave position.
 - Cubenetic (`cubenetic_single_gl.c`, `tools/cubenetic_patch.py`) works out a
   256 by 256 plasma texture every frame, a square root per wave per pixel: 847
   ms a step, 1.2 fps. At 64 by 64 (`-DCUBENETIC_TEXTURE_SIZE`) it is 12-18 fps.
