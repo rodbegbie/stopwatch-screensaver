@@ -115,6 +115,37 @@
         "label": "Skill: search",
         "default_collapsed": true
       }
+    },
+    {
+      "id": "claude-skill-toolu_01NhNPLMjw11Zt2Wdy1Ju77Y",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "port-hack"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "7c8dbf88f825",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 475,
+        "end": 476,
+        "entry_ids": [
+          "f48f10e9-35d5-4d66-bf11-0b569db88a1c"
+        ],
+        "tool_use_id": "toolu_01NhNPLMjw11Zt2Wdy1Ju77Y"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01NhNPLMjw11Zt2Wdy1Ju77Y"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: port-hack",
+        "default_collapsed": true
+      }
     }
   ],
   "session_metrics": {
