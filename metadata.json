@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M592E0ZG70BBEM5XCND8A1SB",
+  "strategy": "manual-commit",
+  "branch": "feature/57-halftone-back-in",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "firmware/src/core/canvas.c",
+    "firmware/test/test_canvas/test_canvas.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 32,
+    "cache_creation_tokens": 17103,
+    "cache_read_tokens": 1873249,
+    "output_tokens": 10612,
+    "api_call_count": 15
+  }
+}
