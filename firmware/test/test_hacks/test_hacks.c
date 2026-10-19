@@ -97,6 +97,7 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Anemotaxis",
                                          "Compass",
                                          "FuzzyFlakes",
+                                         "Halftone",
                                          "IFS",
                                          "Interaggregate",
                                          "LMorph",
@@ -520,6 +521,7 @@ static const uint64_t kBaseline[] = {
     0x1ad9e9fe2718ba88ull, /* Anemotaxis: taken after looking at the frames */
     0x3441a22a1f12785aull, /* Compass: taken after looking at the frames; re-taken for the stroker's shared-edge slack (#56) */
     0xe94fb924120c76a5ull, /* FuzzyFlakes: taken after looking at the frames */
+    0x50ec2b05e4973fd4ull, /* Halftone: re-pinned after looking at the frames; the integer ellipse draws the same pixels as the double one */
     0xb150a7b7357aa897ull, /* IFS: taken after looking at the frames */
     0x355cbdc840d0e8ceull, /* Interaggregate: re-pinned for the float frand, frames looked at */
     0x7118310d47ee4197ull, /* LMorph: taken after looking at the frames */
@@ -1402,6 +1404,10 @@ void test_fuzzyflakes_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("FuzzyFlakes", 0);
 }
 
+void test_halftone_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Halftone", 0);
+}
+
 void test_ifs_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("IFS", 0);
 }
@@ -1823,6 +1829,7 @@ int main(void) {
   RUN_TEST(test_anemotaxis_stops_do_not_leak);
   RUN_TEST(test_compass_stops_do_not_leak);
   RUN_TEST(test_fuzzyflakes_stops_do_not_leak);
+  RUN_TEST(test_halftone_stops_do_not_leak);
   RUN_TEST(test_ifs_stops_do_not_leak);
   RUN_TEST(test_interaggregate_stops_do_not_leak);
   RUN_TEST(test_lmorph_stops_do_not_leak);
