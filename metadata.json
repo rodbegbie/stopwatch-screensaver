@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M5B0177Q9WZBP318M57T0WPV",
+  "strategy": "manual-commit",
+  "branch": "feature/gl-batch-7-glmatrix",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "firmware/src/hacks/fold_alpha.h",
+    "firmware/src/hacks/glmatrix_single_gl.c",
+    "firmware/test/test_hacks/test_hacks.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 30,
+    "cache_creation_tokens": 14759,
+    "cache_read_tokens": 6918232,
+    "output_tokens": 11644,
+    "api_call_count": 15
+  }
+}
