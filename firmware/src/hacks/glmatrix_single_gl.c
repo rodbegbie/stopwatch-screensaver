@@ -7,13 +7,15 @@
  * alpha, and the blend is `GL_SRC_ALPHA, GL_ONE` (added to the screen). Both
  * alphas are folded into colour instead, which an additive blend cannot tell
  * apart: the texture is premultiplied as it is uploaded, and `glColor4f`
- * scales its own colour. The shim's `glTexImage2D` would otherwise drop the
+ * scales its own colour (`fold_alpha.h` clamps the alpha, which a spinner glyph
+ * pushes past 1). The shim's `glTexImage2D` would otherwise drop the
  * alpha and leave solid green squares. `xlockmore.h` comes first because it
  * brings in glshim.h, which defines `glTexImage2D` as that function. */
 #define USE_GL
 #include <stdlib.h>
 
 #include "xlockmore.h"
+#include "hacks/fold_alpha.h"
 
 static void glmatrix_tex_image_2d(GLenum target, GLint level, GLint internal,
                                   GLsizei w, GLsizei h, GLint border,
@@ -36,7 +38,9 @@ static void glmatrix_tex_image_2d(GLenum target, GLint level, GLint internal,
 }
 
 static void glmatrix_color4f(GLfloat r, GLfloat g, GLfloat b, GLfloat a) {
-  glColor3f(r * a, g * a, b * a);
+  float c[3];
+  fold_alpha(r, g, b, a, c);
+  glColor3f(c[0], c[1], c[2]);
 }
 
 #undef glTexImage2D

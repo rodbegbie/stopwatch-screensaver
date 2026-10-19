@@ -542,6 +542,11 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   `tools/glmatrix_patch.py` wraps it to 0, the brightest entry, which follows 1
   in the cycle. Its test compiles the hack's own statement over every row and
   wave position.
+  The vertex alpha is clamped to 1 (`hacks/fold_alpha.h`, tested directly): a
+  spinner glyph gets 1.5 times its brightness, and TinyGL masks a channel past
+  full instead of saturating it, so a reproduced alpha of 1.087 gave green 5/63
+  and the leading glyphs went dark (a trail review finding). A frame metric
+  could not see it (a handful of pixels), so the helper is a plain header.
   Its texture setup also packs `a << 24` with an `unsigned char` promoted to a
   signed `int`, which overflows for an alpha of 128 or more (a sanitizer sweep
   found it): the patch widens it to `unsigned long`, the same bits.

@@ -17,6 +17,7 @@
 #include "hacks/pacman_pool.h"
 #include "glshim/glshim.h"
 #include "grabclient.h"
+#include "hacks/fold_alpha.h"
 #include "hacks/registry.h"
 #include "test_font.h"
 #include "runner/hack_runner.h"
@@ -595,7 +596,7 @@ static const uint64_t kBaseline[] = {
     0xf14cbffca8750e46ull, /* Kaleidocycle: taken after looking at the frames */
     0xf5f32a849773f120ull, /* DangerBall: taken after looking at the frames */
     0xe3e33f0a85f4adf7ull, /* Cubenetic: taken after looking at the frames */
-    0x9b9fab38bc9ac1a1ull, /* GLMatrix: taken after looking at the frames */
+    0xd22a4d38abcc4c29ull, /* GLMatrix: taken after looking at the frames */
     0x48cf40bfdc581fb9ull, /* Superquadrics: taken after looking at the frames */
     0x55d4faaa474ed1c9ull, /* Menger: taken after looking at the frames */
 #ifdef HAVE_AFTER_DARK_TOASTERS
@@ -1875,6 +1876,26 @@ void test_cubestack_survives_its_palette_wrapping(void) {
   runner_destroy(r);
 }
 
+/* A spinner glyph in GLMatrix has an alpha of 1.5 times its brightness. Real
+ * glColor4f clamps it to 1, but TinyGL masks a colour channel that passes full
+ * instead of saturating it, so a reproduced alpha of 1.087 gave green 5/63 and
+ * the leading glyphs went dark (found by the trail review). */
+void test_fold_alpha_clamps_an_alpha_above_one(void) {
+  float out[3];
+  fold_alpha(1.0f, 0.5f, 0.0f, 1.087f, out);
+  TEST_ASSERT_EQUAL_FLOAT(1.0f, out[0]);
+  TEST_ASSERT_EQUAL_FLOAT(0.5f, out[1]);
+  TEST_ASSERT_EQUAL_FLOAT(0.0f, out[2]);
+}
+
+void test_fold_alpha_scales_and_floors_an_alpha_in_range(void) {
+  float out[3];
+  fold_alpha(1.0f, 1.0f, 1.0f, 0.25f, out);
+  TEST_ASSERT_EQUAL_FLOAT(0.25f, out[1]);
+  fold_alpha(1.0f, 1.0f, 1.0f, -0.5f, out);
+  TEST_ASSERT_EQUAL_FLOAT(0.0f, out[0]);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -2013,6 +2034,8 @@ int main(void) {
   RUN_TEST(test_menger_stops_do_not_leak);
   RUN_TEST(test_cubestack_faces_fade_in_with_their_alpha);
   RUN_TEST(test_cubestack_survives_its_palette_wrapping);
+  RUN_TEST(test_fold_alpha_clamps_an_alpha_above_one);
+  RUN_TEST(test_fold_alpha_scales_and_floors_an_alpha_in_range);
   RUN_TEST(test_glmatrix_glyphs_are_dark_between_their_strokes);
   RUN_TEST(test_superquadrics_draws_its_polygons);
   RUN_TEST(test_menger_draws_its_polygons);
