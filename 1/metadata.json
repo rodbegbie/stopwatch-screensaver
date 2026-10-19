@@ -1,0 +1,83 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M5B25SKRB9RZSCERAN0E0TMY",
+  "session_id": "e5ceca6a-25ad-4bff-9b13-9ade0d2e5fa6",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-19T21:48:12.41571Z",
+  "branch": "chore/ARS-54-trim-agents-md",
+  "checkpoints_count": 3,
+  "save_step_count": 3,
+  "files_touched": [
+    "AGENTS.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "a645d5228706",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 40,
+    "cache_creation_tokens": 97275,
+    "cache_read_tokens": 1983244,
+    "output_tokens": 13550,
+    "api_call_count": 20
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "prompt-skill-claude-code-claude-md-optimizer-2026-10-19T21:40:15.222376Z",
+      "event_type": "prompt_invocation",
+      "skill": {
+        "name": "claude-md-optimizer"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "prompt_slash_command",
+        "confidence": "explicit"
+      },
+      "turn_id": "7403ee0009e2",
+      "timestamp": "2026-10-19T21:40:15.222376Z",
+      "native": {
+        "command": "/claude-md-optimizer"
+      },
+      "collapse": {
+        "target": "user_message",
+        "label": "/claude-md-optimizer",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01GkfhP4573F8ir63wNUT6b5",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "a645d5228706",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 126,
+        "end": 127,
+        "entry_ids": [
+          "90eb1c7f-f726-4389-97a8-e6d23e366e0a"
+        ],
+        "tool_use_id": "toolu_01GkfhP4573F8ir63wNUT6b5"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01GkfhP4573F8ir63wNUT6b5"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 3
+  }
+}

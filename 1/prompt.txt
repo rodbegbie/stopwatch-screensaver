@@ -1,0 +1,17 @@
+/claude-md-optimizer
+
+---
+
+1. Yes, fix that.
+2. OK.  Yes, feel free to move some of the details into the deliver-branch skill.
+3. Great idea.
+4. Skip this.
+5. OK.
+
+---
+
+Add a symlink for the new linear skill to the .agent/skills folder so other agents can find it.  (Perhaps capture this as an instruction in AGENTS.md when creating new skills in the future?)
+
+---
+
+No, let's create a branch and open a trail so I can more easily review the changes.
