@@ -79,6 +79,13 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   2^24 keep the double code. On the board (step, before to after): Bouboule
   14.5 to 5.2 ms (27.4 to 36.8 fps), Qix 14.6 to 1.9 ms (37.3 to 70.1 fps),
   Pedal 21.8 to 8.6 ms (it then holds the picture for 5 s).
+- A circle (`w == h`, up to 32) keeps its rows in a table by diameter, relative
+  to its corner: the centre column is `2x + w - 1` and `floor_half(2x + k)` is
+  `x + floor_half(k)`, so the rows do not depend on where it sits. Integer
+  rows alone took Halftone (about 1,150 dots a frame) from 5 to 9.8 fps, push
+  overlap to 11.4-12.0, and the table to 14.2-14.6 (#57). The row-clip bounds
+  in `fill_cached_circle` are speed guards only, since `hspan` clips: removing
+  them is an equivalent mutant, as is reversing the rows (a circle is symmetric).
 - Lisa was the counter-example to "the stroker maths is the cost" (#98), and
   then the maths turned out to be the cost after all. Converting a slanted
   segment's ends from int to float moved it by nothing (52.1 ms either way),

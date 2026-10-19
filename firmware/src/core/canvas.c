@@ -299,11 +299,45 @@ static int64_t floor_half(int64_t n) { return (n - (n & 1)) / 2; }
 static void fill_ellipse_in_double(Canvas *c, int x, int y, int w, int h,
                                    uint16_t color);
 
+/* A circle's rows do not depend on where it sits: the centre column is
+ * 2x + w - 1, and floor_half(2x + k) is x + floor_half(k). So the spans of each
+ * diameter up to CIRCLE_CACHE_MAX are worked out once, relative to the corner.
+ * Halftone fills over a thousand dots a frame in about twenty sizes. */
+#define CIRCLE_CACHE_MAX 32
+typedef struct {
+  int16_t xa, xb;
+} circle_row;
+static circle_row g_circle_rows[CIRCLE_CACHE_MAX + 1][CIRCLE_CACHE_MAX];
+static bool g_circle_built[CIRCLE_CACHE_MAX + 1];
+
+static void build_circle(int w) {
+  for (int row = 0; row < w; row++) {
+    const int64_t reach = ellipse_reach2(w, w, 2 * (int64_t)row - w + 1);
+    g_circle_rows[w][row] = (circle_row){(int16_t)floor_half(w - reach),
+                                         (int16_t)floor_half(w - 1 + reach)};
+  }
+  g_circle_built[w] = true;
+}
+
+static void fill_cached_circle(Canvas *c, int x, int y, int w, uint16_t color) {
+  if (!g_circle_built[w]) build_circle(w);
+  const wide_t first = y < 0 ? -(wide_t)y : 0;
+  wide_t last = w - 1;
+  if ((wide_t)y + last >= c->h) last = (wide_t)c->h - 1 - y;
+  for (wide_t row = first; row <= last; row++)
+    hspan(c, (wide_t)x + g_circle_rows[w][row].xa,
+          (wide_t)x + g_circle_rows[w][row].xb, (wide_t)y + row, color);
+}
+
 void canvas_fill_ellipse(Canvas *c, int x, int y, int w, int h,
                          uint16_t color) {
   if (w <= 0 || h <= 0) return;
   if (w > ELLIPSE_INT_MAX || h > ELLIPSE_INT_MAX) {
     fill_ellipse_in_double(c, x, y, w, h, color);
+    return;
+  }
+  if (w == h && w <= CIRCLE_CACHE_MAX) {
+    fill_cached_circle(c, x, y, w, color);
     return;
   }
   const int64_t centre2 = 2 * (int64_t)x + w - 1; /* twice the centre column */

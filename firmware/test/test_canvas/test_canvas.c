@@ -391,6 +391,29 @@ void test_ellipse_fill_matches_the_double_reference_for_every_small_size(void) {
   canvas_free(&want);
 }
 
+void test_circles_match_the_double_reference_clipped_on_every_side_and_drawn_twice(void) {
+  Canvas got, want;
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&got, 30, 20, malloc));
+  TEST_ASSERT_EQUAL_INT(0, canvas_init(&want, 30, 20, malloc));
+  int wrong = 0, first_w = 0;
+  for (int pass = 0; pass < 2; pass++)
+    for (int w = 1; w <= 40; w++) {
+      const int origins[][2] = {{0, 0},         {-3, -2},   {-w / 2, 5},  {25, 15},
+                                {29, 19},       {-w - 1, 0}, {30, 20},     {10, -w / 2},
+                                {-w + 1, -w + 1}, {7, 19 - w / 2}, {29 - w / 2, 3}};
+      for (unsigned o = 0; o < sizeof origins / sizeof origins[0]; o++) {
+        int d = ellipse_differences(&got, &want, origins[o][0], origins[o][1], w, w);
+        if (d && !wrong) first_w = w;
+        wrong += d != 0;
+      }
+    }
+  char msg[80];
+  snprintf(msg, sizeof msg, "%d placements differ, first diameter %d", wrong, first_w);
+  TEST_ASSERT_EQUAL_INT_MESSAGE(0, wrong, msg);
+  canvas_free(&got);
+  canvas_free(&want);
+}
+
 void test_ellipse_fill_matches_the_double_reference_for_big_and_clipped_sizes(void) {
   Canvas got, want;
   TEST_ASSERT_EQUAL_INT(0, canvas_init(&got, 120, 90, malloc));
@@ -984,6 +1007,7 @@ int main(void) {
   RUN_TEST(test_ellipse_5x5_is_symmetric);
   RUN_TEST(test_ellipse_partly_offscreen_clips);
   RUN_TEST(test_ellipse_fill_matches_the_double_reference_for_every_small_size);
+  RUN_TEST(test_circles_match_the_double_reference_clipped_on_every_side_and_drawn_twice);
   RUN_TEST(test_ellipse_fill_matches_the_double_reference_for_big_and_clipped_sizes);
   RUN_TEST(test_ellipse_fill_is_exact_on_random_big_sizes);
   RUN_TEST(test_ellipse_fill_is_exact_where_the_float_estimate_is_off);

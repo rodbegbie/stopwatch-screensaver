@@ -31,11 +31,11 @@ it with `uv run tools/score_hacks.py`.
 
 | Rating | Meaning | Count |
 | --- | --- | --- |
-| S | 2D, and the unmodified source compiles against the shim | 4 |
+| S | 2D, and the unmodified source compiles against the shim | 3 |
 | M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 1 |
 | L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 40 |
 | XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 129 |
-| Ported | Already running on the device, so no rating | 109 |
+| Ported | Already running on the device, so no rating | 110 |
 
 ## Speed
 
@@ -171,7 +171,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Interaggregate | 13.4-15.0 | 41.8-47.4 ms | 24.3-28.9 ms | 0 ms | about 853 KB |
 | LMorph | 14.8-17.2 | 24.7-34.3 ms | 32.5 ms | 0 ms | none measurable |
 | Wormhole | 17.6-17.8 | 22.4-23.1 ms | 32.4 ms | 0 ms | about 32 KB |
-| Halftone | 4.5-5.2 | 163-193 ms | 32.5 ms | 0 ms | none measurable |
+| Halftone | 14.2-14.6 | 67-70 ms | 0.1 ms (overlapped) | 0 ms | not compared with idle (flat at 6,513,419) |
 | Truchet | 0.8-1.0 | 652-900 ms | 34.4-36.1 ms | 404-406 ms | about 1.5 MB |
 | Truchet (scrolling mode) | 7.2-8.0 | 19.8-36.0 ms | 31.5-39.9 ms | 66-75 ms | about 1.5 MB |
 | UnknownPleasures | 5.0-5.2 | 162-169 ms | 32.3-37.1 ms | 0 ms | about 0.93 MB |
@@ -416,14 +416,14 @@ three and a half laps.
 Each batch row is the registered build: Euler2D with 512 particles, Anemone
 with 64 arms, FuzzyFlakes at density 3, LMorph without its pause, and
 Compass, Interaggregate and the first four in single precision. Halftone's row
-is single precision and not registered.
+is single precision with push overlap and the circle span cache (issue #57).
 The sixteen rows from Forest to Halftone are the S-hack batch, read on one
 lap of the final build (30 s a hack, the first five-second window of each
-dropped, four to five windows read; Halftone's row is from the earlier
-20 s laps). Free heap was flat across each hack's windows (Anemotaxis fell
-636 bytes, Forest 232 and Scooter 88 over its visit), and no stack canary,
-panic or reboot appeared in any capture. "Extra PSRAM" is the drop from the
-idle 7,327,227 bytes. How each slow hack improved, on 20 s laps:
+dropped, four to five windows read; Halftone's row is from a 60 s pinned
+capture after its fixes). Free heap was flat across each hack's windows
+(Anemotaxis fell 636 bytes, Forest 232 and Scooter 88 over its visit), and no
+stack canary, panic or reboot appeared in any capture. "Extra PSRAM" is the
+drop from the idle 7,327,227 bytes. How each slow hack improved, on 20 s laps:
 
 | Hack | As copied (double) | Single precision | Plus float literals | Plus lighter setting |
 | --- | --- | --- | --- | --- |
@@ -433,13 +433,15 @@ idle 7,327,227 bytes. How each slow hack improved, on 20 s laps:
 | LMorph | 9.3 fps, step 35 ms | 9.9 fps, 27 ms | 10.2 fps, 24 ms | 15.4 fps (no 70 ms pause) |
 | FuzzyFlakes | 12.1 fps, step 50 ms | 13.5 fps, 41 ms | 13.6 fps, 40 ms | 15.6 fps (density 3) |
 | Compass | 14.9 fps, step 34 ms | 15.3 fps, 32 ms | 15.5 fps, 31 ms | none |
-| Halftone | 2.5 fps, step 381 ms | 4.8 fps, 178 ms | 5.2 fps, 163 ms | none |
+| Halftone | 2.5 fps, step 381 ms | 4.8 fps, 178 ms | 5.2 fps, 163 ms | 14.4 fps, 68 ms (integer ellipse fill, push overlap, circle span cache; #57) |
 
 Anemone's step moves between 26 and 46 ms as its arms grow, and Interaggregate's
 frame rate drifts as the picture fills, so both sit on the 15 fps line.
 Halftone with `XFillArc` returning at once measured 15.4 fps (step 31.8 ms), so
-its dots' ellipse fills are about 80% of its step (issue #57). Forest waits
-500 ms between trees by design.
+its dots' ellipse fills were about 80% of its step (issue #57). Rows worked out
+in whole numbers took it to 9.8 fps (step 73-79 ms, push 25 ms), push overlap to
+11.4-12.0 fps, and a per-diameter cache of circle rows to 14.2-14.6 fps. Forest
+waits 500 ms between trees by design.
 
 Interaggregate's alpha blend was fixed after the batch lap (the wrapper now
 swaps pixels at the hack's boundary, as Substrate's does). Its row is from a
@@ -450,8 +452,9 @@ Rod looked at all fifteen registered hacks of the batch on the device on
 2026-10-10 and found them performant and in line with the same hacks on other
 platforms (Anemotaxis was missing from his written list; he confirmed after
 that he had looked at it). All fifteen stay in the rotation, Forest included.
-Halftone stays out (issue #57). Truchet, the batch's last S hack, was ported
-later, once primitives could draw into pixmaps (issues #58 and #61).
+Halftone was out until issue #57's fixes brought it back. Truchet, the batch's
+last S hack, was ported later, once primitives could draw into pixmaps
+(issues #58 and #61).
 
 Maze's row is 26 five-second readings over 160 seconds, taken on a build that
 includes the overlay stamping. Its steps are cheap, and its frame rate is set
@@ -976,7 +979,6 @@ needing few additions come first.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | droste | 2d | S | crashed on the host | - | - | pixmaps, readback | 686 |
 | flow | 2d | S | high (0.91 ms) | - | - | pixmaps | 1216 |
-| halftone | 2d | S | high (0.73 ms) | ❌ | - | pixmaps | 413 |
 | twang | 2d | S | crashed on the host | - | - | pixmaps, readback | 791 |
 | metaballs | 2d | M | - | - | `XFree`, `XListPixmapFormats` | - | 438 |
 | apollonian | 2d | L | - | - | `FcChar8`, `XColor.color`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall` | - | 820 |
@@ -1183,6 +1185,7 @@ needing few additions come first.
 | galaxy | 2d | - | 58-75 ms measured | ✅ | - | - | 462 |
 | grav | 2d | - | 1.5-1.9 ms measured | ✅ | - | - | 360 |
 | greynetic | 2d | - | 1.8-2 ms measured | ✅ | - | - | 297 |
+| halftone | 2d | - | 67-70 ms measured | ✅ | - | pixmaps | 413 |
 | halo | 2d | - | - | ✅ | - | pixmaps | 459 |
 | helix | 2d | - | 0.9-2.1 ms measured | ✅ | - | - | 358 |
 | hexadrop | 2d | - | - | ✅ | - | - | 446 |
@@ -1268,7 +1271,6 @@ needing few additions come first.
 - **floppy**: 630 KB model won't fit the 3 MB app partition, est. 5 fps; Rod
   dropped it
 - **flurry**: needs GL TinyGL lacks, est. under 1 fps, issue #70
-- **halftone**: 5 fps; the shim's ellipse fill is 80% of it, issue #57
 - **hypnowheel**: 4.0 fps at half resolution, fill-bound; Rod dropped it, #73
 
 ## Excluded files
