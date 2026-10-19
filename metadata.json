@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M5A5QX3K3RY9JVE2T8EEMPZC",
+  "strategy": "manual-commit",
+  "branch": "feature/gl-batch-7-glmatrix",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "firmware/patch_float_literals.py",
+    "tools/superquadrics_patch.py",
+    "tools/tests/test_superquadrics_patch.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 26,
+    "cache_creation_tokens": 10243,
+    "cache_read_tokens": 5068053,
+    "output_tokens": 8100,
+    "api_call_count": 13
+  }
+}
