@@ -591,7 +591,7 @@ static const uint64_t kBaseline[] = {
     0x31abd823a3dd5ce1ull, /* Bubble3D: taken after looking at the frames (sphere depth 2, single precision, opaque) */
     0xae237080f46db32full, /* Bubbles: taken after looking at the frames */
     0x9b6b0c1c2d889dcaull, /* Rubik: taken after looking at the frames */
-    0x739e59ba26c803d3ull, /* CubeStack: taken after looking at the frames */
+    0x863e3b620c76d7e1ull, /* CubeStack: taken after looking at the frames */
     0xf14cbffca8750e46ull, /* Kaleidocycle: taken after looking at the frames */
     0xf5f32a849773f120ull, /* DangerBall: taken after looking at the frames */
     0xe3e33f0a85f4adf7ull, /* Cubenetic: taken after looking at the frames */
@@ -1847,6 +1847,34 @@ static void check_a_polygon_hack_draws(const char *name) {
 void test_superquadrics_draws_its_polygons(void) { check_a_polygon_hack_draws("Superquadrics"); }
 void test_menger_draws_its_polygons(void) { check_a_polygon_hack_draws("Menger"); }
 
+
+/* CubeStack blends `GL_SRC_ALPHA, GL_ONE` and gives each face an alpha of its
+ * opacity times how far its transition has run. TinyGL ignores vertex alpha, so
+ * `cubestack_gl.c` folds it into the colour. On the first frame the only face
+ * has an alpha of zero: without the fold 10,883 pixels were lit (found by the
+ * trail review). */
+void test_cubestack_faces_fade_in_with_their_alpha(void) {
+  srandom(1);
+  HackRunner *r = runner_create(&cv);
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("CubeStack")));
+  runner_step(r);
+  TEST_ASSERT_EQUAL_INT(0, non_black());
+  runner_destroy(r);
+}
+
+/* CubeStack steps its palette index once every 400 frames and wraps it with
+ * `ccolor > ncolors`, one cycle late: at 32 the next frame read colors[32] of a
+ * 32 entry array, after about 12,900 frames (found by the trail review, as an
+ * AddressSanitizer heap-buffer-overflow). */
+void test_cubestack_survives_its_palette_wrapping(void) {
+  srandom(1);
+  HackRunner *r = runner_create(&cv);
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("CubeStack")));
+  for (int f = 0; f < 13500; f++) runner_step(r);
+  TEST_ASSERT_TRUE(non_black() > 0);
+  runner_destroy(r);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -1983,6 +2011,8 @@ int main(void) {
   RUN_TEST(test_glmatrix_stops_do_not_leak);
   RUN_TEST(test_superquadrics_stops_do_not_leak);
   RUN_TEST(test_menger_stops_do_not_leak);
+  RUN_TEST(test_cubestack_faces_fade_in_with_their_alpha);
+  RUN_TEST(test_cubestack_survives_its_palette_wrapping);
   RUN_TEST(test_glmatrix_glyphs_are_dark_between_their_strokes);
   RUN_TEST(test_superquadrics_draws_its_polygons);
   RUN_TEST(test_menger_draws_its_polygons);

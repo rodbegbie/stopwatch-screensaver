@@ -504,6 +504,14 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   took CubeStack from 16.5 to 22 fps, Kaleidocycle 19.6 to 33 and DangerBall
   16.5 to 25 with no other change. Their motion is per frame, so it is faster
   too, nearer upstream's pace on a desktop.
+- CubeStack (`cubestack_gl.c`) blends `GL_SRC_ALPHA, GL_ONE` with an alpha of
+  opacity times each face's transition, and TinyGL ignores vertex alpha: the
+  wrapper's `glColor4fv` scales its colour (the first frame is black, where
+  10,883 pixels were lit without it), so the cubes are translucent as upstream
+  draws them. Upstream wraps its palette index with `>` instead of `>=`, so
+  after about 12,900 frames it reads `colors[32]` of 32 (an AddressSanitizer
+  overflow in a 13,500 frame test): the wrapper wraps it before each draw.
+  Kaleidocycle also blends but its faces are opaque, so it was not folded.
 - GLMatrix (`glmatrix_single_gl.c`) keeps its look in alpha: the texture's
   alpha is the glyph image's green channel and each glyph's brightness is the
   vertex alpha, drawn `GL_SRC_ALPHA, GL_ONE`. TinyGL has none, and the shim's
