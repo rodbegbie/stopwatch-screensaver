@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M5A4GWFHX57JYWPSFK0B930H",
+  "strategy": "manual-commit",
+  "branch": "feature/gl-batch-7-glmatrix",
+  "checkpoints_count": 5,
+  "files_touched": [
+    "firmware/src/hacks/cubestack_gl.c",
+    "firmware/test/test_hacks/test_hacks.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 96,
+    "cache_creation_tokens": 407514,
+    "cache_read_tokens": 16407336,
+    "output_tokens": 29389,
+    "api_call_count": 47
+  }
+}
