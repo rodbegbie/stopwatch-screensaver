@@ -684,6 +684,14 @@ REPLACEMENTS: tuple[Replace, ...] = (
         "\t\t\tgl_draw_line(&c->vertex[0], &c->vertex[2]);\n\t\t}\n"
         "#if TGL_FEATURE_GL_POLYGON == 1\n\t\tif (c->begin_type == GL_POLYGON) {\n",
     ),
+    # GL_POLYGON is a fan from its first vertex, exact for the convex polygons
+    # the hacks draw (ARS-18). Done where the op runs, so a display list that
+    # records GL_POLYGON replays it as a fan too.
+    Replace(
+        "src/vertex.c",
+        "\t\ttype = p[1].i;\n\tc->begin_type = type;",
+        "\t\ttype = p[1].i;\n\tif (type == GL_POLYGON) type = GL_TRIANGLE_FAN;\n\tc->begin_type = type;",
+    ),
     # The round panel (issue #77): each scanline of a filled triangle is cut to
     # the span the panel shows, with the depth and colour it would have had at
     # its new first pixel. Only the generic scanline; the textured fills have

@@ -1843,6 +1843,81 @@ void test_a_line_loop_starts_afresh_after_each_glEnd(void) {
   }
 }
 
+/* GL_POLYGON is drawn as a fan from its first vertex (ARS-18), so a hack needs
+ * no wrapper for it. Each shape is compared with the same vertices drawn as
+ * GL_TRIANGLE_FAN, which TinyGL has always drawn. */
+static const float kQuad[4][2] = {{-0.5f, -0.5f}, {0.5f, -0.5f}, {0.5f, 0.5f}, {-0.5f, 0.5f}};
+static const float kPentagon[5][2] = {
+    {0.0f, 0.8f}, {-0.7f, 0.2f}, {-0.4f, -0.7f}, {0.4f, -0.7f}, {0.7f, 0.2f}};
+
+static void draw_shape(GLenum mode, const float (*v)[2], int n) {
+  glBegin(mode);
+  for (int i = 0; i < n; i++) glVertex3f(v[i][0], v[i][1], 0);
+  glEnd();
+}
+
+static int lit_pixels(void) {
+  int n = 0;
+  for (int i = 0; i < SIZE * SIZE; i++) n += cv.px[i] != 0;
+  return n;
+}
+
+static void assert_polygon_matches_fan(const float (*v)[2], int n, int min_lit) {
+  open_line_scene(0);
+  draw_shape(GL_TRIANGLE_FAN, v, n);
+  uint16_t *fan = malloc(sizeof cv.px[0] * SIZE * SIZE);
+  TEST_ASSERT_NOT_NULL(fan);
+  memcpy(fan, cv.px, sizeof cv.px[0] * SIZE * SIZE);
+  TEST_ASSERT_TRUE(lit_pixels() >= min_lit);
+
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  TEST_ASSERT_EQUAL_INT(0, lit_pixels());
+  draw_shape(GL_POLYGON, v, n);
+  const int same = memcmp(fan, cv.px, sizeof cv.px[0] * SIZE * SIZE) == 0;
+  free(fan);
+  TEST_ASSERT_TRUE_MESSAGE(same, "GL_POLYGON differs from the fan");
+}
+
+void test_a_gl_polygon_quad_is_drawn_as_a_fan(void) {
+  assert_polygon_matches_fan(kQuad, 4, SIZE * SIZE / 4 - SIZE);
+}
+
+void test_a_gl_polygon_pentagon_is_drawn_as_a_fan(void) {
+  assert_polygon_matches_fan(kPentagon, 5, SIZE * SIZE / 3);
+}
+
+void test_a_gl_polygon_in_a_display_list_is_drawn_as_a_fan(void) {
+  open_line_scene(0);
+  draw_shape(GL_TRIANGLE_FAN, kPentagon, 5);
+  uint16_t *fan = malloc(sizeof cv.px[0] * SIZE * SIZE);
+  TEST_ASSERT_NOT_NULL(fan);
+  memcpy(fan, cv.px, sizeof cv.px[0] * SIZE * SIZE);
+
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  const GLuint list = glGenLists(1);
+  glNewList(list, GL_COMPILE);
+  draw_shape(GL_POLYGON, kPentagon, 5);
+  glEndList();
+  TEST_ASSERT_EQUAL_INT(0, lit_pixels());
+  glCallList(list);
+  const int same = memcmp(fan, cv.px, sizeof cv.px[0] * SIZE * SIZE) == 0;
+  free(fan);
+  glDeleteLists(list, 1);
+  TEST_ASSERT_TRUE_MESSAGE(same, "a listed GL_POLYGON differs from the fan");
+}
+
+void test_two_gl_polygons_in_a_row_each_start_afresh(void) {
+  open_line_scene(0);
+  draw_shape(GL_POLYGON, kQuad, 4);
+  draw_shape(GL_POLYGON, kPentagon, 5);
+  const int both = lit_pixels();
+
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  draw_shape(GL_TRIANGLE_FAN, kQuad, 4);
+  draw_shape(GL_TRIANGLE_FAN, kPentagon, 5);
+  TEST_ASSERT_EQUAL_INT(lit_pixels(), both);
+}
+
 /* The round panel (issue #77): with a disc on the canvas, clears skip the
  * corners nobody sees. */
 #define SENTINEL 0x5A5A
@@ -2045,6 +2120,10 @@ int main(void) {
   RUN_TEST(test_an_unhandled_primitive_never_writes_past_the_vertex_buffer);
   RUN_TEST(test_a_line_loop_draws_every_edge_including_the_closing_one);
   RUN_TEST(test_a_line_loop_starts_afresh_after_each_glEnd);
+  RUN_TEST(test_a_gl_polygon_quad_is_drawn_as_a_fan);
+  RUN_TEST(test_a_gl_polygon_pentagon_is_drawn_as_a_fan);
+  RUN_TEST(test_a_gl_polygon_in_a_display_list_is_drawn_as_a_fan);
+  RUN_TEST(test_two_gl_polygons_in_a_row_each_start_afresh);
 #ifdef GL_PROFILE
   RUN_TEST(test_the_profile_counts_each_stage_once_per_call);
 #endif
