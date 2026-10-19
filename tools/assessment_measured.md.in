@@ -54,6 +54,14 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | CubicGrid (ticks 30, 27,000 points; not registered) | 5.6-6.0 | 137-148 ms | 32.3-36.0 ms | 0 ms | 1.66 MB more than Morph3D (display list) |
 | CubicGrid (ticks 20, 8,000 points; registered) | 11.2-12.4 | 48-52 ms | 32.2-36.1 ms | 0 ms | 0.49 MB more than Morph3D (display list) |
 | Rubik | 14.2-27.0 | 14.9-48.7 ms | 3.5-7.3 ms | 15.0-18.7 ms | 0 (PSRAM constant; heap fell 1.1 KB over the run) |
+| CubeStack | 16.8-38.0 | 13.9-46.1 ms | 8.4-12.5 ms | 0-2.9 ms | 0 (PSRAM constant on a second visit) |
+| Kaleidocycle | 30.4-34.8 | 15.9-21.7 ms | 6.3-11.3 ms | 0.5-5.1 ms | 0 (PSRAM constant on a second visit) |
+| DangerBall | 23.6-26.4 | 26.2-29.3 ms | 5.6-10.8 ms | 1.5-6.0 ms | 0 (PSRAM constant on a second visit) |
+| Cubenetic | 11.8-18.0 | 44.3-72.3 ms | 3.5-11.6 ms | 0.5-7.9 ms | 0 (PSRAM constant on a second visit) |
+| DeepStars | 17.8-19.6 | 19.9-25.4 ms | 21.1-25.2 ms | 6.1-10.3 ms | 0 (PSRAM constant on a second visit) |
+| GLMatrix | 13.4-43.6 | 8.9-50.8 ms | 10.0-23.6 ms | 0-3.6 ms | 0 (PSRAM constant on a second visit) |
+| Superquadrics | 14.4-26.6 | 26.3-44.3 ms | 8.1-26.1 ms | 0-3.3 ms | 0 (PSRAM constant on a second visit) |
+| Menger | 12.8-44.0 | 11.2-66.3 ms | 6.4-16.3 ms | 0-5.0 ms | 0 (PSRAM constant on a second visit) |
 | Celtic (as copied; first port) | 1.0-20.4 | 29-1025 ms | 0.1-5.5 ms | 7.9-928 ms | none measurable |
 | Celtic (single precision, upstream graph sizes) | 1.0-20.2 | 5.6-151 ms | 0.8-6.6 ms | 9.4-1110 ms | 16 KB in one window (heap ran out) |
 | Celtic (single precision, graph sized to the screen, step scale 1) | 1.2-20.2 | 13.5-129 ms | 1.1-6.4 ms | 9.2-929 ms | none measurable |
@@ -859,3 +867,15 @@ constants made every burst fill the picture and the glow blur saturate to
 white. Goop's registered row blends all three colour channels with one
 multiply (`float_polygon.h`) and clears only where last frame's blobs were
 (`span_erase.h`), which also shrinks its push.
+
+The 2026-10-18 GL batch was measured on the board in a 45 s rotation (eight
+windows each) and then in a 14 minute soak at 5 s a hack: no reset, panic or
+stack canary, and PSRAM (6,518,059 bytes) and heap (90,108 bytes, the
+plateau every hack reads after the first lap) were the same on the second
+visit of each. GLMatrix's step grows while the rain fills the screen, so its
+range starts from an empty screen: about 17 fps once full (half size, density
+12). Cubenetic was 1.2 fps (847 ms a step) with its 256 by 256 texture. As
+copied, GLMatrix was 6 fps (135-145 ms) at full size and density 20,
+Superquadrics 8-11 fps in double at full size, and DeepStars 3.4-10.7 fps
+(smear grows to 400 copies). Not judged by eye: only Rod can say what the
+panel shows (DeepStars' stars are dim, GLMatrix at half size is chunky).

@@ -497,3 +497,44 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   the board it ran at 54-62 fps (mean 57.4), a 5-7 ms step under its own
   9.5 ms wait, and held nothing in PSRAM: it is paced by its delay, not by the
   work.
+- The 2026-10-18 GL batch (GLMatrix, CubeStack, Kaleidocycle, DangerBall,
+  Cubenetic, DeepStars, Superquadrics, Menger) is eight `USE_GL` wrappers over
+  unmodified sources. Most GL hacks wait 20-40 ms after a frame (`*delay`), and
+  the loop credits only the push against it, so `kShortDelayOverrides` (10 ms)
+  took CubeStack from 16.5 to 22 fps, Kaleidocycle 19.6 to 33 and DangerBall
+  16.5 to 25 with no other change. Their motion is per frame, so it is faster
+  too, nearer upstream's pace on a desktop.
+- GLMatrix (`glmatrix_single_gl.c`) keeps its look in alpha: the texture's
+  alpha is the glyph image's green channel and each glyph's brightness is the
+  vertex alpha, drawn `GL_SRC_ALPHA, GL_ONE`. TinyGL has none, and the shim's
+  `glTexImage2D` drops alpha, so glyph cells were solid green squares. The
+  wrapper premultiplies the texture as it uploads and has `glColor4f` scale its
+  colour: an additive blend cannot tell the difference. `xlockmore.h` must come
+  before the `#define glTexImage2D` (it brings in `glshim.h`, whose macro would
+  win). `matrix3.png` is deflated by `gl_textures.py` (`--deflate`). The step
+  grows as the rain fills the screen (9 to 140 ms over about 80 s at full size)
+  and fill is 100 of 145 ms: it renders at half size (`-DGLMATRIX_FULL` keeps
+  full size) with `*density: 12` (26 strips, not 44) and `*delay: 10000`, about
+  17 fps once full. Single precision gave byte-identical frames and about 3 ms.
+- Cubenetic (`cubenetic_single_gl.c`, `tools/cubenetic_patch.py`) works out a
+  256 by 256 plasma texture every frame, a square root per wave per pixel: 847
+  ms a step, 1.2 fps. At 64 by 64 (`-DCUBENETIC_TEXTURE_SIZE`) it is 12-18 fps.
+  The restart leak test found that `free_cube` never frees the cube array
+  (320 bytes a start); the wrapper frees it. It passes the addresses of
+  `double` locals to `get_position` and `get_rotation`, so it has the adapters
+  HexTrail has.
+- Superquadrics and Menger draw every face as a `GL_POLYGON`, which TinyGL
+  draws as nothing (issue #80): both were black. Each wrapper maps it to a
+  triangle fan, as Rubik does. Both render at half size
+  (`-DSUPERQUADRICS_FULL`, `-DMENGER_FULL`); Superquadrics is single precision
+  (13 to 19 fps, 8 to 11 before). Menger's depth 3 is 36,000 triangles and 920
+  ms a frame, so the registry caps `*maxDepth` at 2 (11 to 44 fps, the low end
+  while a level's display list is built).
+- DeepStars (`deepstars_gl.c`) draws each smear copy at a lower alpha. TinyGL's
+  blend is right only for black and white, so the wrapper folds alpha into the
+  colour and never enables the blend, and it swallows `glEnable(GL_POINT_SMOOTH)`
+  (TinyGL prints a warning for it every frame: 400 lines in a 400 frame dump).
+  Upstream grows `smear` to 400 copies of 2,700 stars over a few minutes, 3.4
+  fps at 20 copies, so the registry caps it at 4 (`*smear: 0.01`). The stars
+  are dim by design (colours 0.15 to 0.45) and few at a time; look at it on the
+  panel.
