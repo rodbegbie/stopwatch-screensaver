@@ -1,0 +1,47 @@
+Pick 5-10 more GL hacks to port over. GL Matrix is one I'd like to see, but I don't know how hard that might be to optimise.  You have permission to flash the board as much as you like in this session.
+
+---
+
+<task-notification>
+<task-id>b7eeo2ub0</task-id>
+<tool-use-id>toolu_01NJU2wtqzGdK19mFNjJj6X9</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/affddb2d-bfaf-4405-b4b6-244f3afec578/tasks/b7eeo2ub0.output</output-file>
+<status>completed</status>
+<summary>Background command "source tools/env.sh &gt;/dev/null 2&gt;&amp;1; D=/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/affddb2d-bfaf-4405-b4b6-244f3afec578/scratchpad; (
+uv run tools/mutate.py firmware/src/hacks/glmatrix_single_gl.c 'const unsigned a = rgba[i * 4 + 3];=&gt;const unsigned a = 255;' 'glColor3f(r * a, g * a, b * a);=&gt;glColor3f(r, g, b);' --cmd 'pio test -e native -f test_hacks' --cwd firmware &gt; $D/mut_glmatrix.txt 2&gt;&amp;1
+uv run tools/mutate.py firmware/src/hacks/superquadrics_single_gl.c 'mode == GL_POLYGON ? GL_TRIANGLE_FAN : mode=&gt;mode' --cmd 'pio test -e native -f test_hacks' --cwd firmware &gt; $D/mut_sq.txt 2&gt;&amp;1
+uv run tools/mutate.py firmware/src/hacks/menger_gl.c 'mode == GL_POLYGON ? GL_TRIANGLE_FAN : mode=&gt;mode' --cmd 'pio test -e native -f test_hacks' --cwd firmware &gt; $D/mut_menger.txt 2&gt;&amp;1
+uv run tools/mutate.py firmware/src/hacks/cubenetic_single_gl.c '    free(cc-&gt;cubes);=&gt;    (void)cc;' --cmd 'pio test -e native -f test_hacks' --cwd firmware &gt; $D/mut_cubenetic.txt 2&gt;&amp;1
+touch $D/mut_done ) &gt; /dev/null 2&gt;&amp;1 &amp;
+echo started" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>b9s8k8izs</task-id>
+<tool-use-id>toolu_01BGuUmyWLE6THMEC1LAYRgf</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/affddb2d-bfaf-4405-b4b6-244f3afec578/tasks/b9s8k8izs.output</output-file>
+<status>completed</status>
+<summary>Background command "until [ -f /private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/affddb2d-bfaf-4405-b4b6-244f3afec578/scratchpad/mut_done ]; do sleep 15; done; echo done" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bm2eeafn4</task-id>
+<tool-use-id>toolu_01PuYYkLyAuAEbskyKnRcG59</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/affddb2d-bfaf-4405-b4b6-244f3afec578/tasks/bm2eeafn4.output</output-file>
+<status>completed</status>
+<summary>Background command "until [ -f /private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/affddb2d-bfaf-4405-b4b6-244f3afec578/scratchpad/mut_done ]; do sleep 20; done; echo finished" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>b015sppz1</task-id>
+<tool-use-id>toolu_01CbfJBK2trUGJrkw8tWDERA</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/affddb2d-bfaf-4405-b4b6-244f3afec578/tasks/b015sppz1.output</output-file>
+<status>completed</status>
+<summary>Background command "until [ -f /private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/affddb2d-bfaf-4405-b4b6-244f3afec578/scratchpad/mut_done ]; do sleep 20; done; cat /private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/affddb2d-bfaf-4405-b4b6-244f3afec578/scratchpad/mut_*.txt | grep -E 'CAUGHT|SURVIVED|BUILD ERROR|restored' " completed (exit code 0)</summary>
+</task-notification>
