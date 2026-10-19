@@ -512,6 +512,10 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   after about 12,900 frames it reads `colors[32]` of 32 (an AddressSanitizer
   overflow in a 13,500 frame test): the wrapper wraps it before each draw.
   Kaleidocycle also blends but its faces are opaque, so it was not folded.
+- Superquadrics' `myrand` multiplies in `float` (upstream too), so the largest
+  `LRAND()` rounds up and `myrand(4)` is 4, one past `pats[4][4]`.
+  `tools/superquadrics_patch.py` clamps it at build time; its test compiles the
+  real function with `LRAND()` fixed at 2147483647 (the trail review found it).
 - GLMatrix (`glmatrix_single_gl.c`) keeps its look in alpha: the texture's
   alpha is the glyph image's green channel and each glyph's brightness is the
   vertex alpha, drawn `GL_SRC_ALPHA, GL_ONE`. TinyGL has none, and the shim's

@@ -15,6 +15,7 @@ import cubenetic_patch
 import etruscanvenus_patch
 import fireworkx_patch
 import float_literals
+import superquadrics_patch
 import xspirograph_patch
 
 generated = Path(env.subst("$BUILD_DIR")) / "generated"  # noqa: F821
@@ -71,6 +72,8 @@ for name in ("braid",) + (
         source = etruscanvenus_patch.size_the_grid(source)
     if name == "cubenetic":
         source = cubenetic_patch.size_the_texture(source)
+    if name == "superquadrics":
+        source = superquadrics_patch.keep_myrand_in_range(source)
     if name == "bubble3d":
         source = source.replace(
             '#include "bubble3d.h"', '#include "hacks/bubble3d/bubble3d.h"'
