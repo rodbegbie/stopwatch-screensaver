@@ -542,6 +542,9 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   `tools/glmatrix_patch.py` wraps it to 0, the brightest entry, which follows 1
   in the cycle. Its test compiles the hack's own statement over every row and
   wave position.
+  Its texture setup also packs `a << 24` with an `unsigned char` promoted to a
+  signed `int`, which overflows for an alpha of 128 or more (a sanitizer sweep
+  found it): the patch widens it to `unsigned long`, the same bits.
 - Cubenetic (`cubenetic_single_gl.c`, `tools/cubenetic_patch.py`) works out a
   256 by 256 plasma texture every frame, a square root per wave per pixel: 847
   ms a step, 1.2 fps. At 64 by 64 (`-DCUBENETIC_TEXTURE_SIZE`) it is 12-18 fps.

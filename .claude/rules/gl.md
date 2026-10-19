@@ -335,3 +335,15 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   the unpacked floats with upstream's. `buildlwo.c` maps `GL_POLYGON` to
   `GL_TRIANGLE_FAN` in its own wrapper only (issue #80 is the general
   question).
+- Sanitizer sweep for a GL batch (issue #141): build `-e dump` with
+  `PLATFORMIO_BUILD_FLAGS='-g -fsanitize=address,undefined,float-cast-overflow,array-bounds
+  -fsanitize-recover=undefined,float-cast-overflow,array-bounds
+  -fno-omit-frame-pointer'`, then run each hack for a few thousand frames over
+  several seeds (a temporary constructor that reads `SEED`; delete it after).
+  Recover mode prints each location once, so one run lists them all. Match both
+  `.c` and `.h` locations (TinyGL's `ztriangle.h` was missed by a `.c`-only
+  pattern the first time). The sweep found a signed shift in GLMatrix's texture
+  alpha packing (fixed in `tools/glmatrix_patch.py`) and, in every GL hack,
+  undefined behaviour in TinyGL itself (#141). `tools/mutate.py` calls a
+  mutant that fails a sanitizer test a "BUILD ERROR" (the sanitizer text
+  contains `error:`): run it by hand to see the failure.

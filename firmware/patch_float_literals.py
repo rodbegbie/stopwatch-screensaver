@@ -76,6 +76,7 @@ for name in ("braid",) + (
         source = cubenetic_patch.size_the_texture(source)
     if name == "glmatrix":
         source = glmatrix_patch.keep_the_wave_index_in_range(source)
+        source = glmatrix_patch.shift_the_alpha_unsigned(source)
     if name == "superquadrics":
         source = superquadrics_patch.keep_myrand_in_range(source)
     if name == "bubble3d":

@@ -79,3 +79,55 @@ def test_upstream_reaches_one_past_the_table(tmp_path):
     source = UPSTREAM.read_text()
     size = _wave_size(source)
     assert max(_wave_indexes(tmp_path, source)) == size
+
+
+def _run_the_pixel_packing(tmp_path: Path, source: str) -> subprocess.CompletedProcess:
+    """The hack's own packing statement with the alpha of a bright glyph
+    pixel, built with the undefined behaviour sanitizer."""
+    stmt = re.search(r"p = \(r << rpos\).*?;", source, re.DOTALL)
+    assert stmt
+    program = (
+        "#include <stdio.h>\n"
+        "int main(void) {\n"
+        "  int rpos = 0, gpos = 8, bpos = 16, apos = 24;\n"
+        "  unsigned char r = 102, g = 255, b = 94, a = 246;\n"
+        "  unsigned long p;\n"
+        f"  {stmt.group(0)}\n"
+        '  printf("%08lx", p & 0xFFFFFFFFul);\n'
+        "  return 0; }\n"
+    )
+    c = tmp_path / "pack.c"
+    c.write_text(program)
+    exe = tmp_path / "pack"
+    subprocess.run(
+        [
+            "cc",
+            "-fsanitize=undefined",
+            "-fno-sanitize-recover=all",
+            "-o",
+            str(exe),
+            str(c),
+        ],
+        check=True,
+    )
+    return subprocess.run([str(exe)], check=False, capture_output=True, text=True)
+
+
+@pytest.mark.skipif(not UPSTREAM.exists(), reason=f"needs {xs_vendor.UPSTREAM}")
+def test_patched_packing_is_defined_and_gives_the_same_bits(tmp_path):
+    patched = gp.shift_the_alpha_unsigned(UPSTREAM.read_text())
+    done = _run_the_pixel_packing(tmp_path, patched)
+    assert done.returncode == 0, done.stderr
+    assert done.stdout == "f65eff66"
+
+
+@pytest.mark.skipif(not UPSTREAM.exists(), reason=f"needs {xs_vendor.UPSTREAM}")
+def test_upstream_packing_overflows_a_signed_int(tmp_path):
+    done = _run_the_pixel_packing(tmp_path, UPSTREAM.read_text())
+    assert done.returncode != 0
+    assert "cannot be represented" in done.stderr
+
+
+def test_the_alpha_shift_patch_refuses_a_source_that_has_changed():
+    with pytest.raises(ValueError, match="upstream"):
+        gp.shift_the_alpha_unsigned("p = (r << rpos) | (g << gpos);")
