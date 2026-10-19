@@ -24,4 +24,4 @@
 #include "halftone_floatlit.c"
 
 const HackEntry halftone_hack = {"Halftone", halftone_defaults, halftone_init,
-                                halftone_draw, halftone_free, NULL, NULL};
+                                halftone_draw, halftone_free, NULL, NULL, 0, 0, 1};
