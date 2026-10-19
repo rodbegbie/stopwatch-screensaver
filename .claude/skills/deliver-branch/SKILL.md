@@ -118,3 +118,23 @@ Moved verbatim from AGENTS.md.
   run from a script under a Monitor, then merge when it reads "Mergeable:
   yes". First `git fetch`, compare the PR's `headRefOid` with the tip, and
   check `finding list --status open`.
+
+## Linear: creating the trail
+
+After Rod approves creating it, do all three steps together:
+
+1. Start the trail body with `Linear: ARS-NN` and the ticket URL, so a
+   reader of the trail can reach the ticket.
+1. Run `entire trail create`, then comment the trail URL on the ticket.
+1. Set the ticket to **In Review**.
+
+If a draft trail already exists for the work, link it in the new trail's
+body. A draft trail has no branch and cannot be attached to one, so the
+new trail supersedes it; tell Rod so he can close the draft.
+
+## Linear: after the merge
+
+When Rod says the trail is approved: run `entire trail merge N --dry-run`,
+merge it, fast-forward local `main`, and delete the merged branch locally
+and on origin. Then set the ticket to **Done**. If the merge fails or Rod
+asks for changes, set the ticket back to **In Progress**.
