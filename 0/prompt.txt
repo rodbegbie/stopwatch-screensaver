@@ -1,0 +1,45 @@
+What's your current thinking about why "halftone" was so slow?  Is there anything you can think of to help optimise it, given the work we've done since attempting to port it?
+
+---
+
+Yes, let's branch and learn!
+
+---
+
+When you're read, you can flash the device and measure things.
+
+---
+
+<task-notification>
+<task-id>bjvtrihrk</task-id>
+<tool-use-id>toolu_019HToPMvusLCP6gAUQQskmc</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/14432475-b64b-4790-af2b-e2158e239644/tasks/bjvtrihrk.output</output-file>
+<status>completed</status>
+<summary>Background command "Run test_hacks suite with Halftone registered" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Yes, flash the overlap build
+
+---
+
+Try the span cache.
+
+---
+
+<task-notification>
+<task-id>bp2ank56i</task-id>
+<tool-use-id>toolu_01Ai8WpqsL6DpNn7aQti6xCv</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/14432475-b64b-4790-af2b-e2158e239644/tasks/bp2ank56i.output</output-file>
+<status>completed</status>
+<summary>Background command "cd /Users/rod/build/stopwatch-screensaver &amp;&amp; S=/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/14432475-b64b-4790-af2b-e2158e239644/scratchpad; rm -f $S/full-done; source tools/env.sh &amp;&amp; cd firmware &amp;&amp; NO_COLOR=1 pio test -e native &gt; $S/full.txt 2&gt;&amp;1; echo "exit $?" &gt;&gt; $S/full.txt; grep -E "FAILED|test cases|exit " $S/full.txt | head" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+flash the board and measure the perf.
+
+---
+
+Looks great.  Get ready to a PR, and open it when you're ready.  (Comment on Issue 57 too)
