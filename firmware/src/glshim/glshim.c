@@ -498,6 +498,10 @@ void glMateriali(GLint face, GLint pname, GLint value) {
   glMaterialfv(face, pname, v);
 }
 
+void glLighti(GLint light, GLint pname, GLint value) {
+  glLightf(light, pname, (GLfloat)value);
+}
+
 void glDepthFunc(GLint func) { (void)func; }
 
 void glColor4ub(GLubyte r, GLubyte g, GLubyte b, GLubyte a) {

@@ -257,6 +257,26 @@ void test_a_one_value_light_model_is_not_over_read(void) {
   glLightModelfv(GL_LIGHT_MODEL_TWO_SIDE, (GLfloat *)two_side);
 }
 
+/* glLightfv took four floats whatever the parameter, and Circuit passes a
+ * three-float spot direction (AddressSanitizer: stack-buffer-overflow). A
+ * spot direction has three values and a spot exponent one; the colours and
+ * the position still have four. */
+void test_a_short_glLightfv_array_is_not_over_read(void) {
+  static const GLfloat direction[3] = {-1, 0.5f, 2};
+  static const GLfloat exponent[1] = {20};
+  static const GLfloat colour[4] = {0.1f, 0.2f, 0.3f, 0.4f};
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  GLContext *c = gl_get_context();
+  glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, (GLfloat *)direction);
+  glLightfv(GL_LIGHT1, GL_SPOT_EXPONENT, (GLfloat *)exponent);
+  glLightfv(GL_LIGHT1, GL_DIFFUSE, (GLfloat *)colour);
+  TEST_ASSERT_EQUAL_FLOAT(-1, c->lights[1].spot_direction.v[0]);
+  TEST_ASSERT_EQUAL_FLOAT(0.5f, c->lights[1].spot_direction.v[1]);
+  TEST_ASSERT_EQUAL_FLOAT(2, c->lights[1].spot_direction.v[2]);
+  TEST_ASSERT_EQUAL_FLOAT(20, c->lights[1].spot_exponent);
+  TEST_ASSERT_EQUAL_FLOAT(0.4f, c->lights[1].diffuse.v[3]);
+}
+
 void test_is_enabled_reports_texturing_off(void) {
   TEST_ASSERT_EQUAL_INT(0, glIsEnabled(GL_TEXTURE_2D));
 }
@@ -1843,6 +1863,26 @@ void test_a_line_loop_starts_afresh_after_each_glEnd(void) {
   }
 }
 
+/* TinyGL has glLightf but no integer form, which Circuit calls for its spot
+ * and attenuation. Each parameter must land on its own light and field. */
+void test_glLighti_sets_the_light_parameter_it_names(void) {
+  TEST_ASSERT_NOT_NULL(glshim_open(&cv));
+  GLContext *c = gl_get_context();
+  glLighti(GL_LIGHT1, GL_SPOT_EXPONENT, 20);
+  glLighti(GL_LIGHT1, GL_SPOT_CUTOFF, 90);
+  glLighti(GL_LIGHT1, GL_CONSTANT_ATTENUATION, 1);
+  glLighti(GL_LIGHT1, GL_LINEAR_ATTENUATION, 2);
+  glLighti(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 3);
+  TEST_ASSERT_EQUAL_FLOAT(20, c->lights[1].spot_exponent);
+  TEST_ASSERT_EQUAL_FLOAT(90, c->lights[1].spot_cutoff);
+  TEST_ASSERT_EQUAL_FLOAT(1, c->lights[1].attenuation[0]);
+  TEST_ASSERT_EQUAL_FLOAT(2, c->lights[1].attenuation[1]);
+  TEST_ASSERT_EQUAL_FLOAT(3, c->lights[1].attenuation[2]);
+  glLighti(GL_LIGHT0, GL_LINEAR_ATTENUATION, 7);
+  TEST_ASSERT_EQUAL_FLOAT(7, c->lights[0].attenuation[1]);
+  TEST_ASSERT_EQUAL_FLOAT(2, c->lights[1].attenuation[1]);
+}
+
 /* GL_POLYGON is drawn as a fan from its first vertex (ARS-18), so a hack needs
  * no wrapper for it. Each shape is compared with the same vertices drawn as
  * GL_TRIANGLE_FAN, which TinyGL has always drawn. */
@@ -2120,6 +2160,8 @@ int main(void) {
   RUN_TEST(test_an_unhandled_primitive_never_writes_past_the_vertex_buffer);
   RUN_TEST(test_a_line_loop_draws_every_edge_including_the_closing_one);
   RUN_TEST(test_a_line_loop_starts_afresh_after_each_glEnd);
+  RUN_TEST(test_a_short_glLightfv_array_is_not_over_read);
+  RUN_TEST(test_glLighti_sets_the_light_parameter_it_names);
   RUN_TEST(test_a_gl_polygon_quad_is_drawn_as_a_fan);
   RUN_TEST(test_a_gl_polygon_pentagon_is_drawn_as_a_fan);
   RUN_TEST(test_a_gl_polygon_in_a_display_list_is_drawn_as_a_fan);
