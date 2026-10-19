@@ -525,7 +525,7 @@ static const uint64_t kBaseline[] = {
     0x7118310d47ee4197ull, /* LMorph: taken after looking at the frames */
     0xe73572fd64eef48full, /* Wormhole: taken after looking at the frames */
     0x7dd7d7130551c261ull, /* Truchet: taken after looking at the frames */
-    0x5c626e9006fb4248ull, /* UnknownPleasures: after looking at the frames, with the fake clock, smooth lines and the offset margin; re-taken for speed 0.3 (#68) */
+    0xe2ab6cf9eec7e74dull, /* UnknownPleasures: after looking at the frames, with the fake clock, smooth lines and the offset margin; re-taken for speed 0.3 (#68) and again for the row added before the draw (#134) */
     0x32dbba1459c7753ull, /* Hexadrop: taken after looking at the frames */
     0xa4895fcbd5d235feull, /* StonerView: taken after looking at the frames (saturating additive blend); re-taken for the square outlines (GL_LINE_LOOP, #80) */
     0x6312d77d82216fc7ull, /* Halo: taken after looking at the frames, with GCBackground honoured */
@@ -1290,6 +1290,57 @@ void test_unknownpleasures_start_and_stop_do_not_leak(void) {
   TEST_ASSERT_TRUE_MESSAGE(after < before + 64 * 1024, "allocated bytes grew");
 }
 
+static double scroll_now;
+static double scroll_clock(void) { return scroll_now; }
+
+static long picture_change(const uint16_t *a, const uint16_t *b) {
+  long sum = 0;
+  for (long i = 0; i < (long)cv.w * cv.h; i++)
+    sum += labs((long)((px_swap(a[i]) >> 5) & 0x3f) -
+                (long)((px_swap(b[i]) >> 5) & 0x3f));
+  return sum;
+}
+
+static int compare_long(const void *a, const void *b) {
+  const long x = *(const long *)a, y = *(const long *)b;
+  return (x > y) - (x < y);
+}
+
+/* The picture scrolls by (now - last tick) / interval, clamped to one row. A
+ * frame that arrives after the interval is drawn at the clamp, and the tick
+ * restarts the clock at that frame's time, so the surplus never scrolls and the
+ * picture stands still for a push (#134). At 0.3 speed and 40 rows the interval
+ * is 4 s; a frame every 0.2091 s puts the tick 87% of a frame late. */
+void test_unknownpleasures_scrolls_through_a_new_row_without_standing_still(void) {
+  enum { kFrames = 46 };
+  const int unk = index_of("UnknownPleasures");
+  TEST_ASSERT_TRUE(unk >= 0);
+  srandom(1);
+  scroll_now = 1000.0;
+  xshim_set_clock(scroll_clock);
+  HackRunner *r = runner_create(&cv);
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, unk));
+  uint16_t *prev = malloc((size_t)cv.w * cv.h * sizeof *prev);
+  TEST_ASSERT_NOT_NULL(prev);
+  long change[kFrames];
+  int n = 0;
+  for (int f = 0; f < kFrames; f++) {
+    scroll_now += 4.0 / 19.13;
+    runner_step(r);
+    if (f > 0) change[n++] = picture_change(prev, cv.px);
+    memcpy(prev, cv.px, (size_t)cv.w * cv.h * sizeof *prev);
+  }
+  free(prev);
+  runner_destroy(r);
+  long sorted[kFrames];
+  memcpy(sorted, change, n * sizeof *change);
+  qsort(sorted, n, sizeof *sorted, compare_long);
+  const long median = sorted[n / 2];
+  TEST_ASSERT_TRUE_MESSAGE(median > 0, "the picture never moved");
+  TEST_ASSERT_TRUE_MESSAGE(sorted[0] * 2 >= median,
+                           "a frame changed less than half as much as usual");
+}
+
 /* A tripwire, not a proof. On the host this runs unoptimised under
  * AddressSanitizer, which inflates frames several times over: Gears measures
  * 21 KB here against a 2.4 KB high-water mark on the board (the loop task has
@@ -1755,6 +1806,7 @@ int main(void) {
   RUN_TEST(test_cubicgrid_start_and_stop_do_not_leak);
   RUN_TEST(test_unknownpleasures_scrolls_at_a_slower_speed);
   RUN_TEST(test_unknownpleasures_start_and_stop_do_not_leak);
+  RUN_TEST(test_unknownpleasures_scrolls_through_a_new_row_without_standing_still);
   RUN_TEST(test_hexadrop_stops_do_not_leak);
   RUN_TEST(test_stonerview_start_and_stop_do_not_leak);
   RUN_TEST(test_halo_stops_do_not_leak);
