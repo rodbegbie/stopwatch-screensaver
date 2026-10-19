@@ -10,3 +10,4 @@ boing: 8.3 fps and plain on a small screen; Rod dropped it, scanlines cost 83 ms
 blocktube: 8.8-10 fps at 400 blocks, half size; Rod dropped it (slow, little going on)
 companion: about 71,000 vertices a cube, est. 2-3 fps; Rod dropped it
 floppy: 630 KB model won't fit the 3 MB app partition, est. 5 fps; Rod dropped it
+deepstars: about three dim stars and no smear (TinyGL has no alpha or smooth points); Rod dropped it

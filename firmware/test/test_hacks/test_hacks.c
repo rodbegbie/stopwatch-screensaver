@@ -164,7 +164,6 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Kaleidocycle",
                                          "DangerBall",
                                          "Cubenetic",
-                                         "DeepStars",
                                          "GLMatrix",
                                          "Superquadrics",
                                          "Menger",
@@ -596,7 +595,6 @@ static const uint64_t kBaseline[] = {
     0xf14cbffca8750e46ull, /* Kaleidocycle: taken after looking at the frames */
     0xf5f32a849773f120ull, /* DangerBall: taken after looking at the frames */
     0xe3e33f0a85f4adf7ull, /* Cubenetic: taken after looking at the frames */
-    0x7aac185703905810ull, /* DeepStars: taken after looking at the frames */
     0x19ded426e16f3fd1ull, /* GLMatrix: taken after looking at the frames */
     0x48cf40bfdc581fb9ull, /* Superquadrics: taken after looking at the frames */
     0x55d4faaa474ed1c9ull, /* Menger: taken after looking at the frames */
@@ -1797,10 +1795,6 @@ void test_cubenetic_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("Cubenetic", 1);
 }
 
-void test_deepstars_stops_do_not_leak(void) {
-  check_restarts_and_stops_do_not_leak("DeepStars", 1);
-}
-
 void test_glmatrix_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("GLMatrix", 1);
 }
@@ -1986,7 +1980,6 @@ int main(void) {
   RUN_TEST(test_kaleidocycle_stops_do_not_leak);
   RUN_TEST(test_dangerball_stops_do_not_leak);
   RUN_TEST(test_cubenetic_stops_do_not_leak);
-  RUN_TEST(test_deepstars_stops_do_not_leak);
   RUN_TEST(test_glmatrix_stops_do_not_leak);
   RUN_TEST(test_superquadrics_stops_do_not_leak);
   RUN_TEST(test_menger_stops_do_not_leak);

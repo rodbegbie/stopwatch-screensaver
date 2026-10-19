@@ -530,11 +530,14 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   (13 to 19 fps, 8 to 11 before). Menger's depth 3 is 36,000 triangles and 920
   ms a frame, so the registry caps `*maxDepth` at 2 (11 to 44 fps, the low end
   while a level's display list is built).
-- DeepStars (`deepstars_gl.c`) draws each smear copy at a lower alpha. TinyGL's
-  blend is right only for black and white, so the wrapper folds alpha into the
-  colour and never enables the blend, and it swallows `glEnable(GL_POINT_SMOOTH)`
-  (TinyGL prints a warning for it every frame: 400 lines in a 400 frame dump).
-  Upstream grows `smear` to 400 copies of 2,700 stars over a few minutes, 3.4
-  fps at 20 copies, so the registry caps it at 4 (`*smear: 0.01`). The stars
-  are dim by design (colours 0.15 to 0.45) and few at a time; look at it on the
-  panel.
+- DeepStars was dropped after Rod saw it: about three dim stars on screen and
+  no smear. Its source, notices row and `deepstars_gl.c` stay, the wrapper out
+  of the build filter. The wrapper draws each smear copy at a lower alpha
+  folded into the colour (TinyGL's blend is right only for black and white,
+  so the blend is never enabled) and swallows `glEnable(GL_POINT_SMOOTH)`,
+  which TinyGL warns about every frame. Upstream's stars are colours 0.15 to
+  0.45 and 0.5 to 3 pixels across, so with no smooth points or real alpha they
+  are faint and few, and `smear` only starts to grow after a random 1 in 800
+  frames. It grows to 400 copies of 2,700 stars, 3.4 fps at 20, so the
+  registry capped it at 4 (`*smear: 0.01`, now gone). To bring it back, add its
+  registry entry (with that override), expected name, pin and leak test again.

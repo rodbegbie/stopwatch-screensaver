@@ -285,9 +285,6 @@ XLOCKMORE_HACK_WITH(dangerball, "DangerBall", kShortDelayOverrides);
 
 XLOCKMORE_HACK_WITH(cubenetic, "Cubenetic", kShortDelayOverrides);
 
-static const char *const kDeepStarsOverrides[] = {"*smear: 0.01", NULL};
-XLOCKMORE_HACK_WITH(deepstars, "DeepStars", kDeepStarsOverrides);
-
 #ifndef GLMATRIX_DENSITY
 #define GLMATRIX_DENSITY "12"
 #endif
@@ -406,7 +403,6 @@ const HackEntry *const g_hacks[] = {
     &kaleidocycle_hack,
     &dangerball_hack,
     &cubenetic_hack,
-    &deepstars_hack,
     &glmatrix_hack,
     &superquadrics_hack,
     &menger_hack,
