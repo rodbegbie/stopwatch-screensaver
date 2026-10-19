@@ -34,8 +34,8 @@ it with `uv run tools/score_hacks.py`.
 | S | 2D, and the unmodified source compiles against the shim | 3 |
 | M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 1 |
 | L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 40 |
-| XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 129 |
-| Ported | Already running on the device, so no rating | 110 |
+| XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 122 |
+| Ported | Already running on the device, so no rating | 117 |
 
 ## Speed
 
@@ -149,6 +149,14 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | CubicGrid (ticks 30, 27,000 points; not registered) | 5.6-6.0 | 137-148 ms | 32.3-36.0 ms | 0 ms | 1.66 MB more than Morph3D (display list) |
 | CubicGrid (ticks 20, 8,000 points; registered) | 11.2-12.4 | 48-52 ms | 32.2-36.1 ms | 0 ms | 0.49 MB more than Morph3D (display list) |
 | Rubik | 14.2-27.0 | 14.9-48.7 ms | 3.5-7.3 ms | 15.0-18.7 ms | 0 (PSRAM constant; heap fell 1.1 KB over the run) |
+| CubeStack | 16.8-38.0 | 13.9-46.1 ms | 8.4-12.5 ms | 0-2.9 ms | 0 (PSRAM constant on a second visit) |
+| Kaleidocycle | 30.4-34.8 | 15.9-21.7 ms | 6.3-11.3 ms | 0.5-5.1 ms | 0 (PSRAM constant on a second visit) |
+| DangerBall | 23.6-26.4 | 26.2-29.3 ms | 5.6-10.8 ms | 1.5-6.0 ms | 0 (PSRAM constant on a second visit) |
+| Cubenetic | 11.8-18.0 | 44.3-72.3 ms | 3.5-11.6 ms | 0.5-7.9 ms | 0 (PSRAM constant on a second visit) |
+| DeepStars (dropped; not registered) | 17.8-19.6 | 19.9-25.4 ms | 21.1-25.2 ms | 6.1-10.3 ms | 0 (PSRAM constant on a second visit) |
+| GLMatrix | 13.4-43.6 | 8.9-50.8 ms | 10.0-23.6 ms | 0-3.6 ms | 0 (PSRAM constant on a second visit) |
+| Superquadrics | 14.4-26.6 | 26.3-44.3 ms | 8.1-26.1 ms | 0-3.3 ms | 0 (PSRAM constant on a second visit) |
+| Menger | 12.8-44.0 | 11.2-66.3 ms | 6.4-16.3 ms | 0-5.0 ms | 0 (PSRAM constant on a second visit) |
 | Celtic (as copied; first port) | 1.0-20.4 | 29-1025 ms | 0.1-5.5 ms | 7.9-928 ms | none measurable |
 | Celtic (single precision, upstream graph sizes) | 1.0-20.2 | 5.6-151 ms | 0.8-6.6 ms | 9.4-1110 ms | 16 KB in one window (heap ran out) |
 | Celtic (single precision, graph sized to the screen, step scale 1) | 1.2-20.2 | 13.5-129 ms | 1.1-6.4 ms | 9.2-929 ms | none measurable |
@@ -955,6 +963,19 @@ white. Goop's registered row blends all three colour channels with one
 multiply (`float_polygon.h`) and clears only where last frame's blobs were
 (`span_erase.h`), which also shrinks its push.
 
+The 2026-10-18 GL batch was measured on the board in a 45 s rotation (eight
+windows each) and then in a 14 minute soak at 5 s a hack: no reset, panic or
+stack canary, and PSRAM (6,518,059 bytes) and heap (90,108 bytes, the
+plateau every hack reads after the first lap) were the same on the second
+visit of each. GLMatrix's step grows while the rain fills the screen, so its
+range starts from an empty screen: about 17 fps once full (half size, density
+12). Cubenetic was 1.2 fps (847 ms a step) with its 256 by 256 texture. As
+copied, GLMatrix was 6 fps (135-145 ms) at full size and density 20,
+Superquadrics 8-11 fps in double at full size, and DeepStars 3.4-10.7 fps
+(smear grows to 400 copies). Not judged by eye: only Rod can say what the
+panel shows (GLMatrix at half size is chunky). Rod dropped DeepStars after
+seeing it: about three dim stars and no smear.
+
 ## Suggested order for shim stage 2
 
 Shim gaps across 2D hacks, ranked so gaps that block hacks
@@ -1042,13 +1063,10 @@ needing few additions come first.
 | crackberg | gl | XL | - | - | `XNextEvent`, `XPeekEvent`, `XPending` | float-heavy | 1484 |
 | crumbler | gl | XL | - | - | - | - | 905 |
 | cube21 | gl | XL | - | - | - | - | 943 |
-| cubenetic | gl | XL | - | - | - | - | 616 |
-| cubestack | gl | XL | - | - | - | - | 453 |
 | cubestorm | gl | XL | - | - | - | - | 485 |
 | cubetwist | gl | XL | - | - | - | - | 579 |
 | cubocteversion | gl | XL | - | - | - | - | 5657 |
-| dangerball | gl | XL | - | - | - | - | 377 |
-| deepstars | gl | XL | - | - | - | - | 385 |
+| deepstars | gl | XL | - | ❌ | - | - | 385 |
 | discoball | gl | XL | - | - | - | - | 709 |
 | dnalogo | gl | XL | - | - | - | float-heavy | 3657 |
 | dumpsterfire | gl | XL | - | - | - | - | 845 |
@@ -1074,7 +1092,6 @@ needing few additions come first.
 | glforestfire | gl | XL | - | - | - | - | 1089 |
 | glhanoi | gl | XL | - | - | - | float-heavy | 2080 |
 | glknots | gl | XL | - | - | - | - | 455 |
-| glmatrix | gl | XL | - | - | - | readback | 1077 |
 | glplanet | gl | XL | - | - | - | float-heavy | 1111 |
 | glschool | gl | XL | - | - | - | - | 229 |
 | glslideshow | gl | XL | - | - | - | - | 1917 |
@@ -1093,7 +1110,6 @@ needing few additions come first.
 | jigglypuff | gl | XL | - | - | - | - | 1125 |
 | jigsaw | gl | XL | - | - | - | - | 1512 |
 | juggler3d | gl | XL | - | - | - | float-heavy | 3029 |
-| kaleidocycle | gl | XL | - | - | - | - | 584 |
 | kallisti | gl | XL | - | - | - | - | 357 |
 | klein | gl | XL | - | - | - | float-heavy | 3574 |
 | klondike | gl | XL | - | - | - | - | 803 |
@@ -1102,7 +1118,6 @@ needing few additions come first.
 | lockward | gl | XL | - | - | - | - | 964 |
 | mapscroller | gl | XL | - | - | - | readback | 1694 |
 | maze3d | gl | XL | - | - | - | - | 1964 |
-| menger | gl | XL | - | - | - | - | 574 |
 | mirrorblob | gl | XL | - | - | - | - | 1822 |
 | moebius | gl | XL | - | - | - | - | 794 |
 | moebiusgears | gl | XL | - | - | - | - | 446 |
@@ -1138,7 +1153,6 @@ needing few additions come first.
 | squirtorus | gl | XL | - | - | - | - | 1006 |
 | stairs | gl | XL | - | - | - | - | 601 |
 | starwars | gl | XL | - | - | - | - | 1080 |
-| superquadrics | gl | XL | - | - | - | - | 811 |
 | surfaces | gl | XL | - | - | - | float-heavy | 654 |
 | tangram | gl | XL | - | - | - | - | 1079 |
 | timetunnel | gl | XL | - | - | - | - | 1259 |
@@ -1250,15 +1264,22 @@ needing few additions come first.
 | xjack | 2d | - | 0.1-13.8 ms measured | ✅ | `FcChar8`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall`, `screen_number` | pixmaps | 508 |
 | xmatrix | 2d | - | - | ✅ | `images/gen/matrix1_png.h`, `images/gen/matrix1b_png.h`, `images/gen/matrix2_png.h`, `images/gen/matrix2b_png.h`, `matrix1_png`, `matrix1b_png`, `matrix2_png`, `matrix2b_png` | pixmaps, readback | 1915 |
 | b_lockglue | gl | - | 27-101 ms measured | ✅ | - | - | 240 |
+| cubenetic | gl | - | 44.3-72.3 ms measured | ✅ | - | - | 616 |
+| cubestack | gl | - | 13.9-46.1 ms measured | ✅ | - | - | 453 |
 | cubicgrid | gl | - | - | ✅ | - | - | 322 |
+| dangerball | gl | - | 26.2-29.3 ms measured | ✅ | - | - | 377 |
 | etruscanvenus | gl | - | 53.2-78.6 ms measured | ✅ | - | - | 2761 |
 | gears | gl | - | 65-330 ms measured | ✅ | - | - | 953 |
+| glmatrix | gl | - | 8.9-50.8 ms measured | ✅ | - | readback | 1077 |
 | graphstat | gl | - | 35-67.8 ms measured | ✅ | - | - | 760 |
 | hextrail | gl | - | - | ✅ | - | - | 782 |
+| kaleidocycle | gl | - | 15.9-21.7 ms measured | ✅ | - | - | 584 |
+| menger | gl | - | 11.2-66.3 ms measured | ✅ | - | - | 574 |
 | morph3d | gl | - | 48-86 ms measured | ✅ | - | - | 841 |
 | pipes | gl | - | 2-7.8 ms measured | ✅ | - | - | 1208 |
 | rubik | gl | - | 14.9-48.7 ms measured | ✅ | - | - | 2156 |
 | stonerview | gl | - | 12.6-15.6 ms measured | ✅ | - | - | 156 |
+| superquadrics | gl | - | 26.3-44.3 ms measured | ✅ | - | - | 811 |
 | unknownpleasures | gl | - | 162-169 ms measured | ✅ | - | readback | 736 |
 
 ## Failed ports
@@ -1268,6 +1289,8 @@ needing few additions come first.
 - **boing**: 8.3 fps and plain on a small screen; Rod dropped it, scanlines cost
   83 ms
 - **companion**: about 71,000 vertices a cube, est. 2-3 fps; Rod dropped it
+- **deepstars**: about three dim stars and no smear (TinyGL has no alpha or
+  smooth points); Rod dropped it
 - **floppy**: 630 KB model won't fit the 3 MB app partition, est. 5 fps; Rod
   dropped it
 - **flurry**: needs GL TinyGL lacks, est. under 1 fps, issue #70

@@ -497,3 +497,81 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   the board it ran at 54-62 fps (mean 57.4), a 5-7 ms step under its own
   9.5 ms wait, and held nothing in PSRAM: it is paced by its delay, not by the
   work.
+- The 2026-10-18 GL batch (GLMatrix, CubeStack, Kaleidocycle, DangerBall,
+  Cubenetic, DeepStars, Superquadrics, Menger) is eight `USE_GL` wrappers over
+  unmodified sources. Most GL hacks wait 20-40 ms after a frame (`*delay`), and
+  the loop credits only the push against it, so `kShortDelayOverrides` (10 ms)
+  took CubeStack from 16.5 to 22 fps, Kaleidocycle 19.6 to 33 and DangerBall
+  16.5 to 25 with no other change. Their motion is per frame, so it is faster
+  too, nearer upstream's pace on a desktop.
+- CubeStack (`cubestack_gl.c`) blends `GL_SRC_ALPHA, GL_ONE` with an alpha of
+  opacity times each face's transition, and TinyGL ignores vertex alpha: the
+  wrapper's `glColor4fv` scales its colour (the first frame is black, where
+  10,883 pixels were lit without it), so the cubes are translucent as upstream
+  draws them. Upstream wraps its palette index with `>` instead of `>=`, so
+  after about 12,900 frames it reads `colors[32]` of 32 (an AddressSanitizer
+  overflow in a 13,500 frame test): the wrapper wraps it before each draw.
+  Kaleidocycle also blends but its faces are opaque, so it was not folded.
+- Kaleidocycle starts with `count = 0`, so its first frame computes a piece's
+  angle as 0 / 0: a NaN that reaches TinyGL's viewport conversion and is cast to
+  an int (the trail review found it with `-fsanitize=float-cast-overflow`:
+  `PLATFORMIO_BUILD_FLAGS='-fsanitize=float-cast-overflow
+  -fno-sanitize-recover=all' pio run -e dump`, then dump one frame).
+  `tools/kaleidocycle_patch.py` guards the denominator; `kaleidocycle_gl.c`
+  includes the build's patched copy (`generated/kaleidocycle_patched.c`, written
+  by `patch_float_literals.py` with no literal pass), and frames are unchanged.
+- Superquadrics' `myrand` multiplies in `float` (upstream too), so the largest
+  `LRAND()` rounds up and `myrand(4)` is 4, one past `pats[4][4]`.
+  `tools/superquadrics_patch.py` clamps it at build time; its test compiles the
+  real function with `LRAND()` fixed at 2147483647 (the trail review found it).
+- GLMatrix (`glmatrix_single_gl.c`) keeps its look in alpha: the texture's
+  alpha is the glyph image's green channel and each glyph's brightness is the
+  vertex alpha, drawn `GL_SRC_ALPHA, GL_ONE`. TinyGL has none, and the shim's
+  `glTexImage2D` drops alpha, so glyph cells were solid green squares. The
+  wrapper premultiplies the texture as it uploads and has `glColor4f` scale its
+  colour: an additive blend cannot tell the difference. `xlockmore.h` must come
+  before the `#define glTexImage2D` (it brings in `glshim.h`, whose macro would
+  win). `matrix3.png` is deflated by `gl_textures.py` (`--deflate`). The step
+  grows as the rain fills the screen (9 to 140 ms over about 80 s at full size)
+  and fill is 100 of 145 ms: it renders at half size (`-DGLMATRIX_FULL` keeps
+  full size) with `*density: 12` (26 strips, not 44) and `*delay: 10000`, about
+  17 fps once full. Single precision gave byte-identical frames and about 3 ms.
+  Upstream's brightness wave index runs 1 to `WAVE_SIZE` and the table has
+  `WAVE_SIZE` entries, so a zero remainder read the next screen's state, a
+  glyph at a junk brightness now and then (the trail review found it);
+  `tools/glmatrix_patch.py` wraps it to 0, the brightest entry, which follows 1
+  in the cycle. Its test compiles the hack's own statement over every row and
+  wave position.
+  The vertex alpha is clamped to 1 (`hacks/fold_alpha.h`, tested directly): a
+  spinner glyph gets 1.5 times its brightness, and TinyGL masks a channel past
+  full instead of saturating it, so a reproduced alpha of 1.087 gave green 5/63
+  and the leading glyphs went dark (a trail review finding). A frame metric
+  could not see it (a handful of pixels), so the helper is a plain header.
+  Its texture setup also packs `a << 24` with an `unsigned char` promoted to a
+  signed `int`, which overflows for an alpha of 128 or more (a sanitizer sweep
+  found it): the patch widens it to `unsigned long`, the same bits.
+- Cubenetic (`cubenetic_single_gl.c`, `tools/cubenetic_patch.py`) works out a
+  256 by 256 plasma texture every frame, a square root per wave per pixel: 847
+  ms a step, 1.2 fps. At 64 by 64 (`-DCUBENETIC_TEXTURE_SIZE`) it is 12-18 fps.
+  The restart leak test found that `free_cube` never frees the cube array
+  (320 bytes a start); the wrapper frees it. It passes the addresses of
+  `double` locals to `get_position` and `get_rotation`, so it has the adapters
+  HexTrail has.
+- Superquadrics and Menger draw every face as a `GL_POLYGON`, which TinyGL
+  draws as nothing (issue #80): both were black. Each wrapper maps it to a
+  triangle fan, as Rubik does. Both render at half size
+  (`-DSUPERQUADRICS_FULL`, `-DMENGER_FULL`); Superquadrics is single precision
+  (13 to 19 fps, 8 to 11 before). Menger's depth 3 is 36,000 triangles and 920
+  ms a frame, so the registry caps `*maxDepth` at 2 (11 to 44 fps, the low end
+  while a level's display list is built).
+- DeepStars was dropped after Rod saw it: about three dim stars on screen and
+  no smear. Its source, notices row and `deepstars_gl.c` stay, the wrapper out
+  of the build filter. The wrapper draws each smear copy at a lower alpha
+  folded into the colour (TinyGL's blend is right only for black and white,
+  so the blend is never enabled) and swallows `glEnable(GL_POINT_SMOOTH)`,
+  which TinyGL warns about every frame. Upstream's stars are colours 0.15 to
+  0.45 and 0.5 to 3 pixels across, so with no smooth points or real alpha they
+  are faint and few, and `smear` only starts to grow after a random 1 in 800
+  frames. It grows to 400 copies of 2,700 stars, 3.4 fps at 20, so the
+  registry capped it at 4 (`*smear: 0.01`, now gone). To bring it back, add its
+  registry entry (with that override), expected name, pin and leak test again.

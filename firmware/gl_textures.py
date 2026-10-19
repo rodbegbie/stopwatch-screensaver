@@ -1,5 +1,5 @@
 """PlatformIO pre-build script: converts the textures GL hacks load
-(BlockTube's blocktube.png) into the raw blobs they include as
+(GLMatrix's matrix3.png) into the raw blobs they include as
 images/gen/<name>_png.h (see src/x11shim/include/ximage-loader.h for the
 format), as matrix_glyphs.py does for XMatrix, and puts them on the include
 path. The images are read from vendor/ and never committed. Needs uv, because
@@ -21,7 +21,7 @@ images = xs_vendor.upstream(repo) / "hacks" / "images"
 converter = repo / "tools" / "make_logo_blob.py"
 generated = Path(env.subst("$BUILD_DIR")) / "generated"  # noqa: F821
 
-for name in ("blocktube",):
+for name in ("matrix3",):
     image = images / f"{name}.png"
     header = generated / "images" / "gen" / f"{name}_png.h"
     if not image.is_file():
@@ -48,6 +48,7 @@ for name in ("blocktube",):
             str(image),
             "--name",
             f"{name}_png",
+            "--deflate",
             "-o",
             str(partial),
         ],

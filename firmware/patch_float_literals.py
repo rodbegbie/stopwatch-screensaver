@@ -11,9 +11,13 @@ project = Path(env["PROJECT_DIR"])  # noqa: F821
 sys.path.insert(0, str(project.parent / "tools"))
 import binaryring_patch
 import celtic_patch
+import cubenetic_patch
 import etruscanvenus_patch
 import fireworkx_patch
 import float_literals
+import glmatrix_patch
+import kaleidocycle_patch
+import superquadrics_patch
 import xspirograph_patch
 
 generated = Path(env.subst("$BUILD_DIR")) / "generated"  # noqa: F821
@@ -55,6 +59,9 @@ for name in ("braid",) + (
     "flame",
     "substrate",
     "bubble3d",
+    "glmatrix",
+    "cubenetic",
+    "superquadrics",
 ):
     source = (project / "src" / "hacks" / name / f"{name}.c").read_text()
     if name == "fireworkx":
@@ -65,6 +72,13 @@ for name in ("braid",) + (
         source = celtic_patch.scale_the_animation_step(source)
     if name == "etruscanvenus":
         source = etruscanvenus_patch.size_the_grid(source)
+    if name == "cubenetic":
+        source = cubenetic_patch.size_the_texture(source)
+    if name == "glmatrix":
+        source = glmatrix_patch.keep_the_wave_index_in_range(source)
+        source = glmatrix_patch.shift_the_alpha_unsigned(source)
+    if name == "superquadrics":
+        source = superquadrics_patch.keep_myrand_in_range(source)
     if name == "bubble3d":
         source = source.replace(
             '#include "bubble3d.h"', '#include "hacks/bubble3d/bubble3d.h"'
@@ -75,6 +89,14 @@ for name in ("braid",) + (
         source = binaryring_patch.float_random_scale(source)
     patched = float_literals.float_literals(source)
     target = generated / f"{name}_floatlit.c"
+    if not target.exists() or target.read_text() != patched:
+        target.write_text(patched)
+
+# Patched copies that keep their double precision and their literals: only the
+# one change.
+for name, patch in (("kaleidocycle", kaleidocycle_patch.guard_the_zero_count),):
+    patched = patch((project / "src" / "hacks" / name / f"{name}.c").read_text())
+    target = generated / f"{name}_patched.c"
     if not target.exists() or target.read_text() != patched:
         target.write_text(patched)
 

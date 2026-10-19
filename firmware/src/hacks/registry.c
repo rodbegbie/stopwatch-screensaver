@@ -274,6 +274,30 @@ XLOCKMORE_HACK_REPAINTS_ALL_WITH(bubble3d, "Bubble3D", kBubble3DOverrides);
 static const char *const kRubikOverrides[] = {"*ncolors: 64", NULL};
 XLOCKMORE_HACK_WITH(rubik, "Rubik", kRubikOverrides);
 
+/* These GL hacks wait 20-30 ms after every frame, which the board's step and
+ * push do not need: 10 ms, as Gears and Morph3D do. */
+static const char *const kShortDelayOverrides[] = {"*delay: 10000", NULL};
+XLOCKMORE_HACK_WITH(cubestack, "CubeStack", kShortDelayOverrides);
+
+XLOCKMORE_HACK_WITH(kaleidocycle, "Kaleidocycle", kShortDelayOverrides);
+
+XLOCKMORE_HACK_WITH(dangerball, "DangerBall", kShortDelayOverrides);
+
+XLOCKMORE_HACK_WITH(cubenetic, "Cubenetic", kShortDelayOverrides);
+
+#ifndef GLMATRIX_DENSITY
+#define GLMATRIX_DENSITY "12"
+#endif
+static const char *const kGLMatrixOverrides[] = {"*density: " GLMATRIX_DENSITY,
+                                                 "*delay: 10000", NULL};
+XLOCKMORE_HACK_WITH(glmatrix, "GLMatrix", kGLMatrixOverrides);
+
+XLOCKMORE_HACK_WITH(superquadrics, "Superquadrics", kShortDelayOverrides);
+
+static const char *const kMengerOverrides[] = {"*delay: 10000",
+                                               "*maxDepth: 2", NULL};
+XLOCKMORE_HACK_WITH(menger, "Menger", kMengerOverrides);
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -375,6 +399,13 @@ const HackEntry *const g_hacks[] = {
     &bubble3d_hack,
     &bubbles_hack,
     &rubik_hack,
+    &cubestack_hack,
+    &kaleidocycle_hack,
+    &dangerball_hack,
+    &cubenetic_hack,
+    &glmatrix_hack,
+    &superquadrics_hack,
+    &menger_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif
