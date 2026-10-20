@@ -18,6 +18,13 @@ embedded-specific choices as you make them. See `README.md` for setup and
   defines `HAVE_AFTER_DARK_TOASTERS`; without it the hack is left out, with a
   message. A present but bad image fails the build. The hack stays last in
   `g_hacks[]`, under `#ifdef HAVE_AFTER_DARK_TOASTERS`.
+- `firmware/badge_font.py` (ours) is a PlatformIO pre-script: it runs
+  `tools/make_badge_font.py` on `vendor/pixChicago.ttf` (or the path in
+  `PIX_CHICAGO_TTF`) to make the name badge's font header, regenerating it
+  when a stamp of the font's path and sha256, the tool's sha256 and the pixel
+  size differs. With the font it defines `HAVE_PIX_CHICAGO` (badge at x7);
+  without it the badge keeps `Font8x8C64` at x8, with a message. A present but
+  bad font fails the build. The font's licence is unclear: never commit it.
 - `firmware/src/glshim/` (ours) is the GL layer for OpenGL hacks, over
   `firmware/src/tinygl/` (TinyGL, byte-identical, patched at build by
   `tools/tinygl_patch.py`). `xs_support/glx/` holds the copied GL helpers.
