@@ -31,6 +31,10 @@ extern "C" void xshim_set_grab_image(const unsigned char *blob, unsigned long si
 #include "x11shim/xft_font.h"
 /* font_atlas.py writes this header into the build directory. */
 #include "special_elite.h"
+#ifdef HAVE_PIX_CHICAGO
+/* badge_font.py writes this header when vendor/pixChicago.ttf is present. */
+#include "badge_font/pix_chicago.h"
+#endif
 #include "lgfx/utility/lgfx_qrcode.h"
 /* The encoder's header defines generic names that clash with the rest of the
  * code. */
@@ -63,7 +67,21 @@ static const char *const kForcedStart = nullptr;
 #define BADGE_NAME "Rod\nBegbie"
 #endif
 static const char *const kBadgeName = BADGE_NAME;
-static const int kBadgeScale = 8;
+
+/* pixChicago is a pixel font, so it is drawn at a whole-number scale of its
+ * 8 px grid (-DBADGE_SCALE=n to try another); without it, M5GFX's 8x8 font. */
+#ifdef HAVE_PIX_CHICAGO
+#ifndef BADGE_SCALE
+#define BADGE_SCALE 7
+#endif
+static const lgfx::IFont *const kBadgeFont = &pix_chicago_font;
+#else
+#ifndef BADGE_SCALE
+#define BADGE_SCALE 8
+#endif
+static const lgfx::IFont *const kBadgeFont = &fonts::Font8x8C64;
+#endif
+static const int kBadgeScale = BADGE_SCALE;
 
 /* The QR code overlay's target; build with -DQR_URL=\"https://example.com\". */
 #ifndef QR_URL
@@ -293,7 +311,11 @@ static void printStats(const char *tag) {
  * as the hack left it, since hacks draw incrementally. M5Canvas wraps the
  * canvas buffer so M5GFX's fonts can draw into it; the DejaVu fonts are 1-bit,
  * so only pure black and white are written (the same in either byte order). */
+#ifdef HAVE_PIX_CHICAGO
+static const int kPatchMaxH = 248; /* two 13 px lines at x9, plus the outline */
+#else
 static const int kPatchMaxH = 140;
+#endif
 
 struct Patch {
   int x, y, w, h;
@@ -512,8 +534,8 @@ static void present() {
     stampText(&namePatch, g_hacks[runner_index(runner)]->name, kSize / 2,
               kNameY, &fonts::DejaVu24);
   if (overlay_badge_visible(&overlay))
-    stampText(&namePatch, kBadgeName, kSize / 2, kSize / 2,
-              &fonts::Font8x8C64, kBadgeScale);
+    stampText(&namePatch, kBadgeName, kSize / 2, kSize / 2, kBadgeFont,
+              kBadgeScale);
   if (overlay_qr_visible(&overlay) && qrPixels) stampQr(&infoPatch);
   if (overlay_fps_visible(&overlay) || overlay_battery_visible(&overlay)) {
     char text[16];
