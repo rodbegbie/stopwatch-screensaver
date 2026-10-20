@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M5BAFN9Q62RQ2EA0ADE6AVBY",
+  "strategy": "manual-commit",
+  "branch": "feature/ARS-55-port-circuit",
+  "checkpoints_count": 5,
+  "files_touched": [
+    "THIRD_PARTY_NOTICES.md",
+    "firmware/src/hacks/circuit/circuit.c",
+    "firmware/src/hacks/circuit_gl.c",
+    "firmware/src/hacks/registry.c",
+    "firmware/test/test_hacks/test_hacks.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 64,
+    "cache_creation_tokens": 42242,
+    "cache_read_tokens": 10936489,
+    "output_tokens": 21747,
+    "api_call_count": 27
+  }
+}
