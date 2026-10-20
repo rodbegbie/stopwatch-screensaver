@@ -582,12 +582,12 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   host run aborted in the 3,000-frame test on two over-reads (see `gl.md`).
   `free_circuit` never frees the components still on the board, up to ten, so
   every stop leaked them: the wrapper frees them (payload, a diode's band, the
-  component) before upstream's free, and the leak test fails without it. On
-  the board, over 240 s pinned: 8.4-11.4 fps (mean 9.7), step 60-93 ms growing
-  as components arrive, push 24.8 ms (every frame is a full push: the grid
-  fills the screen), no wait, PSRAM flat. `gl_budget.py` predicted 79-85 ms a
-  frame (12 fps) against about 103 measured (step plus push). It counts lines
-  as free, and they are not (below).
+  component) before upstream's free, and the leak test fails without it. At
+  full size on the board, over 240 s pinned: 8.4-11.4 fps (mean 9.7), step
+  60-93 ms growing as components arrive, push 24.8 ms (every frame is a
+  full push: the grid fills the screen), no wait, PSRAM flat. `gl_budget.py`
+  predicted 79-85 ms a frame (12 fps) against about 103 measured (step plus
+  push). It counts lines as free, and they are not (below).
   A single-precision build (ARS-55, committed and reverted: `b32fe24`,
   `bc549b2`) took `tools/softdouble_report.py`'s count in the wrapper's object
   from 198 call sites to 14 (the hack has no `double` keyword; its literals,
@@ -600,3 +600,12 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   triangles and fills (growing from 1 ms to 32 ms as components arrive), and
   the hack's own code is 6.3 ms: the most any arithmetic change could win is
   8 percent. The lever is the grid's lines, not Circuit's maths.
+  So `circuit_gl.c` renders at half the width and height
+  (`glshim_set_render_scale(2)`, as Menger does; `-DCIRCUIT_FULL` keeps full
+  size). Alternating the two builds on the board, two rounds each (about 57
+  windows a build): full 9.67 fps (8.4-11.6, step 78.6 ms), half 14.78 fps
+  (13.0-18.4, step 42.1 ms); the push is 24.9 ms either way, so it is now over
+  half of the frame. Rod asked for it after seeing the profile; the look is
+  2-pixel grid lines and blockier edges (a resistor's bands, the display's
+  decimal point). It costs about 217 KB more PSRAM (6,049,231 against
+  5,832,095 bytes, constant) and re-pinned the frame hash.
