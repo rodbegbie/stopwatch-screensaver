@@ -187,6 +187,7 @@ implied warranty.
 | `firmware/src/hacks/glmatrix/glmatrix.c` | Copyright (c) 2003-2018 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/superquadrics/superquadrics.c` | Ed Mackey (1987, 1997), later changes by the xlockmore and xscreensaver authors | xlock permission notice (below) |
 | `firmware/src/hacks/menger/menger.c` | Copyright (c) 2001-2014 Jamie Zawinski; Copyright (c) 2002 Aurelien Jacobs | jwz permission notice (above) |
+| `firmware/src/hacks/circuit/circuit.c` | Copyright (c) 2001-2015 Ben Buxton | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/sphere.c` | Copyright (c) 2002 Paul Bourke, Copyright (c) 2010-2026 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/sphere.h` | Copyright (c) 2001-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/teapot.c` | Copyright (c) Mark J. Kilgard, 1994; (c) Copyright 1993, Silicon Graphics, Inc. | Silicon Graphics notice (below) |
