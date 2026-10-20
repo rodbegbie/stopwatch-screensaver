@@ -40,11 +40,12 @@ __attribute__((constructor)) static void circuit_frees_its_components(void) {
   circuit_xlockmore_function_table.hack_free = circuit_free_with_components;
 }
 
-/* The board's 156 grid lines were 40 ms of a 79.8 ms step and the clear 15 ms
- * (a GL profile): both shrink with the picture, so it renders at half the
- * width and height (glshim_set_render_scale), as menger_gl.c does.
- * `-DCIRCUIT_FULL` keeps full size. */
-#ifndef CIRCUIT_FULL
+/* `-DCIRCUIT_HALF` renders at half the width and height
+ * (glshim_set_render_scale), as menger_gl.c does. The board's grid lines were
+ * 40 ms of a 79.8 ms step and the clear 15 ms, and both shrink with the
+ * picture: 9.7 fps became 14.8, but the fine grid lines come out blocky, so it
+ * is opt-in. A scale-2 hack cannot overlap its push (see the registry). */
+#ifdef CIRCUIT_HALF
 static void init_circuit_half(ModeInfo *mi) {
   glshim_set_render_scale(2);
   init_circuit(mi);

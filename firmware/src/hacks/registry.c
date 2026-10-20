@@ -298,7 +298,14 @@ static const char *const kMengerOverrides[] = {"*delay: 10000",
                                                "*maxDepth: 2", NULL};
 XLOCKMORE_HACK_WITH(menger, "Menger", kMengerOverrides);
 
+/* Circuit clears and redraws every frame, so its push can overlap the next
+ * step, except at half size: a scale-2 hack's swap writes only its box
+ * (`-DCIRCUIT_HALF`, see device-display.md). */
+#ifdef CIRCUIT_HALF
 XLOCKMORE_HACK_WITH(circuit, "Circuit", kShortDelayOverrides);
+#else
+XLOCKMORE_HACK_REPAINTS_ALL_WITH(circuit, "Circuit", kShortDelayOverrides);
+#endif
 
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,

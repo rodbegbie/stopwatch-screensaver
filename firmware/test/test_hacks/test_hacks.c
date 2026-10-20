@@ -600,7 +600,7 @@ static const uint64_t kBaseline[] = {
     0xd22a4d38abcc4c29ull, /* GLMatrix: taken after looking at the frames */
     0x48cf40bfdc581fb9ull, /* Superquadrics: taken after looking at the frames */
     0x55d4faaa474ed1c9ull, /* Menger: taken after looking at the frames */
-    0x49080b0ff996e799ull, /* Circuit: taken after looking at the frames (half resolution) */
+    0x63c7a4c072b4282dull, /* Circuit: taken after looking at the frames */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
