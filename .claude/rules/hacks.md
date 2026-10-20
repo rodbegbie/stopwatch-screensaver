@@ -628,11 +628,18 @@ Moved verbatim from the Gotchas section of AGENTS.md.
 - Phosphor (`phosphor_tty.c`, ARS-58) is an unmodified `phosphor.c` and
   `ansi-tty.c` behind a wrapper. Upstream reads a program on a pty
   (`xscreensaver-text`); the wrapper renames the `textclient_*` calls to a
-  text source of its own, a canned boot log typed a character a frame that
-  clears and loops (`kSession`; the shared `textclient.h` stays a NULL
-  source, which XMatrix relies on). The text keeps to the columns the round
-  panel shows on each row: the corners of the 25 by 15 grid are off the
-  glass, and the first version's header sat in one. The wrapper overrides
+  text source of its own (`phosphor_text.h`, tested directly): it `cat`s one
+  of seven public-domain poems, picked at random and never the one just shown,
+  typed a character a frame. The shared `textclient.h` stays a NULL source,
+  which XMatrix relies on. `firmware/assets/phosphor-poems.txt` is the source
+  text; `tools/make_phosphor_poems.py` word-wraps it to 18 columns (4 in, the
+  columns the round panel shows on rows 2 to 13: the corners of the 25 by 15
+  grid are off the glass) and pages it into `phosphor_poems.h`. Nothing
+  scrolls: Phosphor leaves a ghost of every character a scroll moves, which
+  read as noise under the new text, so a page ends with `--More--`, a pause
+  byte (`\001`) and then a clear. Only poems published before 1931 go in
+  (`THIRD_PARTY_NOTICES.md`); the Raven, Ozymandias, two Frost poems, Williams's
+  Red Wheelbarrow (1923), Blake and Dickinson are in. The wrapper overrides
   `*phosphorScale` to 3 (upstream's 6 is a 12 by 7 grid on 466 pixels) and
   `*cache: False` (a cache of every fade of every glyph is about 20 MB). The
   builtin 6 by 10 font is `images/gen/6x10font_png.h`, a blob made by
@@ -644,8 +651,10 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   Upstream's free leaves the tty grid, the Xft handle, three of its four
   glyph sets' structs and the first font pass's three GCs (it runs the pass
   twice and overwrites its GCs); the wrapper frees all of them. On the board:
-  11.0-17.8 fps (mean 16.0), paced by its own 50 ms delay while typing (step
-  0.6-2 ms) and 20-36 ms when the screen clears and every cell fades at once.
+  13.0-17.6 fps (mean 16.2), paced by its own 50 ms delay while typing (step
+  1.4-2 ms) and up to 22 ms when a page clears and every cell fades at once.
   `ansi-tty.c` writes to `stderr` only with `debug_p` set, and on the board
   that expands to `_impure_ptr`, which the toolchain lacks: `blurb.h` gives
-  the file a null `stderr` there.
+  the file a null `stderr` there. `pio test` and `pio run -e stopwatch` must
+  not overlap: the test run clears shared build state and the flash fails
+  with a missing `firmware.elf`.
