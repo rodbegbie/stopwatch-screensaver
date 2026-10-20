@@ -157,6 +157,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | GLMatrix | 13.4-43.6 | 8.9-50.8 ms | 10.0-23.6 ms | 0-3.6 ms | 0 (PSRAM constant on a second visit) |
 | Superquadrics | 14.4-26.6 | 26.3-44.3 ms | 8.1-26.1 ms | 0-3.3 ms | 0 (PSRAM constant on a second visit) |
 | Menger | 12.8-44.0 | 11.2-66.3 ms | 6.4-16.3 ms | 0-5.0 ms | 0 (PSRAM constant on a second visit) |
+| Circuit | 8.4-11.4 | 60.4-92.9 ms | 24.7-27.2 ms | 0 ms | 0 (PSRAM constant; heap fell 1 KB in the first minute, then held) |
 | Celtic (as copied; first port) | 1.0-20.4 | 29-1025 ms | 0.1-5.5 ms | 7.9-928 ms | none measurable |
 | Celtic (single precision, upstream graph sizes) | 1.0-20.2 | 5.6-151 ms | 0.8-6.6 ms | 9.4-1110 ms | 16 KB in one window (heap ran out) |
 | Celtic (single precision, graph sized to the screen, step scale 1) | 1.2-20.2 | 13.5-129 ms | 1.1-6.4 ms | 9.2-929 ms | none measurable |
@@ -1263,7 +1264,7 @@ needing few additions come first.
 | xjack | 2d | - | 0.1-13.8 ms measured | ✅ | `FcChar8`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall`, `screen_number` | pixmaps | 508 |
 | xmatrix | 2d | - | - | ✅ | `images/gen/matrix1_png.h`, `images/gen/matrix1b_png.h`, `images/gen/matrix2_png.h`, `images/gen/matrix2b_png.h`, `matrix1_png`, `matrix1b_png`, `matrix2_png`, `matrix2b_png` | pixmaps, readback | 1915 |
 | b_lockglue | gl | - | 27-101 ms measured | ✅ | - | - | 240 |
-| circuit | gl | - | - | ✅ | - | - | 2106 |
+| circuit | gl | - | 60.4-92.9 ms measured | ✅ | - | - | 2106 |
 | cubenetic | gl | - | 44.3-72.3 ms measured | ✅ | - | - | 616 |
 | cubestack | gl | - | 13.9-46.1 ms measured | ✅ | - | - | 453 |
 | cubicgrid | gl | - | - | ✅ | - | - | 322 |
