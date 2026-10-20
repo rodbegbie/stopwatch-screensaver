@@ -1958,6 +1958,256 @@ void test_two_gl_polygons_in_a_row_each_start_afresh(void) {
   TEST_ASSERT_EQUAL_INT(lit_pixels(), both);
 }
 
+/* Line batching (ARS-56). A near-vertical line steps to a new row every pixel,
+ * so in the depth and colour buffers each pixel is a fresh PSRAM cache line:
+ * Circuit's 156 grid lines were 40 ms of a 79.8 ms step, and a cache simulation
+ * of their pixels counts about one miss a pixel. Lines of one glBegin(GL_LINES)
+ * batch that move in lockstep (same major axis, step count and start) are drawn a few pixels at a time in turn, so neighbours share cache
+ * lines. Every pixel, in both buffers, must come out exactly as drawing the
+ * lines one after another: a batch of one line takes the original code. */
+typedef struct {
+  float x1, y1, x2, y2, z1, z2;
+  int colour, colour2; /* colour2 < 0: one colour along the line */
+} TestLine;
+
+static const float kLineColours[6][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1},
+                                         {1, 1, 0}, {0, 1, 1}, {1, 0, 1}};
+static unsigned g_line_rng;
+
+static unsigned line_rand(void) {
+  g_line_rng = g_line_rng * 1664525u + 1013904223u;
+  return g_line_rng >> 8;
+}
+
+static float line_frand(float lo, float hi) {
+  return lo + (hi - lo) * ((line_rand() & 0xFFFF) / 65535.0f);
+}
+
+static void emit_line(const TestLine *l) {
+  glColor3fv((GLfloat *)kLineColours[l->colour]);
+  glVertex3f(l->x1, l->y1, l->z1);
+  if (l->colour2 >= 0) glColor3fv((GLfloat *)kLineColours[l->colour2]);
+  glVertex3f(l->x2, l->y2, l->z2);
+}
+
+static void draw_lines_as_one_batch(const TestLine *l, int n) {
+  glBegin(GL_LINES);
+  for (int i = 0; i < n; i++) emit_line(&l[i]);
+  glEnd();
+}
+
+static void draw_lines_one_by_one(const TestLine *l, int n) {
+  for (int i = 0; i < n; i++) {
+    glBegin(GL_LINES);
+    emit_line(&l[i]);
+    glEnd();
+  }
+}
+
+/* Parallel lines that differ by whole pixels across their minor axis, three at a
+ * time as Circuit's grid draws them, plus lines of every other kind. */
+static int build_line_scene(TestLine *out, unsigned seed) {
+  g_line_rng = seed * 2654435761u + 12345u;
+  int n = 0;
+  for (int g = 0; g < 5; g++) {
+    const int kind = (int)(line_rand() % 3);
+    const float x1 = line_frand(-0.9f, 0.9f), y1 = line_frand(-0.9f, 0.9f);
+    float dx = line_frand(-0.15f, 0.15f), dy = line_frand(0.5f, 1.4f);
+    if (kind == 1) {
+      const float t = dx;
+      dx = dy;
+      dy = t;
+    } else if (kind == 2) {
+      dx = dy = line_frand(0.4f, 1.0f);
+    }
+    const int steep = fabsf(dy) > fabsf(dx);
+    const float z = line_frand(-0.5f, 0.5f);
+    const float dz = (line_rand() % 3 == 0) ? 0.0f : line_frand(-0.3f, 0.3f);
+    for (int k = 0; k < 3 && n < 40; k++) {
+      const float shift = (float)(line_rand() % 3) * PIXEL_NDC;
+      const float zz = (line_rand() & 1) ? z : z + 0.02f * (float)k;
+      TestLine l = {x1 + (steep ? shift : 0), y1 + (steep ? 0 : shift),
+                    x1 + dx + (steep ? shift : 0), y1 + dy + (steep ? 0 : shift),
+                    zz, zz + dz, (int)(line_rand() % 6), -1};
+      out[n++] = l;
+    }
+  }
+  for (int e = 0; e < 10 && n < 40; e++) {
+    const float z = (float)((int)(line_rand() % 3) - 1) * 0.4f;
+    TestLine l = {line_frand(-1.3f, 1.3f), line_frand(-1.3f, 1.3f), line_frand(-1.3f, 1.3f),
+                  line_frand(-1.3f, 1.3f), z, (line_rand() & 1) ? z : z + line_frand(-0.3f, 0.3f),
+                  (int)(line_rand() % 6), (line_rand() % 4 == 0) ? (int)(line_rand() % 6) : -1};
+    if (line_rand() % 7 == 0) l.x2 = l.x1, l.y2 = l.y1; /* a single pixel */
+    out[n++] = l;
+  }
+  return n;
+}
+
+static void draw_occluder(void) {
+  glColor3f(1, 1, 1);
+  glBegin(GL_TRIANGLES);
+  glVertex3f(-0.8f, -0.8f, 0.0f);
+  glVertex3f(0.2f, -0.6f, 0.0f);
+  glVertex3f(-0.2f, 0.7f, 0.0f);
+  glEnd();
+}
+
+static void snapshot_buffers(uint16_t *colour, uint16_t *depth) {
+  memcpy(colour, cv.px, sizeof(uint16_t) * SIZE * SIZE);
+  memcpy(depth, gl_get_context()->zb->zbuf, sizeof(uint16_t) * SIZE * SIZE);
+}
+
+/* Draws a scene as one batch and then line by line on a cleared canvas, and
+ * returns whether both buffers match. `lockstep` receives how many lines the
+ * batched path drew. */
+static int batched_lines_match(const TestLine *l, int n, unsigned long *lockstep) {
+  const size_t bytes = sizeof(uint16_t) * SIZE * SIZE;
+  uint16_t *a_colour = malloc(bytes), *a_depth = malloc(bytes);
+  uint16_t *b_colour = malloc(bytes), *b_depth = malloc(bytes);
+  TEST_ASSERT_TRUE(a_colour && a_depth && b_colour && b_depth);
+
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  draw_occluder();
+  const unsigned long before = zb_line_lockstep_lines;
+  draw_lines_as_one_batch(l, n);
+  *lockstep = zb_line_lockstep_lines - before;
+  snapshot_buffers(a_colour, a_depth);
+
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  draw_occluder();
+  draw_lines_one_by_one(l, n);
+  snapshot_buffers(b_colour, b_depth);
+
+  const int same = memcmp(a_colour, b_colour, bytes) == 0 && memcmp(a_depth, b_depth, bytes) == 0;
+  free(a_colour);
+  free(a_depth);
+  free(b_colour);
+  free(b_depth);
+  return same;
+}
+
+void test_batched_lines_are_pixel_identical_to_one_after_another(void) {
+  open_line_scene(0);
+  glEnable(GL_DEPTH_TEST);
+  unsigned long lockstep_total = 0;
+  for (unsigned seed = 1; seed <= 60; seed++) {
+    TestLine scene[40];
+    const int n = build_line_scene(scene, seed);
+    unsigned long lockstep = 0;
+    char msg[48];
+    snprintf(msg, sizeof msg, "scene %u differs", seed);
+    TEST_ASSERT_TRUE_MESSAGE(batched_lines_match(scene, n, &lockstep), msg);
+    lockstep_total += lockstep;
+  }
+  TEST_ASSERT_TRUE_MESSAGE(lockstep_total > 200, "the lockstep path drew almost nothing");
+}
+
+/* Lines that step along different axes can reach one pixel at different steps,
+ * so they must not be interleaved even when their step counts and starts agree:
+ * a shallow line along a row and a steep one down a column cross at step xb - xa
+ * for the first and ya - yb for the second. With 32 steps a turn the order flips
+ * when the first is late in its turn and the second early. The starts are swept
+ * independently so that some pair agrees whichever way the viewport runs. */
+void test_lines_that_step_along_different_axes_are_not_interleaved(void) {
+  open_line_scene(0);
+  glEnable(GL_DEPTH_TEST);
+  unsigned long lockstep = 0;
+  for (int xb = 40; xb <= 58; xb += 3)
+    for (int ya = 8; ya <= 32; ya += 4)
+      for (int sa = 0; sa < 6; sa++)
+        for (int sb = 0; sb < 6; sb++) {
+          const float a0 = (float)(2 + sa) * PIXEL_NDC - 1.0f;
+          const float b0 = (float)(2 + sb) * PIXEL_NDC - 1.0f;
+          TestLine pair[2] = {
+              {a0, (float)ya * PIXEL_NDC - 1.0f, a0 + 56 * PIXEL_NDC, (float)ya * PIXEL_NDC - 1.0f,
+               0.1f, 0.1f, 0, -1},
+              {(float)xb * PIXEL_NDC - 1.0f, b0, (float)xb * PIXEL_NDC - 1.0f, b0 + 56 * PIXEL_NDC,
+               0.1f, 0.1f, 1, -1}};
+          char msg[64];
+          snprintf(msg, sizeof msg, "xb %d ya %d sa %d sb %d", xb, ya, sa, sb);
+          TEST_ASSERT_TRUE_MESSAGE(batched_lines_match(pair, 2, &lockstep), msg);
+        }
+}
+
+/* The runner honours glDepthMask like the one-line path: a batch leaves the
+ * depth buffer as it found it. */
+void test_batched_lines_leave_the_depth_buffer_alone_when_depth_writes_are_off(void) {
+  open_line_scene(0);
+  glEnable(GL_DEPTH_TEST);
+  glDepthMask(0);
+  unsigned long lockstep_total = 0;
+  for (unsigned seed = 100; seed < 120; seed++) {
+    TestLine scene[40];
+    const int n = build_line_scene(scene, seed);
+    unsigned long lockstep = 0;
+    TEST_ASSERT_TRUE(batched_lines_match(scene, n, &lockstep));
+    lockstep_total += lockstep;
+  }
+  TEST_ASSERT_TRUE(lockstep_total > 50);
+  glDepthMask(1);
+}
+
+/* Lines on the same axis with the same step count but different starts reach a
+ * shared pixel at different steps: a line along a row from x 2 and one from x
+ * 2 + s overlap from x 2 + s, at step i for the first and i - s for the second.
+ * With 32 steps a turn the order flips when the first is late in its turn and
+ * the second early, so such lines must not be interleaved. */
+void test_overlapping_lines_that_start_in_different_places_are_not_interleaved(void) {
+  open_line_scene(0);
+  glEnable(GL_DEPTH_TEST);
+  unsigned long lockstep = 0;
+  for (int steep = 0; steep < 2; steep++)
+    for (int shift = 1; shift <= 8; shift++)
+      for (int across = 4; across <= 40; across += 6) {
+        const float base = 2 * PIXEL_NDC - 1.0f;
+        const float other = (float)across * PIXEL_NDC - 1.0f;
+        const float a0 = base, a1 = base + 50 * PIXEL_NDC;
+        const float b0 = base + (float)shift * PIXEL_NDC, b1 = a1 + (float)shift * PIXEL_NDC;
+        TestLine pair[2];
+        if (steep) {
+          const TestLine a = {other, a0, other, a1, 0.1f, 0.1f, 0, -1};
+          const TestLine b = {other, b0, other, b1, 0.1f, 0.1f, 1, -1};
+          pair[0] = a, pair[1] = b;
+        } else {
+          const TestLine a = {a0, other, a1, other, 0.1f, 0.1f, 0, -1};
+          const TestLine b = {b0, other, b1, other, 0.1f, 0.1f, 1, -1};
+          pair[0] = a, pair[1] = b;
+        }
+        char msg[64];
+        snprintf(msg, sizeof msg, "steep %d shift %d across %d", steep, shift, across);
+        TEST_ASSERT_TRUE_MESSAGE(batched_lines_match(pair, 2, &lockstep), msg);
+      }
+}
+
+void test_a_batch_leaves_nothing_queued_after_glEnd(void) {
+  open_line_scene(0);
+  glEnable(GL_DEPTH_TEST);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  TestLine triple[3] = {{-0.5f, -0.8f, -0.5f, 0.8f, 0, 0, 0, -1},
+                        {-0.5f + PIXEL_NDC, -0.8f, -0.5f + PIXEL_NDC, 0.8f, 0, 0, 1, -1},
+                        {-0.5f + 2 * PIXEL_NDC, -0.8f, -0.5f + 2 * PIXEL_NDC, 0.8f, 0, 0, 2, -1}};
+  draw_lines_as_one_batch(triple, 3);
+  TEST_ASSERT_TRUE_MESSAGE(lit_pixels() >= 3 * (SIZE * 3 / 4), "lines were still queued after glEnd");
+}
+
+/* Only a flat colour, depth-tested, unsmoothed, unclipped line is batched: the
+ * rest keep their own paths, and drawing is unchanged. */
+void test_lines_that_cannot_be_batched_still_draw_as_before(void) {
+  open_line_scene(0);
+  for (int mode = 0; mode < 3; mode++) {
+    glDisable(GL_LINE_SMOOTH);
+    if (mode == 0) glDisable(GL_DEPTH_TEST); else glEnable(GL_DEPTH_TEST);
+    if (mode == 1) glEnable(GL_LINE_SMOOTH);
+    TestLine scene[40];
+    const int n = build_line_scene(scene, 7 + (unsigned)mode);
+    if (mode == 2)
+      for (int i = 0; i < n; i++) scene[i].colour2 = (scene[i].colour + 1) % 6;
+    unsigned long lockstep = 0;
+    TEST_ASSERT_TRUE(batched_lines_match(scene, n, &lockstep));
+    TEST_ASSERT_EQUAL_UINT32(0, (uint32_t)lockstep);
+  }
+}
+
 /* The round panel (issue #77): with a disc on the canvas, clears skip the
  * corners nobody sees. */
 #define SENTINEL 0x5A5A
@@ -2166,6 +2416,12 @@ int main(void) {
   RUN_TEST(test_a_gl_polygon_pentagon_is_drawn_as_a_fan);
   RUN_TEST(test_a_gl_polygon_in_a_display_list_is_drawn_as_a_fan);
   RUN_TEST(test_two_gl_polygons_in_a_row_each_start_afresh);
+  RUN_TEST(test_batched_lines_are_pixel_identical_to_one_after_another);
+  RUN_TEST(test_lines_that_step_along_different_axes_are_not_interleaved);
+  RUN_TEST(test_batched_lines_leave_the_depth_buffer_alone_when_depth_writes_are_off);
+  RUN_TEST(test_overlapping_lines_that_start_in_different_places_are_not_interleaved);
+  RUN_TEST(test_a_batch_leaves_nothing_queued_after_glEnd);
+  RUN_TEST(test_lines_that_cannot_be_batched_still_draw_as_before);
 #ifdef GL_PROFILE
   RUN_TEST(test_the_profile_counts_each_stage_once_per_call);
 #endif

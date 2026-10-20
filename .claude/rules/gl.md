@@ -179,6 +179,28 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   ran about 17 ms above Circuit's measured 15.0 and 25 ms, which hid most of
   the gap. Profile (`-DGL_PROFILE`, `line=`) before blaming a hack's own maths
   for a line-heavy frame.
+- Line batching (ARS-56, `LINE_BATCH` in `tinygl_patch.py`): the flat,
+  depth-tested, unsmoothed lines of one `glBegin(GL_LINES)` batch are queued
+  and flushed at `glEnd`, and consecutive lines with the same major axis,
+  step count and start are drawn 32 pixels each in turn. A near-vertical
+  line is a cache miss per pixel in both the depth and colour buffers, and
+  Circuit draws each grid line three times side by side, so neighbours now
+  share cache lines. Lines in lockstep reach any pixel at the same step, in
+  queue order, so both buffers are bit for bit what one line at a time
+  gives. The key has three parts and each is needed: the axis (a row and a
+  column cross at different steps), the step count and the start (collinear
+  lines shifted along the axis share pixels at different steps); direction
+  is not, since lines running apart from one start share only that pixel.
+  `-DGL_NO_LINE_BATCH` turns it off. Before building it a cache simulation
+  of Circuit's real line pixels (32 KB, 8-way, 64-byte lines, 1.1 us a miss)
+  predicted about 20 ms a frame saved and dropping duplicate lines only 7
+  percent: the first idea, duplicates, was wrong, and the simulation said
+  so in minutes. The board measured 20.9 ms (step 94.4 to 73.5 ms, 10.56 to
+  13.49 fps, two alternating rounds, window ratio 1.28). Tests compare
+  colour and depth over random batches (ties, occlusion, clipped, reversed,
+  interpolated, single-pixel lines, different end depths), plus sweeps for
+  crossing and overlapping lines; 16 of 17 mutants died, and the one that
+  lived (ignoring the start) showed a real gap that got its own test.
 - TinyGL's `glLightModelfv` copied four floats whatever the parameter, so
   `glLightModelfv(GL_LIGHT_MODEL_TWO_SIDE, one_float)` (Morph3D) read past the
   array: AddressSanitizer's global-buffer-overflow. `tinygl_patch.py` now copies

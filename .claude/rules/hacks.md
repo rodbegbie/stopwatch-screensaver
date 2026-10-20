@@ -618,7 +618,10 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   contend for the PSRAM cache and Circuit's lines are miss-heavy (a cache
   simulation of its real line pixels gives about 33,000 misses a frame, 1.1
   us each, which matches the 40 ms), so the 25 ms push hid only 8 of its
-  milliseconds. It also takes 8.7 KB of internal heap. Fewer line misses
-  (interleaving the lockstep lines of a `GL_LINES` batch leaves 46 percent of
-  them) would help the overlap too; that is a shared TinyGL change, not yet
-  made.
+  milliseconds. It also takes 8.7 KB of internal heap.
+  Line batching (see `gl.md`) then took the registered build from 10.59 to
+  13.55 fps over two alternating rounds (step 93.2 to 72.3 ms, worst window
+  9.2 to 11.6, best 16.2), with frames byte-identical. That is full size and
+  crisp, but still under the 15 fps bar. The profile has not been taken again
+  with batching on; before it, the clear was 15 ms and vertex setup, lighting
+  and fills about 18 ms of the step.

@@ -11,21 +11,21 @@ The bands were fitted to the 88 hacks in this section, so these
 figures are in-sample.
 
 - Host time ranks the device step with a Spearman correlation of
-  0.86.
+  0.85.
 - Bands (host ms per step): low is under 0.015, medium is under
   0.05, high is 0.05 or more.
 - The slowest hack in the low band took 13.9 ms on the device
-  (20 hacks), in the medium band 16.3 ms (17
-  hacks) and in the high band 720.0 ms (51 hacks).
+  (19 hacks), in the medium band 16.3 ms (19
+  hacks) and in the high band 720.0 ms (50 hacks).
 - Of the 22 hacks with a
   device step of 50 ms or more, the high band caught
   22.
   Missed: none.
 - High band but under 50 ms on the device:
-  coral, cloudlife, fadeplot, substrate, stonerview, cynosure, moire, moire2,
-  eruption, kumppa, piecewise, boxfit, popsquares, xrayswarm, deco, imsmap,
-  ccurve, nerverot, hyperball, polyominoes, barcode, bubbles, rubik,
-  cubestack, kaleidocycle, dangerball, glmatrix, superquadrics, menger.
+  coral, cloudlife, substrate, stonerview, cynosure, moire, moire2, eruption,
+  kumppa, piecewise, boxfit, popsquares, xrayswarm, deco, imsmap, ccurve,
+  nerverot, hyperball, polyominoes, barcode, bubbles, rubik, cubestack,
+  kaleidocycle, dangerball, glmatrix, superquadrics, menger.
 
 ## Out of sample
 
@@ -51,106 +51,106 @@ uses its midpoint.
 
 | Hack | Set | Host ms | Band | Device step ms | Device / host |
 | --- | --- | --- | --- | --- | --- |
-| truchet | held out | 1.829 | high | 652-900 | 424 |
-| hypnowheel | fitted | 5.475 | high | 720 | 132 |
-| pedal | fitted | 0.113 | high | 126-519 | 2857 |
-| gears | fitted | 2.337 | high | 65-330 | 84 |
-| braid | fitted | 2.548 | high | 95-296 | 77 |
-| unknownpleasures | held out | 2.832 | high | 162-169 | 58 |
-| marbling | fitted | 0.985 | high | 157.7 | 160 |
-| discrete | fitted | 1.341 | high | 149-160 | 115 |
-| vines | fitted | 0.077 | high | 133-160 | 1895 |
-| boing | fitted | 2.590 | high | 87.1-89 | 34 |
-| circuit | fitted | 0.994 | high | 64.3-110.9 | 88 |
-| binaryhorizon | fitted | 0.510 | high | 57-108.6 | 162 |
-| rotzoomer | fitted | 0.167 | high | 79.3-81.7 | 483 |
-| halftone | held out | 0.411 | high | 67-70 | 167 |
-| interference | fitted | 0.654 | high | 67.9-68 | 104 |
-| morph3d | fitted | 1.372 | high | 48-86 | 49 |
-| flame | fitted | 0.324 | high | 26-107 | 205 |
+| truchet | held out | 1.813 | high | 652-900 | 428 |
+| hypnowheel | fitted | 5.513 | high | 720 | 131 |
+| pedal | fitted | 0.112 | high | 126-519 | 2872 |
+| gears | fitted | 2.327 | high | 65-330 | 85 |
+| braid | fitted | 2.530 | high | 95-296 | 77 |
+| unknownpleasures | held out | 2.834 | high | 162-169 | 58 |
+| marbling | fitted | 0.989 | high | 157.7 | 159 |
+| discrete | fitted | 1.339 | high | 149-160 | 115 |
+| vines | fitted | 0.077 | high | 133-160 | 1898 |
+| boing | fitted | 2.604 | high | 87.1-89 | 34 |
+| binaryhorizon | fitted | 0.508 | high | 57-108.6 | 163 |
+| rotzoomer | fitted | 0.165 | high | 79.3-81.7 | 488 |
+| halftone | held out | 0.417 | high | 67-70 | 164 |
+| interference | fitted | 0.651 | high | 67.9-68 | 104 |
+| morph3d | fitted | 1.349 | high | 48-86 | 50 |
+| flame | fitted | 0.318 | high | 26-107 | 209 |
 | galaxy | fitted | 0.192 | high | 58-75 | 347 |
-| etruscanvenus | fitted | 0.848 | high | 53.2-78.6 | 78 |
-| bubble3d | fitted | 1.119 | high | 27-101 | 57 |
-| cubenetic | fitted | 0.679 | high | 44.3-72.3 | 86 |
-| xspirograph | fitted | 0.065 | high | 54-56 | 847 |
-| deluxe | fitted | 0.651 | high | 44.6-62.6 | 82 |
-| lisa | fitted | 0.695 | high | 51.9-52.5 | 75 |
-| graphstat | fitted | 0.798 | high | 35-67.8 | 64 |
-| barcode | fitted | 0.401 | high | 42.5-52.2 | 118 |
-| celtic | held out | 0.157 | high | 12.6-76.8 | 284 |
+| etruscanvenus | fitted | 0.846 | high | 53.2-78.6 | 78 |
+| bubble3d | fitted | 1.123 | high | 27-101 | 57 |
+| circuit | fitted | 1.006 | high | 37.6-85.5 | 61 |
+| cubenetic | fitted | 0.680 | high | 44.3-72.3 | 86 |
+| xspirograph | fitted | 0.066 | high | 54-56 | 840 |
+| deluxe | fitted | 0.650 | high | 44.6-62.6 | 82 |
+| lisa | fitted | 0.688 | high | 51.9-52.5 | 76 |
+| graphstat | fitted | 0.821 | high | 35-67.8 | 63 |
+| barcode | fitted | 0.404 | high | 42.5-52.2 | 117 |
+| celtic | held out | 0.158 | high | 12.6-76.8 | 283 |
 | interaggregate | held out | 0.692 | high | 41.8-47.4 | 64 |
-| kumppa | fitted | 0.176 | high | 44.5 | 253 |
-| piecewise | fitted | 0.399 | high | 41.2-44 | 107 |
-| ccurve | fitted | 0.213 | high | 41.7-43.3 | 199 |
-| eruption | fitted | 0.465 | high | 39-39.1 | 84 |
-| nerverot | fitted | 0.367 | high | 38-39.7 | 106 |
-| menger | fitted | 0.672 | high | 11.2-66.3 | 58 |
-| hyperball | fitted | 0.404 | high | 38.6-38.7 | 96 |
+| kumppa | fitted | 0.177 | high | 44.5 | 252 |
+| piecewise | fitted | 0.398 | high | 41.2-44 | 107 |
+| ccurve | fitted | 0.215 | high | 41.7-43.3 | 198 |
+| eruption | fitted | 0.467 | high | 39-39.1 | 84 |
+| nerverot | fitted | 0.369 | high | 38-39.7 | 105 |
+| menger | fitted | 0.679 | high | 11.2-66.3 | 57 |
+| hyperball | fitted | 0.405 | high | 38.6-38.7 | 95 |
 | forest | held out | 0.136 | high | 13-58.9 | 264 |
 | anemone | held out | 0.224 | high | 25.5-46.3 | 160 |
-| superquadrics | fitted | 0.784 | high | 26.3-44.3 | 45 |
-| polyominoes | fitted | 0.196 | high | 33.1-37.1 | 180 |
-| deco | fitted | 0.306 | high | 33.1-35.4 | 112 |
-| rubik | fitted | 1.292 | high | 14.9-48.7 | 25 |
-| compass | held out | 0.271 | high | 30.5-31.5 | 115 |
-| fuzzyflakes | held out | 0.264 | high | 30.2-30.9 | 116 |
-| cubestack | fitted | 0.319 | high | 13.9-46.1 | 94 |
-| glmatrix | fitted | 0.383 | high | 8.9-50.8 | 78 |
+| superquadrics | fitted | 0.792 | high | 26.3-44.3 | 45 |
+| polyominoes | fitted | 0.198 | high | 33.1-37.1 | 177 |
+| deco | fitted | 0.305 | high | 33.1-35.4 | 112 |
+| rubik | fitted | 1.295 | high | 14.9-48.7 | 25 |
+| compass | held out | 0.269 | high | 30.5-31.5 | 115 |
+| fuzzyflakes | held out | 0.262 | high | 30.2-30.9 | 117 |
+| cubestack | fitted | 0.326 | high | 13.9-46.1 | 92 |
+| glmatrix | fitted | 0.390 | high | 8.9-50.8 | 77 |
 | lmorph | held out | 0.294 | high | 24.7-34.3 | 100 |
-| moire2 | fitted | 0.242 | high | 28.1-28.3 | 117 |
+| moire2 | fitted | 0.241 | high | 28.1-28.3 | 117 |
 | euler2d | held out | 0.155 | high | 27.9 | 180 |
-| dangerball | fitted | 0.505 | high | 26.2-29.3 | 55 |
-| substrate | fitted | 0.112 | high | 2.9-43.9 | 208 |
-| laser | held out | 0.134 | high | 21.6-25.1 | 175 |
-| wormhole | held out | 0.190 | high | 22.4-23.1 | 120 |
-| xrayswarm | fitted | 0.239 | high | 21.2-21.6 | 90 |
-| anemotaxis | held out | 0.181 | high | 19.8-22.5 | 117 |
-| ifs | held out | 0.299 | high | 19-23.2 | 71 |
+| dangerball | fitted | 0.508 | high | 26.2-29.3 | 55 |
+| substrate | fitted | 0.113 | high | 2.9-43.9 | 207 |
+| laser | held out | 0.134 | high | 21.6-25.1 | 174 |
+| wormhole | held out | 0.191 | high | 22.4-23.1 | 119 |
+| xrayswarm | fitted | 0.234 | high | 21.2-21.6 | 92 |
+| anemotaxis | held out | 0.182 | high | 19.8-22.5 | 116 |
+| ifs | held out | 0.298 | high | 19-23.2 | 71 |
 | scooter | held out | 0.186 | high | 19-23.1 | 113 |
-| coral | fitted | 0.097 | high | 15-25 | 206 |
-| kaleidocycle | fitted | 0.211 | high | 15.9-21.7 | 89 |
-| imsmap | fitted | 0.371 | high | 17.7-17.8 | 48 |
-| cynosure | fitted | 0.184 | high | 17-17.8 | 94 |
-| whirlwindwarp | fitted | 0.025 | medium | 6.2-26.4 | 657 |
-| cwaves | fitted | 0.023 | medium | 16.1-16.2 | 705 |
-| popsquares | fitted | 0.126 | high | 15.3 | 122 |
-| stonerview | fitted | 0.254 | high | 12.6-15.6 | 55 |
-| bouboule | fitted | 0.014 | low | 13.9-14 | 996 |
-| hopalong | fitted | 0.029 | medium | 7.3-20.1 | 469 |
-| qix | fitted | 0.020 | medium | 8.8-17.9 | 668 |
-| boxfit | fitted | 0.246 | high | 9.1-17 | 53 |
+| coral | fitted | 0.098 | high | 15-25 | 205 |
+| kaleidocycle | fitted | 0.212 | high | 15.9-21.7 | 89 |
+| imsmap | fitted | 0.372 | high | 17.7-17.8 | 48 |
+| cynosure | fitted | 0.186 | high | 17-17.8 | 93 |
+| whirlwindwarp | fitted | 0.024 | medium | 6.2-26.4 | 691 |
+| cwaves | fitted | 0.023 | medium | 16.1-16.2 | 699 |
+| popsquares | fitted | 0.126 | high | 15.3 | 121 |
+| stonerview | fitted | 0.258 | high | 12.6-15.6 | 55 |
+| bouboule | fitted | 0.014 | low | 13.9-14 | 1004 |
+| hopalong | fitted | 0.029 | medium | 7.3-20.1 | 466 |
+| qix | fitted | 0.020 | medium | 8.8-17.9 | 671 |
+| boxfit | fitted | 0.244 | high | 9.1-17 | 54 |
 | drift | fitted | 0.000 | low | 11-13 | inf |
-| moire | fitted | 0.068 | high | 9.5-9.7 | 141 |
-| cloudlife | fitted | 0.141 | high | 8.8-8.9 | 63 |
+| moire | fitted | 0.065 | high | 9.5-9.7 | 147 |
+| cloudlife | fitted | 0.142 | high | 8.8-8.9 | 62 |
 | kaleidescope | held out | 0.070 | high | 7-9.8 | 119 |
 | xjack | fitted | 0.003 | low | 0.1-13.8 | 2482 |
-| abstractile | fitted | 0.045 | medium | 2.4-11.1 | 150 |
-| bubbles | fitted | 0.058 | high | 4.9-7.1 | 103 |
+| abstractile | fitted | 0.046 | medium | 2.4-11.1 | 147 |
+| bubbles | fitted | 0.057 | high | 4.9-7.1 | 105 |
 | attraction | fitted | 0.010 | low | 5.6 | 538 |
-| pipes | fitted | 0.022 | medium | 2-7.8 | 225 |
-| triangle | fitted | 0.011 | low | 3.6-6 | 429 |
-| wander | fitted | 0.033 | medium | 4.4 | 132 |
-| blaster | fitted | 0.007 | low | 3.6-3.7 | 487 |
-| decayscreen | fitted | 0.002 | low | 3.3-3.9 | 1565 |
-| fadeplot | fitted | 0.051 | high | 2.9-3.2 | 60 |
+| pipes | fitted | 0.022 | medium | 2-7.8 | 226 |
+| triangle | fitted | 0.011 | low | 3.6-6 | 432 |
+| wander | fitted | 0.033 | medium | 4.4 | 133 |
+| blaster | fitted | 0.007 | low | 3.6-3.7 | 500 |
+| decayscreen | fitted | 0.002 | low | 3.3-3.9 | 1636 |
+| fadeplot | fitted | 0.050 | medium | 2.9-3.2 | 61 |
 | sierpinski | fitted | 0.035 | medium | 1.8-4 | 82 |
-| rocks | fitted | 0.027 | medium | 2.5-3.2 | 104 |
-| hypercube | fitted | 0.038 | medium | 2.7-2.9 | 74 |
-| shadebobs | fitted | 0.031 | medium | 2-2.3 | 70 |
+| rocks | fitted | 0.028 | medium | 2.5-3.2 | 104 |
+| hypercube | fitted | 0.036 | medium | 2.7-2.9 | 78 |
+| shadebobs | fitted | 0.031 | medium | 2-2.3 | 69 |
 | thornbird | fitted | 0.003 | low | 2-2.2 | 750 |
 | greynetic | fitted | 0.016 | medium | 1.8-2 | 120 |
-| lightning | fitted | 0.016 | medium | 1.8-1.9 | 114 |
-| vermiculate | fitted | 0.015 | medium | 1.3-2.2 | 114 |
+| lightning | fitted | 0.016 | medium | 1.8-1.9 | 113 |
+| vermiculate | fitted | 0.016 | medium | 1.3-2.2 | 111 |
 | grav | held out | 0.003 | low | 1.5-1.9 | 548 |
 | pacman | fitted | 0.010 | low | 1.3-1.9 | 165 |
 | helix | fitted | 0.035 | medium | 0.9-2.1 | 43 |
-| petri | fitted | 0.017 | medium | 0.3-2.5 | 84 |
+| petri | fitted | 0.017 | medium | 0.3-2.5 | 82 |
 | demon | fitted | 0.002 | low | 1.1-1.6 | 711 |
 | epicycle | held out | 0.001 | low | 0.3-2.1 | 1714 |
 | rorschach | fitted | 0.038 | medium | 0.6-1.7 | 30 |
-| munch | fitted | 0.013 | low | 0.9-1.2 | 78 |
+| munch | fitted | 0.013 | low | 0.9-1.2 | 82 |
 | spiral | fitted | 0.001 | low | 0.9-1.2 | 1050 |
-| pyro | fitted | 0.009 | low | 0.8-1.1 | 100 |
+| pyro | fitted | 0.016 | medium | 0.8-1.1 | 61 |
 | sphere | fitted | 0.002 | low | 0.6-1.1 | 354 |
 | maze | fitted | 0.011 | low | 0.1-1.3 | 65 |
 | critical | fitted | 0.009 | low | 0.7 | 82 |
