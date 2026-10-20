@@ -2129,6 +2129,24 @@ void test_lines_that_step_along_different_axes_are_not_interleaved(void) {
         }
 }
 
+/* The runner honours glDepthMask like the one-line path: a batch leaves the
+ * depth buffer as it found it. */
+void test_batched_lines_leave_the_depth_buffer_alone_when_depth_writes_are_off(void) {
+  open_line_scene(0);
+  glEnable(GL_DEPTH_TEST);
+  glDepthMask(0);
+  unsigned long lockstep_total = 0;
+  for (unsigned seed = 100; seed < 120; seed++) {
+    TestLine scene[40];
+    const int n = build_line_scene(scene, seed);
+    unsigned long lockstep = 0;
+    TEST_ASSERT_TRUE(batched_lines_match(scene, n, &lockstep));
+    lockstep_total += lockstep;
+  }
+  TEST_ASSERT_TRUE(lockstep_total > 50);
+  glDepthMask(1);
+}
+
 void test_a_batch_leaves_nothing_queued_after_glEnd(void) {
   open_line_scene(0);
   glEnable(GL_DEPTH_TEST);
@@ -2368,6 +2386,7 @@ int main(void) {
   RUN_TEST(test_two_gl_polygons_in_a_row_each_start_afresh);
   RUN_TEST(test_batched_lines_are_pixel_identical_to_one_after_another);
   RUN_TEST(test_lines_that_step_along_different_axes_are_not_interleaved);
+  RUN_TEST(test_batched_lines_leave_the_depth_buffer_alone_when_depth_writes_are_off);
   RUN_TEST(test_a_batch_leaves_nothing_queued_after_glEnd);
   RUN_TEST(test_lines_that_cannot_be_batched_still_draw_as_before);
 #ifdef GL_PROFILE
