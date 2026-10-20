@@ -172,6 +172,13 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   TinyGL never has them. Its fill cost is fitted to one Gears scene, so it
   over-predicts few-large-triangle scenes, and lines and points cost nothing
   beyond vertex setup. Add a second calibration point after each GL port.
+  Lines are not free: Circuit's 156 grid lines, which span the screen, took
+  0.256 ms apiece on the board (40 ms of a 79.8 ms step, depth test on). The
+  model predicted 79-85 ms a frame against about 103 measured; it charges
+  nothing for those lines, and its clear (24.6 ms) and push (32 ms) constants
+  ran about 17 ms above Circuit's measured 15.0 and 25 ms, which hid most of
+  the gap. Profile (`-DGL_PROFILE`, `line=`) before blaming a hack's own maths
+  for a line-heavy frame.
 - TinyGL's `glLightModelfv` copied four floats whatever the parameter, so
   `glLightModelfv(GL_LIGHT_MODEL_TWO_SIDE, one_float)` (Morph3D) read past the
   array: AddressSanitizer's global-buffer-overflow. `tinygl_patch.py` now copies

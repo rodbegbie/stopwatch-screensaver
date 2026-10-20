@@ -586,8 +586,17 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   the board, over 240 s pinned: 8.4-11.4 fps (mean 9.7), step 60-93 ms growing
   as components arrive, push 24.8 ms (every frame is a full push: the grid
   fills the screen), no wait, PSRAM flat. `gl_budget.py` predicted 79-85 ms a
-  frame (12 fps) against about 103 measured (step plus push), so it
-  under-predicts a lit, line-heavy hack as it did for others.
-  `tools/softdouble_report.py` finds about 160 soft-double call sites in
-  `draw_circuit` (literals like `0.02` and float to double promotions): a
-  single-precision wrapper is the next idea, not yet tried or measured.
+  frame (12 fps) against about 103 measured (step plus push). It counts lines
+  as free, and they are not (below).
+  A single-precision build (ARS-55, committed and reverted: `b32fe24`,
+  `bc549b2`) took `tools/softdouble_report.py`'s count in the wrapper's object
+  from 198 call sites to 14 (the hack has no `double` keyword; its literals,
+  `0.02` and `0.84`, were the cause) with host frames byte-identical, and moved
+  the board by nothing: double and float alternated over two rounds, 28
+  windows each, 9.76 vs 9.79 fps and a 77.6 vs 77.3 ms step. A `-DGL_PROFILE`
+  build says why. Of a mean 79.8 ms step, 40.0 ms is the 156 lines of the
+  board's grid (0.256 ms a line, every frame), 15.0 ms is the full-screen
+  clear (the grid fills the box), about 18 ms is vertex setup, lighting,
+  triangles and fills (growing from 1 ms to 32 ms as components arrive), and
+  the hack's own code is 6.3 ms: the most any arithmetic change could win is
+  8 percent. The lever is the grid's lines, not Circuit's maths.

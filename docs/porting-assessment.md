@@ -158,6 +158,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Superquadrics | 14.4-26.6 | 26.3-44.3 ms | 8.1-26.1 ms | 0-3.3 ms | 0 (PSRAM constant on a second visit) |
 | Menger | 12.8-44.0 | 11.2-66.3 ms | 6.4-16.3 ms | 0-5.0 ms | 0 (PSRAM constant on a second visit) |
 | Circuit | 8.4-11.4 | 60.4-92.9 ms | 24.7-27.2 ms | 0 ms | 0 (PSRAM constant; heap fell 1 KB in the first minute, then held) |
+| Circuit (float literals; not registered) | 8.6-11.6 | 58.8-90.6 ms | 24.7-27.2 ms | 0 ms | 0 (PSRAM constant; two rounds beside the registered build: 9.79 vs 9.76 fps) |
 | Celtic (as copied; first port) | 1.0-20.4 | 29-1025 ms | 0.1-5.5 ms | 7.9-928 ms | none measurable |
 | Celtic (single precision, upstream graph sizes) | 1.0-20.2 | 5.6-151 ms | 0.8-6.6 ms | 9.4-1110 ms | 16 KB in one window (heap ran out) |
 | Celtic (single precision, graph sized to the screen, step scale 1) | 1.2-20.2 | 13.5-129 ms | 1.1-6.4 ms | 9.2-929 ms | none measurable |
