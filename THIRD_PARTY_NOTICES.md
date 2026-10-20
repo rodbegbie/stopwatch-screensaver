@@ -388,12 +388,13 @@ notice (above). The blob format is in `ximage-loader.h`.
 
 ### The Phosphor poems
 
-`firmware/assets/phosphor-poems.txt` holds the poems Phosphor types, and
-`firmware/src/hacks/phosphor_poems.h` is made from it by
-`tools/make_phosphor_poems.py`. Each was published before 1931, so it is in the
-public domain in the United States, and each author died more than 70 years
-ago. The texts are Wikisource's transcriptions of the first printings, in
-ASCII (curly quotes became straight ones and a dash became `--`):
+`firmware/assets/phosphor-poems.txt` holds the poems Phosphor types.
+`firmware/src/hacks/phosphor_poems.h` (pages) and `phosphor_poems_scroll.h`
+(scrolling) are made from it by `tools/make_phosphor_poems.py`. Each poem was
+first published before 1931, so it is in the public domain in the United
+States, and each author died more than 70 years ago. The texts are Wikisource's
+transcriptions of the printings named below, in ASCII (curly quotes became
+straight ones and a dash became `--`):
 
 - "The Raven" (first stanza), Edgar Allan Poe, 1845, from *The Raven and Other
   Poems*.
@@ -408,6 +409,15 @@ ASCII (curly quotes became straight ones and a dash became `--`):
 - "Hope is the thing with feathers" (first two stanzas), Emily Dickinson, first
   published in 1891, from Wikisource's transcription of *The Complete Poems of
   Emily Dickinson* (Little, Brown).
+- "I Wandered Lonely as a Cloud", William Wordsworth, from *Poems* (1815),
+  with its original capitals and spelling.
+- "The Charge of the Light Brigade", Alfred, Lord Tennyson, first published in
+  1854, from the revised text in *Poems That Every Child Should Know* (1904).
+- "To a Mouse", Robert Burns, 1785, from *The Poetical Works of Robert Burns*,
+  in Scots.
+- "If--", Rudyard Kipling, 1910, from *Rewards and Fairies* (Kipling died in
+  1936). Wikisource's text has no stanza breaks, so they are put back after
+  every eighth line, as in the printed poem.
 
 ### The Pacman sprites
 

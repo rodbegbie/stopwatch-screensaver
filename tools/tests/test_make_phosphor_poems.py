@@ -128,10 +128,56 @@ def test_the_committed_poems_are_all_ascii_and_each_has_a_distinct_name():
     assert len(set(names)) == len(names)
 
 
-def test_the_committed_header_is_what_the_tool_makes():
-    assert mpp.OUTPUT.read_text() == mpp.header(mpp.SOURCE.read_text())
+def test_the_committed_headers_are_what_the_tool_makes():
+    source = mpp.SOURCE.read_text()
+    assert mpp.OUTPUT.read_text() == mpp.header(source, paged=True)
+    assert mpp.OUTPUT_SCROLL.read_text() == mpp.header(source, paged=False)
+
+
+def test_the_two_headers_have_different_guards_and_the_same_poem_count():
+    source = mpp.SOURCE.read_text()
+    paged, scroll = mpp.header(source, True), mpp.header(source, False)
+    assert "#ifndef PHOSPHOR_POEMS_H\n" in paged
+    assert "#ifndef PHOSPHOR_POEMS_SCROLL_H\n" in scroll
+    assert paged.count("/* ") == scroll.count("/* ")
 
 
 def test_c_strings_escape_the_escape_character_and_quotes():
     text = mpp.c_string('\x1b[2J"hi"\r\nx')
     assert text == '    "\\033[2J\\"hi\\"\\r\\n"\n    "x"'
+
+
+def test_a_scrolling_poem_types_into_a_region_over_the_rows_the_circle_shows():
+    lines = [f"line {i}" for i in range(30)]
+    out = mpp.render("a", "X, 1900", lines, paged=False)
+    assert out.startswith(
+        "\x1b[2J\x1b[H\r\n\r\n    > cat a\r\n\x1b[5;14r    line 0\r\n"
+    )
+    assert mpp.PAUSE not in out
+    assert mpp.MORE not in out
+    assert out.endswith("    -- X, 1900\r\n    > _")
+    typed = strip_escapes(out).split("\r\n")[mpp.FIRST_ROW + 1 :]
+    assert [r.strip() for r in typed if r.strip().startswith("line")] == lines
+
+
+def test_a_scrolling_poem_keeps_its_stanza_breaks():
+    out = mpp.render("a", "X, 1900", ["one", "", "two"], paged=False)
+    assert "    one\r\n\r\n    two\r\n\r\n    -- X, 1900\r\n    > _" in out
+
+
+def test_a_byline_too_wide_for_the_circle_wraps_and_the_last_page_still_fits():
+    byline = "Wordsworth, 1815"
+    assert mpp.byline_rows(byline) == ["-- Wordsworth,", "  1815"]
+    lines = [f"line {i}" for i in range(9)]
+    for page in pages_of("a", byline, lines):
+        rows = strip_escapes(page).split("\r\n")
+        assert len(rows) <= mpp.LAST_ROW + 1
+        assert all(len(r) <= mpp.INDENT + mpp.WIDTH for r in rows)
+    assert pages_of("a", byline, lines)[-1].endswith(
+        "    -- Wordsworth,\r\n      1815\r\n    > _"
+    )
+
+
+def test_the_committed_poems_include_the_ones_rod_asked_for():
+    names = {p[0] for p in mpp.parse(mpp.SOURCE.read_text())}
+    assert {"raven", "daffodils", "charge", "mouse"} <= names

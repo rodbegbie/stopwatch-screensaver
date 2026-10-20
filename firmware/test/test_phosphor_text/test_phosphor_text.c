@@ -1,7 +1,9 @@
+#include <string.h>
 #include <unity.h>
 
 #include "hacks/phosphor_pick.h"
 #include "hacks/phosphor_text.h"
+#include "hacks/phosphor_timers.h"
 
 void setUp(void) {}
 void tearDown(void) {}
@@ -99,6 +101,93 @@ void test_a_fresh_source_can_start_on_any_poem(void) {
   TEST_ASSERT_TRUE(seen[0] > 0 && seen[1] > 0);
 }
 
+static int fired[8];
+static int fired_count;
+static unsigned long fired_id[8];
+static void note(void *closure, unsigned long *id) {
+  fired[fired_count] = (int)(long)closure;
+  fired_id[fired_count++] = *id;
+}
+
+static PtQueue q;
+static void reset_queue(void) {
+  memset(&q, 0, sizeof q);
+  fired_count = 0;
+}
+
+void test_a_timer_fires_once_when_its_time_comes_and_not_before(void) {
+  reset_queue();
+  unsigned long id = pt_add(&q, 10.0, 333, note, (void *)1);
+  TEST_ASSERT_NOT_EQUAL(0, id);
+  pt_fire(&q, 10.332);
+  TEST_ASSERT_EQUAL_INT(0, fired_count);
+  pt_fire(&q, 10.333);
+  TEST_ASSERT_EQUAL_INT(1, fired_count);
+  TEST_ASSERT_EQUAL_UINT32(id, fired_id[0]);
+  pt_fire(&q, 99.0);
+  TEST_ASSERT_EQUAL_INT(1, fired_count);
+}
+
+void test_a_removed_timer_never_fires(void) {
+  reset_queue();
+  unsigned long a = pt_add(&q, 0.0, 100, note, (void *)1);
+  pt_add(&q, 0.0, 100, note, (void *)2);
+  pt_remove(&q, a);
+  pt_fire(&q, 1.0);
+  TEST_ASSERT_EQUAL_INT(1, fired_count);
+  TEST_ASSERT_EQUAL_INT(2, fired[0]);
+}
+
+void test_removing_an_id_that_is_not_there_changes_nothing(void) {
+  reset_queue();
+  pt_add(&q, 0.0, 100, note, (void *)1);
+  pt_remove(&q, 0);
+  pt_remove(&q, 12345);
+  pt_fire(&q, 1.0);
+  TEST_ASSERT_EQUAL_INT(1, fired_count);
+}
+
+static void rearm(void *closure, unsigned long *id) {
+  (void)id;
+  fired[fired_count++] = 7;
+  pt_add((PtQueue *)closure, 5.0, 100, note, (void *)9);
+}
+
+void test_a_timer_may_add_another_and_that_one_waits_for_its_own_time(void) {
+  reset_queue();
+  pt_add(&q, 5.0, 0, rearm, &q);
+  pt_fire(&q, 5.0);
+  TEST_ASSERT_EQUAL_INT(1, fired_count);
+  pt_fire(&q, 5.05);
+  TEST_ASSERT_EQUAL_INT(1, fired_count);
+  pt_fire(&q, 5.1);
+  TEST_ASSERT_EQUAL_INT(2, fired_count);
+  TEST_ASSERT_EQUAL_INT(9, fired[1]);
+}
+
+void test_every_timer_that_is_due_fires_in_one_call(void) {
+  reset_queue();
+  for (long i = 1; i <= 3; i++) pt_add(&q, 0.0, 10 * (unsigned long)i, note, (void *)i);
+  pt_fire(&q, 1.0);
+  TEST_ASSERT_EQUAL_INT(3, fired_count);
+}
+
+void test_ids_are_never_zero_and_never_reused_while_pending(void) {
+  reset_queue();
+  unsigned long seen[PT_SLOTS];
+  for (int i = 0; i < PT_SLOTS; i++) {
+    seen[i] = pt_add(&q, 0.0, 10, note, (void *)1);
+    TEST_ASSERT_NOT_EQUAL(0, seen[i]);
+    for (int j = 0; j < i; j++) TEST_ASSERT_NOT_EQUAL(seen[j], seen[i]);
+  }
+}
+
+void test_a_full_queue_says_so_with_id_zero(void) {
+  reset_queue();
+  for (int i = 0; i < PT_SLOTS; i++) pt_add(&q, 0.0, 10, note, (void *)1);
+  TEST_ASSERT_EQUAL_UINT32(0, pt_add(&q, 0.0, 10, note, (void *)1));
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_it_never_picks_the_poem_it_just_showed);
@@ -110,5 +199,12 @@ int main(void) {
   RUN_TEST(test_the_end_of_a_poem_waits_and_then_starts_the_other_poem);
   RUN_TEST(test_poems_alternate_when_there_are_two_and_never_repeat);
   RUN_TEST(test_a_fresh_source_can_start_on_any_poem);
+  RUN_TEST(test_a_timer_fires_once_when_its_time_comes_and_not_before);
+  RUN_TEST(test_a_removed_timer_never_fires);
+  RUN_TEST(test_removing_an_id_that_is_not_there_changes_nothing);
+  RUN_TEST(test_a_timer_may_add_another_and_that_one_waits_for_its_own_time);
+  RUN_TEST(test_every_timer_that_is_due_fires_in_one_call);
+  RUN_TEST(test_ids_are_never_zero_and_never_reused_while_pending);
+  RUN_TEST(test_a_full_queue_says_so_with_id_zero);
   return UNITY_END();
 }

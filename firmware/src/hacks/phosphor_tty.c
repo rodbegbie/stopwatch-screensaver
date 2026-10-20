@@ -12,6 +12,9 @@
  * as it does for XJack. */
 #include "screenhack.h"
 
+#include <X11/Intrinsic.h>
+#include "doubletime.h"
+
 #include "textclient.h"
 #include "x11shim/pixmap.h"
 #include "x11shim/xft.h"
@@ -21,8 +24,9 @@ typedef unsigned long Time;
 #define FALSE 0
 #endif
 
-#include "hacks/phosphor_poems.h"
+#include "hacks/phosphor_poem_set.h"
 #include "hacks/phosphor_text.h"
+#include "hacks/phosphor_timers.h"
 
 static text_data *phosphor_text_open(Display *dpy) {
   (void)dpy;
@@ -54,6 +58,27 @@ static Bool phosphor_text_putc_event(text_data *td, XKeyEvent *event) {
 #define textclient_getc phosphor_text_getc
 #define textclient_puts phosphor_text_puts
 #define textclient_putc_event phosphor_text_putc_event
+
+/* Upstream blinks the cursor with Xt timers (set_cursor, cursor_on_timer), and
+ * the shim's never fire. Its three Xt calls go to a queue of our own, which
+ * phosphor_draw_blinking fires. Intrinsic.h is already in, above, so its
+ * stand-in definitions are not renamed. */
+/* Not static: test_hacks counts what is pending. */
+PtQueue phosphor_timers;
+
+static XtIntervalId phosphor_add_timeout(XtAppContext app, unsigned long ms,
+                                         XtTimerCallbackProc proc,
+                                         XtPointer closure) {
+  (void)app;
+  return pt_add(&phosphor_timers, double_time(), ms, (PtProc)proc, closure);
+}
+
+static void phosphor_remove_timeout(XtIntervalId id) {
+  pt_remove(&phosphor_timers, id);
+}
+
+#define XtAppAddTimeOut phosphor_add_timeout
+#define XtRemoveTimeOut phosphor_remove_timeout
 
 /* Upstream fades a glyph's glow by filling its cell through a clip mask, and
  * the shim's XFillRectangle ignores the mask (changing that would move every
@@ -120,11 +145,21 @@ static void phosphor_free_all(Display *dpy, Window window, void *closure) {
     }
 }
 
+static unsigned long phosphor_draw_blinking(Display *dpy, Window window,
+                                            void *closure) {
+  pt_fire(&phosphor_timers, double_time());
+  return phosphor_draw(dpy, window, closure);
+}
+
 /* Upstream's scale of 6 gives a 12 by 7 grid on 466 pixels. A cache of every
  * fade of every glyph is about 20 MB at scale 3 against 8 MB of PSRAM. */
 static const char *const phosphor_overrides[] = {"*phosphorScale: 3",
                                                  "*cache: False", 0};
 
-const HackEntry phosphor_hack = {"Phosphor",     phosphor_defaults, phosphor_init,
-                                 phosphor_draw,  phosphor_free_all, NULL,
+const HackEntry phosphor_hack = {"Phosphor",
+                                 phosphor_defaults,
+                                 phosphor_init,
+                                 phosphor_draw_blinking,
+                                 phosphor_free_all,
+                                 NULL,
                                  phosphor_overrides};

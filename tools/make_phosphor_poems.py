@@ -3,10 +3,14 @@ source reads.
 
 Each poem becomes one string of terminal output: clear the screen, type a
 `cat` command, then the poem word-wrapped to fit the part of the round panel
-that shows (see the table below). A poem that does not fit is paged: the page
-ends with `--More--` and a pause byte, and the next page clears the screen.
-Phosphor leaves a ghost of every character a scroll moves, which reads as
-noise under the new text, so nothing scrolls.
+that shows (see the table below). Two layouts are made, one header each:
+
+- paged (`phosphor_poems.h`): a poem that does not fit is paged. A page ends
+  with `--More--` and a pause byte, and the next page clears the screen.
+  Phosphor leaves a ghost of every character a scroll moves, which reads as
+  noise under the new text, so nothing scrolls.
+- scrolling (`phosphor_poems_scroll.h`, `-DPHOSPHOR_SCROLL`): the poem types
+  into a scroll region over the rows the circle shows, and scrolls there.
 
 Run with: uv run tools/make_phosphor_poems.py
 """
@@ -17,6 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "firmware" / "assets" / "phosphor-poems.txt"
 OUTPUT = ROOT / "firmware" / "src" / "hacks" / "phosphor_poems.h"
+OUTPUT_SCROLL = ROOT / "firmware" / "src" / "hacks" / "phosphor_poems_scroll.h"
 
 # At scale 3 the grid is 25 by 15 cells, and the circle shows columns 4 to 21
 # on rows 2 to 13 (rows 0, 1 and 14 are mostly off the glass).
@@ -28,8 +33,7 @@ LAST_ROW = 13
 # The command takes row 2 and a gap row 3, so a page has rows 4 to 13: ten.
 PAGE_ROWS = LAST_ROW - (FIRST_ROW + 2) + 1
 MORE = "--More--"
-# The last page ends with a blank row, the byline and a prompt row.
-TAIL_ROWS = 3
+# The last page ends with a blank row, the byline (which may wrap) and a prompt.
 # The byte the text source waits on; the terminal never sees it.
 PAUSE = "\x01"
 
@@ -84,11 +88,16 @@ def parse(text: str) -> list[tuple[str, str, list[str]]]:
     return poems
 
 
-def paginate(groups: list[list[str]]) -> list[list[str]]:
+def byline_rows(byline: str) -> list[str]:
+    return wrap(f"-- {byline}")
+
+
+def paginate(groups: list[list[str]], tail_rows: int) -> list[list[str]]:
     """Rows of each page. A group (one verse line, wrapped) is never split. A
-    page that is not the last keeps a row for --More--, and the last keeps rows
-    for a blank, the byline and the prompt. Blank rows at a page's edges go."""
-    final_room = PAGE_ROWS - TAIL_ROWS
+    page that is not the last keeps a row for --More--, and the last keeps
+    tail_rows for a blank, the byline and the prompt. Blank rows at a page's
+    edges go."""
+    final_room = PAGE_ROWS - tail_rows
     pages: list[list[str]] = []
     i = 0
     while True:
@@ -112,24 +121,26 @@ def paginate(groups: list[list[str]]) -> list[list[str]]:
         pages.append(page)
 
 
-def render(name: str, byline: str, lines: list[str]) -> str:
+def indent(rows: list[str]) -> str:
+    return "\r\n".join(" " * INDENT + row if row else "" for row in rows)
+
+
+def render(name: str, byline: str, lines: list[str], paged: bool = True) -> str:
     """The terminal output for one poem."""
     groups = [wrap(line) if line else [""] for line in lines]
-    pages = paginate(groups)
+    tail = ["", *byline_rows(byline), "> _"]
+    command = CLEAR + "\r\n" * FIRST_ROW + " " * INDENT + f"> cat {name}\r\n"
+    if not paged:
+        # Rows 2 to 13 of the circle, 1-based: a region from row 5 to row 14.
+        region = f"\x1b[{FIRST_ROW + 3};{LAST_ROW + 1}r"
+        body = [row for group in groups for row in group]
+        return command + region + indent([*body, *tail])
+    pages = paginate(groups, len(tail))
     out = []
     for number, rows in enumerate(pages):
-        out.append(CLEAR + "\r\n" * FIRST_ROW)
-        out.append(" " * INDENT + f"> cat {name}\r\n\r\n")
-        if number + 1 < len(pages):
-            rows = [*rows, MORE]
-        else:
-            rows = [*rows, "", f"-- {byline}", "> _"]
-        for i, row in enumerate(rows):
-            out.append(" " * INDENT + row if row else "")
-            if i + 1 < len(rows):
-                out.append("\r\n")
-        if number + 1 < len(pages):
-            out.append(PAUSE)
+        last_page = number + 1 == len(pages)
+        rows = [*rows, *tail] if last_page else [*rows, MORE]
+        out.append(command + "\r\n" + indent(rows) + ("" if last_page else PAUSE))
     return "".join(out)
 
 
@@ -152,17 +163,19 @@ def c_string(text: str) -> str:
     return "\n".join(pieces)
 
 
-def header(text: str) -> str:
+def header(text: str, paged: bool = True) -> str:
     poems = parse(text)
     body = []
     for name, byline, lines in poems:
-        body.append(f"    /* {name} */\n{c_string(render(name, byline, lines))},")
+        shown = c_string(render(name, byline, lines, paged))
+        body.append(f"    /* {name} */\n{shown},")
     entries = "\n".join(body)
+    guard = "PHOSPHOR_POEMS_H" if paged else "PHOSPHOR_POEMS_SCROLL_H"
     return (
         "/* Generated by tools/make_phosphor_poems.py from "
         "firmware/assets/phosphor-poems.txt; do not edit. */\n"
-        "#ifndef PHOSPHOR_POEMS_H\n"
-        "#define PHOSPHOR_POEMS_H\n\n"
+        f"#ifndef {guard}\n"
+        f"#define {guard}\n\n"
         "static const char *const kPoems[] = {\n"
         f"{entries}\n"
         "};\n\n"
@@ -172,10 +185,12 @@ def header(text: str) -> str:
 
 
 def main(argv: list[str]) -> int:
-    text = header(SOURCE.read_text())
-    if not OUTPUT.exists() or OUTPUT.read_text() != text:
-        OUTPUT.write_text(text)
-    print(f"{OUTPUT.relative_to(ROOT)}: {len(parse(SOURCE.read_text()))} poems")
+    source = SOURCE.read_text()
+    for path, paged in ((OUTPUT, True), (OUTPUT_SCROLL, False)):
+        text = header(source, paged)
+        if not path.exists() or path.read_text() != text:
+            path.write_text(text)
+        print(f"{path.relative_to(ROOT)}: {len(parse(source))} poems")
     return 0
 
 

@@ -18,6 +18,9 @@
 #include "glshim/glshim.h"
 #include "grabclient.h"
 #include "hacks/fold_alpha.h"
+#include "hacks/phosphor_pick.h"
+#include "hacks/phosphor_timers.h"
+#include "hacks/phosphor_poem_set.h"
 #include "hacks/registry.h"
 #include "test_font.h"
 #include "runner/hack_runner.h"
@@ -602,7 +605,7 @@ static const uint64_t kBaseline[] = {
     0x48cf40bfdc581fb9ull, /* Superquadrics: taken after looking at the frames */
     0x55d4faaa474ed1c9ull, /* Menger: taken after looking at the frames */
     0x63c7a4c072b4282dull, /* Circuit: taken after looking at the frames */
-    0xfbf1f0b27441859dull, /* Phosphor: taken after looking at the frames (scale 3, poems, no cache) */
+    0x8793ac65dca470b9ull, /* Phosphor: taken after looking at the frames (scale 3, scrolling poems, blinking cursor, no cache) */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -764,6 +767,66 @@ void test_phosphor_draws_letters_not_solid_cells(void) {
   TEST_ASSERT_TRUE_MESSAGE(lettered >= 5, "no letters on rows 4 to 6");
   TEST_ASSERT_TRUE_MESSAGE(solid <= 1, "cells are solid, not letters");
   runner_destroy(r);
+}
+
+/* Upstream blinks the cursor with Xt timers, which the shim never fires; the
+ * wrapper keeps a small queue of its own and fires it once a draw. A clock the
+ * test moves 50 ms a step stands in for time. Wheelbarrow is the shortest
+ * poem: once its last character is typed and the fade is over (23 ticks), the
+ * only thing that changes is the cursor, so the frames after must show two
+ * pictures, cursor on and cursor off (on 666 ms, off 333 ms: a 20 step cycle). */
+extern PtQueue phosphor_timers;
+
+static int pending_blink_timers(void) {
+  int n = 0;
+  for (int i = 0; i < PT_SLOTS; i++) n += phosphor_timers.timer[i].id != 0;
+  return n;
+}
+
+static double blink_now;
+static double blink_clock(void) { return blink_now; }
+
+static uint64_t canvas_hash(void) {
+  uint64_t h = 1469598103934665603ull;
+  for (int i = 0; i < cv.w * cv.h; i++) h = (h ^ cv.px[i]) * 1099511628211ull;
+  return h;
+}
+
+void test_phosphor_blinks_its_cursor_once_the_typing_stops(void) {
+  int poem = -1;
+  for (int i = 0; i < POEM_COUNT; i++)
+    if (strstr(kPoems[i], "> cat wheelbarrow")) poem = i;
+  TEST_ASSERT_TRUE(poem >= 0);
+  int seed = 1;
+  for (; seed < 500; seed++) {
+    srandom(seed);
+    if (phosphor_next_poem(-1, POEM_COUNT, (unsigned long)random()) == poem) break;
+  }
+  TEST_ASSERT_TRUE_MESSAGE(seed < 500, "no seed picks the wheelbarrow");
+  const int typed = (int)strlen(kPoems[poem]);
+
+  xshim_set_clock(blink_clock);
+  srandom(seed);
+  blink_now = 1000.0;
+  HackRunner *r = runner_create(&cv);
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("Phosphor")));
+  uint64_t seen[20];
+  int distinct = 0;
+  for (int step = 0; step < typed + 52; step++) {
+    blink_now += 0.05;
+    runner_step(r);
+    if (step < typed + 30) continue;
+    const uint64_t h = canvas_hash();
+    int fresh = 1;
+    for (int i = 0; i < distinct; i++) fresh &= seen[i] != h;
+    if (fresh && distinct < 20) seen[distinct++] = h;
+  }
+  /* Moving the cursor removes the pending timer before it makes another: with
+   * no removal the chains pile up and the blink runs at several rates. */
+  TEST_ASSERT_EQUAL_INT_MESSAGE(1, pending_blink_timers(), "one timer pending");
+  runner_destroy(r);
+  TEST_ASSERT_EQUAL_INT_MESSAGE(0, pending_blink_timers(), "stopping leaves a timer");
+  TEST_ASSERT_EQUAL_INT_MESSAGE(2, distinct, "the cursor should show on and off");
 }
 
 /* Phosphor's poem comes from random(), and picks a different one each loop. */
@@ -2025,6 +2088,7 @@ int main(void) {
   RUN_TEST(test_xjack_keeps_its_lines_inside_the_page);
   RUN_TEST(test_phosphor_draws_letters_not_solid_cells);
   RUN_TEST(test_phosphor_types_a_different_poem_for_a_different_seed);
+  RUN_TEST(test_phosphor_blinks_its_cursor_once_the_typing_stops);
   RUN_TEST(test_loop_picks_squares_or_hexagons_again_at_every_start);
   RUN_TEST(test_write_the_unpinned_hashes_when_asked);
   RUN_TEST(test_loop_keeps_drawing_squares_when_malloc_of_nothing_returns_null);
