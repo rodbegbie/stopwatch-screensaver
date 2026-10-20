@@ -1,8 +1,10 @@
 /* Builds the unmodified phosphor.c on the board.
  *
  * Upstream reads its text from a program on a pty (xscreensaver-text), and the
- * device has neither. This file swaps in a text source of its own: a short
- * terminal session, typed a character a frame, that loops. The shared
+ * device has neither. This file swaps in a text source of its own: it `cat`s
+ * a public-domain poem, picked at random, typed a character a frame
+ * (assets/phosphor-poems.txt, made into phosphor_poems.h by
+ * tools/make_phosphor_poems.py), then clears and starts another. The shared
  * textclient.h stand-in stays as it is (XMatrix treats its NULL as "no text").
  *
  * The font is the builtin 6x10 one (images/gen/6x10font_png.h, a blob), and
@@ -19,38 +21,12 @@ typedef unsigned long Time;
 #define FALSE 0
 #endif
 
-struct text_data {
-  size_t pos;
-  int pause;
-};
-
-/* Ends with a pause of PAUSE_FRAMES draws and then clears the screen, so the
- * last page fades out as phosphor does. */
-#define PAUSE_FRAMES 60
-
-/* The panel is round, so the corners of the 25 by 15 grid are off the glass:
- * the text keeps to the columns the circle shows on each row (row 2 shows
- * columns 4 to 22, row 13 columns 4 to 21, row 14 columns 7 to 18). */
-static const char kSession[] =
-    "\033[2J\033[H"
-    "\r\n\r\n"
-    "    \033[7m STOPWATCH C152 \033[0m\r\n"
-    "\r\n"
-    "   > boot --verbose\r\n"
-    "   CPU0 240MHZ ok\r\n"
-    "   CPU1 240MHZ ok\r\n"
-    "   PSRAM 8192K ok\r\n"
-    "   AMOLED 466x466 ok\r\n"
-    "\r\n"
-    "   > cat motd\r\n"
-    "   Nobody asked for a\r\n"
-    "   glass terminal on\r\n"
-    "    a stopwatch.\r\n"
-    "       > _";
+#include "hacks/phosphor_poems.h"
+#include "hacks/phosphor_text.h"
 
 static text_data *phosphor_text_open(Display *dpy) {
   (void)dpy;
-  return (text_data *)calloc(1, sizeof(text_data));
+  return phosphor_text_create(kPoems, POEM_COUNT);
 }
 
 static void phosphor_text_close(text_data *td) { free(td); }
@@ -60,16 +36,7 @@ static void phosphor_text_reshape(text_data *td, int pix_w, int pix_h, int char_
   (void)td, (void)pix_w, (void)pix_h, (void)char_w, (void)char_h, (void)max_lines;
 }
 
-static int phosphor_text_getc(text_data *td) {
-  if (td->pause > 0) {
-    if (--td->pause == 0) td->pos = 0;
-    return -1;
-  }
-  const char c = kSession[td->pos++];
-  if (c) return (unsigned char)c;
-  td->pause = PAUSE_FRAMES;
-  return -1;
-}
+static int phosphor_text_getc(text_data *td) { return phosphor_text_next(td); }
 
 static Bool phosphor_text_puts(text_data *td, const char *s) {
   (void)td, (void)s;

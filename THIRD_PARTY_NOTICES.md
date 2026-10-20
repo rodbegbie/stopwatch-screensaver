@@ -386,6 +386,29 @@ transparency mask, deflated, without changing a glyph. The PNG has no licence
 text of its own, and `phosphor.c`, which loads it, carries jwz's permission
 notice (above). The blob format is in `ximage-loader.h`.
 
+### The Phosphor poems
+
+`firmware/assets/phosphor-poems.txt` holds the poems Phosphor types, and
+`firmware/src/hacks/phosphor_poems.h` is made from it by
+`tools/make_phosphor_poems.py`. Each was published before 1931, so it is in the
+public domain in the United States, and each author died more than 70 years
+ago. The texts are Wikisource's transcriptions of the first printings, in
+ASCII (curly quotes became straight ones and a dash became `--`):
+
+- "The Raven" (first stanza), Edgar Allan Poe, 1845, from *The Raven and Other
+  Poems*.
+- "Ozymandias", Percy Bysshe Shelley, 1818, as printed in *The Examiner*
+  (London), with its original spelling.
+- "Fire and Ice" and "Stopping by Woods on a Snowy Evening", Robert Frost, from
+  *New Hampshire* (1923).
+- "The Red Wheelbarrow" (poem XXII of *Spring and All*), William Carlos
+  Williams, 1923.
+- "The Tyger" (first two stanzas), William Blake, from *Songs of Experience*
+  (1794), with its original spelling.
+- "Hope is the thing with feathers" (first two stanzas), Emily Dickinson, first
+  published in 1891, from Wikisource's transcription of *The Complete Poems of
+  Emily Dickinson* (Little, Brown).
+
 ### The Pacman sprites
 
 Pacman draws its characters from `hacks/images/pacman.png` in xscreensaver

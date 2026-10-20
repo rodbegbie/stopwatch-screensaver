@@ -602,7 +602,7 @@ static const uint64_t kBaseline[] = {
     0x48cf40bfdc581fb9ull, /* Superquadrics: taken after looking at the frames */
     0x55d4faaa474ed1c9ull, /* Menger: taken after looking at the frames */
     0x63c7a4c072b4282dull, /* Circuit: taken after looking at the frames */
-    0x553af623dd77a599ull, /* Phosphor: taken after looking at the frames (scale 3, canned session, no cache) */
+    0xfbf1f0b27441859dull, /* Phosphor: taken after looking at the frames (scale 3, poems, no cache) */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -743,20 +743,47 @@ void test_xjack_keeps_its_lines_inside_the_page(void) {
 
 /* Phosphor fades a glyph's glow by filling its cell through a clip mask. The
  * shim's XFillRectangle ignores the mask, so the wrapper asks for the clipped
- * fill: without it every letter is a solid green cell. Row 4 is "> boot
- * --verbose" (cells 30 pixels tall, 18 wide): the pinned hash cannot say
- * "glyphs, not blocks", and a block row would be about 88 percent lit. */
+ * fill: without it every letter is a solid green cell. The pinned hash cannot
+ * say "glyphs, not blocks". Which poem it types depends on random(), so this
+ * looks at rows 4 to 6 (cells are 18 by 30) after 60 frames, when some text is
+ * up: at most the cursor's cell may be nearly solid, and there must be letters. */
 void test_phosphor_draws_letters_not_solid_cells(void) {
+  srandom(1);
   HackRunner *r = runner_create(&cv);
   TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("Phosphor")));
-  for (int f = 0; f < 200; f++) runner_step(r);
-  int lit = 0;
-  for (int y = 4 * 30; y < 5 * 30; y++)
-    for (int x = 0; x < 20 * 18; x++) lit += cv.px[y * cv.w + x] != 0;
-  const int cells = 20 * 18 * 30;
-  TEST_ASSERT_TRUE_MESSAGE(lit > cells / 10, "no letters on row 4");
-  TEST_ASSERT_TRUE_MESSAGE(lit < cells / 2, "row 4 is solid cells, not letters");
+  for (int f = 0; f < 60; f++) runner_step(r);
+  int lettered = 0, solid = 0;
+  for (int row = 4; row <= 6; row++)
+    for (int col = 0; col < 25; col++) {
+      int lit = 0;
+      for (int y = row * 30; y < row * 30 + 30; y++)
+        for (int x = col * 18; x < col * 18 + 18; x++) lit += cv.px[y * cv.w + x] != 0;
+      lettered += lit > 0;
+      solid += lit > 18 * 30 * 3 / 4;
+    }
+  TEST_ASSERT_TRUE_MESSAGE(lettered >= 5, "no letters on rows 4 to 6");
+  TEST_ASSERT_TRUE_MESSAGE(solid <= 1, "cells are solid, not letters");
   runner_destroy(r);
+}
+
+/* Phosphor's poem comes from random(), and picks a different one each loop. */
+void test_phosphor_types_a_different_poem_for_a_different_seed(void) {
+  uint64_t seen[8];
+  int distinct = 0;
+  for (int seed = 1; seed <= 8; seed++) {
+    srandom(seed);
+    HackRunner *r = runner_create(&cv);
+    TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("Phosphor")));
+    for (int f = 0; f < 80; f++) runner_step(r);
+    uint64_t h = 1469598103934665603ull;
+    for (int i = 0; i < cv.w * cv.h; i++) h = (h ^ cv.px[i]) * 1099511628211ull;
+    int fresh = 1;
+    for (int i = 0; i < seed - 1; i++) fresh &= seen[i] != h;
+    distinct += fresh;
+    seen[seed - 1] = h;
+    runner_destroy(r);
+  }
+  TEST_ASSERT_TRUE_MESSAGE(distinct >= 4, "the same poem for every seed");
 }
 
 /* Loop picks squares or hexagons at random when it starts, but upstream keeps
@@ -1997,6 +2024,7 @@ int main(void) {
   RUN_TEST(test_xjack_types_on_cream_paper);
   RUN_TEST(test_xjack_keeps_its_lines_inside_the_page);
   RUN_TEST(test_phosphor_draws_letters_not_solid_cells);
+  RUN_TEST(test_phosphor_types_a_different_poem_for_a_different_seed);
   RUN_TEST(test_loop_picks_squares_or_hexagons_again_at_every_start);
   RUN_TEST(test_write_the_unpinned_hashes_when_asked);
   RUN_TEST(test_loop_keeps_drawing_squares_when_malloc_of_nothing_returns_null);
