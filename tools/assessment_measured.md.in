@@ -62,8 +62,10 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | GLMatrix | 13.4-43.6 | 8.9-50.8 ms | 10.0-23.6 ms | 0-3.6 ms | 0 (PSRAM constant on a second visit) |
 | Superquadrics | 14.4-26.6 | 26.3-44.3 ms | 8.1-26.1 ms | 0-3.3 ms | 0 (PSRAM constant on a second visit) |
 | Menger | 12.8-44.0 | 11.2-66.3 ms | 6.4-16.3 ms | 0-5.0 ms | 0 (PSRAM constant on a second visit) |
-| Circuit | 13.0-18.4 | 26.0-50.8 ms | 24.8-27.2 ms | 0 ms | half resolution; 217 KB more PSRAM than full size (6,049,231, constant) |
-| Circuit (full size; not registered) | 8.4-11.6 | 58.9-93.9 ms | 24.7-27.3 ms | 0 ms | 0 (PSRAM constant at 5,832,095; heap fell 1 KB in the first minute, then held) |
+| Circuit | 9.0-11.4 | 64.3-110.9 ms | 0.1-27.3 ms | 0-0.2 ms | full size, push overlapped (registered); free PSRAM 5,832,095 with the 434 KB spare canvas, internal heap 8.7 KB lower than without overlap |
+| Circuit (full size, no push overlap; not registered) | 8.4-11.0 | 63.3-93.6 ms | 24.7-27.2 ms | 0 ms | free PSRAM 6,266,423 (no spare canvas), internal heap 256.6 KB |
+| Circuit (half resolution; not registered) | 13.0-18.4 | 26.0-50.8 ms | 24.8-27.2 ms | 0 ms | `-DCIRCUIT_HALF`; free PSRAM 6,049,231, 217 KB more free than at full size |
+| Circuit (full size, before the overlap flag; not registered) | 8.4-11.6 | 58.9-93.9 ms | 24.7-27.3 ms | 0 ms | free PSRAM 5,832,095 (the spare canvas was allocated but unused); heap fell 1 KB in the first minute, then held |
 | Circuit (float literals; not registered) | 8.6-11.6 | 58.8-90.6 ms | 24.7-27.2 ms | 0 ms | 0 (PSRAM constant; two rounds beside the double build, both full size: 9.79 vs 9.76 fps) |
 | Celtic (as copied; first port) | 1.0-20.4 | 29-1025 ms | 0.1-5.5 ms | 7.9-928 ms | none measurable |
 | Celtic (single precision, upstream graph sizes) | 1.0-20.2 | 5.6-151 ms | 0.8-6.6 ms | 9.4-1110 ms | 16 KB in one window (heap ran out) |
