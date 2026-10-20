@@ -1902,6 +1902,26 @@ void test_circuit_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("Circuit", 1);
 }
 
+/* The leak test above stops Circuit at one seed, where no diode happens to be
+ * on the board, and a diode's band is only 20 bytes. Stopping it with
+ * different parts on show must hold exactly what stopping it at the start
+ * does: whatever the board held is freed, bands included. */
+static size_t circuit_held_after(unsigned seed, int frames) {
+  const HackEntry *const hacks[] = {g_hacks[index_of("Circuit")]};
+  srandom(seed);
+  HackRunner *r = runner_create_with(&cv, hacks, 1);
+  runner_start(r, 0);
+  for (int f = 0; f < frames; f++) runner_step(r);
+  runner_destroy(r);
+  return __sanitizer_get_current_allocated_bytes();
+}
+
+void test_circuit_frees_every_part_on_the_board_when_it_stops(void) {
+  const size_t at_start = circuit_held_after(1, 1);
+  for (unsigned seed = 1; seed <= 6; seed++)
+    TEST_ASSERT_EQUAL_UINT64_MESSAGE(at_start, circuit_held_after(seed, 800), "a part was left allocated");
+}
+
 /* Circuit builds its seven-segment display from GL_POLYGON hexagons, which
  * TinyGL draws as fans (ARS-18). A lit segment is pure red, and nothing else
  * the hack draws is, so the red count over a run shows whether they arrive. */
@@ -2074,6 +2094,7 @@ int main(void) {
   RUN_TEST(test_superquadrics_draws_its_polygons);
   RUN_TEST(test_menger_draws_its_polygons);
   RUN_TEST(test_circuit_draws_its_seven_segment_display);
+  RUN_TEST(test_circuit_frees_every_part_on_the_board_when_it_stops);
   RUN_TEST(test_circuit_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);

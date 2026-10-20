@@ -582,9 +582,12 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   host run aborted in the 3,000-frame test on two over-reads (see `gl.md`).
   `free_circuit` never frees the components still on the board, up to ten, so
   every stop leaked them: the wrapper frees them (payload, a diode's band, the
-  component) before upstream's free, and the leak test fails without it. Host
-  step 1 ms; `gl_budget.py` predicts 79-85 ms (about 12 fps), unmeasured on
-  the board. `tools/softdouble_report.py` finds about 160 soft-double call
-  sites in `draw_circuit` (literals like `0.02` and float to double
-  promotions): a single-precision wrapper is the next idea if the step is
-  long.
+  component) before upstream's free, and the leak test fails without it. On
+  the board, over 240 s pinned: 8.4-11.4 fps (mean 9.7), step 60-93 ms growing
+  as components arrive, push 24.8 ms (every frame is a full push: the grid
+  fills the screen), no wait, PSRAM flat. `gl_budget.py` predicted 79-85 ms a
+  frame (12 fps) against about 103 measured (step plus push), so it
+  under-predicts a lit, line-heavy hack as it did for others.
+  `tools/softdouble_report.py` finds about 160 soft-double call sites in
+  `draw_circuit` (literals like `0.02` and float to double promotions): a
+  single-precision wrapper is the next idea, not yet tried or measured.
