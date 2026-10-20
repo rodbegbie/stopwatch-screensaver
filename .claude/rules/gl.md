@@ -178,6 +178,17 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   four only for `GL_LIGHT_MODEL_AMBIENT`. `glopLightModel` still reads the
   value back as an int from a float slot, which only works because any
   non-zero float has non-zero bits; leave it unless a hack passes 0.
+- `glLightfv` had the same fault (ARS-55, Circuit): it copied four floats
+  whatever the parameter, so a three-float `GL_SPOT_DIRECTION` read one past
+  the array (AddressSanitizer: stack-buffer-overflow, found by the 3,000-frame
+  test, not by a frame). `tinygl_patch.py` now copies four for the colours and
+  the position, three for a spot direction and one for the rest. A colour
+  array of three floats is the hack's fault, not TinyGL's (GL says four):
+  Circuit's capacitor `brown` is one, so `circuit_gl.c` passes colours on with
+  an alpha of 1. `glLighti` did not exist; `glshim.c` forwards it to
+  `glLightf`. A hack's first sanitizer run is the cheap check for all of this:
+  a sanitized `dump` build (see the sweep below) over several seeds takes
+  seconds, where `test_hacks` takes five minutes a try.
 - Morph3D is small and wanders by design: a window (not iconic) build scales
   the object to 0.3 and moves it on a Lissajous path, so it is about 70 px
   across on the 466 px canvas and its position differs frame to frame. It

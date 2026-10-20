@@ -575,3 +575,16 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   frames. It grows to 400 copies of 2,700 stars, 3.4 fps at 20, so the
   registry capped it at 4 (`*smear: 0.01`, now gone). To bring it back, add its
   registry entry (with that override), expected name, pin and leak test again.
+- Circuit (`circuit_gl.c`, ARS-55) is the first port to lean on the TinyGL
+  `GL_POLYGON` fan (ARS-18): its seven-segment display is `GL_POLYGON`
+  hexagons, so it needs no `glBegin` wrapper, and a test counts pure-red pixels
+  over a run (3,166 at most; nothing else it draws is pure red). The first
+  host run aborted in the 3,000-frame test on two over-reads (see `gl.md`).
+  `free_circuit` never frees the components still on the board, up to ten, so
+  every stop leaked them: the wrapper frees them (payload, a diode's band, the
+  component) before upstream's free, and the leak test fails without it. Host
+  step 1 ms; `gl_budget.py` predicts 79-85 ms (about 12 fps), unmeasured on
+  the board. `tools/softdouble_report.py` finds about 160 soft-double call
+  sites in `draw_circuit` (literals like `0.02` and float to double
+  promotions): a single-precision wrapper is the next idea if the step is
+  long.

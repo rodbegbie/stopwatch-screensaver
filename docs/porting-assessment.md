@@ -34,8 +34,8 @@ it with `uv run tools/score_hacks.py`.
 | S | 2D, and the unmodified source compiles against the shim | 3 |
 | M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 1 |
 | L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 40 |
-| XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 122 |
-| Ported | Already running on the device, so no rating | 117 |
+| XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 121 |
+| Ported | Already running on the device, so no rating | 118 |
 
 ## Speed
 
@@ -1056,7 +1056,6 @@ needing few additions come first.
 | cage | gl | XL | - | - | - | - | 498 |
 | carousel | gl | XL | - | - | - | - | 982 |
 | chompytower | gl | XL | - | - | - | - | 1131 |
-| circuit | gl | XL | - | - | - | - | 2106 |
 | cityflow | gl | XL | - | - | - | - | 561 |
 | companion | gl | XL | - | ❌ | - | - | 605 |
 | covid19 | gl | XL | - | - | - | - | 657 |
@@ -1264,6 +1263,7 @@ needing few additions come first.
 | xjack | 2d | - | 0.1-13.8 ms measured | ✅ | `FcChar8`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall`, `screen_number` | pixmaps | 508 |
 | xmatrix | 2d | - | - | ✅ | `images/gen/matrix1_png.h`, `images/gen/matrix1b_png.h`, `images/gen/matrix2_png.h`, `images/gen/matrix2b_png.h`, `matrix1_png`, `matrix1b_png`, `matrix2_png`, `matrix2b_png` | pixmaps, readback | 1915 |
 | b_lockglue | gl | - | 27-101 ms measured | ✅ | - | - | 240 |
+| circuit | gl | - | - | ✅ | - | - | 2106 |
 | cubenetic | gl | - | 44.3-72.3 ms measured | ✅ | - | - | 616 |
 | cubestack | gl | - | 13.9-46.1 ms measured | ✅ | - | - | 453 |
 | cubicgrid | gl | - | - | ✅ | - | - | 322 |
