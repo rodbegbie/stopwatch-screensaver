@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.11.5",
+  "checkpoint_id": "01M5BXHA0F5P5KK1WZHRRTFTVT",
+  "strategy": "manual-commit",
+  "branch": "feature/ARS-57-chicago-font-badge",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "README.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 36,
+    "cache_creation_tokens": 21026,
+    "cache_read_tokens": 3266241,
+    "output_tokens": 10900,
+    "api_call_count": 16
+  }
+}
