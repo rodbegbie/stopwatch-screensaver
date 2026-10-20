@@ -62,7 +62,6 @@ for name in ("braid",) + (
     "glmatrix",
     "cubenetic",
     "superquadrics",
-    "circuit",
 ):
     source = (project / "src" / "hacks" / name / f"{name}.c").read_text()
     if name == "fireworkx":
