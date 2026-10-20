@@ -1,0 +1,15 @@
+Trail 85 is approved and can be merged.  The version on the device is noticably blocky given the fine gridlines.  So let's take a look at a cheaper line path as an option.
+
+---
+
+OK, let's keep -DCIRCUIT_HALF as an opt-in for now and try repaints_all on regular resolution.
+
+---
+
+<task-notification>
+<task-id>bd3bpu90o</task-id>
+<tool-use-id>toolu_01QPDq2iW3EJpZiqH62jWZBp</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/9fff6ba0-d196-40c8-b82b-c5687e5a7479/tasks/bd3bpu90o.output</output-file>
+<status>completed</status>
+<summary>Background command "Run test_hacks with Circuit flagged and the full-size pin" completed (exit code 0)</summary>
+</task-notification>
