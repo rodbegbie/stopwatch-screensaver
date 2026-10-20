@@ -404,6 +404,191 @@ DISC_TRIANGLE = (
     "TGL_IN_DISC(zb, p1) && TGL_IN_DISC(zb, p2));\n"
 )
 
+# Line batching (ARS-56). The lines of one glBegin(GL_LINES) batch that move in
+# lockstep (same major axis, step count and start) are drawn a few
+# pixels each in turn instead of one after another, so that neighbouring lines
+# share PSRAM cache lines in the depth and colour buffers. A pixel is visited
+# at one major coordinate, so lines in lockstep reach it at the same step, in
+# queue order: the result is bit for bit what drawing them in turn gives. Only
+# flat-coloured, depth-tested, unsmoothed lines are queued, and only
+# consecutive ones are grouped. Everything else flushes the queue first.
+# -DGL_NO_LINE_BATCH draws every line at once, as before.
+LINE_BATCH = """
+#ifndef GL_NO_LINE_BATCH
+#define ZB_LINEQ_MAX 8
+#define ZB_LINE_TURN 32
+
+typedef struct {
+	ZBufferPoint a, b;
+	GLint color;
+} ZBQLine;
+
+typedef struct {
+	PIXEL* pp;
+	GLushort* pz;
+	GLint z, zinc, a, d1, d2, i1, i2, left;
+	PIXEL color;
+} ZBLineRun;
+
+static ZBQLine zb_lineq[ZB_LINEQ_MAX];
+static GLint zb_lineq_n;
+
+/* The axis the line steps along (0 x, 1 y, -1 for a single pixel), its step
+ * count and where it starts along it. Two lines with the same three reach a
+ * pixel at the same step, so their direction does not matter: lines that run
+ * apart from one start share only that first pixel. */
+static GLint zb_lockstep_key(const ZBQLine* q, GLint* n, GLint* start) {
+	GLint dx = q->b.x - q->a.x, dy = q->b.y - q->a.y;
+	GLint adx = dx < 0 ? -dx : dx;
+	if (dx == 0 && dy == 0) return -1;
+	if (adx >= dy) {
+		*n = adx;
+		*start = q->a.x;
+		return 0;
+	}
+	*n = dy;
+	*start = q->a.y;
+	return 1;
+}
+
+/* The state zline.h's DRAWLINE starts from, for a flat, depth-tested line. */
+static void zb_line_run_init(ZBuffer* zb, const ZBQLine* q, ZBLineRun* r) {
+	GLint sx = zb->xsize;
+	GLint dx = q->b.x - q->a.x, dy = q->b.y - q->a.y;
+	GLint major, minor, i1, i2;
+	r->pp = (PIXEL*)((GLbyte*)zb->pbuf + zb->linesize * q->a.y + q->a.x * PSZB);
+	r->pz = zb->zbuf + (q->a.y * sx + q->a.x);
+	r->z = q->a.z;
+	r->color = (PIXEL)q->color;
+	if (dx == 0 && dy == 0) {
+		r->zinc = r->a = r->d1 = r->d2 = r->i1 = r->i2 = 0;
+		r->left = 1;
+		return;
+	}
+	if (dx > 0) {
+		if (dx >= dy) {
+			major = dx, minor = dy, i1 = sx + 1, i2 = 1;
+		} else {
+			major = dy, minor = dx, i1 = sx + 1, i2 = sx;
+		}
+	} else {
+		dx = -dx;
+		if (dx >= dy) {
+			major = dx, minor = dy, i1 = sx - 1, i2 = -1;
+		} else {
+			major = dy, minor = dx, i1 = sx - 1, i2 = sx;
+		}
+	}
+	r->zinc = (q->b.z - q->a.z) / major;
+	r->a = 2 * minor - major;
+	r->d1 = 2 * minor;
+	r->d2 = 2 * major - 2 * minor;
+	r->i1 = i1;
+	r->i2 = i2;
+	r->left = major + 1;
+}
+
+/* Up to `steps` more pixels of the line, each step as the loop in zline.h. */
+TGL_HOT static void zb_line_run(ZBuffer* zb, ZBLineRun* r, GLint steps) {
+	GLubyte zbdt = zb->depth_test;
+	GLubyte zbdw = zb->depth_write;
+	register PIXEL* pp = r->pp;
+	register GLushort* pz = r->pz;
+	register GLint z = r->z, a = r->a;
+	const GLint zinc = r->zinc, d1 = r->d1, d2 = r->d2, i1 = r->i1, i2 = r->i2;
+	const PIXEL color = r->color;
+	if (steps > r->left) steps = r->left;
+	r->left -= steps;
+	while (--steps >= 0) {
+		GLint zz = z >> ZB_POINT_Z_FRAC_BITS;
+		if (ZCMP(zz, *pz)) {
+			*pp = color;
+			if (zbdw) *pz = zz;
+		}
+		z += zinc;
+		if (a > 0) {
+			pp += i1;
+			pz += i1;
+			a -= d2;
+		} else {
+			pp += i2;
+			pz += i2;
+			a += d1;
+		}
+	}
+	r->pp = pp;
+	r->pz = pz;
+	r->z = z;
+	r->a = a;
+}
+
+void ZB_line_flush(ZBuffer* zb) {
+	GLint i = 0;
+	if (!zb_lineq_n) return;
+	GLPROF_SCOPE_OUTER(GLPROF_LINE);
+	while (i < zb_lineq_n) {
+		GLint n0, start0, n, start, j = i + 1;
+		GLint axis0 = zb_lockstep_key(&zb_lineq[i], &n0, &start0);
+		while (axis0 >= 0 && j < zb_lineq_n && zb_lockstep_key(&zb_lineq[j], &n, &start) == axis0 &&
+			   n == n0 && start == start0)
+			j++;
+		if (j - i == 1) {
+			ZB_line_flat_z(zb, &zb_lineq[i].a, &zb_lineq[i].b, zb_lineq[i].color);
+		} else {
+			ZBLineRun runs[ZB_LINEQ_MAX];
+			GLint k, left = n0 + 1;
+			for (k = i; k < j; k++) zb_line_run_init(zb, &zb_lineq[k], &runs[k - i]);
+			while (left > 0) {
+				for (k = 0; k < j - i; k++) zb_line_run(zb, &runs[k], ZB_LINE_TURN);
+				left -= ZB_LINE_TURN;
+			}
+			zb_line_lockstep_lines += j - i;
+		}
+		i = j;
+	}
+	zb_lineq_n = 0;
+}
+
+void ZB_line_dispatch(ZBuffer* zb, ZBufferPoint* p1, ZBufferPoint* p2) {
+	if (!zb->depth_test) {
+		ZB_line_flush(zb);
+		ZB_line(zb, p1, p2);
+		return;
+	}
+	if (!zb->line_smooth) {
+		GLint color1 = RGB_TO_PIXEL(p1->r, p1->g, p1->b);
+		GLint color2 = RGB_TO_PIXEL(p2->r, p2->g, p2->b);
+		if (color1 == color2) {
+			ZBQLine* q;
+			if (zb_lineq_n == ZB_LINEQ_MAX) ZB_line_flush(zb);
+			q = &zb_lineq[zb_lineq_n++];
+			if (p1->y > p2->y || (p1->y == p2->y && p1->x > p2->x)) {
+				q->a = *p2;
+				q->b = *p1;
+			} else {
+				q->a = *p1;
+				q->b = *p2;
+			}
+			q->color = color1;
+			return;
+		}
+	}
+	ZB_line_flush(zb);
+	ZB_line_z(zb, p1, p2);
+}
+#else /* GL_NO_LINE_BATCH */
+void ZB_line_flush(ZBuffer* zb) { (void)zb; }
+
+void ZB_line_dispatch(ZBuffer* zb, ZBufferPoint* p1, ZBufferPoint* p2) {
+	if (zb->depth_test)
+		ZB_line_z(zb, p1, p2);
+	else
+		ZB_line(zb, p1, p2);
+}
+#endif
+"""
+
+
 REPLACEMENTS: tuple[Replace, ...] = (
     Replace(
         "src/clip.c",
@@ -700,6 +885,45 @@ REPLACEMENTS: tuple[Replace, ...] = (
         "\t\tif (c->begin_type == GL_LINE_LOOP && c->vertex_cnt >= 3) {\n"
         "\t\t\tgl_draw_line(&c->vertex[0], &c->vertex[2]);\n\t\t}\n"
         "#if TGL_FEATURE_GL_POLYGON == 1\n\t\tif (c->begin_type == GL_POLYGON) {\n",
+    ),
+    # Line batching (ARS-56): see LINE_BATCH.
+    Replace(
+        "include/zbuffer.h",
+        "void ZB_line_z(ZBuffer * zb, ZBufferPoint * p1, ZBufferPoint * p2);",
+        "void ZB_line_z(ZBuffer * zb, ZBufferPoint * p1, ZBufferPoint * p2);\n"
+        "extern GLuint zb_line_lockstep_lines;\n"
+        "void ZB_line_dispatch(ZBuffer* zb, ZBufferPoint* p1, ZBufferPoint* p2);\n"
+        "void ZB_line_flush(ZBuffer* zb);\n",
+    ),
+    Replace(
+        "src/zline.c",
+        "void ZB_line_z(ZBuffer* zb, ZBufferPoint* p1, ZBufferPoint* p2) {\n",
+        "GLuint zb_line_lockstep_lines;\n"
+        "static void ZB_line_flat_z(ZBuffer* zb, ZBufferPoint* p1, ZBufferPoint* p2, GLint color);\n"
+        + LINE_BATCH
+        + "void ZB_line_z(ZBuffer* zb, ZBufferPoint* p1, ZBufferPoint* p2) {\n",
+    ),
+    Replace(
+        "src/clip.c",
+        "\t\t\tif (c->zb->depth_test)\n\t\t\t\tZB_line_z(c->zb, &p1->zp, &p2->zp);\n"
+        "\t\t\telse\n\t\t\t\tZB_line(c->zb, &p1->zp, &p2->zp);\n",
+        "\t\t\tZB_line_dispatch(c->zb, &p1->zp, &p2->zp);\n",
+    ),
+    Replace(
+        "src/clip.c",
+        "\t\t\t\tif (c->zb->depth_test)\n\t\t\t\t\tZB_line_z(c->zb, &q1.zp, &q2.zp);\n"
+        "\t\t\t\telse\n\t\t\t\t\tZB_line(c->zb, &q1.zp, &q2.zp);\n",
+        "\t\t\t\tZB_line_dispatch(c->zb, &q1.zp, &q2.zp);\n",
+    ),
+    Replace(
+        "src/vertex.c",
+        "\tc->in_begin = 1;\n",
+        "\tZB_line_flush(c->zb);\n\tc->in_begin = 1;\n",
+    ),
+    Replace(
+        "src/vertex.c",
+        "\tc->in_begin = 0;\n",
+        "\tZB_line_flush(c->zb);\n\tc->in_begin = 0;\n",
     ),
     # GL_POLYGON is a fan from its first vertex, exact for the convex polygons
     # the hacks draw (ARS-18). Done where the op runs, so a display list that
