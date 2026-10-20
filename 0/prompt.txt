@@ -1,0 +1,54 @@
+<task-notification>
+<task-id>brmebfv44</task-id>
+<tool-use-id>toolu_01ENPr5Xc3Vdfmcn6ggNrGh2</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/4b01b378-be4e-45a3-8e52-78a29ee2938a/tasks/brmebfv44.output</output-file>
+<status>completed</status>
+<summary>Background command "cd /Users/rod/build/stopwatch-screensaver/firmware &amp;&amp; S=/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/4b01b378-be4e-45a3-8e52-78a29ee2938a/scratchpad; python3 $S/mutate_shim.py &gt; $S/mut.log 2&gt;&amp;1; echo done &gt;&gt; $S/mut.log; cat $S/mut.log" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>b22bf896t</task-id>
+<tool-use-id>toolu_01L6f7YeHw8TdUKLcVAaTMWB</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/4b01b378-be4e-45a3-8e52-78a29ee2938a/tasks/b22bf896t.output</output-file>
+<status>completed</status>
+<summary>Background command "S=/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/4b01b378-be4e-45a3-8e52-78a29ee2938a/scratchpad; cat &gt; $S/mutate_wrapper.py &lt;&lt;'EOF'
+import subprocess, pathlib, os, re
+fw = pathlib.Path('/Users/rod/build/stopwatch-screensaver/firmware')
+env = dict(os.environ, NO_COLOR='1')
+tests = fw/'test/test_hacks/test_hacks.c'
+orig_tests = tests.read_text()
+keep = ('test_phosphor_draws_letters_not_solid_cells','test_phosphor_stops_do_not_leak')
+reduced = '\n'.join(l for l in orig_tests.split('\n')
+                    if not (l.strip().startswith('RUN_TEST(') and not any(k in l for k in keep)))
+W = 'src/hacks/phosphor_tty.c'
+M = [
+ ('#define XFillRectangle phosphor_fill_rect\n', ''),
+ ('  for (int i = 0; i &lt; 3 * 256; i++) free(kept[i]);\n', ''),
+ ('  free(grid);\n', ''),
+ ('  XftDrawDestroy(xftdraw);\n', ''),
+ ('      XFreeGC(dpy, phosphor_gcs[i]);\n', ''),
+]
+def run():
+    r = subprocess.run(['bash','-c','source ../tools/env.sh &amp;&amp; pio test -e native -f test_hacks'],cwd=fw,env=env,capture_output=True,text=True)
+    return r.returncode, r.stdout + r.stderr
+try:
+    tests.write_text(reduced)
+    rc, out = run()
+    print('baseline rc', rc, flush=True)
+    for old, new in M:
+        path = fw/W
+        text = path.read_text()
+        assert old in text, old
+        path.write_text(text.replace(old, new, 1))
+        try:
+            rc, out = run()
+            print('KILLED  ' if rc else 'SURVIVED', old.strip()[:60], flush=True)
+        finally:
+            path.write_text(text)
+finally:
+    tests.write_text(orig_tests)
+EOF
+python3 $S/mutate_wrapper.py" completed (exit code 0)</summary>
+</task-notification>
