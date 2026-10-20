@@ -86,6 +86,37 @@
         "label": "Skill: linear-tracking",
         "default_collapsed": true
       }
+    },
+    {
+      "id": "claude-skill-toolu_01AWqLrGUfDffwc18Mfzefz7",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "device-run"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "c8eade14fcc3",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 1242,
+        "end": 1243,
+        "entry_ids": [
+          "10da8dd4-749d-4dfb-abe6-4911633d1a73"
+        ],
+        "tool_use_id": "toolu_01AWqLrGUfDffwc18Mfzefz7"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01AWqLrGUfDffwc18Mfzefz7"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: device-run",
+        "default_collapsed": true
+      }
     }
   ],
   "session_metrics": {
