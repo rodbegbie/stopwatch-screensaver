@@ -1,0 +1,33 @@
+<task-notification>
+<task-id>bw6quikfc</task-id>
+<tool-use-id>toolu_01VjnNsqxao8TgdpX9G5vvjt</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/7dff18c0-a5c1-43bf-aebf-4f07462fa1bd/tasks/bw6quikfc.output</output-file>
+<status>completed</status>
+<summary>Background command "Run flash A/B comparison of badge sizes on Halftone" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>ba7odcbw0</task-id>
+<tool-use-id>toolu_01W2jvqCWS75xBkcDpbai8kM</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/7dff18c0-a5c1-43bf-aebf-4f07462fa1bd/tasks/ba7odcbw0.output</output-file>
+<status>completed</status>
+<summary>Background command "Run host tests under AddressSanitizer" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Great.  Flash it with the final build and open a trail
+
+---
+
+/address-findings
+
+---
+
+Update AGENTS.md with the new script on this branch.
+
+---
+
+commit and push the fix
