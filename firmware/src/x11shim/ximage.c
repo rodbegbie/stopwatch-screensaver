@@ -113,6 +113,7 @@ XImage *XGetImage(Display *dpy, Drawable d, int x, int y, unsigned int w,
                   unsigned int h, unsigned long plane_mask, int format) {
   (void)plane_mask;
   Canvas *src = xshim_target(dpy, d);
+  if (!src && format == XYPixmap) return xshim_bitmap_get_image(dpy, d, x, y, w, h);
   if (!src || format != ZPixmap) return NULL;
   XImage *im = XCreateImage(dpy, NULL, 24, ZPixmap, 0, NULL, w, h, 32, 0);
   if (!im) return NULL;
@@ -144,7 +145,8 @@ int XPutImage(Display *dpy, Drawable d, GC gc, XImage *im, int src_x,
               int src_y, int dst_x, int dst_y, unsigned int w,
               unsigned int h) {
   Canvas *dst = xshim_target(dpy, d);
-  if (!dst || !im || !im->data) return 0;
+  if (!dst) return xshim_bitmap_put_image(dpy, d, gc, im, src_x, src_y, dst_x, dst_y, w, h), 0;
+  if (!im || !im->data) return 0;
   if (im->bits_per_pixel == 1 && !gc) return 0;
   const int64_t i0 = max_i64(0, max_i64(-(int64_t)src_x, -(int64_t)dst_x));
   const int64_t j0 = max_i64(0, max_i64(-(int64_t)src_y, -(int64_t)dst_y));

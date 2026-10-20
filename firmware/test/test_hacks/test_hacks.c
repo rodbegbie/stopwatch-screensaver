@@ -169,6 +169,7 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Superquadrics",
                                          "Menger",
                                          "Circuit",
+                                         "Phosphor",
 #ifdef HAVE_AFTER_DARK_TOASTERS
                                          "ad-flyingtoasters",
 #endif
@@ -601,6 +602,7 @@ static const uint64_t kBaseline[] = {
     0x48cf40bfdc581fb9ull, /* Superquadrics: taken after looking at the frames */
     0x55d4faaa474ed1c9ull, /* Menger: taken after looking at the frames */
     0x63c7a4c072b4282dull, /* Circuit: taken after looking at the frames */
+    0x553af623dd77a599ull, /* Phosphor: taken after looking at the frames (scale 3, canned session, no cache) */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -736,6 +738,24 @@ void test_xjack_keeps_its_lines_inside_the_page(void) {
   for (int f = 0; f < 3000; f++) runner_step(r);
   TEST_ASSERT_TRUE_MESSAGE(pixels_not(paper, 340, 420) > 100, "never filled the page");
   TEST_ASSERT_EQUAL_INT(0, pixels_not(paper, 420, cv.h));
+  runner_destroy(r);
+}
+
+/* Phosphor fades a glyph's glow by filling its cell through a clip mask. The
+ * shim's XFillRectangle ignores the mask, so the wrapper asks for the clipped
+ * fill: without it every letter is a solid green cell. Row 4 is "> boot
+ * --verbose" (cells 30 pixels tall, 18 wide): the pinned hash cannot say
+ * "glyphs, not blocks", and a block row would be about 88 percent lit. */
+void test_phosphor_draws_letters_not_solid_cells(void) {
+  HackRunner *r = runner_create(&cv);
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("Phosphor")));
+  for (int f = 0; f < 200; f++) runner_step(r);
+  int lit = 0;
+  for (int y = 4 * 30; y < 5 * 30; y++)
+    for (int x = 0; x < 20 * 18; x++) lit += cv.px[y * cv.w + x] != 0;
+  const int cells = 20 * 18 * 30;
+  TEST_ASSERT_TRUE_MESSAGE(lit > cells / 10, "no letters on row 4");
+  TEST_ASSERT_TRUE_MESSAGE(lit < cells / 2, "row 4 is solid cells, not letters");
   runner_destroy(r);
 }
 
@@ -1950,6 +1970,10 @@ void test_circuit_draws_its_seven_segment_display(void) {
   runner_destroy(r);
 }
 
+void test_phosphor_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Phosphor", 0);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -1972,6 +1996,7 @@ int main(void) {
   RUN_TEST(test_decayscreen_stays_black_without_a_grab_image);
   RUN_TEST(test_xjack_types_on_cream_paper);
   RUN_TEST(test_xjack_keeps_its_lines_inside_the_page);
+  RUN_TEST(test_phosphor_draws_letters_not_solid_cells);
   RUN_TEST(test_loop_picks_squares_or_hexagons_again_at_every_start);
   RUN_TEST(test_write_the_unpinned_hashes_when_asked);
   RUN_TEST(test_loop_keeps_drawing_squares_when_malloc_of_nothing_returns_null);
@@ -2096,6 +2121,7 @@ int main(void) {
   RUN_TEST(test_circuit_draws_its_seven_segment_display);
   RUN_TEST(test_circuit_frees_every_part_on_the_board_when_it_stops);
   RUN_TEST(test_circuit_stops_do_not_leak);
+  RUN_TEST(test_phosphor_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);
