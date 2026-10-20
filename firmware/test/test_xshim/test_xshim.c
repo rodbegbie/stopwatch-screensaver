@@ -3403,6 +3403,29 @@ void test_clipped_fill_clips_to_the_canvas_and_the_rectangle(void) {
   XFreePixmap(dpy, mask);
 }
 
+void test_copy_plane_between_bitmaps_honours_the_clip_mask(void) {
+  Pixmap src = XCreatePixmap(dpy, win, 8, 8, 1);
+  Pixmap dst = XCreatePixmap(dpy, win, 8, 8, 1);
+  Pixmap mask = XCreatePixmap(dpy, win, 2, 2, 1);
+  GC clear = bitmap_gc(src, 0), one = bitmap_gc(src, 1);
+  XFillRectangle(dpy, src, one, 0, 0, 8, 8);
+  XFillRectangle(dpy, dst, clear, 0, 0, 8, 8);
+  XFillRectangle(dpy, mask, clear, 0, 0, 2, 2);
+  XFillRectangle(dpy, mask, one, 1, 0, 1, 1);
+  XSetBackground(dpy, one, 0);
+  XSetClipMask(dpy, one, mask);
+  XSetClipOrigin(dpy, one, 3, 4);
+  XCopyPlane(dpy, src, dst, one, 0, 0, 8, 8, 0, 0, 1);
+  stamp_bitmap(dst);
+  TEST_ASSERT_EQUAL_INT(1, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(4, 4));
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, src);
+  XFreePixmap(dpy, dst);
+  XFreePixmap(dpy, mask);
+}
+
 void test_copy_plane_into_a_colour_pixmap_lands_in_the_pixmap(void) {
   GC gc = new_gc(0xF800, 0x001F);
   Pixmap bits = XCreatePixmap(dpy, win, 4, 2, 1);
@@ -4579,6 +4602,7 @@ int main(void) {
   RUN_TEST(test_get_image_of_a_bitmap_gives_a_one_bit_image_of_its_bits);
   RUN_TEST(test_put_image_of_a_bitmap_onto_a_bitmap_uses_the_low_bit_of_each_colour);
   RUN_TEST(test_copy_plane_between_bitmaps_maps_set_bits_to_foreground_and_clear_to_background);
+  RUN_TEST(test_copy_plane_between_bitmaps_honours_the_clip_mask);
   RUN_TEST(test_an_image_reports_the_server_byte_and_bit_order_and_lets_a_hack_set_them);
   RUN_TEST(test_countof_is_the_number_of_elements_of_an_array_not_its_bytes);
   RUN_TEST(test_unmap_notify_has_the_x_event_number_and_fits_an_event_type);
