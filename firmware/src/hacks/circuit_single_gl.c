@@ -1,5 +1,8 @@
-/* Builds the unmodified circuit.c with USE_GL set for this file only, so no
- * other hack sees a GL build. See hacks/gears_gl.c.
+/* Builds circuit.c with USE_GL set for this file only, so no other hack sees a
+ * GL build (see hacks/gears_gl.c), with its decimal literals made floats at
+ * build time (tools/float_literals.py). The hack is float already but its
+ * literals (`0.02`, `0.84`) are double, so each use was a software double
+ * multiply or add on the ESP32-S3.
  *
  * glMaterialfv takes four values for a colour, but Circuit gives it a
  * three-float array for its capacitor (`brown`), so TinyGL read one float past
@@ -18,7 +21,7 @@ static void circuit_materialfv(GLint face, GLint pname, const GLfloat *v) {
 }
 
 #define glMaterialfv circuit_materialfv
-#include "circuit/circuit.c"
+#include "circuit_floatlit.c"
 
 /* free_circuit never frees the components still on the board, so each stop
  * leaked up to ten of them. A component that leaves the screen is freed as
