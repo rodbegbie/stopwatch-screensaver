@@ -1,0 +1,12 @@
+Load up context-mode, using-entire and using-superpowers.  Let's work on ARS-57. Do you have any questions for me about it?
+
+---
+
+1. License is unclear, so let's read it at build time.
+2. Badge only.
+3. Yes, that sounds right.  Show me an image of it so I can make a clear decision.
+4. Yes, name source stays the same.
+
+---
+
+If x7 is cheaper, then let's go with that.  You have permission to flash the device if you want to compare the impact of different sizes on performance. Maybe on a hack like Halftone which was always close the the borderline of 15 fps.
