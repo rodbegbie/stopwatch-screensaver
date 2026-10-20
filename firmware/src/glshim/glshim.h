@@ -108,6 +108,8 @@ void glshim_TexImage2D(GLint target, GLint level, GLint components, GLint width,
 #define glTexImage2D glshim_TexImage2D
 
 void glMateriali(GLint face, GLint pname, GLint value);
+/* TinyGL has glLightf and glLightfv but not the integer form (Circuit). */
+void glLighti(GLint light, GLint pname, GLint value);
 /* TinyGL has this commented out. Pixel unpacking only matters for texture
  * upload, which no hack here does, so it is accepted and ignored. */
 void glPixelStorei(GLint pname, GLint param);

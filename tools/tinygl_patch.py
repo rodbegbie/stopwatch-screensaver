@@ -501,6 +501,23 @@ REPLACEMENTS: tuple[Replace, ...] = (
         "\tfor (i = 0; i < 4; i++)\n\t\tp[2 + i].f = i < n ? param[i] : 0;\n",
     ),
     Replace(
+        "src/api.c",
+        "\tp[2].i = type;\n"
+        "\t/* TODO: 3 components ? */\n"
+        "\tfor (i = 0; i < 4; i++)\n\t\tp[3 + i].f = v[i];\n",
+        "\tp[2].i = type;\n"
+        "\t/* Colours and the position have four values, a spot direction three and\n"
+        "\t * the rest one, and hacks pass arrays of that size. */\n"
+        "\tfor (i = 0; i < 4; i++)\n"
+        "\t\tp[3 + i].f = i < (type == GL_SPOT_DIRECTION ? 3\n"
+        "\t\t                  : (type == GL_AMBIENT || type == GL_DIFFUSE ||\n"
+        "\t\t                     type == GL_SPECULAR || type == GL_POSITION)\n"
+        "\t\t                      ? 4\n"
+        "\t\t                      : 1)\n"
+        "\t\t                 ? v[i]\n"
+        "\t\t                 : 0;\n",
+    ),
+    Replace(
         "src/zgl.h",
         "#define CLIP_EPSILON (1E-5)",
         "#define CLIP_EPSILON (1E-5f)",

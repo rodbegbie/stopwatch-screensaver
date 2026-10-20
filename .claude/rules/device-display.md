@@ -226,11 +226,12 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   each frame, the worker pushes the finished one, and the loop credits that
   push's measured duration against the hack's delay. Pinned A/B on the board,
   plain to overlapped: Deluxe 14.0 to 19.0 fps, Compass 18.8 to 29.1, FuzzyFlakes
-  18.4 to 28.9, Moire2 16.5 to 26.4, Scooter 22.1 to 28.4; eighteen hacks are
-  flagged, five of them GL (grep `repaints_all`, and
-  `XLOCKMORE_HACK_REPAINTS_ALL`). The step slows by about 5 ms (both cores
-  share the PSRAM cache), so the frame is roughly the step, not the longer of
-  the two. Rules:
+  18.4 to 28.9, Moire2 16.5 to 26.4, Scooter 22.1 to 28.4; Circuit 9.50 to 10.29,
+  its step growing 17 ms (a miss-heavy line hack: the gain is smaller when
+  the step contends for the cache). Many hacks are flagged, some of them GL
+  (grep `repaints_all`, and `XLOCKMORE_HACK_REPAINTS_ALL`). The step slows by
+  about 5 ms (both cores share the PSRAM cache), so the frame is roughly the
+  step, not the longer of the two. Rules:
   - Flag a hack only if it never reads the canvas it starts from. The noise
     test and the real-swap test in `test_push_overlap` run every flagged hack
     for 300 frames; 40 frames missed Halo, which the 300-frame run caught. GL

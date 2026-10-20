@@ -172,12 +172,30 @@ OpenGL hacks run on TinyGL, a software OpenGL (C-Chads fork, commit
   TinyGL never has them. Its fill cost is fitted to one Gears scene, so it
   over-predicts few-large-triangle scenes, and lines and points cost nothing
   beyond vertex setup. Add a second calibration point after each GL port.
+  Lines are not free: Circuit's 156 grid lines, which span the screen, took
+  0.256 ms apiece on the board (40 ms of a 79.8 ms step, depth test on). The
+  model predicted 79-85 ms a frame against about 103 measured; it charges
+  nothing for those lines, and its clear (24.6 ms) and push (32 ms) constants
+  ran about 17 ms above Circuit's measured 15.0 and 25 ms, which hid most of
+  the gap. Profile (`-DGL_PROFILE`, `line=`) before blaming a hack's own maths
+  for a line-heavy frame.
 - TinyGL's `glLightModelfv` copied four floats whatever the parameter, so
   `glLightModelfv(GL_LIGHT_MODEL_TWO_SIDE, one_float)` (Morph3D) read past the
   array: AddressSanitizer's global-buffer-overflow. `tinygl_patch.py` now copies
   four only for `GL_LIGHT_MODEL_AMBIENT`. `glopLightModel` still reads the
   value back as an int from a float slot, which only works because any
   non-zero float has non-zero bits; leave it unless a hack passes 0.
+- `glLightfv` had the same fault (ARS-55, Circuit): it copied four floats
+  whatever the parameter, so a three-float `GL_SPOT_DIRECTION` read one past
+  the array (AddressSanitizer: stack-buffer-overflow, found by the 3,000-frame
+  test, not by a frame). `tinygl_patch.py` now copies four for the colours and
+  the position, three for a spot direction and one for the rest. A colour
+  array of three floats is the hack's fault, not TinyGL's (GL says four):
+  Circuit's capacitor `brown` is one, so `circuit_gl.c` passes colours on with
+  an alpha of 1. `glLighti` did not exist; `glshim.c` forwards it to
+  `glLightf`. A hack's first sanitizer run is the cheap check for all of this:
+  a sanitized `dump` build (see the sweep below) over several seeds takes
+  seconds, where `test_hacks` takes five minutes a try.
 - Morph3D is small and wanders by design: a window (not iconic) build scales
   the object to 0.3 and moves it on a Lissajous path, so it is about 70 px
   across on the 466 px canvas and its position differs frame to frame. It

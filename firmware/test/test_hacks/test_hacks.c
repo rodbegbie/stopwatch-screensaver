@@ -168,6 +168,7 @@ void test_registry_lists_hacks_in_order(void) {
                                          "GLMatrix",
                                          "Superquadrics",
                                          "Menger",
+                                         "Circuit",
 #ifdef HAVE_AFTER_DARK_TOASTERS
                                          "ad-flyingtoasters",
 #endif
@@ -599,6 +600,7 @@ static const uint64_t kBaseline[] = {
     0xd22a4d38abcc4c29ull, /* GLMatrix: taken after looking at the frames */
     0x48cf40bfdc581fb9ull, /* Superquadrics: taken after looking at the frames */
     0x55d4faaa474ed1c9ull, /* Menger: taken after looking at the frames */
+    0x63c7a4c072b4282dull, /* Circuit: taken after looking at the frames */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -1896,6 +1898,58 @@ void test_fold_alpha_scales_and_floors_an_alpha_in_range(void) {
   TEST_ASSERT_EQUAL_FLOAT(0.0f, out[0]);
 }
 
+void test_circuit_stops_do_not_leak(void) {
+  check_restarts_and_stops_do_not_leak("Circuit", 1);
+}
+
+/* The leak test above stops Circuit at one seed, where no diode happens to be
+ * on the board, and a diode's band is only 20 bytes. Stopping it with
+ * different parts on show must hold exactly what stopping it at the start
+ * does: whatever the board held is freed, bands included. */
+static size_t circuit_held_after(unsigned seed, int frames) {
+  const HackEntry *const hacks[] = {g_hacks[index_of("Circuit")]};
+  srandom(seed);
+  HackRunner *r = runner_create_with(&cv, hacks, 1);
+  runner_start(r, 0);
+  for (int f = 0; f < frames; f++) runner_step(r);
+  runner_destroy(r);
+  return __sanitizer_get_current_allocated_bytes();
+}
+
+void test_circuit_frees_every_part_on_the_board_when_it_stops(void) {
+  const size_t at_start = circuit_held_after(1, 1);
+  for (unsigned seed = 1; seed <= 6; seed++)
+    TEST_ASSERT_EQUAL_UINT64_MESSAGE(at_start, circuit_held_after(seed, 800), "a part was left allocated");
+}
+
+/* Circuit builds its seven-segment display from GL_POLYGON hexagons, which
+ * TinyGL draws as fans (ARS-18). A lit segment is pure red, and nothing else
+ * the hack draws is, so the red count over a run shows whether they arrive. */
+static int pure_red_pixels(void) {
+  int n = 0;
+  for (long i = 0; i < (long)cv.w * cv.h; i++) {
+    const uint16_t v = px_swap(cv.px[i]);
+    n += (v >> 11) >= 28 && ((v >> 5) & 63) <= 3 && (v & 31) <= 3;
+  }
+  return n;
+}
+
+void test_circuit_draws_its_seven_segment_display(void) {
+  srandom(1);
+  HackRunner *r = runner_create(&cv);
+  TEST_ASSERT_EQUAL_INT(0, runner_start(r, index_of("Circuit")));
+  int most = 0;
+  for (int f = 0; f < 1200; f++) {
+    runner_step(r);
+    if (f >= 100 && f % 10 == 0) {
+      const int red = pure_red_pixels();
+      if (red > most) most = red;
+    }
+  }
+  TEST_ASSERT_TRUE_MESSAGE(most > 1000, "the display's polygons did not draw");
+  runner_destroy(r);
+}
+
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -2039,6 +2093,9 @@ int main(void) {
   RUN_TEST(test_glmatrix_glyphs_are_dark_between_their_strokes);
   RUN_TEST(test_superquadrics_draws_its_polygons);
   RUN_TEST(test_menger_draws_its_polygons);
+  RUN_TEST(test_circuit_draws_its_seven_segment_display);
+  RUN_TEST(test_circuit_frees_every_part_on_the_board_when_it_stops);
+  RUN_TEST(test_circuit_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);

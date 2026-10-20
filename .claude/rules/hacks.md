@@ -575,3 +575,50 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   frames. It grows to 400 copies of 2,700 stars, 3.4 fps at 20, so the
   registry capped it at 4 (`*smear: 0.01`, now gone). To bring it back, add its
   registry entry (with that override), expected name, pin and leak test again.
+- Circuit (`circuit_gl.c`, ARS-55) is the first port to lean on the TinyGL
+  `GL_POLYGON` fan (ARS-18): its seven-segment display is `GL_POLYGON`
+  hexagons, so it needs no `glBegin` wrapper, and a test counts pure-red pixels
+  over a run (3,166 at most; nothing else it draws is pure red). The first
+  host run aborted in the 3,000-frame test on two over-reads (see `gl.md`).
+  `free_circuit` never frees the components still on the board, up to ten, so
+  every stop leaked them: the wrapper frees them (payload, a diode's band, the
+  component) before upstream's free, and the leak test fails without it. At
+  full size on the board, over 240 s pinned: 8.4-11.4 fps (mean 9.7), step
+  60-93 ms growing as components arrive, push 24.8 ms (every frame is a
+  full push: the grid fills the screen), no wait, PSRAM flat. `gl_budget.py`
+  predicted 79-85 ms a frame (12 fps) against about 103 measured (step plus
+  push). It counts lines as free, and they are not (below).
+  A single-precision build (ARS-55, committed and reverted: `b32fe24`,
+  `bc549b2`) took `tools/softdouble_report.py`'s count in the wrapper's object
+  from 198 call sites to 14 (the hack has no `double` keyword; its literals,
+  `0.02` and `0.84`, were the cause) with host frames byte-identical, and moved
+  the board by nothing: double and float alternated over two rounds, 28
+  windows each, 9.76 vs 9.79 fps and a 77.6 vs 77.3 ms step. A `-DGL_PROFILE`
+  build says why. Of a mean 79.8 ms step, 40.0 ms is the 156 lines of the
+  board's grid (0.256 ms a line, every frame), 15.0 ms is the full-screen
+  clear (the grid fills the box), about 18 ms is vertex setup, lighting,
+  triangles and fills (growing from 1 ms to 32 ms as components arrive), and
+  the hack's own code is 6.3 ms: the most any arithmetic change could win is
+  8 percent. The lever is the grid's lines, not Circuit's maths.
+  `-DCIRCUIT_HALF` renders at half the width and height
+  (`glshim_set_render_scale(2)`, as Menger does). Alternating it with full
+  size on the board, two rounds each (about 57 windows a build): full 9.67
+  fps (8.4-11.6, step 78.6 ms), half 14.78 fps (13.0-18.4, step 42.1 ms); the
+  push is 24.9 ms either way. Rod found the half-size picture noticeably
+  blocky against the fine grid lines (2-pixel lines, chunky resistor bands and
+  display dot), so it is opt-in, not the default. It leaves 217 KB more PSRAM
+  free (6,049,231 against 5,832,095; `psram=` is free memory, and an earlier
+  note here said the opposite). A scale-2 hack cannot overlap its push, so the
+  registry flags Circuit `repaints_all` only without `-DCIRCUIT_HALF`.
+  The flag earned its place narrowly. Pinned, alternating with
+  `-DPUSH_NO_OVERLAP`, two rounds each (about 57 windows a build): plain 9.50
+  fps (step 80.5 ms, push 24.8 ms), overlapped 10.29 fps (step 97.2 ms, push
+  0.1 ms), +8.3 percent; window by window the ratio averaged 1.08 (0.98 to
+  1.14). The step grew 17 ms, three times the usual 5, because both cores
+  contend for the PSRAM cache and Circuit's lines are miss-heavy (a cache
+  simulation of its real line pixels gives about 33,000 misses a frame, 1.1
+  us each, which matches the 40 ms), so the 25 ms push hid only 8 of its
+  milliseconds. It also takes 8.7 KB of internal heap. Fewer line misses
+  (interleaving the lockstep lines of a `GL_LINES` batch leaves 46 percent of
+  them) would help the overlap too; that is a shared TinyGL change, not yet
+  made.
