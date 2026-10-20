@@ -1,0 +1,17 @@
+<task-notification>
+<task-id>b6rejwiqw</task-id>
+<tool-use-id>toolu_01Qassy5wN7gN4BX93Tb3A6C</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/9fff6ba0-d196-40c8-b82b-c5687e5a7479/tasks/b6rejwiqw.output</output-file>
+<status>completed</status>
+<summary>Background command "Run the 17 line-batching mutants against test_glshim" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bu2yi0tdn</task-id>
+<tool-use-id>toolu_01RofpnTjuQpaamBz8SvK5RF</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/9fff6ba0-d196-40c8-b82b-c5687e5a7479/tasks/bu2yi0tdn.output</output-file>
+<status>completed</status>
+<summary>Background command "Run the full native suite on the pushed tip in an export" completed (exit code 0)</summary>
+</task-notification>
