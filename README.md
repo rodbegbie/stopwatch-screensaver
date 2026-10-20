@@ -94,7 +94,11 @@ hack's name shows for a few seconds as it starts, and a tap on the screen
 cycles the readout: nothing (the default at boot), a name badge, a QR code, the
 frame rate, then the battery level. The badge is "Rod" over "Begbie" in large letters,
 centred on the screen, in place of the hack's name; build with
-`-DBADGE_NAME=\"Ann\"` to change it. The QR code is white-backed and covers
+`-DBADGE_NAME=\"Ann\"` to change it. If `vendor/pixChicago.ttf` is present
+the badge is drawn in that pixel font, rasterised at build time (the font is
+not in the repository, because its licence is unclear; `PIX_CHICAGO_TTF`
+names another path). Without it the badge uses M5GFX's built-in 8x8 font.
+The QR code is white-backed and covers
 most of the screen, pointing at `https://linkedin.com/in/rodbegbie`; build with
 `-DQR_URL=\"https://example.com\"` to change it. The frame rate and battery
 sit below the hack's name. The choice stays when the hack changes.
@@ -106,6 +110,8 @@ rebuild without them afterwards, since the define sticks to the build):
 - `-DROTATE_SECONDS=5` changes the rotation time, and `0` turns it off.
 - `-DBADGE_NAME=\"Ann\"` and `-DQR_URL=\"https://example.com\"` set the name
   badge text and the QR code's target, as described above.
+- `-DBADGE_SCALE=7` sets the badge's text size, a whole number (7 with
+  pixChicago, 8 without).
 
 A press made during a long draw step takes effect when the step ends. Extra
 presses in that wait count as one, and holding a button does not repeat.

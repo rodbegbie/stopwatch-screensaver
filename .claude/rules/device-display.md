@@ -80,8 +80,17 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   Substrate is white; every other hack asks for black or nothing.
 - Overlay modes cycle on a tap: nothing, name badge, QR code, fps, battery. The
   badge, the QR code and the info line share the stamp/unstamp path, and
-  `kPatchMaxH` (140) must cover the text block plus its outline: the badge
-  is two lines, and `stampText` drops any line that would not fit. The
+  `kPatchMaxH` (140, or 248 with pixChicago) must cover the text block plus
+  its outline: the badge is two lines, and `stampText` drops any line that
+  would not fit. With `vendor/pixChicago.ttf` the badge is drawn in that font
+  (`badge_font.py` rasterises it through `tools/make_badge_font.py` into an
+  M5GFX `GFXfont`; the file is never committed, its licence being unclear) at
+  x7. The font's grid is 8 px (9 px capitals, 3 px descenders, 13 px lines), so
+  only whole scales look right, and `stampText`'s outline is `1 + scale / 4`
+  px: 2 up to x7, 3 from x8, which is 24 then 48 stamps. Halftone pinned, badge
+  on, push= in ms: Font8x8C64 x8 65.7; pixChicago x5 36.5, x6 39.2, x7 45.6,
+  x8 82.7, x9 105.8 (no badge 0.10, since it overlaps the push). x7 is the
+  largest scale before the cliff. `-DBADGE_SCALE=n` picks another. The
   battery is polled every 30 s (`M5.Power.getBatteryLevel()`; negative means a
   failed read, so the last good level stays). The QR code is encoded once at
   boot with M5GFX's `lgfx_qrcode` (`buildQr`, lowest version that holds
