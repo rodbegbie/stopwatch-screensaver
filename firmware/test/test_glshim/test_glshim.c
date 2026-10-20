@@ -2147,6 +2147,38 @@ void test_batched_lines_leave_the_depth_buffer_alone_when_depth_writes_are_off(v
   glDepthMask(1);
 }
 
+/* Lines on the same axis with the same step count but different starts reach a
+ * shared pixel at different steps: a line along a row from x 2 and one from x
+ * 2 + s overlap from x 2 + s, at step i for the first and i - s for the second.
+ * With 32 steps a turn the order flips when the first is late in its turn and
+ * the second early, so such lines must not be interleaved. */
+void test_overlapping_lines_that_start_in_different_places_are_not_interleaved(void) {
+  open_line_scene(0);
+  glEnable(GL_DEPTH_TEST);
+  unsigned long lockstep = 0;
+  for (int steep = 0; steep < 2; steep++)
+    for (int shift = 1; shift <= 8; shift++)
+      for (int across = 4; across <= 40; across += 6) {
+        const float base = 2 * PIXEL_NDC - 1.0f;
+        const float other = (float)across * PIXEL_NDC - 1.0f;
+        const float a0 = base, a1 = base + 50 * PIXEL_NDC;
+        const float b0 = base + (float)shift * PIXEL_NDC, b1 = a1 + (float)shift * PIXEL_NDC;
+        TestLine pair[2];
+        if (steep) {
+          const TestLine a = {other, a0, other, a1, 0.1f, 0.1f, 0, -1};
+          const TestLine b = {other, b0, other, b1, 0.1f, 0.1f, 1, -1};
+          pair[0] = a, pair[1] = b;
+        } else {
+          const TestLine a = {a0, other, a1, other, 0.1f, 0.1f, 0, -1};
+          const TestLine b = {b0, other, b1, other, 0.1f, 0.1f, 1, -1};
+          pair[0] = a, pair[1] = b;
+        }
+        char msg[64];
+        snprintf(msg, sizeof msg, "steep %d shift %d across %d", steep, shift, across);
+        TEST_ASSERT_TRUE_MESSAGE(batched_lines_match(pair, 2, &lockstep), msg);
+      }
+}
+
 void test_a_batch_leaves_nothing_queued_after_glEnd(void) {
   open_line_scene(0);
   glEnable(GL_DEPTH_TEST);
@@ -2387,6 +2419,7 @@ int main(void) {
   RUN_TEST(test_batched_lines_are_pixel_identical_to_one_after_another);
   RUN_TEST(test_lines_that_step_along_different_axes_are_not_interleaved);
   RUN_TEST(test_batched_lines_leave_the_depth_buffer_alone_when_depth_writes_are_off);
+  RUN_TEST(test_overlapping_lines_that_start_in_different_places_are_not_interleaved);
   RUN_TEST(test_a_batch_leaves_nothing_queued_after_glEnd);
   RUN_TEST(test_lines_that_cannot_be_batched_still_draw_as_before);
 #ifdef GL_PROFILE

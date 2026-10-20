@@ -917,11 +917,6 @@ REPLACEMENTS: tuple[Replace, ...] = (
     ),
     Replace(
         "src/vertex.c",
-        "\tc->in_begin = 1;\n",
-        "\tZB_line_flush(c->zb);\n\tc->in_begin = 1;\n",
-    ),
-    Replace(
-        "src/vertex.c",
         "\tc->in_begin = 0;\n",
         "\tZB_line_flush(c->zb);\n\tc->in_begin = 0;\n",
     ),
