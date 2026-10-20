@@ -352,7 +352,8 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   is set where the GC's foreground is odd and cleared where it is even, and the
   clip mask and the GC's function are ignored. The polygon is even-odd, a pixel
   being in when its centre is, in float. Other primitives still draw nothing on
-  a bitmap. Halo, Moire2 and Goop keep their own planes or layers and did not
+  a bitmap (lines, images and plane copies came later, for Phosphor: see the
+  last bullet). Halo, Moire2 and Goop keep their own planes or layers and did not
   move.
 - `xshim_set_grab_image` (`grabclient.h`) gives `load_image_async_simple` a
   picture to paint over its target the next time a load starts: scaled to cover
@@ -397,3 +398,13 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   does), so plain hacks and xlockmore hacks see different headers. Put a
   macro upstream defines in `screenhackI.h` for every hack into a small
   header both include, as `nls.h` (`_()` and `gettext`) is.
+- Added for Phosphor (ARS-58), each test-first: `XDrawLine` on a bitmap (thin
+  lines walk the longer axis and round halves up; wide lines are a rectangle
+  plus 16-sided discs for a round cap, centred as `stroke.c` does), `XGetImage`
+  of a bitmap (an `XYPixmap` request gives a 1-bit image), `XPutImage` onto a
+  bitmap, `XCopyPlane` between bitmaps (set bits take the GC's foreground and
+  clear bits its background, the low bit of each; it honours the clip mask),
+  `utf8_encode` and `utf8_decode`, and a `blurb.h`. `XFillRectangle` still
+  ignores a clip mask: `xshim_fill_rect_clipped` (`pixmap.h`) is the clipped
+  fill, and only Phosphor's wrapper calls it, since making the shared call
+  honour the mask moved Bubbles' and Pacman's pinned frames.

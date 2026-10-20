@@ -186,6 +186,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Rocks | 17.2-17.4 | 2.5-3.2 ms | 3.5-4.7 ms | 50.7-52.0 ms | about 2.66 MB |
 | DecayScreen | 63.6-66.8 | 3.3-3.9 ms | 4.3-5.0 ms | 6.7-7.3 ms | none measurable |
 | XJack | 7.8-15.8 | 0.1-13.8 ms | 0.3-15.0 ms | 46-130 ms | none measurable |
+| Phosphor (scale 3, canned session) | 11.0-17.8 (mean 16.0) | 0.6-35.7 ms | 0.3-5.1 ms | 50.2-55.4 ms | none measurable (free PSRAM 6,214,243 flat over 16 windows) |
 | Pipes | 51.8-75 | 2.0-7.8 ms | 0.3-0.5 ms | 10.9-11.0 ms | not measured against idle (1.91 MB left free at the lowest) |
 | Marbling | 5.4 | 157.7 ms | 28.9 ms | 0.0 ms | about 430 KB |
 | Deco | 0.2 | 33.1-35.4 ms | 29.1-29.2 ms | 5512.0-5515.7 ms | none measurable |

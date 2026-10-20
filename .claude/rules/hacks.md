@@ -625,3 +625,27 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   crisp, but still under the 15 fps bar. The profile has not been taken again
   with batching on; before it, the clear was 15 ms and vertex setup, lighting
   and fills about 18 ms of the step.
+- Phosphor (`phosphor_tty.c`, ARS-58) is an unmodified `phosphor.c` and
+  `ansi-tty.c` behind a wrapper. Upstream reads a program on a pty
+  (`xscreensaver-text`); the wrapper renames the `textclient_*` calls to a
+  text source of its own, a canned boot log typed a character a frame that
+  clears and loops (`kSession`; the shared `textclient.h` stays a NULL
+  source, which XMatrix relies on). The text keeps to the columns the round
+  panel shows on each row: the corners of the 25 by 15 grid are off the
+  glass, and the first version's header sat in one. The wrapper overrides
+  `*phosphorScale` to 3 (upstream's 6 is a 12 by 7 grid on 466 pixels) and
+  `*cache: False` (a cache of every fade of every glyph is about 20 MB). The
+  builtin 6 by 10 font is `images/gen/6x10font_png.h`, a blob made by
+  `make_logo_blob.py --deflate` (1.3 KB). Upstream's glow is a fill through a
+  clip mask, which `XFillRectangle` ignores, so the wrapper maps it to
+  `xshim_fill_rect_clipped`: making the shared call honour the mask moved
+  Bubbles' and Pacman's pinned frames, and without any such fill every
+  letter was a solid cell (`test_phosphor_draws_letters_not_solid_cells`).
+  Upstream's free leaves the tty grid, the Xft handle, three of its four
+  glyph sets' structs and the first font pass's three GCs (it runs the pass
+  twice and overwrites its GCs); the wrapper frees all of them. On the board:
+  11.0-17.8 fps (mean 16.0), paced by its own 50 ms delay while typing (step
+  0.6-2 ms) and 20-36 ms when the screen clears and every cell fades at once.
+  `ansi-tty.c` writes to `stderr` only with `debug_p` set, and on the board
+  that expands to `_impure_ptr`, which the toolchain lacks: `blurb.h` gives
+  the file a null `stderr` there.
