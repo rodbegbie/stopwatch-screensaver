@@ -1,0 +1,130 @@
+<task-notification>
+<task-id>brmebfv44</task-id>
+<tool-use-id>toolu_01ENPr5Xc3Vdfmcn6ggNrGh2</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/4b01b378-be4e-45a3-8e52-78a29ee2938a/tasks/brmebfv44.output</output-file>
+<status>completed</status>
+<summary>Background command "cd /Users/rod/build/stopwatch-screensaver/firmware &amp;&amp; S=/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/4b01b378-be4e-45a3-8e52-78a29ee2938a/scratchpad; python3 $S/mutate_shim.py &gt; $S/mut.log 2&gt;&amp;1; echo done &gt;&gt; $S/mut.log; cat $S/mut.log" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>b22bf896t</task-id>
+<tool-use-id>toolu_01L6f7YeHw8TdUKLcVAaTMWB</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/4b01b378-be4e-45a3-8e52-78a29ee2938a/tasks/b22bf896t.output</output-file>
+<status>completed</status>
+<summary>Background command "S=/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/4b01b378-be4e-45a3-8e52-78a29ee2938a/scratchpad; cat &gt; $S/mutate_wrapper.py &lt;&lt;'EOF'
+import subprocess, pathlib, os, re
+fw = pathlib.Path('/Users/rod/build/stopwatch-screensaver/firmware')
+env = dict(os.environ, NO_COLOR='1')
+tests = fw/'test/test_hacks/test_hacks.c'
+orig_tests = tests.read_text()
+keep = ('test_phosphor_draws_letters_not_solid_cells','test_phosphor_stops_do_not_leak')
+reduced = '\n'.join(l for l in orig_tests.split('\n')
+                    if not (l.strip().startswith('RUN_TEST(') and not any(k in l for k in keep)))
+W = 'src/hacks/phosphor_tty.c'
+M = [
+ ('#define XFillRectangle phosphor_fill_rect\n', ''),
+ ('  for (int i = 0; i &lt; 3 * 256; i++) free(kept[i]);\n', ''),
+ ('  free(grid);\n', ''),
+ ('  XftDrawDestroy(xftdraw);\n', ''),
+ ('      XFreeGC(dpy, phosphor_gcs[i]);\n', ''),
+]
+def run():
+    r = subprocess.run(['bash','-c','source ../tools/env.sh &amp;&amp; pio test -e native -f test_hacks'],cwd=fw,env=env,capture_output=True,text=True)
+    return r.returncode, r.stdout + r.stderr
+try:
+    tests.write_text(reduced)
+    rc, out = run()
+    print('baseline rc', rc, flush=True)
+    for old, new in M:
+        path = fw/W
+        text = path.read_text()
+        assert old in text, old
+        path.write_text(text.replace(old, new, 1))
+        try:
+            rc, out = run()
+            print('KILLED  ' if rc else 'SURVIVED', old.strip()[:60], flush=True)
+        finally:
+            path.write_text(text)
+finally:
+    tests.write_text(orig_tests)
+EOF
+python3 $S/mutate_wrapper.py" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bl7p49qu4</task-id>
+<tool-use-id>toolu_01AqnmjypV6sfLGRiJCEmNSx</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/4b01b378-be4e-45a3-8e52-78a29ee2938a/tasks/bl7p49qu4.output</output-file>
+<status>completed</status>
+<summary>Background command "source tools/env.sh &amp;&amp; cd firmware &amp;&amp; S=/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/4b01b378-be4e-45a3-8e52-78a29ee2938a/scratchpad; NO_COLOR=1 pio test -e native &gt; $S/full.log 2&gt;&amp;1; echo rc=$? &gt; $S/full.done; tail -4 $S/full.log | cut -c1-200; grep -n "\[FAILED\]" $S/full.log | cut -c1-220 | head" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+Scale 3 looks good as does the phosphor glow.  Can you maybe find some public domain poetry (The Raven? This Is Just To Say? This Be The Verse?  Stuff like that) and then pick them at random to "cat" in the terminal?
+
+---
+
+Huh.  It's not important, but I'm curious… when will "This Is Just To Say" enter the public domain?
+
+---
+
+Huh.  It's not important, but I'm curious… when will "This Is Just To Say" enter the public domain?
+
+---
+
+<task-notification>
+<task-id>bigaefaed</task-id>
+<tool-use-id>toolu_01W3fVzkBckD2cZiUsyzdPbd</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/4b01b378-be4e-45a3-8e52-78a29ee2938a/tasks/bigaefaed.output</output-file>
+<status>completed</status>
+<summary>Background command "cd /Users/rod/build/stopwatch-screensaver &amp;&amp; source tools/env.sh &amp;&amp; cd firmware &amp;&amp; S=/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/4b01b378-be4e-45a3-8e52-78a29ee2938a/scratchpad; rm -f $S/h.done; NO_COLOR=1 pio test -e native -f test_hacks &gt; $S/h.log 2&gt;&amp;1; echo rc=$? &gt; $S/h.done; grep -n "\[FAILED\]\|error:" $S/h.log | cut -c1-230 | head" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+<task-notification>
+<task-id>bn2ojugv8</task-id>
+<tool-use-id>toolu_01HL5q8mg7rgya8DmLh577fy</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/4b01b378-be4e-45a3-8e52-78a29ee2938a/tasks/bn2ojugv8.output</output-file>
+<status>completed</status>
+<summary>Background command "S=/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/4b01b378-be4e-45a3-8e52-78a29ee2938a/scratchpad; cat &gt; $S/mutate_poems.py &lt;&lt;'EOF'
+import subprocess, pathlib, os
+fw = pathlib.Path('/Users/rod/build/stopwatch-screensaver/firmware')
+env = dict(os.environ, NO_COLOR='1')
+def run(filt):
+    r = subprocess.run(['bash','-c',f'source ../tools/env.sh &amp;&amp; pio test -e native -f {filt}'],cwd=fw,env=env,capture_output=True,text=True)
+    return r.returncode
+tests = fw/'test/test_hacks/test_hacks.c'
+orig = tests.read_text()
+keep = ('test_frames_of_every_hack_but_maze_match_main','test_phosphor')
+reduced = '\n'.join(l for l in orig.split('\n') if not (l.strip().startswith('RUN_TEST(') and not any(k in l for k in keep)))
+P = [
+ ('src/hacks/phosphor_pick.h','return n &gt;= last ? n + 1 : n;','return n;','test_phosphor_pick'),
+ ('src/hacks/phosphor_pick.h','(unsigned long)(count - 1)','(unsigned long)count','test_phosphor_pick'),
+ ('src/hacks/phosphor_pick.h','if (last &lt; 0 || last &gt;= count) return','if (0) return','test_phosphor_pick'),
+ ('src/hacks/phosphor_tty.c','    td-&gt;wait = MORE_FRAMES;\n','    td-&gt;wait = 0;\n','test_hacks'),
+ ('src/hacks/phosphor_tty.c','if (--td-&gt;wait == 0 &amp;&amp; td-&gt;done)','if (--td-&gt;wait == 0)','test_hacks'),
+ ('src/hacks/phosphor_tty.c','    td-&gt;done = 1;\n','','test_hacks'),
+ ('src/hacks/phosphor_tty.c','  td-&gt;last = phosphor_next_poem(td-&gt;last, POEM_COUNT, (unsigned long)random());','  td-&gt;last = phosphor_next_poem(-1, POEM_COUNT, (unsigned long)random());','test_hacks'),
+]
+try:
+    tests.write_text(reduced)
+    print('baseline hacks rc', run('test_hacks'), flush=True)
+    for f,old,new,filt in P:
+        path = fw/f; text = path.read_text()
+        assert old in text, old
+        path.write_text(text.replace(old,new,1))
+        try:
+            print('KILLED  ' if run(filt) else 'SURVIVED', f, old.strip()[:55], flush=True)
+        finally:
+            path.write_text(text)
+finally:
+    tests.write_text(orig)
+EOF
+python3 $S/mutate_poems.py" completed (exit code 0)</summary>
+</task-notification>
