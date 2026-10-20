@@ -6,6 +6,7 @@ badge keeps M5GFX's Font8x8C64 (HAVE_PIX_CHICAGO stays undefined). A present
 but unusable font fails the build. Needs uv, because Pillow is not in
 PlatformIO's Python."""
 
+import hashlib
 import os
 import shutil
 import subprocess
@@ -26,11 +27,16 @@ PIXEL_SIZE = "8"
 if not ttf.is_file():
     print(f"badge: no pixChicago.ttf at {ttf}; the name badge keeps Font8x8C64")
 else:
-    if (
-        not header.exists()
-        or header.stat().st_mtime < ttf.stat().st_mtime
-        or header.stat().st_mtime < tool.stat().st_mtime
-    ):
+    stamp = header.with_suffix(".stamp")
+    inputs = "\n".join(
+        [
+            str(ttf.resolve()),
+            hashlib.sha256(ttf.read_bytes()).hexdigest(),
+            hashlib.sha256(tool.read_bytes()).hexdigest(),
+            PIXEL_SIZE,
+        ]
+    )
+    if not header.exists() or not stamp.exists() or stamp.read_text() != inputs:
         uv = shutil.which("uv")
         if not uv:
             raise SystemExit("badge_font.py needs uv on PATH to rasterise the font")
@@ -53,9 +59,11 @@ else:
             check=False,
         )
         if result.returncode != 0:
+            header.unlink(missing_ok=True)
             sys.exit(
                 result.stderr.strip() or f"{tool.name} failed ({result.returncode})"
             )
+        stamp.write_text(inputs)
     env.Append(  # noqa: F821
         CPPPATH=[str(generated)], CPPDEFINES=["HAVE_PIX_CHICAGO"]
     )
