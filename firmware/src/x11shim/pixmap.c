@@ -377,9 +377,12 @@ static void bitmap_thin_line(struct XshimPixmap *pm, int x1, int y1, int x2, int
   }
   const int64_t denom = count ? count : 1;
   for (int64_t i = i0; i <= i1; i++) {
-    /* round(rise * i / count), halves up: floor((2 * rise * i + count) / (2 * count)) */
-    const int64_t num = 2 * rise * i + denom, den = 2 * denom;
-    const int64_t q = num / den - ((num % den < 0) ? 1 : 0);
+    /* round(rise * i / count), halves up. |rise| <= count < 2^32, so the
+     * product fits in 64 bits only unsigned. */
+    const uint64_t prod = (uint64_t)llabs(rise) * (uint64_t)i;
+    const uint64_t quot = prod / (uint64_t)denom, rem = prod % (uint64_t)denom;
+    const int64_t q = rise < 0 ? -(int64_t)(quot + (2 * rem > (uint64_t)denom))
+                               : (int64_t)(quot + (2 * rem >= (uint64_t)denom));
     const int64_t minor = minor0 + q;
     const int64_t major = major0 + step * i;
     if (minor < 0 || minor >= minor_max) continue;
@@ -389,6 +392,37 @@ static void bitmap_thin_line(struct XshimPixmap *pm, int x1, int y1, int x2, int
 
 #define CAP_SEGMENTS 16
 
+/* Clips the centre line to the bitmap grown by margin, in double, because the
+ * ends can be anywhere in the int range and a float cannot hold them exactly.
+ * Returns 0 when nothing is left. */
+static int clip_to_bitmap(const struct XshimPixmap *pm, int margin, double *x1,
+                          double *y1, double *x2, double *y2) {
+  const double xmin = -(double)margin, xmax = (double)pm->w + margin;
+  const double ymin = -(double)margin, ymax = (double)pm->h + margin;
+  const double dx = *x2 - *x1, dy = *y2 - *y1;
+  const double p[4] = {-dx, dx, -dy, dy};
+  const double q[4] = {*x1 - xmin, xmax - *x1, *y1 - ymin, ymax - *y1};
+  double t0 = 0, t1 = 1;
+  for (int i = 0; i < 4; i++) {
+    if (p[i] == 0) {
+      if (q[i] < 0) return 0;
+    } else {
+      const double t = q[i] / p[i];
+      if (p[i] < 0) {
+        if (t > t1) return 0;
+        if (t > t0) t0 = t;
+      } else {
+        if (t < t0) return 0;
+        if (t < t1) t1 = t;
+      }
+    }
+  }
+  const double ax = *x1 + t0 * dx, ay = *y1 + t0 * dy;
+  const double bx = *x1 + t1 * dx, by = *y1 + t1 * dy;
+  *x1 = ax, *y1 = ay, *x2 = bx, *y2 = by;
+  return 1;
+}
+
 /* A wide line is its rectangle, plus a disc at each end for a round cap and
  * a half width more for a projecting one. The coordinates sit where
  * stroke.c puts them: an odd width is centred on the pixel, an even one on its
@@ -397,7 +431,9 @@ static void bitmap_wide_line(struct XshimPixmap *pm, GC gc, int x1, int y1, int 
                              int y2) {
   const int w = gc->line_width, on = (int)(gc->foreground & 1);
   const float o = (w & 1) ? 0.5f : 0.0f, half = (float)w / 2.0f;
-  float ax = (float)x1 + o, ay = (float)y1 + o, bx = (float)x2 + o, by = (float)y2 + o;
+  double cx1 = x1, cy1 = y1, cx2 = x2, cy2 = y2;
+  if (!clip_to_bitmap(pm, w + 2, &cx1, &cy1, &cx2, &cy2)) return;
+  float ax = (float)cx1 + o, ay = (float)cy1 + o, bx = (float)cx2 + o, by = (float)cy2 + o;
   float ux = bx - ax, uy = by - ay;
   const float len = sqrtf(ux * ux + uy * uy);
   if (len > 0) {
@@ -416,7 +452,7 @@ static void bitmap_wide_line(struct XshimPixmap *pm, GC gc, int x1, int y1, int 
                          bx - nx, by - ny, ax - nx, ay - ny};
   if (len > 0 || gc->cap_style == CapProjecting) bitmap_fill_polygon_f(pm, quad, 4, on);
   if (gc->cap_style != CapRound) return;
-  const float centre[2][2] = {{(float)x1 + o, (float)y1 + o}, {(float)x2 + o, (float)y2 + o}};
+  const float centre[2][2] = {{(float)cx1 + o, (float)cy1 + o}, {(float)cx2 + o, (float)cy2 + o}};
   for (int end = 0; end < 2; end++) {
     float disc[2 * CAP_SEGMENTS];
     for (int i = 0; i < CAP_SEGMENTS; i++) {

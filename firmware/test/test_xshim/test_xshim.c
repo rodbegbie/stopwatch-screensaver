@@ -3261,6 +3261,71 @@ void test_a_wide_line_on_a_bitmap_clips_at_the_bitmap_edges(void) {
   XFreePixmap(dpy, p);
 }
 
+void test_thin_lines_on_a_bitmap_round_an_exact_half_up_in_both_directions(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XDrawLine(dpy, p, one, 0, 0, 4, 1);
+  const char *rising[] = {"##...", "..###"};
+  expect_bits(p, rising, 2);
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XDrawLine(dpy, p, one, 0, 1, 4, 0);
+  const char *falling[] = {"...##", "###.."};
+  expect_bits(p, falling, 2);
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, p);
+}
+
+void test_a_wide_line_whose_centre_is_off_the_bitmap_still_draws_the_part_that_is_on(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+  XSetLineAttributes(dpy, one, 4, LineSolid, CapButt, JoinMiter);
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XDrawLine(dpy, p, one, 0, -1, 15, -1);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(15, count_set());
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XDrawLine(dpy, p, one, -1, 0, -1, 15);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(15, count_set());
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, p);
+}
+
+void test_a_thin_line_on_a_bitmap_across_the_whole_int_range_still_crosses_it(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XDrawLine(dpy, p, one, INT_MIN, INT_MIN, INT_MAX, INT_MAX);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(16, count_set());
+  for (int i = 0; i < 16; i++) TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(i, i));
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, p);
+}
+
+void test_a_wide_line_on_a_bitmap_from_far_off_covers_what_a_near_one_does(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+  XSetLineAttributes(dpy, one, 4, LineSolid, CapRound, JoinRound);
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XDrawLine(dpy, p, one, -1000, -1000, 1000, 1000);
+  stamp_bitmap(p);
+  const int near_count = count_set();
+  TEST_ASSERT_GREATER_THAN_INT(16, near_count);
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XDrawLine(dpy, p, one, -100000000, -100000000, 100000000, 100000000);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(near_count, count_set());
+  for (int i = 0; i < 16; i++) TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(i, i));
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, p);
+}
+
 void test_get_image_of_a_bitmap_gives_a_one_bit_image_of_its_bits(void) {
   Pixmap p = XCreatePixmap(dpy, win, 16, 8, 1);
   GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
@@ -4599,6 +4664,10 @@ int main(void) {
   RUN_TEST(test_a_wide_projecting_line_on_a_bitmap_reaches_half_a_width_past_each_end);
   RUN_TEST(test_a_wide_butt_capped_line_on_a_bitmap_ends_square_at_its_endpoints);
   RUN_TEST(test_a_wide_line_on_a_bitmap_clips_at_the_bitmap_edges);
+  RUN_TEST(test_thin_lines_on_a_bitmap_round_an_exact_half_up_in_both_directions);
+  RUN_TEST(test_a_wide_line_whose_centre_is_off_the_bitmap_still_draws_the_part_that_is_on);
+  RUN_TEST(test_a_thin_line_on_a_bitmap_across_the_whole_int_range_still_crosses_it);
+  RUN_TEST(test_a_wide_line_on_a_bitmap_from_far_off_covers_what_a_near_one_does);
   RUN_TEST(test_get_image_of_a_bitmap_gives_a_one_bit_image_of_its_bits);
   RUN_TEST(test_put_image_of_a_bitmap_onto_a_bitmap_uses_the_low_bit_of_each_colour);
   RUN_TEST(test_copy_plane_between_bitmaps_maps_set_bits_to_foreground_and_clear_to_background);
