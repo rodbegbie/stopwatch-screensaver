@@ -1,0 +1,47 @@
+{
+  "cli_version": "0.11.6",
+  "checkpoint_id": "01M5EA7MDSCBKEHEQSE81CFX6F",
+  "strategy": "manual-commit",
+  "branch": "feature/ARS-59-pong",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "THIRD_PARTY_NOTICES.md",
+    "firmware/platformio.ini",
+    "firmware/src/hacks/pong/analogtv.c",
+    "firmware/src/hacks/pong/analogtv.h",
+    "firmware/src/hacks/pong/pong.c",
+    "firmware/src/hacks/pong_tv.c",
+    "firmware/src/hacks/registry.c",
+    "firmware/src/x11shim/include/X11/Xutil.h",
+    "firmware/src/x11shim/include/X11/keysym.h",
+    "firmware/src/x11shim/include/font-retry.h",
+    "firmware/src/x11shim/include/resources.h",
+    "firmware/src/x11shim/include/thread_util.h",
+    "firmware/src/x11shim/include/visual.h",
+    "firmware/src/x11shim/include/xft.h",
+    "firmware/src/x11shim/thread_util.c",
+    "firmware/src/x11shim/ximage.c",
+    "firmware/src/x11shim/xshim.c",
+    "firmware/src/x11shim/xshim.h",
+    "firmware/src/x11shim/xshm.c",
+    "firmware/test/test_hacks/test_hacks.c",
+    "firmware/test/test_pong_wrapper/test_pong_wrapper.c",
+    "firmware/test/test_xshim/test_xshim.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 158,
+    "cache_creation_tokens": 262022,
+    "cache_read_tokens": 15548072,
+    "output_tokens": 60711,
+    "api_call_count": 78
+  }
+}
