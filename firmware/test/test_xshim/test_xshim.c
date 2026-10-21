@@ -3309,6 +3309,22 @@ void test_a_bitmap_line_of_the_largest_width_covers_the_rows_its_stroke_reaches(
   XFreePixmap(dpy, p);
 }
 
+void test_a_huge_wide_line_wholly_beside_a_bitmap_draws_nothing_and_stays_in_bounds(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 466, 466, 1);
+  GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+  XSetLineAttributes(dpy, one, 2000000000, LineSolid, CapButt, JoinMiter);
+  XFillRectangle(dpy, p, clear, 0, 0, 466, 466);
+  XDrawLine(dpy, p, one, -2000000000, -1500000000, -1800000000, -100000000);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XDrawLine(dpy, p, one, 2000000000, -1500000000, 1800000000, -100000000);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, p);
+}
+
 void test_a_thin_line_on_a_bitmap_across_the_whole_int_range_still_crosses_it(void) {
   Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
   GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
@@ -4682,6 +4698,7 @@ int main(void) {
   RUN_TEST(test_thin_lines_on_a_bitmap_round_an_exact_half_up_in_both_directions);
   RUN_TEST(test_a_wide_line_whose_centre_is_off_the_bitmap_still_draws_the_part_that_is_on);
   RUN_TEST(test_a_bitmap_line_of_the_largest_width_covers_the_rows_its_stroke_reaches);
+  RUN_TEST(test_a_huge_wide_line_wholly_beside_a_bitmap_draws_nothing_and_stays_in_bounds);
   RUN_TEST(test_a_thin_line_on_a_bitmap_across_the_whole_int_range_still_crosses_it);
   RUN_TEST(test_a_wide_line_on_a_bitmap_from_far_off_covers_what_a_near_one_does);
   RUN_TEST(test_get_image_of_a_bitmap_gives_a_one_bit_image_of_its_bits);

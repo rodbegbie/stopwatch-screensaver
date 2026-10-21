@@ -331,8 +331,8 @@ static void bitmap_fill_polygon_f(struct XshimPixmap *pm, const float *xy, int n
       cross[k] = at;
     }
     for (int k = 0; k + 1 < count; k += 2) {
-      const int64_t from = max64(0, (int64_t)ceilf(cross[k] - 0.5f));
-      const int64_t to = min64(pm->w, (int64_t)ceilf(cross[k + 1] - 0.5f));
+      const int64_t from = min64(pm->w, max64(0, (int64_t)ceilf(cross[k] - 0.5f)));
+      const int64_t to = min64(pm->w, max64(0, (int64_t)ceilf(cross[k + 1] - 0.5f)));
       set_span(pm, (int)row, (int)from, (int)to, on);
     }
   }
