@@ -12,11 +12,12 @@
  * Two ways to do less work per frame, both measured on the board (see
  * docs/porting-assessment): `pong_line_step` draws every Nth line of the picture
  * over the rows of the lines it skips, and `pong_view_size` tells analogtv the
- * window is a smaller square and draws it in the middle of the canvas. 330 is the
- * largest square inside the round glass, so the paddles are not cut by the bezel.
- * With the whole window as the view the picture repaints every pixel, which lets
- * the push overlap the next step; a smaller view leaves the rest of the canvas
- * alone, so it cannot. */
+ * window is a smaller square and draws it in the middle of the canvas. 330 (the
+ * default) is the largest square inside the round glass, so the paddles are not
+ * cut by the bezel; on the board it ran at 7.2 fps against 6.4 for the whole
+ * window at the same step. With the whole window as the view the picture repaints
+ * every pixel, which lets the push overlap the next step; a smaller view leaves
+ * the rest of the canvas alone, so it cannot. */
 #include "screenhack.h"
 
 #include "core/canvas.h"
@@ -27,7 +28,7 @@
 #define PONG_LINE_STEP 2
 #endif
 #ifndef PONG_VIEW
-#define PONG_VIEW 0 /* 0: the whole window */
+#define PONG_VIEW 330 /* the biggest square inside the round glass; 0: the whole window */
 #endif
 #ifndef PONG_NOISE
 #define PONG_NOISE "0.02" /* upstream's 0.04, dialled back */
