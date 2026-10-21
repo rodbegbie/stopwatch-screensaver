@@ -17,7 +17,7 @@ XImage *XCreateImage(Display *dpy, Visual *visual, unsigned int depth,
   (void)dpy;
   (void)visual;
   (void)offset;
-  const int bitmap = format == XYBitmap && depth == 1;
+  const int bitmap = (format == XYBitmap || format == XYPixmap) && depth == 1;
   if (!bitmap && (format != ZPixmap || (depth != 16 && depth != 24 && depth != 32)))
     return NULL;
   const int bits = bitmap ? 1 : depth == 16 ? 16 : BYTES_PER_PIXEL * 8;
@@ -40,6 +40,7 @@ XImage *XCreateImage(Display *dpy, Visual *visual, unsigned int depth,
   im->byte_order = LSBFirst;
   im->bitmap_unit = (int)pad;
   im->bitmap_bit_order = LSBFirst;
+  im->format = format;
   return im;
 }
 

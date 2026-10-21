@@ -49,6 +49,11 @@ void threadpool_destroy(struct threadpool *self);
 void threadpool_run(struct threadpool *self, void (*func)(void *));
 void threadpool_wait(struct threadpool *self);
 
+/* Memory a thread may share: with one thread, plain malloc. Returns 0, or
+ * ENOMEM with *ptr NULL. */
+int thread_malloc(void **ptr, Display *dpy, size_t size);
+void thread_free(void *ptr);
+
 /* One core runs hacks. */
 unsigned hardware_concurrency(Display *dpy);
 /* With no threads sharing memory, upstream's answer is sizeof(void *). */
