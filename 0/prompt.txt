@@ -1,0 +1,13 @@
+do a fresh build for the device
+
+---
+
+flash the device
+
+---
+
+/address-findings
+
+---
+
+commit and push
