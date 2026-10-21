@@ -395,10 +395,10 @@ static void bitmap_thin_line(struct XshimPixmap *pm, int x1, int y1, int x2, int
 /* Clips the centre line to the bitmap grown by margin, in double, because the
  * ends can be anywhere in the int range and a float cannot hold them exactly.
  * Returns 0 when nothing is left. */
-static int clip_to_bitmap(const struct XshimPixmap *pm, int margin, double *x1,
+static int clip_to_bitmap(const struct XshimPixmap *pm, double margin, double *x1,
                           double *y1, double *x2, double *y2) {
-  const double xmin = -(double)margin, xmax = (double)pm->w + margin;
-  const double ymin = -(double)margin, ymax = (double)pm->h + margin;
+  const double xmin = -margin, xmax = (double)pm->w + margin;
+  const double ymin = -margin, ymax = (double)pm->h + margin;
   const double dx = *x2 - *x1, dy = *y2 - *y1;
   const double p[4] = {-dx, dx, -dy, dy};
   const double q[4] = {*x1 - xmin, xmax - *x1, *y1 - ymin, ymax - *y1};
@@ -432,7 +432,7 @@ static void bitmap_wide_line(struct XshimPixmap *pm, GC gc, int x1, int y1, int 
   const int w = gc->line_width, on = (int)(gc->foreground & 1);
   const float o = (w & 1) ? 0.5f : 0.0f, half = (float)w / 2.0f;
   double cx1 = x1, cy1 = y1, cx2 = x2, cy2 = y2;
-  if (!clip_to_bitmap(pm, w + 2, &cx1, &cy1, &cx2, &cy2)) return;
+  if (!clip_to_bitmap(pm, (double)w + 2, &cx1, &cy1, &cx2, &cy2)) return;
   float ax = (float)cx1 + o, ay = (float)cy1 + o, bx = (float)cx2 + o, by = (float)cy2 + o;
   float ux = bx - ax, uy = by - ay;
   const float len = sqrtf(ux * ux + uy * uy);
