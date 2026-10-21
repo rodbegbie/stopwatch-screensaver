@@ -1,5 +1,5 @@
 """PlatformIO pre-build script: writes the patched analogtv.c that
-src/hacks/pong_tv.c includes. See tools/analogtv_patch.py for why."""
+src/hacks/analogtv_tv.c includes. See tools/analogtv_patch.py for why."""
 
 import sys
 from pathlib import Path
@@ -13,11 +13,11 @@ import analogtv_patch
 generated = Path(env.subst("$BUILD_DIR")) / "generated"  # noqa: F821
 generated.mkdir(parents=True, exist_ok=True)
 
-source = (project / "src" / "hacks" / "pong" / "analogtv.c").read_text()
+source = (project / "src" / "hacks" / "analogtv" / "analogtv.c").read_text()
 patched = analogtv_patch.step_the_line_loop(analogtv_patch.float_ghost_filter(source))
 target = generated / "analogtv_patched.c"
 if not target.exists() or target.read_text() != patched:
     target.write_text(patched)
 
 # The patched copy lives in the build directory, so it finds analogtv.h by path.
-env.Append(CPPPATH=[str(generated), str(project / "src" / "hacks" / "pong")])  # noqa: F821
+env.Append(CPPPATH=[str(generated), str(project / "src" / "hacks" / "analogtv")])  # noqa: F821

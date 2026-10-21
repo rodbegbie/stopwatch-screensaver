@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import analogtv_patch as ap
 
 ROOT = Path(__file__).resolve().parents[2]
-ANALOGTV = ROOT / "firmware" / "src" / "hacks" / "pong" / "analogtv.c"
+ANALOGTV = ROOT / "firmware" / "src" / "hacks" / "analogtv" / "analogtv.c"
 
 
 def _add_signal(source: str) -> str:
@@ -142,13 +142,13 @@ def _draw_lines(source: str) -> str:
 
 def test_the_line_loop_steps_by_the_wrappers_variable():
     out = _draw_lines(ap.step_the_line_loop(ANALOGTV.read_text()))
-    assert "lineno += it->threads.count * pong_line_step) {" in out
+    assert "lineno += it->threads.count * analogtv_line_step) {" in out
     assert "lineno += it->threads.count) {" not in out
 
 
 def test_a_stepped_line_writes_its_colours_into_the_rows_of_the_lines_it_skips():
     out = _draw_lines(ap.step_the_line_loop(ANALOGTV.read_text()))
-    tail = out.split("for (k = 1; k < pong_line_step")[1]
+    tail = out.split("for (k = 1; k < analogtv_line_step")[1]
     assert "lineno + k < ANALOGTV_BOT" in tail
     # Each skipped line is drawn at its own height, not as one tall line.
     assert "analogtv_blast_imagerow(it, raw_rgb_start, raw_rgb_end,\n" in tail
@@ -162,8 +162,8 @@ def test_the_first_blast_of_a_line_is_still_its_own_rows():
 
 def test_each_drawn_line_is_counted_for_the_tests():
     out = _draw_lines(ap.step_the_line_loop(ANALOGTV.read_text()))
-    assert out.count("pong_lines_drawn++;") == 1
-    assert out.index("pong_lines_drawn++;") > out.index("analogtv_get_line(")
+    assert out.count("analogtv_lines_drawn++;") == 1
+    assert out.index("analogtv_lines_drawn++;") > out.index("analogtv_get_line(")
 
 
 def test_only_the_line_loop_changes_when_the_step_is_patched():
