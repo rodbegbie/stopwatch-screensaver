@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.11.6",
+  "checkpoint_id": "01M5EDFMY58GFA5F44Q83C92CA",
+  "strategy": "manual-commit",
+  "branch": "feature/ARS-59-pong",
+  "checkpoints_count": 6,
+  "files_touched": [
+    "firmware/patch_analogtv.py",
+    "firmware/src/hacks/pong_tv.c",
+    "firmware/test/test_pong_wrapper/test_pong_wrapper.c",
+    "tools/analogtv_patch.py",
+    "tools/tests/test_analogtv_patch.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 82,
+    "cache_creation_tokens": 67498,
+    "cache_read_tokens": 15255979,
+    "output_tokens": 53615,
+    "api_call_count": 38
+  }
+}
