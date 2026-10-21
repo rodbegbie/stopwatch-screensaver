@@ -13,6 +13,7 @@ extern const HackEntry pong_hack;
 /* The wrapper's two ways of doing less work per frame (see pong_tv.c). */
 extern int pong_line_step;
 extern int pong_view_size;
+extern int pong_ticks;
 
 static const char *const tv_defaults[] = {ANALOGTV_DEFAULTS 0};
 
@@ -180,8 +181,9 @@ void test_a_330_pixel_view_is_centred_and_inside_the_glass(void) {
 /* The whole-window view fills the canvas, which is what lets the push overlap
  * the next step: the registry flag is only true if every pixel is repainted. */
 void test_the_whole_window_view_repaints_every_pixel(void) {
-  const int was_view = pong_view_size;
+  const int was_view = pong_view_size, was_ticks = pong_ticks;
   pong_view_size = 0;
+  pong_ticks = 1;
   xshim_set_defaults(pong_hack.defaults);
   void *st = pong_hack.init(dpy, XSHIM_WINDOW);
   pong_hack.draw(dpy, XSHIM_WINDOW, st);
@@ -192,11 +194,67 @@ void test_the_whole_window_view_repaints_every_pixel(void) {
   TEST_ASSERT_EQUAL_INT_MESSAGE(0, stale, "a pixel kept the old canvas");
   pong_hack.free(dpy, XSHIM_WINDOW, st);
   pong_view_size = was_view;
+  pong_ticks = was_ticks;
 }
 
 /* The entry's flag must agree with the build's view. */
 void test_the_hack_overlaps_its_push_only_with_the_whole_window_view(void) {
   TEST_ASSERT_EQUAL_INT(pong_view_size == 0, pong_hack.repaints_all);
+}
+
+/* The game's logic runs on every call but the picture is only drawn on every
+ * Nth: analogtv_draw is the expensive part, and the game should move at its own
+ * pace whatever the picture costs. Which calls changed the canvas? */
+static unsigned long canvas_hash(void) {
+  unsigned long h = 1469598103UL;
+  for (int i = 0; i < cv.w * cv.h; i++) h = (h ^ cv.px[i]) * 16777619UL;
+  return h;
+}
+
+static void drawn_calls(int ticks, int calls, int *drawn, unsigned long *delays) {
+  const int was = pong_ticks;
+  pong_ticks = ticks;
+  xshim_set_defaults(pong_hack.defaults);
+  void *st = pong_hack.init(dpy, XSHIM_WINDOW);
+  for (int i = 0; i < calls; i++) {
+    const unsigned long before = canvas_hash();
+    delays[i] = pong_hack.draw(dpy, XSHIM_WINDOW, st);
+    drawn[i] = canvas_hash() != before;
+  }
+  pong_hack.free(dpy, XSHIM_WINDOW, st);
+  pong_ticks = was;
+}
+
+void test_the_picture_is_drawn_on_the_first_call_and_every_nth_after(void) {
+  int drawn[9];
+  unsigned long delays[9];
+  drawn_calls(3, 9, drawn, delays);
+  const int want[9] = {1, 0, 0, 1, 0, 0, 1, 0, 0};
+  for (int i = 0; i < 9; i++) TEST_ASSERT_EQUAL_INT_MESSAGE(want[i], drawn[i], "call");
+  drawn_calls(1, 4, drawn, delays);
+  for (int i = 0; i < 4; i++) TEST_ASSERT_EQUAL_INT_MESSAGE(1, drawn[i], "every call");
+}
+
+/* A call that drew nothing asks for no wait: the next game step follows at
+ * once. A call that drew keeps the hack's own pause (upstream's 1/29.97 s minus
+ * what it took), which is all that is left to wait for. */
+void test_a_call_that_drew_nothing_asks_for_no_wait(void) {
+  int drawn[6];
+  unsigned long delays[6];
+  drawn_calls(3, 6, drawn, delays);
+  for (int i = 0; i < 6; i++) {
+    if (drawn[i]) TEST_ASSERT_TRUE_MESSAGE(delays[i] > 0, "a drawn call keeps the pause");
+    else TEST_ASSERT_EQUAL_UINT_MESSAGE(0, delays[i], "a skipped call must not wait");
+  }
+}
+
+/* Starting again starts with a drawn picture: the counter does not carry over. */
+void test_a_new_start_draws_its_first_call_whatever_the_last_run_ended_on(void) {
+  int drawn[2];
+  unsigned long delays[2];
+  drawn_calls(3, 2, drawn, delays);
+  drawn_calls(3, 1, drawn, delays);
+  TEST_ASSERT_EQUAL_INT(1, drawn[0]);
 }
 
 int main(void) {
@@ -210,5 +268,8 @@ int main(void) {
   RUN_TEST(test_a_330_pixel_view_is_centred_and_inside_the_glass);
   RUN_TEST(test_the_whole_window_view_repaints_every_pixel);
   RUN_TEST(test_the_hack_overlaps_its_push_only_with_the_whole_window_view);
+  RUN_TEST(test_the_picture_is_drawn_on_the_first_call_and_every_nth_after);
+  RUN_TEST(test_a_call_that_drew_nothing_asks_for_no_wait);
+  RUN_TEST(test_a_new_start_draws_its_first_call_whatever_the_last_run_ended_on);
   return UNITY_END();
 }

@@ -34,6 +34,11 @@
 #define PONG_NOISE "0.02" /* upstream's 0.04, dialled back */
 #endif
 
+#ifndef PONG_TICKS
+#define PONG_TICKS 3 /* game steps for each picture drawn */
+#endif
+
+int pong_ticks = PONG_TICKS;
 int pong_line_step = PONG_LINE_STEP;
 int pong_view_size = PONG_VIEW;
 long pong_lines_drawn; /* lines drawn since the program started: for the tests */
@@ -86,11 +91,45 @@ analogtv *analogtv_allocate(Display *dpy, Window window) {
   return it;
 }
 
+/* Game steps and pictures. pong_draw moves the game, paints it into the signal
+ * and then asks analogtv to draw the picture, which is nearly all of the time it
+ * takes. At 8 pictures a second the game ran at a quarter of its pace (upstream
+ * steps 30 times a second), so the picture is only drawn on every pong_ticks-th
+ * call, and a call that draws nothing asks for no wait: the game steps run back
+ * to back, nearer upstream's pace, and the picture shows where it has got to. */
+static int pong_tick;
+static int pong_drew;
+
+static void pong_analogtv_draw(analogtv *it, double noiselevel,
+                               const analogtv_reception *const *recs,
+                               unsigned rec_count) {
+  pong_drew = ++pong_tick >= pong_ticks;
+  if (!pong_drew) return;
+  pong_tick = 0;
+  analogtv_draw(it, noiselevel, recs, rec_count);
+}
+
 /* pong.c registers itself at its end; this file registers it instead, so the
  * entry can carry the overrides and the overlap flag. */
 #undef XSCREENSAVER_MODULE
 #define XSCREENSAVER_MODULE(CLASS, PREFIX)
+#define analogtv_draw pong_analogtv_draw
+#define pong_init pong_init_upstream
+#define pong_draw pong_draw_upstream
 #include "pong/pong.c"
+#undef pong_draw
+#undef pong_init
+#undef analogtv_draw
+
+static void *pong_init(Display *dpy, Window window) {
+  pong_tick = pong_ticks - 1; /* the first call draws */
+  return pong_init_upstream(dpy, window);
+}
+
+static unsigned long pong_draw(Display *dpy, Window window, void *closure) {
+  const unsigned long delay = pong_draw_upstream(dpy, window, closure);
+  return pong_drew ? delay : 0;
+}
 
 static const char *const pong_overrides[] = {"*noise: " PONG_NOISE, 0};
 
