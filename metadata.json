@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.11.6",
+  "checkpoint_id": "01M5FSBWFM9C8JSB98F7B4EQHY",
+  "strategy": "manual-commit",
+  "branch": "feature/ARS-60-xanalogtv-filmleader",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "THIRD_PARTY_NOTICES.md",
+    "firmware/patch_analogtv.py",
+    "firmware/platformio.ini",
+    "firmware/src/hacks/analogtv/analogtv.c",
+    "firmware/src/hacks/analogtv/analogtv.h",
+    "firmware/src/hacks/analogtv_tv.c",
+    "firmware/src/hacks/analogtv_tv.h",
+    "firmware/src/hacks/pong/analogtv.c",
+    "firmware/src/hacks/pong/analogtv.h",
+    "firmware/src/hacks/pong_tv.c",
+    "firmware/test/test_pong_wrapper/test_pong_wrapper.c",
+    "tools/analogtv_patch.py",
+    "tools/tests/test_analogtv_patch.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 96,
+    "cache_creation_tokens": 215183,
+    "cache_read_tokens": 7287668,
+    "output_tokens": 33665,
+    "api_call_count": 47
+  }
+}
