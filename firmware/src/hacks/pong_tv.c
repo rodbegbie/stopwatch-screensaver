@@ -1,4 +1,7 @@
-/* Builds the unmodified pong.c and analogtv.c as one translation unit.
+/* Builds the unmodified pong.c and analogtv.c as one translation unit. analogtv.c
+ * is built from the build directory's copy, with the ghost filter in float
+ * (tools/analogtv_patch.py): its taps are doubles, which made the signal passes
+ * 209 of the 356 ms step.
  *
  * analogtv.c does not include screenhack.h (it takes `frand` from there), and
  * packs its pixels from the visual's masks as ordinary RGB565. The canvas holds
@@ -10,7 +13,7 @@
 #include "core/canvas.h"
 
 #define analogtv_allocate analogtv_allocate_upstream
-#include "pong/analogtv.c"
+#include "analogtv_patched.c"
 #undef analogtv_allocate
 
 analogtv *analogtv_allocate(Display *dpy, Window window);
