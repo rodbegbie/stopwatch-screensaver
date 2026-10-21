@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.11.6",
+  "checkpoint_id": "01M5EJ0CXRCHQ8KC7XBCF1QBGT",
+  "strategy": "manual-commit",
+  "branch": "feature/ARS-59-pong",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "firmware/src/hacks/pong_tv.c"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 14,
+    "cache_creation_tokens": 2991,
+    "cache_read_tokens": 2668066,
+    "output_tokens": 7042,
+    "api_call_count": 6
+  }
+}
