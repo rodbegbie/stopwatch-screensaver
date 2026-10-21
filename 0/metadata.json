@@ -1,0 +1,155 @@
+{
+  "cli_version": "0.11.6",
+  "checkpoint_id": "01M5EH931MSS0K8YQH655PM1AN",
+  "session_id": "efcb603e-baf6-4e73-a696-d12c0151cdb4",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-21T06:09:52.682063Z",
+  "branch": "feature/ARS-59-pong",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "firmware/src/hacks/pong_tv.c"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "fe0e3763e1c8",
+  "checkpoint_transcript_start": 1967,
+  "transcript_lines_at_start": 1967,
+  "compact_transcript_start": 171,
+  "token_usage": {
+    "input_tokens": 24,
+    "cache_creation_tokens": 10723,
+    "cache_read_tokens": 4800326,
+    "output_tokens": 8702,
+    "api_call_count": 11
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01Hv4oVCSS5fJoPbNJbaqXhY",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "port-hack"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "a1667bd608bf",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 43,
+        "end": 44,
+        "entry_ids": [
+          "8d59243c-1692-4796-a802-da1779afe68d"
+        ],
+        "tool_use_id": "toolu_01Hv4oVCSS5fJoPbNJbaqXhY"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01Hv4oVCSS5fJoPbNJbaqXhY"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: port-hack",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01M4CTdc3T9BUKfrVqmpodom",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "linear-tracking"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "a1667bd608bf",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 166,
+        "end": 167,
+        "entry_ids": [
+          "6bd9f4c6-6feb-473b-9fe3-a6c9a0d12755"
+        ],
+        "tool_use_id": "toolu_01M4CTdc3T9BUKfrVqmpodom"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01M4CTdc3T9BUKfrVqmpodom"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: linear-tracking",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01HHAGZbvyPXFhh33L7jpU4G",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "worktree-session"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "a1667bd608bf",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 183,
+        "end": 184,
+        "entry_ids": [
+          "a054c5e4-846e-41fc-a495-b3c6e3815567"
+        ],
+        "tool_use_id": "toolu_01HHAGZbvyPXFhh33L7jpU4G"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01HHAGZbvyPXFhh33L7jpU4G"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: worktree-session",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01Wk1J44GUBbeddCBgikY6hf",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "device-run"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "389e8c8179b1",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 1111,
+        "end": 1112,
+        "entry_ids": [
+          "74d19342-dd7a-405b-849f-9740ffd66c7f"
+        ],
+        "tool_use_id": "toolu_01Wk1J44GUBbeddCBgikY6hf"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01Wk1J44GUBbeddCBgikY6hf"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: device-run",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 15
+  }
+}
