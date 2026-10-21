@@ -15,7 +15,7 @@
  * window is a smaller square and draws it in the middle of the canvas. 330 (the
  * default) is the largest square inside the round glass, so the paddles are not
  * cut by the bezel; on the board it ran at 7.2 fps against 6.4 for the whole
- * window at the same step. With the whole window as the view the picture repaints
+ * window at step 2, and step 3 (the default) took it to 8.0. With the whole window as the view the picture repaints
  * every pixel, which lets the push overlap the next step; a smaller view leaves
  * the rest of the canvas alone, so it cannot. */
 #include "screenhack.h"
@@ -25,7 +25,7 @@
 #include "xshm.h"
 
 #ifndef PONG_LINE_STEP
-#define PONG_LINE_STEP 2
+#define PONG_LINE_STEP 3
 #endif
 #ifndef PONG_VIEW
 #define PONG_VIEW 330 /* the biggest square inside the round glass; 0: the whole window */
