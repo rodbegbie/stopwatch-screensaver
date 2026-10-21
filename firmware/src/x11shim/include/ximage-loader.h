@@ -44,6 +44,11 @@ XImage *image_data_to_ximage(Display *, Visual *, const unsigned char *data,
  * picture carries on without one. */
 XImage *file_to_ximage(Display *, Visual *, const char *filename);
 
+/* The same, as a pixmap (and its mask): always None, with zero size, and an
+ * optional mask pointer set to None. */
+Pixmap file_to_pixmap(Display *, Window, const char *filename, int *width_ret,
+                      int *height_ret, Pixmap *mask_ret);
+
 #ifdef __cplusplus
 }
 #endif

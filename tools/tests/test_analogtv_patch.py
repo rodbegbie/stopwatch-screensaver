@@ -189,3 +189,152 @@ def test_a_changed_line_loop_fails_loudly():
 def test_a_second_line_loop_fails_loudly():
     with pytest.raises(ValueError, match="found 2"):
         ap.step_the_line_loop(ANALOGTV.read_text() + ANALOGTV.read_text())
+
+
+def _load_ximage(source: str) -> str:
+    start = source.index("int\nanalogtv_load_ximage(")
+    return source[start : source.index("\n}\n", start) + 3]
+
+
+def test_load_ximage_keeps_no_row_buffers_and_reads_each_pixel_as_it_goes():
+    out = _load_ximage(ap.load_ximage_without_row_buffers(ANALOGTV.read_text()))
+    for name in ("col1", "col2", "mask"):
+        assert f"{name}[" not in out
+    assert "malloc" not in out
+    assert "XColor col1, col2;" in out
+    assert out.count("xshim_query_rgb565(") == 2
+    assert "XQueryColor" not in out
+    assert "if (!pic_im) return 0;" in out
+
+
+def test_only_load_ximage_changes_when_its_row_buffers_go():
+    before = ANALOGTV.read_text()
+    after = ap.load_ximage_without_row_buffers(before)
+    assert after.replace(_load_ximage(after), "") == before.replace(
+        _load_ximage(before), ""
+    )
+
+
+def test_a_changed_load_ximage_fails_loudly():
+    with pytest.raises(ValueError, match="has upstream changed"):
+        ap.load_ximage_without_row_buffers("int\nanalogtv_load_ximage(void) {}\n")
+
+
+def test_a_second_load_ximage_fails_loudly():
+    with pytest.raises(ValueError, match="found 2"):
+        ap.load_ximage_without_row_buffers(ANALOGTV.read_text() + ANALOGTV.read_text())
+
+
+def test_the_three_patches_apply_together():
+    out = ap.load_ximage_without_row_buffers(
+        ap.step_the_line_loop(ap.float_ghost_filter(ANALOGTV.read_text()))
+    )
+    assert (
+        "ghostfir0" in out
+        and "analogtv_line_step" in out
+        and "XColor col1, col2;" in out
+    )
+
+
+@pytest.mark.skipif(not shutil.which("cc"), reason="needs a C compiler")
+def test_load_ximage_gives_the_same_signal_and_a_small_stack_frame(tmp_path):
+    """Run the real analogtv_load_ximage, as copied and as patched, on the same
+    picture (with and without a mask) and compare the signal it writes. The
+    copied one keeps about 28 KB of colours on the stack, which overflowed the
+    board's 16 KB loop stack, and filling and reading them back cost half the
+    time of a picture; the patched one must keep under 4 KB."""
+    source = ANALOGTV.read_text()
+    old = _load_ximage(source).replace("analogtv_load_ximage", "load_old")
+    new = _load_ximage(ap.load_ximage_without_row_buffers(source)).replace(
+        "analogtv_load_ximage", "load_new"
+    )
+    harness = textwrap.dedent(
+        """\
+        #include <math.h>
+        #include <stdio.h>
+        #include <stdlib.h>
+        #include <string.h>
+        #define ANALOGTV_PIC_LEN 582
+        #define ANALOGTV_VISLINES 200
+        #define ANALOGTV_SCALE 1
+        #define ANALOGTV_TOP 30
+        #define ANALOGTV_PIC_START 60
+        #define ANALOGTV_BLACK_LEVEL 10
+        #define ANALOGTV_V 262
+        #define ANALOGTV_H 912
+        typedef struct { unsigned long pixel; unsigned short red, green, blue; char flags, pad; } XColor;
+        typedef struct { int width, height; char *data; int bits_per_pixel, bytes_per_line; } XImage;
+        typedef struct { signed char signal[ANALOGTV_V+1][ANALOGTV_H]; } analogtv_input;
+        typedef struct { void *dpy; int colormap; struct { int width, height; } xgwa; } analogtv;
+        static unsigned long XGetPixel(XImage *im, int x, int y) {
+          if (x < 0 || y < 0 || x >= im->width || y >= im->height) return 0;
+          return ((unsigned int *)(im->data + (size_t)y * im->bytes_per_line))[x];
+        }
+        static int XQueryColor(void *d, int cm, XColor *c) {
+          (void)d; (void)cm;
+          const unsigned long p = c->pixel;
+          c->red = (unsigned short)((p & 0xFF) * 257);
+          c->green = (unsigned short)(((p >> 8) & 0xFF) * 257);
+          c->blue = (unsigned short)(((p >> 16) & 0xFF) * 257);
+          return 1;
+        }
+        static void XQueryColors(void *d, int cm, XColor *c, int n) {
+          for (int i = 0; i < n; i++) XQueryColor(d, cm, &c[i]);
+        }
+        static void xshim_query_rgb565(XColor *c) { XQueryColor(0, 0, c); }
+        %s
+        %s
+        int main(void) {
+          /* One row spare: the last scanline's second sample can fall just past the picture. */
+          static unsigned int pic[97 * 62], msk[97 * 62];
+          static analogtv_input a, b;
+          srandom(5);
+          for (int i = 0; i < 97 * 62; i++) { pic[i] = (unsigned int)(random() & 0xFFFFFF); msk[i] = (random() %% 4) != 0; }
+          XImage im = {97, 61, (char *)pic, 32, 97 * 4}, mm = {97, 61, (char *)msk, 32, 97 * 4};
+          XImage im16 = {97, 61, (char *)pic, 16, 97 * 4};
+          analogtv it = {0, 0, {640, 480}};
+          int differ = 0;
+          for (int variant = 0; variant < 4; variant++) {
+            memset(&a, 0, sizeof a); memset(&b, 0, sizeof b);
+            XImage *mask = (variant & 1) ? &mm : NULL;
+            const int xoff = (variant & 2) ? 40 : 0, tw = (variant & 2) ? 130 : 0;
+            const int ra = load_old(&it, (analogtv_input *)&a, &im, mask, xoff, xoff, tw, tw);
+            const int rb = load_new(&it, (analogtv_input *)&b, &im, mask, xoff, xoff, tw, tw);
+            differ += ra != rb || memcmp(&a, &b, sizeof a) != 0;
+          }
+          /* A picture that is not 32 bits a pixel goes through XGetPixel. */
+          memset(&a, 0, sizeof a); memset(&b, 0, sizeof b);
+          const int r16a = load_old(&it, (analogtv_input *)&a, &im16, NULL, 0, 0, 0, 0);
+          const int r16b = load_new(&it, (analogtv_input *)&b, &im16, NULL, 0, 0, 0, 0);
+          differ += r16a != r16b || memcmp(&a, &b, sizeof a) != 0;
+          /* With no picture it loads nothing and says so. */
+          memset(&b, 0, sizeof b);
+          differ += load_new(&it, (analogtv_input *)&b, NULL, NULL, 0, 0, 0, 0) != 0;
+          for (size_t i = 0; i < sizeof b; i++) differ += ((signed char *)&b)[i] != 0;
+          printf("%%d\\n", differ);
+          return 0;
+        }
+        """
+    ) % (old, new)
+    src = tmp_path / "h.c"
+    src.write_text(harness)
+    exe = tmp_path / "h"
+    subprocess.run(
+        ["cc", "-O1", "-fsanitize=address", "-o", str(exe), str(src), "-lm"], check=True
+    )
+    # The frame sizes come from a plain build: AddressSanitizer moves arrays off
+    # the stack.
+    subprocess.run(
+        ["cc", "-O1", "-fstack-usage", "-c", str(src), "-o", str(tmp_path / "h.o")],
+        check=True,
+        cwd=tmp_path,
+    )
+    ran = subprocess.run([str(exe)], check=False, capture_output=True, text=True)
+    assert ran.returncode == 0, ran.stderr[:2000]
+    assert ran.stdout.split() == ["0"]
+    frames = {}
+    for line in (tmp_path / "h.su").read_text().splitlines():
+        parts = line.split("\t")
+        frames[parts[0].split(":")[-1]] = int(parts[1])
+    assert frames["load_old"] > 8000
+    assert frames["load_new"] < 4096

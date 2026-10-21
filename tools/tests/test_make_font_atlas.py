@@ -99,3 +99,31 @@ def test_an_unreadable_font_is_an_error(tmp_path):
 def test_a_size_below_four_pixels_is_refused():
     with pytest.raises(ValueError):
         mfa.build_font(TTF, [3])
+
+
+def test_a_size_from_the_digits_only_threshold_has_ink_for_digits_alone():
+    font = mfa.build_font(TTF, [24, 100], digits_from=100)
+    small, big = font
+    assert glyph(small, "A")["w"] > 0
+    for ch in "0123456789":
+        assert glyph(big, ch)["w"] > 0
+    for ch in "AMx.":
+        assert glyph(big, ch)["w"] == 0
+    assert glyph(big, "A")["advance"] > 0
+
+
+def test_a_digits_only_size_keeps_the_advance_of_the_glyphs_it_drops():
+    plain = mfa.build_font(TTF, [100])[0]
+    digits = mfa.build_font(TTF, [100], digits_from=100)[0]
+    assert glyph(digits, "M")["advance"] == glyph(plain, "M")["advance"]
+    assert len(digits["alpha"]) < len(plain["alpha"]) // 4
+
+
+def test_a_glyph_wider_than_the_table_can_hold_is_refused():
+    with pytest.raises(ValueError, match="255"):
+        mfa.build_font(TTF, [400])
+
+
+def test_a_glyph_that_sits_too_far_from_its_pen_is_refused():
+    with pytest.raises(ValueError, match="127"):
+        mfa.build_font(TTF, [200], digits_from=100)

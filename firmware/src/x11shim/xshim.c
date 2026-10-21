@@ -6,6 +6,7 @@
 #include "fps.h"
 #include "x11shim/arc.h"
 #include "x11shim/pixmap.h"
+#include "x11shim/query_color.h"
 #include "x11shim/stroke.h"
 #include "yarandom.h"
 
@@ -419,11 +420,7 @@ int XStoreColors(Display *dpy, Colormap cmap, XColor *colors, int ncolors) {
 int XQueryColor(Display *dpy, Colormap cmap, XColor *c) {
   (void)dpy;
   (void)cmap;
-  const uint16_t p = px_swap((uint16_t)c->pixel);
-  c->red = (unsigned short)(((p >> 11) & 0x1F) * 65535 / 31);
-  c->green = (unsigned short)(((p >> 5) & 0x3F) * 65535 / 63);
-  c->blue = (unsigned short)((p & 0x1F) * 65535 / 31);
-  c->flags = DoRed | DoGreen | DoBlue;
+  xshim_query_rgb565(c);
   return 1;
 }
 

@@ -103,6 +103,17 @@ int XDestroyImage(XImage *im) {
   return 1;
 }
 
+Pixmap file_to_pixmap(Display *dpy, Window window, const char *filename, int *width_ret,
+                      int *height_ret, Pixmap *mask_ret) {
+  (void)dpy;
+  (void)window;
+  (void)filename;
+  if (width_ret) *width_ret = 0;
+  if (height_ret) *height_ret = 0;
+  if (mask_ret) *mask_ret = None;
+  return None;
+}
+
 XImage *file_to_ximage(Display *dpy, Visual *visual, const char *filename) {
   (void)dpy;
   (void)visual;

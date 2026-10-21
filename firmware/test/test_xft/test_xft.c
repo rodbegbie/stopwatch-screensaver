@@ -352,6 +352,21 @@ void test_colour_names_parse_like_the_rest_of_the_shim(void) {
   TEST_ASSERT_FALSE(XftColorAllocName(dpy, NULL, 1, "no-such-colour", &c));
 }
 
+/* The shim's colours are plain 565 values with nothing to give back, so freeing
+ * one leaves the shared colour table and its neighbour alone. */
+void test_freeing_a_colour_changes_no_other_colour(void) {
+  XftColor a, b;
+  TEST_ASSERT_TRUE(XftColorAllocName(dpy, NULL, 1, "#FF0000", &a));
+  TEST_ASSERT_TRUE(XftColorAllocName(dpy, NULL, 1, "#0000FF", &b));
+  XftColorFree(dpy, NULL, 1, &a);
+  TEST_ASSERT_EQUAL_HEX16(rgb565(0, 0, 255), (uint16_t)b.pixel);
+  XColor again;
+  memset(&again, 0, sizeof again);
+  TEST_ASSERT_TRUE(XParseColor(dpy, 1, "#FF0000", &again));
+  TEST_ASSERT_TRUE(XAllocColor(dpy, 1, &again));
+  TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), (uint16_t)again.pixel);
+}
+
 /* What a channel should become: the colour weighed a out of 255 against what
  * was there, rounded to the nearest. The sum over 255 never ends in exactly
  * .5, so double arithmetic and the shim's integer rounding agree. */
@@ -442,5 +457,6 @@ int main(void) {
   RUN_TEST(test_a_number_stuck_to_the_family_name_is_not_a_size);
   RUN_TEST(test_drawing_to_no_drawable_or_a_bitmap_does_nothing);
   RUN_TEST(test_the_screen_number_is_zero);
+  RUN_TEST(test_freeing_a_colour_changes_no_other_colour);
   return UNITY_END();
 }

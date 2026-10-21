@@ -4703,6 +4703,31 @@ void test_create_image_refuses_depths_and_sizes_it_cannot_hold(void) {
       XCreateImage(dpy, NULL, 32, ZPixmap, 0, NULL, INT_MAX, 4, 32, 0));
 }
 
+/* Every pixel the canvas can hold gives the colour its channels widen to: a table
+ * entry wrong anywhere shows here. */
+void test_xquerycolor_widens_every_565_pixel_exactly(void) {
+  for (unsigned v = 0; v < 65536; v++) {
+    XColor c;
+    memset(&c, 0, sizeof c);
+    c.pixel = px_swap((uint16_t)v);
+    TEST_ASSERT_TRUE(XQueryColor(dpy, 0, &c));
+    const unsigned r = (v >> 11) & 0x1F, g = (v >> 5) & 0x3F, b = v & 0x1F;
+    if (c.red != r * 65535 / 31 || c.green != g * 65535 / 63 || c.blue != b * 65535 / 31)
+      TEST_FAIL_MESSAGE("a pixel widened to the wrong colour");
+    TEST_ASSERT_EQUAL_INT(DoRed | DoGreen | DoBlue, c.flags);
+  }
+}
+
+void test_file_to_pixmap_has_no_decoder_and_returns_none_with_zero_size(void) {
+  int w = 7, h = 7;
+  Pixmap mask = 7;
+  TEST_ASSERT_EQUAL_UINT(None, file_to_pixmap(dpy, XSHIM_WINDOW, "/no/such/picture.png", &w, &h, &mask));
+  TEST_ASSERT_EQUAL_INT(0, w);
+  TEST_ASSERT_EQUAL_INT(0, h);
+  TEST_ASSERT_EQUAL_UINT(None, mask);
+  TEST_ASSERT_EQUAL_UINT(None, file_to_pixmap(dpy, XSHIM_WINDOW, "x.png", NULL, NULL, NULL));
+}
+
 void test_file_to_ximage_has_no_decoder_and_returns_null(void) {
   TEST_ASSERT_NULL(file_to_ximage(dpy, NULL, "/no/such/mask.png"));
 }
@@ -4837,6 +4862,8 @@ int main(void) {
   RUN_TEST(test_stipple_constants_and_fields_are_accepted_and_fills_stay_solid);
   RUN_TEST(test_create_image_refuses_depths_and_sizes_it_cannot_hold);
   RUN_TEST(test_file_to_ximage_has_no_decoder_and_returns_null);
+  RUN_TEST(test_file_to_pixmap_has_no_decoder_and_returns_none_with_zero_size);
+  RUN_TEST(test_xquerycolor_widens_every_565_pixel_exactly);
   RUN_TEST(test_ease_in_out_sine_runs_from_0_to_1_through_one_half);
   RUN_TEST(test_ease_in_out_sine_does_not_clamp_past_the_end);
   RUN_TEST(test_ease_in_sine_and_out_sine_are_the_two_halves);
