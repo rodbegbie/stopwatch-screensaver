@@ -41,6 +41,14 @@ void threadpool_run(struct threadpool *self, void (*func)(void *)) {
 
 void threadpool_wait(struct threadpool *self) { (void)self; }
 
+int thread_malloc(void **ptr, Display *dpy, size_t size) {
+  (void)dpy;
+  *ptr = malloc(size);
+  return *ptr ? 0 : ENOMEM;
+}
+
+void thread_free(void *ptr) { free(ptr); }
+
 unsigned hardware_concurrency(Display *dpy) {
   (void)dpy;
   return 1;

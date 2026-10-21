@@ -408,3 +408,8 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   ignores a clip mask: `xshim_fill_rect_clipped` (`pixmap.h`) is the clipped
   fill, and only Phosphor's wrapper calls it, since making the shared call
   honour the mask moved Bubbles' and Pacman's pinned frames.
+- Pong added: no-op pointer calls (`XCreatePixmapCursor`, `XDefineCursor`,
+  `XWarpPointer`, `XGrabPointer`, `XUngrabPointer`), `XHeightOfScreen` and
+  `XHeightMMOfScreen` (44), `XQueryColors`, the visual's class and RGB masks
+  (`include/visual.h`: RGB565 as TrueColor, 0xF800/0x07E0/0x001F), 1-bit
+  `XYPixmap` in `XCreateImage`, and `thread_malloc`/`thread_free`.

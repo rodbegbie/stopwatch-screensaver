@@ -192,6 +192,9 @@ implied warranty.
 | `firmware/src/hacks/phosphor/phosphor.c` | Copyright (c) 1999-2025 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/phosphor/ansi-tty.c` | Copyright (c) 2025-2026 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/phosphor/ansi-tty.h` | Copyright (c) 2025 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/pong/pong.c` | Copyright (c) 2003 Jeremy English | jwz permission notice (above) |
+| `firmware/src/hacks/pong/analogtv.c` | Copyright (c) 2003-2018 Trevor Blackwell | jwz permission notice (above) |
+| `firmware/src/hacks/pong/analogtv.h` | Copyright (c) 2003-2018 Trevor Blackwell | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/sphere.c` | Copyright (c) 2002 Paul Bourke, Copyright (c) 2010-2026 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/sphere.h` | Copyright (c) 2001-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/teapot.c` | Copyright (c) Mark J. Kilgard, 1994; (c) Copyright 1993, Silicon Graphics, Inc. | Silicon Graphics notice (below) |

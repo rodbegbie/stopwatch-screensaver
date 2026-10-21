@@ -5,6 +5,21 @@
 #include "visual.h"
 #include "xshm.h"
 
+int visual_class(Screen *screen, Visual *visual) {
+  (void)screen;
+  (void)visual;
+  return TrueColor;
+}
+
+void visual_rgb_masks(Screen *screen, Visual *visual, unsigned long *red_mask,
+                      unsigned long *green_mask, unsigned long *blue_mask) {
+  (void)screen;
+  (void)visual;
+  if (red_mask) *red_mask = 0xF800;
+  if (green_mask) *green_mask = 0x07E0;
+  if (blue_mask) *blue_mask = 0x001F;
+}
+
 int visual_depth(Screen *screen, Visual *visual) {
   (void)screen;
   (void)visual;

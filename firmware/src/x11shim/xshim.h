@@ -155,6 +155,9 @@ typedef union {
 } XEvent;
 
 #define KeyPress 2
+#define KeyRelease 3
+#define FocusIn 9
+#define FocusOut 10
 #define ButtonPress 4
 #define ButtonRelease 5
 #define MotionNotify 6
@@ -228,9 +231,38 @@ enum { XrmoptionNoArg, XrmoptionIsArg, XrmoptionStickyArg, XrmoptionSepArg };
 /* The screen carries no pointer back, so this is the display opened last. */
 #define DisplayOfScreen(screen) ((void)(screen), xshim_current_display())
 #define CellsOfScreen(screen) ((void)(screen), 65536)
+#define KeyPressMask (1L << 0)
+#define KeyReleaseMask (1L << 1)
+#define ButtonPressMask (1L << 2)
+#define ButtonReleaseMask (1L << 3)
 #define PointerMotionMask (1L << 6)
+#define FocusChangeMask (1L << 21)
 /* Events never arrive, so selecting them does nothing. */
 int XSelectInput(Display *, Window, long mask);
+
+/* There is no pointer, so a cursor is a number nothing reads, and grabbing,
+ * warping or hiding the pointer does nothing. */
+typedef unsigned long Cursor;
+typedef unsigned long Time;
+#define CurrentTime 0L
+#define GrabModeSync 0
+#define GrabModeAsync 1
+#define GrabSuccess 0
+Cursor XCreatePixmapCursor(Display *, Pixmap source, Pixmap mask,
+                           XColor *foreground, XColor *background,
+                           unsigned int x, unsigned int y);
+int XDefineCursor(Display *, Window, Cursor);
+int XWarpPointer(Display *, Window src, Window dest, int src_x, int src_y,
+                 unsigned int src_w, unsigned int src_h, int dest_x, int dest_y);
+int XGrabPointer(Display *, Window, Bool owner_events, unsigned int event_mask,
+                 int pointer_mode, int keyboard_mode, Window confine_to,
+                 Cursor, Time);
+int XUngrabPointer(Display *, Time);
+/* The screen carries no pointer back (see DisplayOfScreen), so these answer for
+ * the display opened last: the canvas, and the 1.75 inch panel. */
+int xshim_screen_height(void);
+#define XHeightOfScreen(screen) ((void)(screen), xshim_screen_height())
+#define XHeightMMOfScreen(screen) ((void)(screen), 44)
 #define WhitePixel(dpy, scr) ((void)(dpy), (void)(scr), 0xFFFFUL)
 #define BlackPixel(dpy, scr) ((void)(dpy), (void)(scr), 0x0000UL)
 #define WhitePixelOfScreen(screen) ((void)(screen), 0xFFFFUL)
@@ -380,6 +412,8 @@ typedef struct XImage {
   /* The server's own orders: little-endian and least significant bit first.
    * A hack may set them, and they change nothing. */
   int byte_order, bitmap_unit, bitmap_bit_order;
+  /* ZPixmap, XYBitmap, or XYPixmap (a one-bit image from analogtv's font). */
+  int format;
 } XImage;
 
 /* A 16-bit image is two bytes a pixel of ordinary little-endian RGB565, as on
@@ -425,6 +459,8 @@ Status XAllocColor(Display *, Colormap, XColor *);
  * channels are scaled up from RGB565, so 5 and 6 bit values come back as
  * multiples of 0x0842 and 0x0410 and not the colour that was asked for. */
 int XQueryColor(Display *, Colormap, XColor *);
+/* XQueryColor on each of n colours. */
+int XQueryColors(Display *, Colormap, XColor *, int n);
 /* Nothing to store: colours are plain pixel values, not cells to rewrite. */
 int XStoreColors(Display *, Colormap, XColor *, int ncolors);
 int XFreeColors(Display *, Colormap, unsigned long *pixels, int n,

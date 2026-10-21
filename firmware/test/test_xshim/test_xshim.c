@@ -851,6 +851,71 @@ void test_visual_depth_is_sixteen(void) {
   TEST_ASSERT_EQUAL_INT(16, visual_depth(NULL, NULL));
 }
 
+void test_the_visual_is_true_colour_with_rgb565_masks(void) {
+  unsigned long r = 0, g = 0, b = 0;
+  TEST_ASSERT_EQUAL_INT(TrueColor, visual_class(NULL, NULL));
+  TEST_ASSERT_NOT_EQUAL(PseudoColor, TrueColor);
+  TEST_ASSERT_NOT_EQUAL(DirectColor, TrueColor);
+  TEST_ASSERT_NOT_EQUAL(StaticColor, TrueColor);
+  visual_rgb_masks(NULL, NULL, &r, &g, &b);
+  TEST_ASSERT_EQUAL_HEX(0xF800, r);
+  TEST_ASSERT_EQUAL_HEX(0x07E0, g);
+  TEST_ASSERT_EQUAL_HEX(0x001F, b);
+}
+
+void test_thread_malloc_gives_writable_memory_and_thread_free_releases_it(void) {
+  void *p = NULL;
+  TEST_ASSERT_EQUAL_INT(0, thread_malloc(&p, dpy, 1000));
+  TEST_ASSERT_NOT_NULL(p);
+  TEST_ASSERT_EQUAL_UINT(0, (uintptr_t)p % thread_memory_alignment(dpy));
+  memset(p, 0xA5, 1000);
+  thread_free(p);
+  thread_free(NULL);
+}
+
+void test_query_colors_reads_each_colour_like_query_color(void) {
+  XColor in[3] = {{0}};
+  in[0].red = 0xFFFF;
+  in[1].green = 0xFFFF;
+  in[2].blue = 0xFFFF;
+  XColor want[3];
+  for (int i = 0; i < 3; i++) {
+    XAllocColor(dpy, 1, &in[i]);
+    want[i] = in[i];
+    XQueryColor(dpy, 1, &want[i]);
+    in[i].red = in[i].green = in[i].blue = 0x7777;
+  }
+  TEST_ASSERT_TRUE(XQueryColors(dpy, 1, in, 3) != 0);
+  for (int i = 0; i < 3; i++) {
+    TEST_ASSERT_EQUAL_HEX16(want[i].red, in[i].red);
+    TEST_ASSERT_EQUAL_HEX16(want[i].green, in[i].green);
+    TEST_ASSERT_EQUAL_HEX16(want[i].blue, in[i].blue);
+  }
+}
+
+void test_ximage_remembers_its_format(void) {
+  XImage *deep = XCreateImage(dpy, NULL, 16, ZPixmap, 0, NULL, 4, 1, 16, 0);
+  XImage *bits = XCreateImage(dpy, NULL, 1, XYBitmap, 0, NULL, 4, 1, 8, 0);
+  TEST_ASSERT_EQUAL_INT(ZPixmap, deep->format);
+  TEST_ASSERT_EQUAL_INT(XYBitmap, bits->format);
+  XDestroyImage(deep);
+  XDestroyImage(bits);
+}
+
+void test_a_one_bit_xypixmap_image_works_like_a_bitmap(void) {
+  XImage *im = XCreateImage(dpy, NULL, 1, XYPixmap, 0, NULL, 20, 2, 8, 0);
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_INT(XYPixmap, im->format);
+  TEST_ASSERT_EQUAL_INT(1, im->bits_per_pixel);
+  im->data = (char *)calloc(im->height, (size_t)im->bytes_per_line);
+  XPutPixel(im, 0, 0, 1);
+  XPutPixel(im, 19, 1, 1);
+  TEST_ASSERT_EQUAL_UINT(1, XGetPixel(im, 0, 0));
+  TEST_ASSERT_EQUAL_UINT(0, XGetPixel(im, 1, 0));
+  TEST_ASSERT_EQUAL_UINT(1, XGetPixel(im, 19, 1));
+  XDestroyImage(im);
+}
+
 void test_xshm_image_is_a_16_bit_image_put_where_asked(void) {
   XShmSegmentInfo shm;
   XImage *im = create_xshm_image(dpy, NULL, 16, ZPixmap, &shm, 8, 2);
@@ -904,6 +969,39 @@ void test_select_input_is_accepted_and_ignored(void) {
 
 void test_pointer_motion_mask_is_the_x11_bit(void) {
   TEST_ASSERT_EQUAL_INT64(1L << 6, PointerMotionMask);
+}
+
+void test_event_masks_and_types_are_the_x11_values(void) {
+  TEST_ASSERT_EQUAL_INT64(1L << 0, KeyPressMask);
+  TEST_ASSERT_EQUAL_INT64(1L << 1, KeyReleaseMask);
+  TEST_ASSERT_EQUAL_INT64(1L << 2, ButtonPressMask);
+  TEST_ASSERT_EQUAL_INT64(1L << 3, ButtonReleaseMask);
+  TEST_ASSERT_EQUAL_INT64(1L << 21, FocusChangeMask);
+  TEST_ASSERT_EQUAL_INT(3, KeyRelease);
+  TEST_ASSERT_EQUAL_INT(9, FocusIn);
+  TEST_ASSERT_EQUAL_INT(10, FocusOut);
+  TEST_ASSERT_EQUAL_INT(0, CurrentTime);
+  TEST_ASSERT_EQUAL_INT(1, GrabModeAsync);
+}
+
+void test_screen_size_is_the_canvas_and_the_panel(void) {
+  XWindowAttributes a;
+  XGetWindowAttributes(dpy, win, &a);
+  TEST_ASSERT_EQUAL_INT(cv.h, XHeightOfScreen(a.screen));
+  TEST_ASSERT_EQUAL_INT(44, XHeightMMOfScreen(a.screen));
+}
+
+void test_pointer_and_cursor_calls_do_nothing_and_say_so(void) {
+  Pixmap bits = XCreatePixmap(dpy, win, 4, 4, 1);
+  XColor black = {0, 0, 0, 0};
+  Cursor c = XCreatePixmapCursor(dpy, bits, bits, &black, &black, 0, 0);
+  TEST_ASSERT_EQUAL_INT(0, XDefineCursor(dpy, win, c));
+  TEST_ASSERT_EQUAL_INT(0, XWarpPointer(dpy, None, win, 0, 0, 0, 0, 8, 8));
+  TEST_ASSERT_EQUAL_INT(GrabSuccess, XGrabPointer(dpy, win, True, PointerMotionMask,
+                                                  GrabModeAsync, GrabModeAsync, win, c,
+                                                  CurrentTime));
+  TEST_ASSERT_EQUAL_INT(0, XUngrabPointer(dpy, CurrentTime));
+  XFreePixmap(dpy, bits);
 }
 
 void test_window_attributes_have_your_event_mask(void) {
@@ -4840,6 +4938,14 @@ int main(void) {
   RUN_TEST(test_root_window_of_screen_accepts_null_and_names_the_runner_window);
   RUN_TEST(test_select_input_is_accepted_and_ignored);
   RUN_TEST(test_pointer_motion_mask_is_the_x11_bit);
+  RUN_TEST(test_the_visual_is_true_colour_with_rgb565_masks);
+  RUN_TEST(test_thread_malloc_gives_writable_memory_and_thread_free_releases_it);
+  RUN_TEST(test_query_colors_reads_each_colour_like_query_color);
+  RUN_TEST(test_ximage_remembers_its_format);
+  RUN_TEST(test_a_one_bit_xypixmap_image_works_like_a_bitmap);
+  RUN_TEST(test_event_masks_and_types_are_the_x11_values);
+  RUN_TEST(test_screen_size_is_the_canvas_and_the_panel);
+  RUN_TEST(test_pointer_and_cursor_calls_do_nothing_and_say_so);
   RUN_TEST(test_window_attributes_have_your_event_mask);
   RUN_TEST(test_ya_rand_init_with_a_seed_repeats_the_sequence);
   RUN_TEST(test_ya_random_follows_the_seeded_sequence_and_is_not_constant);

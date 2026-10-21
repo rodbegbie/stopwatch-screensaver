@@ -427,6 +427,11 @@ int XQueryColor(Display *dpy, Colormap cmap, XColor *c) {
   return 1;
 }
 
+int XQueryColors(Display *dpy, Colormap cmap, XColor *colors, int n) {
+  for (int i = 0; i < n; i++) XQueryColor(dpy, cmap, &colors[i]);
+  return 1;
+}
+
 int XFreeColors(Display *dpy, Colormap cmap, unsigned long *pixels, int n,
                 unsigned long planes) {
   (void)dpy;
@@ -442,6 +447,43 @@ int XSelectInput(Display *dpy, Window w, long mask) {
   (void)w;
   (void)mask;
   return 0;
+}
+
+Cursor XCreatePixmapCursor(Display *dpy, Pixmap source, Pixmap mask,
+                           XColor *foreground, XColor *background,
+                           unsigned int x, unsigned int y) {
+  (void)dpy, (void)source, (void)mask, (void)foreground, (void)background;
+  (void)x, (void)y;
+  return 1;
+}
+
+int XDefineCursor(Display *dpy, Window w, Cursor cursor) {
+  (void)dpy, (void)w, (void)cursor;
+  return 0;
+}
+
+int XWarpPointer(Display *dpy, Window src, Window dest, int src_x, int src_y,
+                 unsigned int src_w, unsigned int src_h, int dest_x, int dest_y) {
+  (void)dpy, (void)src, (void)dest, (void)src_x, (void)src_y, (void)src_w;
+  (void)src_h, (void)dest_x, (void)dest_y;
+  return 0;
+}
+
+int XGrabPointer(Display *dpy, Window w, Bool owner_events, unsigned int event_mask,
+                 int pointer_mode, int keyboard_mode, Window confine_to,
+                 Cursor cursor, Time time) {
+  (void)dpy, (void)w, (void)owner_events, (void)event_mask, (void)pointer_mode;
+  (void)keyboard_mode, (void)confine_to, (void)cursor, (void)time;
+  return GrabSuccess;
+}
+
+int XUngrabPointer(Display *dpy, Time time) {
+  (void)dpy, (void)time;
+  return 0;
+}
+
+int xshim_screen_height(void) {
+  return g_current_display ? g_current_display->canvas->h : 0;
 }
 
 void ya_rand_init(unsigned int seed) {
