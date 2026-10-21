@@ -1,8 +1,8 @@
 """PlatformIO pre-build script: rasterises Special Elite (Apache 2.0,
 firmware/assets/fonts) into generated/special_elite.h in the build directory.
 main.cpp hands it to the shim (xshim_set_font), and the Xft stand-in draws
-XJack's text from it. The sizes are the ones XJack's font resources can land
-on after the shim picks the nearest. Needs uv, because Pillow is not in
+XJack's text from it. The sizes are the ones XJack's and FilmLeader's font
+resources can land on after the shim picks the nearest. Needs uv, because Pillow is not in
 PlatformIO's Python."""
 
 import shutil
@@ -15,7 +15,8 @@ project = Path(env["PROJECT_DIR"])  # noqa: F821
 generated = Path(env.subst("$BUILD_DIR")) / "generated"  # noqa: F821
 header = generated / "special_elite.h"
 font = project / "assets" / "fonts" / "SpecialElite-Regular.ttf"
-SIZES = "12,16,20,24"
+SIZES = "12,16,20,24,140"
+DIGITS_FROM = "100"  # the 140 pixel size is FilmLeader's countdown: digits only
 
 uv = shutil.which("uv")
 if not uv:
@@ -32,6 +33,8 @@ subprocess.run(
         "special_elite",
         "--sizes",
         SIZES,
+        "--digits-from",
+        DIGITS_FROM,
         "-o",
         str(fresh),
     ],

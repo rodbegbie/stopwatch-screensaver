@@ -24,6 +24,7 @@
 #include "xshm.h"
 
 #include "analogtv_tv.h"
+#include "x11shim/query_color.h"
 
 int analogtv_line_step = 1;
 int analogtv_view_size;
