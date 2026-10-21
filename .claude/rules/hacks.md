@@ -625,3 +625,46 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   crisp, but still under the 15 fps bar. The profile has not been taken again
   with batching on; before it, the clear was 15 ms and vertex setup, lighting
   and fills about 18 ms of the step.
+- Phosphor (`phosphor_tty.c`, ARS-58) is an unmodified `phosphor.c` and
+  `ansi-tty.c` behind a wrapper. Upstream reads a program on a pty
+  (`xscreensaver-text`); the wrapper renames the `textclient_*` calls to a
+  text source of its own (`phosphor_text.h`, tested directly): it `cat`s one
+  of eleven public-domain poems, picked at random and never the one just shown,
+  typed a character a frame. The shared `textclient.h` stays a NULL source,
+  which XMatrix relies on. `firmware/assets/phosphor-poems.txt` is the source
+  text; `tools/make_phosphor_poems.py` word-wraps it to 18 columns (4 in, the
+  columns the round panel shows on rows 2 to 13: the corners of the 25 by 15
+  grid are off the glass) and makes two headers. The default
+  (`phosphor_poems_scroll.h`) types into a scroll region over rows 4 to 13 and
+  scrolls there. `-DPHOSPHOR_PAGED` (`phosphor_poems.h`) pages instead: a page
+  ends with `--More--`, a pause byte (`\001`) and a clear. Scrolling leaves a
+  ghost of every character it moves under the new text (upstream's long
+  sustain), which Rod preferred. Only poems published before 1931 go in
+  (`THIRD_PARTY_NOTICES.md`); This Is Just To Say (1934) and This Be The Verse
+  (1971) are still in copyright. The cursor blinks: upstream does it with Xt
+  timers, which the shim never fires, so the wrapper maps `XtAppAddTimeOut` and
+  `XtRemoveTimeOut` to a four-slot queue (`phosphor_timers.h`) that
+  `phosphor_draw_blinking` fires once a draw (two thirds of a second on, a
+  third off, restarting when the cursor moves). The wrapper overrides
+  `*phosphorScale` to 3 (upstream's 6 is a 12 by 7 grid on 466 pixels) and
+  `*cache: False` (a cache of every fade of every glyph is about 20 MB). The
+  builtin 6 by 10 font is `images/gen/6x10font_png.h`, a blob made by
+  `make_logo_blob.py --deflate` (1.3 KB). Upstream's glow is a fill through a
+  clip mask, which `XFillRectangle` ignores, so the wrapper maps it to
+  `xshim_fill_rect_clipped`: making the shared call honour the mask moved
+  Bubbles' and Pacman's pinned frames, and without any such fill every
+  letter was a solid cell (`test_phosphor_draws_letters_not_solid_cells`).
+  Upstream's free leaves the tty grid, the Xft handle, three of its four
+  glyph sets' structs and the first font pass's three GCs (it runs the pass
+  twice and overwrites its GCs); the wrapper frees all of them. On the board
+  with scrolling: 10.6-17.6 fps (mean 11.8), step 1.6-39.9 ms and push up to
+  10.3 ms (a scroll redraws every cell: about 260 rows a frame); paged was
+  13.0-17.6 (mean 16.2). `ansi-tty.c` writes to `stderr` only with `debug_p`
+  set, and on the board that expands to `_impure_ptr`, which the toolchain
+  lacks: `blurb.h` gives the file a null `stderr` there. `pio test` and
+  `pio run -e stopwatch` must not overlap: the test run clears shared build
+  state and the flash fails with a missing `firmware.elf`. A test that sizes
+  a hack's output must include the header the wrapper chose
+  (`phosphor_poem_set.h`): the test included the paged one and every
+  wrapper mutant looked killed because the baseline was failing. Run a
+  mutation script's baseline first and stop if it fails.

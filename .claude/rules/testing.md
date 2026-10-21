@@ -81,3 +81,7 @@ Moved verbatim from AGENTS.md.
 - `pio test` hides which test crashed and AddressSanitizer's report: after a
   failure, run `.pio/build/native/program` from `firmware/` for the per-test
   PASS/FAIL lines and the ASan stack.
+- A mutation script must run the unmutated tree first and stop if it fails:
+  a test that fails for another reason (Phosphor's included the paged poem
+  header while the wrapper used the scrolling one) makes every mutant look
+  killed. Print the baseline's result, not only the mutants'.

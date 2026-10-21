@@ -307,6 +307,8 @@ XLOCKMORE_HACK_WITH(circuit, "Circuit", kShortDelayOverrides);
 XLOCKMORE_HACK_REPAINTS_ALL_WITH(circuit, "Circuit", kShortDelayOverrides);
 #endif
 
+extern const HackEntry phosphor_hack;
+
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -416,6 +418,7 @@ const HackEntry *const g_hacks[] = {
     &superquadrics_hack,
     &menger_hack,
     &circuit_hack,
+    &phosphor_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif

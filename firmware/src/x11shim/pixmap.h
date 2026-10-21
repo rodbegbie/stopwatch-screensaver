@@ -32,5 +32,22 @@ Canvas *xshim_target(Display *dpy, Drawable d);
 int xshim_bitmap_fill_rect(Display *, Drawable, GC, int x, int y,
                            unsigned int w, unsigned int h);
 int xshim_bitmap_fill_polygon(Display *, Drawable, GC, const int *xy, int n);
+/* The same for a line: thin ones set one pixel a step, wide ones are a
+ * rectangle with the GC's cap (round caps are 16-sided discs). */
+int xshim_bitmap_draw_line(Display *, Drawable, GC, int x1, int y1, int x2, int y2);
+/* A fill of the window or a colour pixmap that honours the GC's clip mask.
+ * XFillRectangle itself ignores the mask, and a hack that needs the clipped
+ * fill asks for this one (Phosphor's wrapper), so no other hack's frames move.
+ * Returns 0, drawing nothing, when the GC has no clip mask or `d` has no
+ * canvas, so the caller does its plain fill. */
+int xshim_fill_rect_clipped(Display *, Drawable, GC, int x, int y, unsigned int w,
+                            unsigned int h);
+/* A depth-1 XImage of a region of a bitmap, or NULL if `d` is not one. */
+XImage *xshim_bitmap_get_image(Display *, Drawable, int x, int y, unsigned int w,
+                               unsigned int h);
+/* XPutImage onto a bitmap: set image bits become the GC's foreground, clear
+ * ones its background (low bit of each). Returns 1 if `d` is a bitmap. */
+int xshim_bitmap_put_image(Display *, Drawable, GC, XImage *, int src_x, int src_y,
+                           int dst_x, int dst_y, unsigned int w, unsigned int h);
 
 #endif

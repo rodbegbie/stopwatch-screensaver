@@ -203,7 +203,10 @@ int XDrawPoints(Display *dpy, Drawable d, GC gc, XPoint *pts, int n,
 int XDrawLine(Display *dpy, Drawable d, GC gc, int x1, int y1, int x2,
               int y2) {
   Canvas *c = xshim_target(dpy, d);
-  if (!c) return 0;
+  if (!c) {
+    xshim_bitmap_draw_line(dpy, d, gc, x1, y1, x2, y2);
+    return 0;
+  }
   if (gc->line_width > 1)
     stroke_segment(c, gc, x1, y1, x2, y2);
   else

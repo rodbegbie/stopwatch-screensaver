@@ -23,6 +23,7 @@
 #include "utils.h"
 #include "xshm.h"
 #include "x11shim/arc.h"
+#include "x11shim/pixmap.h"
 #include "x11shim/stroke.h"
 #include "X11/Intrinsic.h"
 #include "textclient.h"
@@ -3090,18 +3091,435 @@ void test_drawing_into_a_pixmap_clips_at_the_pixmap_edges(void) {
   XFreeGC(dpy, gc);
 }
 
-void test_lines_on_a_bitmap_and_primitives_on_none_draw_nothing(void) {
+void test_primitives_on_none_draw_nothing_and_a_bitmap_line_stays_off_the_window(void) {
   GC gc = new_gc(0xF800, 0x001F);
   Pixmap bits = XCreatePixmap(dpy, win, 8, 8, 1);
-  XDrawLine(dpy, bits, gc, 0, 0, 7, 7);
+  GC one = bitmap_gc(bits, 1);
+  XDrawLine(dpy, bits, one, 0, 0, 7, 7);
   XFillRectangle(dpy, None, gc, 0, 0, 8, 8);
   XDrawLine(dpy, None, gc, 0, 0, 7, 7);
   XFillArc(dpy, None, gc, 0, 0, 8, 8, 0, 360 * 64);
   TEST_ASSERT_EQUAL_INT(0, count_set());
   XCopyPlane(dpy, bits, win, gc, 0, 0, 8, 8, 0, 0, 1);
-  TEST_ASSERT_EQUAL_INT(64, count_colour(0x001F));
+  TEST_ASSERT_EQUAL_INT(56, count_colour(0x001F));
+  TEST_ASSERT_EQUAL_INT(8, count_colour(0xF800));
   XFreePixmap(dpy, bits);
+  XFreeGC(dpy, one);
   XFreeGC(dpy, gc);
+}
+
+/* Reads a bitmap back through the window, as the tests above do. */
+static void expect_bits(Pixmap bitmap, const char *rows[], int n) {
+  stamp_bitmap(bitmap);
+  for (int y = 0; y < n; y++)
+    for (int x = 0; rows[y][x]; x++)
+      TEST_ASSERT_EQUAL_HEX16_MESSAGE(rows[y][x] == '#' ? 0xFFFF : 0, at(x, y),
+                                      rows[y]);
+}
+
+void test_a_thin_line_on_a_bitmap_sets_every_pixel_of_the_diagonal(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XDrawLine(dpy, p, one, 1, 1, 6, 6);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(6, count_set());
+  for (int i = 1; i <= 6; i++) TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(i, i));
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, p);
+}
+
+void test_a_thin_line_on_a_bitmap_with_foreground_zero_clears_bits_and_clips(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+  XFillRectangle(dpy, p, one, 0, 0, 16, 16);
+  XDrawLine(dpy, p, clear, -20, 4, 40, 4);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(240, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0, at(0, 4));
+  TEST_ASSERT_EQUAL_HEX16(0, at(15, 4));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(7, 3));
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, p);
+}
+
+void test_a_wide_round_capped_line_on_a_bitmap_is_a_band_with_rounded_ends(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XSetLineAttributes(dpy, one, 4, LineSolid, CapRound, JoinRound);
+  XDrawLine(dpy, p, one, 4, 6, 10, 6);
+  const char *rows[] = {
+      "................", "................", "................", "................",
+      "...########.....", "..##########....", "..##########....", "...########.....",
+      "................", "................"};
+  expect_bits(p, rows, 10);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_HEX16(0, at(1, 5));
+  TEST_ASSERT_EQUAL_HEX16(0, at(12, 5));
+  TEST_ASSERT_EQUAL_HEX16(0, at(2, 4));
+  TEST_ASSERT_EQUAL_HEX16(0, at(6, 3));
+  TEST_ASSERT_EQUAL_HEX16(0, at(6, 8));
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, p);
+}
+
+void test_thin_lines_on_a_bitmap_run_in_any_direction_and_hit_both_endpoints(void) {
+  const int lines[][4] = {{7, 3, 1, 3}, {2, 0, 2, 7}, {2, 7, 2, 0}, {0, 0, 7, 3},
+                          {7, 3, 0, 0}, {1, 6, 6, 1}, {3, 3, 3, 3}};
+  const int counts[] = {7, 8, 8, 8, 8, 6, 1};
+  for (size_t i = 0; i < sizeof lines / sizeof lines[0]; i++) {
+    Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+    GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+    XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+    XDrawLine(dpy, p, one, lines[i][0], lines[i][1], lines[i][2], lines[i][3]);
+    stamp_bitmap(p);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(counts[i], count_set(), "pixels in the line");
+    TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(lines[i][0], lines[i][1]));
+    TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(lines[i][2], lines[i][3]));
+    XFreeGC(dpy, clear);
+    XFreeGC(dpy, one);
+    XFreePixmap(dpy, p);
+  }
+}
+
+void test_a_shallow_thin_line_on_a_bitmap_rounds_halves_up(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XDrawLine(dpy, p, one, 0, 0, 7, 3);
+  const char *rows[] = {"##......", "..##....", "....##..", "......##"};
+  expect_bits(p, rows, 4);
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, p);
+}
+
+void test_a_wide_odd_width_line_on_a_bitmap_is_centred_on_its_pixel_row(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XSetLineAttributes(dpy, one, 3, LineSolid, CapButt, JoinMiter);
+  XDrawLine(dpy, p, one, 4, 6, 10, 6);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(18, count_set());
+  for (int y = 5; y <= 7; y++) TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(6, y));
+  TEST_ASSERT_EQUAL_HEX16(0, at(6, 4));
+  TEST_ASSERT_EQUAL_HEX16(0, at(6, 8));
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, p);
+}
+
+void test_a_wide_projecting_line_on_a_bitmap_reaches_half_a_width_past_each_end(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XSetLineAttributes(dpy, one, 2, LineSolid, CapProjecting, JoinMiter);
+  XDrawLine(dpy, p, one, 4, 6, 10, 6);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(16, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(3, 5));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(10, 6));
+  TEST_ASSERT_EQUAL_HEX16(0, at(2, 5));
+  TEST_ASSERT_EQUAL_HEX16(0, at(11, 6));
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, p);
+}
+
+void test_a_wide_butt_capped_line_on_a_bitmap_ends_square_at_its_endpoints(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XSetLineAttributes(dpy, one, 2, LineSolid, CapButt, JoinMiter);
+  XDrawLine(dpy, p, one, 4, 6, 10, 6);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(12, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(4, 5));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(9, 6));
+  TEST_ASSERT_EQUAL_HEX16(0, at(3, 5));
+  TEST_ASSERT_EQUAL_HEX16(0, at(10, 6));
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, p);
+}
+
+void test_a_wide_line_on_a_bitmap_clips_at_the_bitmap_edges(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 8, 8, 1);
+  GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+  XFillRectangle(dpy, p, clear, 0, 0, 8, 8);
+  XSetLineAttributes(dpy, one, 4, LineSolid, CapRound, JoinRound);
+  XDrawLine(dpy, p, one, -50, 3, 50, 3);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(32, count_set());
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, p);
+}
+
+void test_thin_lines_on_a_bitmap_round_an_exact_half_up_in_both_directions(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XDrawLine(dpy, p, one, 0, 0, 4, 1);
+  const char *rising[] = {"##...", "..###"};
+  expect_bits(p, rising, 2);
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XDrawLine(dpy, p, one, 0, 1, 4, 0);
+  const char *falling[] = {"...##", "###.."};
+  expect_bits(p, falling, 2);
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, p);
+}
+
+void test_a_wide_line_whose_centre_is_off_the_bitmap_still_draws_the_part_that_is_on(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+  XSetLineAttributes(dpy, one, 4, LineSolid, CapButt, JoinMiter);
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XDrawLine(dpy, p, one, 0, -1, 15, -1);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(15, count_set());
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XDrawLine(dpy, p, one, -1, 0, -1, 15);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(15, count_set());
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, p);
+}
+
+void test_a_bitmap_line_of_the_largest_width_covers_the_rows_its_stroke_reaches(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+  XSetLineAttributes(dpy, one, INT_MAX, LineSolid, CapButt, JoinMiter);
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XDrawLine(dpy, p, one, 3, 3, 8, 3);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(5, 0));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(5, 15));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(5, 3));
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, p);
+}
+
+void test_a_huge_wide_line_wholly_beside_a_bitmap_draws_nothing_and_stays_in_bounds(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 466, 466, 1);
+  GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+  XSetLineAttributes(dpy, one, 2000000000, LineSolid, CapButt, JoinMiter);
+  XFillRectangle(dpy, p, clear, 0, 0, 466, 466);
+  XDrawLine(dpy, p, one, -2000000000, -1500000000, -1800000000, -100000000);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XDrawLine(dpy, p, one, 2000000000, -1500000000, 1800000000, -100000000);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(0, count_set());
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, p);
+}
+
+void test_a_thin_line_on_a_bitmap_across_the_whole_int_range_still_crosses_it(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XDrawLine(dpy, p, one, INT_MIN, INT_MIN, INT_MAX, INT_MAX);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(16, count_set());
+  for (int i = 0; i < 16; i++) TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(i, i));
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, p);
+}
+
+void test_a_wide_line_on_a_bitmap_from_far_off_covers_what_a_near_one_does(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+  XSetLineAttributes(dpy, one, 4, LineSolid, CapRound, JoinRound);
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XDrawLine(dpy, p, one, -1000, -1000, 1000, 1000);
+  stamp_bitmap(p);
+  const int near_count = count_set();
+  TEST_ASSERT_GREATER_THAN_INT(16, near_count);
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XDrawLine(dpy, p, one, -100000000, -100000000, 100000000, 100000000);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(near_count, count_set());
+  for (int i = 0; i < 16; i++) TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(i, i));
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, p);
+}
+
+void test_get_image_of_a_bitmap_gives_a_one_bit_image_of_its_bits(void) {
+  Pixmap p = XCreatePixmap(dpy, win, 16, 8, 1);
+  GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 8);
+  XFillRectangle(dpy, p, one, 3, 2, 2, 1);
+  XFillRectangle(dpy, p, one, 15, 7, 1, 1);
+  XImage *im = XGetImage(dpy, p, 0, 0, 16, 8, 1, XYPixmap);
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_INT(1, im->depth);
+  TEST_ASSERT_EQUAL_INT(1, im->bits_per_pixel);
+  TEST_ASSERT_EQUAL_INT(16, im->width);
+  TEST_ASSERT_EQUAL_INT(8, im->height);
+  int set = 0;
+  for (int y = 0; y < 8; y++)
+    for (int x = 0; x < 16; x++) set += (int)XGetPixel(im, x, y);
+  TEST_ASSERT_EQUAL_INT(3, set);
+  TEST_ASSERT_EQUAL_HEX64(1, XGetPixel(im, 3, 2));
+  TEST_ASSERT_EQUAL_HEX64(1, XGetPixel(im, 4, 2));
+  TEST_ASSERT_EQUAL_HEX64(1, XGetPixel(im, 15, 7));
+  TEST_ASSERT_EQUAL_HEX64(0, XGetPixel(im, 5, 2));
+  XDestroyImage(im);
+
+  im = XGetImage(dpy, p, 3, 2, 4, 2, 1, XYPixmap);
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_HEX64(1, XGetPixel(im, 0, 0));
+  TEST_ASSERT_EQUAL_HEX64(1, XGetPixel(im, 1, 0));
+  TEST_ASSERT_EQUAL_HEX64(0, XGetPixel(im, 2, 0));
+  XDestroyImage(im);
+
+  im = XGetImage(dpy, p, 14, 6, 4, 4, 1, XYPixmap);
+  TEST_ASSERT_NOT_NULL(im);
+  TEST_ASSERT_EQUAL_HEX64(1, XGetPixel(im, 1, 1));
+  TEST_ASSERT_EQUAL_HEX64(0, XGetPixel(im, 3, 3));
+  XDestroyImage(im);
+  TEST_ASSERT_NULL(XGetImage(dpy, p, 0, 0, 4, 4, 1, ZPixmap));
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, p);
+}
+
+void test_put_image_of_a_bitmap_onto_a_bitmap_uses_the_low_bit_of_each_colour(void) {
+  XImage *im = XCreateImage(dpy, NULL, 1, XYBitmap, 0, NULL, 4, 1, 8, 0);
+  im->data = (char *)calloc(1, (size_t)im->bytes_per_line);
+  XPutPixel(im, 1, 0, 1);
+  XPutPixel(im, 3, 0, 1);
+  Pixmap p = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC clear = bitmap_gc(p, 0), one = bitmap_gc(p, 1);
+  XFillRectangle(dpy, p, clear, 0, 0, 16, 16);
+  XSetBackground(dpy, one, 0);
+  XPutImage(dpy, p, one, im, 0, 0, 5, 6, 4, 1);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_INT(2, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(6, 6));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(8, 6));
+  XFillRectangle(dpy, p, one, 0, 0, 16, 16);
+  XPutImage(dpy, p, clear, im, 0, 0, 5, 6, 4, 1);
+  XSetBackground(dpy, clear, 1);
+  XPutImage(dpy, p, clear, im, 0, 0, 5, 7, 4, 1);
+  stamp_bitmap(p);
+  TEST_ASSERT_EQUAL_HEX16(0, at(5, 6));
+  TEST_ASSERT_EQUAL_HEX16(0, at(6, 6));
+  TEST_ASSERT_EQUAL_HEX16(0, at(8, 6));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(5, 7));
+  TEST_ASSERT_EQUAL_HEX16(0, at(6, 7));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(7, 7));
+  TEST_ASSERT_EQUAL_HEX16(0, at(8, 7));
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, p);
+  XDestroyImage(im);
+}
+
+void test_copy_plane_between_bitmaps_maps_set_bits_to_foreground_and_clear_to_background(void) {
+  Pixmap src = XCreatePixmap(dpy, win, 8, 8, 1);
+  Pixmap dst = XCreatePixmap(dpy, win, 8, 8, 1);
+  GC clear = bitmap_gc(src, 0), one = bitmap_gc(src, 1);
+  XFillRectangle(dpy, src, clear, 0, 0, 8, 8);
+  XFillRectangle(dpy, src, one, 1, 1, 2, 2);
+  XFillRectangle(dpy, dst, clear, 0, 0, 8, 8);
+  XSetBackground(dpy, one, 0);
+  XCopyPlane(dpy, src, dst, one, 0, 0, 4, 4, 2, 2, 1);
+  stamp_bitmap(dst);
+  TEST_ASSERT_EQUAL_INT(4, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(3, 3));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(4, 4));
+  TEST_ASSERT_EQUAL_HEX16(0, at(2, 2));
+
+  XFillRectangle(dpy, dst, clear, 0, 0, 8, 8);
+  XSetForeground(dpy, clear, 0);
+  XSetBackground(dpy, clear, 1);
+  XCopyPlane(dpy, src, dst, clear, 0, 0, 4, 4, 0, 0, 1);
+  stamp_bitmap(dst);
+  TEST_ASSERT_EQUAL_INT(16 - 4, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0, at(1, 1));
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(0, 0));
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, src);
+  XFreePixmap(dpy, dst);
+}
+
+void test_clipped_fill_draws_only_where_the_mask_has_bits(void) {
+  Pixmap mask = XCreatePixmap(dpy, win, 4, 4, 1);
+  GC clear = bitmap_gc(mask, 0), one = bitmap_gc(mask, 1);
+  XFillRectangle(dpy, mask, clear, 0, 0, 4, 4);
+  XFillRectangle(dpy, mask, one, 1, 1, 1, 1);
+  XFillRectangle(dpy, mask, one, 2, 2, 2, 1);
+  GC gc = new_gc(0xF81F, 0);
+  canvas_clear(&cv, 0);
+  XSetClipMask(dpy, gc, mask);
+  XSetClipOrigin(dpy, gc, 3, 5);
+  TEST_ASSERT_TRUE(xshim_fill_rect_clipped(dpy, win, gc, 0, 0, 16, 16));
+  TEST_ASSERT_EQUAL_INT(3, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xF81F, at(4, 6));
+  TEST_ASSERT_EQUAL_HEX16(0xF81F, at(5, 7));
+  TEST_ASSERT_EQUAL_HEX16(0xF81F, at(6, 7));
+  XSetClipMask(dpy, gc, None);
+  TEST_ASSERT_FALSE(xshim_fill_rect_clipped(dpy, win, gc, 0, 0, 16, 16));
+  TEST_ASSERT_EQUAL_INT(3, count_set());
+  XFreeGC(dpy, gc);
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, mask);
+}
+
+void test_clipped_fill_clips_to_the_canvas_and_the_rectangle(void) {
+  Pixmap mask = XCreatePixmap(dpy, win, 16, 16, 1);
+  GC one = bitmap_gc(mask, 1);
+  XFillRectangle(dpy, mask, one, 0, 0, 16, 16);
+  GC gc = new_gc(0xF81F, 0);
+  canvas_clear(&cv, 0);
+  XSetClipMask(dpy, gc, mask);
+  XSetClipOrigin(dpy, gc, 8, 8);
+  xshim_fill_rect_clipped(dpy, win, gc, 4, 4, 8, 8);
+  TEST_ASSERT_EQUAL_INT(16, count_set());
+  xshim_fill_rect_clipped(dpy, win, gc, -100, -100, 100000, 100000);
+  TEST_ASSERT_EQUAL_INT(64, count_set());
+  XFreeGC(dpy, gc);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, mask);
+}
+
+void test_copy_plane_between_bitmaps_honours_the_clip_mask(void) {
+  Pixmap src = XCreatePixmap(dpy, win, 8, 8, 1);
+  Pixmap dst = XCreatePixmap(dpy, win, 8, 8, 1);
+  Pixmap mask = XCreatePixmap(dpy, win, 2, 2, 1);
+  GC clear = bitmap_gc(src, 0), one = bitmap_gc(src, 1);
+  XFillRectangle(dpy, src, one, 0, 0, 8, 8);
+  XFillRectangle(dpy, dst, clear, 0, 0, 8, 8);
+  XFillRectangle(dpy, mask, clear, 0, 0, 2, 2);
+  XFillRectangle(dpy, mask, one, 1, 0, 1, 1);
+  XSetBackground(dpy, one, 0);
+  XSetClipMask(dpy, one, mask);
+  XSetClipOrigin(dpy, one, 3, 4);
+  XCopyPlane(dpy, src, dst, one, 0, 0, 8, 8, 0, 0, 1);
+  stamp_bitmap(dst);
+  TEST_ASSERT_EQUAL_INT(1, count_set());
+  TEST_ASSERT_EQUAL_HEX16(0xFFFF, at(4, 4));
+  XFreeGC(dpy, clear);
+  XFreeGC(dpy, one);
+  XFreePixmap(dpy, src);
+  XFreePixmap(dpy, dst);
+  XFreePixmap(dpy, mask);
 }
 
 void test_copy_plane_into_a_colour_pixmap_lands_in_the_pixmap(void) {
@@ -3118,13 +3536,8 @@ void test_copy_plane_into_a_colour_pixmap_lands_in_the_pixmap(void) {
   canvas_clear(&cv, 0);
   Pixmap mask = None;
   Pixmap image = load_image(&mask);
-  Pixmap other = XCreatePixmap(dpy, win, 8, 8, 1);
-  XCopyPlane(dpy, mask, other, gc, 0, 0, BLOB_W, BLOB_H, 0, 0, 1);
   XCopyPlane(dpy, mask, None, gc, 0, 0, BLOB_W, BLOB_H, 0, 0, 1);
   TEST_ASSERT_EQUAL_INT(0, count_set());
-  XCopyPlane(dpy, other, win, gc, 0, 0, 8, 8, 0, 0, 1);
-  TEST_ASSERT_EQUAL_INT(0, count_colour(0xF800));
-  XFreePixmap(dpy, other);
   XFreePixmap(dpy, image);
   XFreePixmap(dpy, mask);
   XFreePixmap(dpy, colour);
@@ -3683,6 +4096,45 @@ void test_utf8_to_latin1_copies_ascii_and_gives_up_on_anything_else(void) {
   TEST_ASSERT_NULL(utf8_to_latin1("caf\xc3\xa9", 0));
 }
 
+void test_utf8_encode_writes_one_to_four_bytes_and_terminates(void) {
+  char out[8];
+  memset(out, 'x', sizeof out);
+  TEST_ASSERT_EQUAL_INT(1, utf8_encode('A', out, sizeof out - 1));
+  TEST_ASSERT_EQUAL_STRING("A", out);
+  TEST_ASSERT_EQUAL_INT(2, utf8_encode(0xE9, out, sizeof out - 1));
+  TEST_ASSERT_EQUAL_STRING("\xc3\xa9", out);
+  TEST_ASSERT_EQUAL_INT(3, utf8_encode(0x2592, out, sizeof out - 1));
+  TEST_ASSERT_EQUAL_STRING("\xe2\x96\x92", out);
+  TEST_ASSERT_EQUAL_INT(4, utf8_encode(0x1F600, out, sizeof out - 1));
+  TEST_ASSERT_EQUAL_STRING("\xf0\x9f\x98\x80", out);
+}
+
+void test_utf8_encode_writes_nothing_when_the_character_does_not_fit(void) {
+  char out[8];
+  memset(out, 'x', sizeof out);
+  TEST_ASSERT_EQUAL_INT(0, utf8_encode(0x2592, out, 2));
+  TEST_ASSERT_EQUAL_INT('x', out[0]);
+}
+
+void test_utf8_decode_reads_the_first_character_and_says_how_many_bytes(void) {
+  unsigned long c = 0;
+  TEST_ASSERT_EQUAL_INT(1, utf8_decode((const unsigned char *)"Az", 2, &c));
+  TEST_ASSERT_EQUAL_HEX64('A', c);
+  TEST_ASSERT_EQUAL_INT(2, utf8_decode((const unsigned char *)"\xc3\xa9", 2, &c));
+  TEST_ASSERT_EQUAL_HEX64(0xE9, c);
+  TEST_ASSERT_EQUAL_INT(3, utf8_decode((const unsigned char *)"\xe2\x96\x92", 3, &c));
+  TEST_ASSERT_EQUAL_HEX64(0x2592, c);
+  TEST_ASSERT_EQUAL_INT(4, utf8_decode((const unsigned char *)"\xf0\x9f\x98\x80", 4, &c));
+  TEST_ASSERT_EQUAL_HEX64(0x1F600, c);
+}
+
+void test_utf8_decode_does_not_read_past_the_length(void) {
+  unsigned long c = 0x77;
+  TEST_ASSERT_EQUAL_INT(0, utf8_decode((const unsigned char *)"\xe2\x96", 2, &c));
+  TEST_ASSERT_EQUAL_INT(0, utf8_decode((const unsigned char *)"A", 0, &c));
+  TEST_ASSERT_EQUAL_INT(1, utf8_decode((const unsigned char *)"\x80", 1, &c));
+}
+
 void test_an_image_reports_the_server_byte_and_bit_order_and_lets_a_hack_set_them(void) {
   XImage *im = XCreateImage(dpy, NULL, 1, XYBitmap, 0, NULL, 9, 1, 8, 0);
   TEST_ASSERT_NOT_NULL(im);
@@ -4228,6 +4680,31 @@ int main(void) {
   RUN_TEST(test_the_screen_is_a_colour_display_with_no_writable_cells);
   RUN_TEST(test_a_16_bit_image_is_two_bytes_a_pixel_and_keeps_16_bits);
   RUN_TEST(test_utf8_to_latin1_copies_ascii_and_gives_up_on_anything_else);
+  RUN_TEST(test_utf8_encode_writes_one_to_four_bytes_and_terminates);
+  RUN_TEST(test_utf8_encode_writes_nothing_when_the_character_does_not_fit);
+  RUN_TEST(test_utf8_decode_reads_the_first_character_and_says_how_many_bytes);
+  RUN_TEST(test_utf8_decode_does_not_read_past_the_length);
+  RUN_TEST(test_clipped_fill_draws_only_where_the_mask_has_bits);
+  RUN_TEST(test_clipped_fill_clips_to_the_canvas_and_the_rectangle);
+  RUN_TEST(test_a_thin_line_on_a_bitmap_sets_every_pixel_of_the_diagonal);
+  RUN_TEST(test_a_thin_line_on_a_bitmap_with_foreground_zero_clears_bits_and_clips);
+  RUN_TEST(test_a_wide_round_capped_line_on_a_bitmap_is_a_band_with_rounded_ends);
+  RUN_TEST(test_thin_lines_on_a_bitmap_run_in_any_direction_and_hit_both_endpoints);
+  RUN_TEST(test_a_shallow_thin_line_on_a_bitmap_rounds_halves_up);
+  RUN_TEST(test_a_wide_odd_width_line_on_a_bitmap_is_centred_on_its_pixel_row);
+  RUN_TEST(test_a_wide_projecting_line_on_a_bitmap_reaches_half_a_width_past_each_end);
+  RUN_TEST(test_a_wide_butt_capped_line_on_a_bitmap_ends_square_at_its_endpoints);
+  RUN_TEST(test_a_wide_line_on_a_bitmap_clips_at_the_bitmap_edges);
+  RUN_TEST(test_thin_lines_on_a_bitmap_round_an_exact_half_up_in_both_directions);
+  RUN_TEST(test_a_wide_line_whose_centre_is_off_the_bitmap_still_draws_the_part_that_is_on);
+  RUN_TEST(test_a_bitmap_line_of_the_largest_width_covers_the_rows_its_stroke_reaches);
+  RUN_TEST(test_a_huge_wide_line_wholly_beside_a_bitmap_draws_nothing_and_stays_in_bounds);
+  RUN_TEST(test_a_thin_line_on_a_bitmap_across_the_whole_int_range_still_crosses_it);
+  RUN_TEST(test_a_wide_line_on_a_bitmap_from_far_off_covers_what_a_near_one_does);
+  RUN_TEST(test_get_image_of_a_bitmap_gives_a_one_bit_image_of_its_bits);
+  RUN_TEST(test_put_image_of_a_bitmap_onto_a_bitmap_uses_the_low_bit_of_each_colour);
+  RUN_TEST(test_copy_plane_between_bitmaps_maps_set_bits_to_foreground_and_clear_to_background);
+  RUN_TEST(test_copy_plane_between_bitmaps_honours_the_clip_mask);
   RUN_TEST(test_an_image_reports_the_server_byte_and_bit_order_and_lets_a_hack_set_them);
   RUN_TEST(test_countof_is_the_number_of_elements_of_an_array_not_its_bytes);
   RUN_TEST(test_unmap_notify_has_the_x_event_number_and_fits_an_event_type);
@@ -4460,7 +4937,7 @@ int main(void) {
   RUN_TEST(test_fill_rectangle_into_a_pixmap_lands_in_the_pixmap);
   RUN_TEST(test_every_primitive_draws_the_same_into_a_pixmap_as_on_the_window);
   RUN_TEST(test_drawing_into_a_pixmap_clips_at_the_pixmap_edges);
-  RUN_TEST(test_lines_on_a_bitmap_and_primitives_on_none_draw_nothing);
+  RUN_TEST(test_primitives_on_none_draw_nothing_and_a_bitmap_line_stays_off_the_window);
   RUN_TEST(test_copy_plane_into_a_colour_pixmap_lands_in_the_pixmap);
   RUN_TEST(test_root_window_is_the_window_the_shim_draws_on);
   RUN_TEST(test_create_pixmap_wider_than_int16_returns_none);

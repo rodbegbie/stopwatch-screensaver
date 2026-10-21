@@ -54,6 +54,7 @@ implied warranty.
 | `firmware/src/hacks/lightning/lightning.c` | Copyright (c) 1996 Keith Romberg | xlock permission notice (below) |
 | `firmware/src/hacks/maze/maze.c` | Copyright 1988 by Sun Microsystems, Inc.; later changes by Dave Lemke, Richard Hess, Jim Randell, Ed James, Johannes Keukelaar, Zack Weinberg and Jamie Zawinski | Sun/MIT permission notice (below) |
 | `firmware/src/x11shim/include/images/gen/logo-50_png.h` | The xscreensaver logo, designed by Angela Goodman; this is `utils/images/logo-50.gif` converted to raw pixels by `tools/make_logo_blob.py`. The image carries no copyright line | The image states no licence. See "The Maze logo" below |
+| `firmware/src/x11shim/include/images/gen/6x10font_png.h` | The 6 by 10 terminal font Phosphor draws with: `hacks/images/6x10font.png` from xscreensaver 6.17 converted to raw pixels by `tools/make_logo_blob.py`. The image carries no copyright line | The image states no licence. See "The Phosphor font" below |
 | `firmware/src/hacks/blaster/blaster.c` | Copyright (c) 1999 Jonathan H. Lin | jwz permission notice (above) |
 | `firmware/src/hacks/substrate/substrate.c` | dragorn (<dragorn@kismetwireless.net>), ported from j.tarbell's Substrate (complexification.net, 2004); based on xscreensaver, Copyright (c) 1997, 1998, 2002 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/pacman/pacman.c` | Copyright (c) 2002 Edwin de Jong | xlock permission notice (below) |
@@ -188,6 +189,9 @@ implied warranty.
 | `firmware/src/hacks/superquadrics/superquadrics.c` | Ed Mackey (1987, 1997), later changes by the xlockmore and xscreensaver authors | xlock permission notice (below) |
 | `firmware/src/hacks/menger/menger.c` | Copyright (c) 2001-2014 Jamie Zawinski; Copyright (c) 2002 Aurelien Jacobs | jwz permission notice (above) |
 | `firmware/src/hacks/circuit/circuit.c` | Copyright (c) 2001-2015 Ben Buxton | jwz permission notice (above) |
+| `firmware/src/hacks/phosphor/phosphor.c` | Copyright (c) 1999-2025 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/phosphor/ansi-tty.c` | Copyright (c) 2025-2026 Jamie Zawinski | jwz permission notice (above) |
+| `firmware/src/hacks/phosphor/ansi-tty.h` | Copyright (c) 2025 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/sphere.c` | Copyright (c) 2002 Paul Bourke, Copyright (c) 2010-2026 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/sphere.h` | Copyright (c) 2001-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/teapot.c` | Copyright (c) Mark J. Kilgard, 1994; (c) Copyright 1993, Silicon Graphics, Inc. | Silicon Graphics notice (below) |
@@ -373,6 +377,47 @@ permission notice (above) for its code, and asks that the logo not be
 altered: "The logo is xscreensaver's identity". To use a different picture
 in a local build without committing it, set `XS_LOGO` to the image file (see
 `AGENTS.md`). The blob format is in `ximage-loader.h`.
+
+### The Phosphor font
+
+`6x10font_png.h` is `hacks/images/6x10font.png` from xscreensaver 6.17 (a
+strip of 256 glyphs, 7 by 10 pixels each), re-encoded as raw pixels and a
+transparency mask, deflated, without changing a glyph. The PNG has no licence
+text of its own, and `phosphor.c`, which loads it, carries jwz's permission
+notice (above). The blob format is in `ximage-loader.h`.
+
+### The Phosphor poems
+
+`firmware/assets/phosphor-poems.txt` holds the poems Phosphor types.
+`firmware/src/hacks/phosphor_poems.h` (pages) and `phosphor_poems_scroll.h`
+(scrolling) are made from it by `tools/make_phosphor_poems.py`. Each poem was
+first published before 1931, so it is in the public domain in the United
+States, and each author died more than 70 years ago. The texts are Wikisource's
+transcriptions of the printings named below, in ASCII (curly quotes became
+straight ones and a dash became `--`):
+
+- "The Raven" (first stanza), Edgar Allan Poe, 1845, from *The Raven and Other
+  Poems*.
+- "Ozymandias", Percy Bysshe Shelley, 1818, as printed in *The Examiner*
+  (London), with its original spelling.
+- "Fire and Ice" and "Stopping by Woods on a Snowy Evening", Robert Frost, from
+  *New Hampshire* (1923).
+- "The Red Wheelbarrow" (poem XXII of *Spring and All*), William Carlos
+  Williams, 1923.
+- "The Tyger" (first two stanzas), William Blake, from *Songs of Experience*
+  (1794), with its original spelling.
+- "Hope is the thing with feathers" (first two stanzas), Emily Dickinson, first
+  published in 1891, from Wikisource's transcription of *The Complete Poems of
+  Emily Dickinson* (Little, Brown).
+- "I Wandered Lonely as a Cloud", William Wordsworth, from *Poems* (1815),
+  with its original capitals and spelling.
+- "The Charge of the Light Brigade", Alfred, Lord Tennyson, first published in
+  1854, from the revised text in *Poems That Every Child Should Know* (1904).
+- "To a Mouse", Robert Burns, 1785, from *The Poetical Works of Robert Burns*,
+  in Scots.
+- "If--", Rudyard Kipling, 1910, from *Rewards and Fairies* (Kipling died in
+  1936). Wikisource's text has no stanza breaks, so they are put back after
+  every eighth line, as in the printed poem.
 
 ### The Pacman sprites
 
