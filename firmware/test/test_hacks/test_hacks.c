@@ -607,7 +607,7 @@ static const uint64_t kBaseline[] = {
     0x55d4faaa474ed1c9ull, /* Menger: taken after looking at the frames */
     0x63c7a4c072b4282dull, /* Circuit: taken after looking at the frames */
     0xa83085c64654adf1ull, /* Phosphor: taken after looking at the frames (scale 3, scrolling poems, blinking cursor, no cache, region reset) */
-    0, /* Pong: not yet pinned */
+    0xfb51d3e1832dada4ull, /* Pong: taken after Rod saw it on the board (330 view, line step 3, noise 0.02, 3 ticks a picture) */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif

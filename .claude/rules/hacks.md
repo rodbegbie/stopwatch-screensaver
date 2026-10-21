@@ -668,3 +668,21 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   (`phosphor_poem_set.h`): the test included the paged one and every
   wrapper mutant looked killed because the baseline was failing. Run a
   mutation script's baseline first and stop if it fails.
+- Pong (`pong_tv.c`): `analogtv` hacks build `pong.c` and `analogtv.c` as one
+  translation unit, with `analogtv.c` taken from the build directory's patched
+  copy (`firmware/patch_analogtv.py`, `tools/analogtv_patch.py`), because the
+  `.c` files must stay byte-identical. The copy has a `float` ghost filter
+  (its `double` taps were 209 of a 356 ms step) and a line step. Skipped lines
+  must be blasted at their own height: extending the first line's `ybot` made
+  dark bands, since analogtv's level table is built only near the average
+  height. The canvas holds byte-swapped RGB565, so the wrapper swaps analogtv's
+  colour tables once after `analogtv_allocate`. The wrapper registers the hack
+  itself (`pong_hack`), for the `*noise: 0.02` override and the overlap flag
+  (`repaints_all` only when `PONG_VIEW` is 0: a smaller view leaves the rest of
+  the canvas alone). The picture costs about 111 ms and the game step almost
+  nothing, so the picture is drawn on every third call and the other calls
+  return a delay of 0: the game runs at about 74% of upstream's pace. `pong_init`
+  must reset the tick, or the first call can skip drawing. Stack: 2.8 KB free
+  of 16 KB on the board, set by analogtv's 9.3 KB `yiq` array. A test of the
+  patch must compare the C result with the real function
+  (`test_analogtv_patch.py`).
