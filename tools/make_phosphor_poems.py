@@ -37,7 +37,7 @@ MORE = "--More--"
 # The byte the text source waits on; the terminal never sees it.
 PAUSE = "\x01"
 
-CLEAR = "\x1b[2J\x1b[H"
+CLEAR = "\x1b[r\x1b[2J\x1b[H"
 
 
 def wrap(line: str) -> list[str]:

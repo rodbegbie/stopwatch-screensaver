@@ -605,7 +605,7 @@ static const uint64_t kBaseline[] = {
     0x48cf40bfdc581fb9ull, /* Superquadrics: taken after looking at the frames */
     0x55d4faaa474ed1c9ull, /* Menger: taken after looking at the frames */
     0x63c7a4c072b4282dull, /* Circuit: taken after looking at the frames */
-    0x8793ac65dca470b9ull, /* Phosphor: taken after looking at the frames (scale 3, scrolling poems, blinking cursor, no cache) */
+    0xa83085c64654adf1ull, /* Phosphor: taken after looking at the frames (scale 3, scrolling poems, blinking cursor, no cache, region reset) */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif

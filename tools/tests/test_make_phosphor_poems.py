@@ -57,7 +57,7 @@ def test_parse_refuses_a_poem_without_lines_or_a_byline():
 
 def test_a_short_poem_is_one_page_that_clears_types_a_command_and_ends_on_a_prompt():
     out = mpp.render("a.txt", "Poe, 1845", ["one", "", "two"])
-    assert out.startswith("\x1b[2J\x1b[H\r\n\r\n    > cat a.txt\r\n\r\n")
+    assert out.startswith("\x1b[r\x1b[2J\x1b[H\r\n\r\n    > cat a.txt\r\n\r\n")
     assert "    one\r\n\r\n    two\r\n\r\n" in out
     assert out.endswith("    -- Poe, 1845\r\n    > _")
     assert mpp.PAUSE not in out
@@ -78,7 +78,7 @@ def test_a_long_poem_is_paged_and_each_page_but_the_last_ends_with_more():
     for page in pages[:-1]:
         assert page.endswith("    --More--")
     assert pages[-1].endswith("    > _")
-    assert all(page.startswith("\x1b[2J\x1b[H") for page in pages)
+    assert all(page.startswith("\x1b[r\x1b[2J\x1b[H") for page in pages)
 
 
 def test_no_page_has_more_rows_than_the_circle_shows_and_none_is_empty():
@@ -151,13 +151,21 @@ def test_a_scrolling_poem_types_into_a_region_over_the_rows_the_circle_shows():
     lines = [f"line {i}" for i in range(30)]
     out = mpp.render("a", "X, 1900", lines, paged=False)
     assert out.startswith(
-        "\x1b[2J\x1b[H\r\n\r\n    > cat a\r\n\x1b[5;14r    line 0\r\n"
+        "\x1b[r\x1b[2J\x1b[H\r\n\r\n    > cat a\r\n\x1b[5;14r    line 0\r\n"
     )
     assert mpp.PAUSE not in out
     assert mpp.MORE not in out
     assert out.endswith("    -- X, 1900\r\n    > _")
     typed = strip_escapes(out).split("\r\n")[mpp.FIRST_ROW + 1 :]
     assert [r.strip() for r in typed if r.strip().startswith("line")] == lines
+
+
+def test_every_poem_resets_the_scroll_region_before_it_clears_and_types():
+    lines = [f"line {i}" for i in range(30)]
+    for paged in (True, False):
+        out = mpp.render("a", "X, 1900", lines, paged=paged)
+        assert out.startswith("\x1b[r\x1b[2J\x1b[H")
+        assert out.count("\x1b[r\x1b[2J") == out.count("\x1b[2J")
 
 
 def test_a_scrolling_poem_keeps_its_stanza_breaks():

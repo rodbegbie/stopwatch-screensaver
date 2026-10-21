@@ -4,7 +4,7 @@
 
 static const char *const kPoems[] = {
     /* raven */
-    "\033[2J\033[H\r\n"
+    "\033[r\033[2J\033[H\r\n"
     "\r\n"
     "    > cat raven\r\n"
     "\033[5;14r    Once upon a\r\n"
@@ -35,7 +35,7 @@ static const char *const kPoems[] = {
     "    -- Poe, 1845\r\n"
     "    > _",
     /* ozymandias */
-    "\033[2J\033[H\r\n"
+    "\033[r\033[2J\033[H\r\n"
     "\r\n"
     "    > cat ozymandias\r\n"
     "\033[5;14r    I met a Traveller\r\n"
@@ -89,7 +89,7 @@ static const char *const kPoems[] = {
     "    -- Shelley, 1818\r\n"
     "    > _",
     /* fire */
-    "\033[2J\033[H\r\n"
+    "\033[r\033[2J\033[H\r\n"
     "\r\n"
     "    > cat fire\r\n"
     "\033[5;14r    Some say the world\r\n"
@@ -112,7 +112,7 @@ static const char *const kPoems[] = {
     "    -- Frost, 1923\r\n"
     "    > _",
     /* wheelbarrow */
-    "\033[2J\033[H\r\n"
+    "\033[r\033[2J\033[H\r\n"
     "\r\n"
     "    > cat wheelbarrow\r\n"
     "\033[5;14r    so much depends\r\n"
@@ -130,7 +130,7 @@ static const char *const kPoems[] = {
     "    -- Williams, 1923\r\n"
     "    > _",
     /* woods */
-    "\033[2J\033[H\r\n"
+    "\033[r\033[2J\033[H\r\n"
     "\r\n"
     "    > cat woods\r\n"
     "\033[5;14r    Whose woods these\r\n"
@@ -181,7 +181,7 @@ static const char *const kPoems[] = {
     "    -- Frost, 1923\r\n"
     "    > _",
     /* tyger */
-    "\033[2J\033[H\r\n"
+    "\033[r\033[2J\033[H\r\n"
     "\r\n"
     "    > cat tyger\r\n"
     "\033[5;14r    Tyger Tyger.\r\n"
@@ -207,7 +207,7 @@ static const char *const kPoems[] = {
     "    -- Blake, 1794\r\n"
     "    > _",
     /* hope */
-    "\033[2J\033[H\r\n"
+    "\033[r\033[2J\033[H\r\n"
     "\r\n"
     "    > cat hope\r\n"
     "\033[5;14r    Hope is the thing\r\n"
@@ -233,7 +233,7 @@ static const char *const kPoems[] = {
     "    -- Dickinson, 1891\r\n"
     "    > _",
     /* daffodils */
-    "\033[2J\033[H\r\n"
+    "\033[r\033[2J\033[H\r\n"
     "\r\n"
     "    > cat daffodils\r\n"
     "\033[5;14r    I wandered lonely\r\n"
@@ -302,7 +302,7 @@ static const char *const kPoems[] = {
     "      1815\r\n"
     "    > _",
     /* charge */
-    "\033[2J\033[H\r\n"
+    "\033[r\033[2J\033[H\r\n"
     "\r\n"
     "    > cat charge\r\n"
     "\033[5;14r    Half a league,\r\n"
@@ -423,7 +423,7 @@ static const char *const kPoems[] = {
     "    -- Tennyson, 1854\r\n"
     "    > _",
     /* mouse */
-    "\033[2J\033[H\r\n"
+    "\033[r\033[2J\033[H\r\n"
     "\r\n"
     "    > cat mouse\r\n"
     "\033[5;14r    Wee, sleekit,\r\n"
@@ -547,7 +547,7 @@ static const char *const kPoems[] = {
     "    -- Burns, 1785\r\n"
     "    > _",
     /* if */
-    "\033[2J\033[H\r\n"
+    "\033[r\033[2J\033[H\r\n"
     "\r\n"
     "    > cat if\r\n"
     "\033[5;14r    If you can keep\r\n"
