@@ -14,7 +14,7 @@ generated = Path(env.subst("$BUILD_DIR")) / "generated"  # noqa: F821
 generated.mkdir(parents=True, exist_ok=True)
 
 source = (project / "src" / "hacks" / "pong" / "analogtv.c").read_text()
-patched = analogtv_patch.float_ghost_filter(source)
+patched = analogtv_patch.step_the_line_loop(analogtv_patch.float_ghost_filter(source))
 target = generated / "analogtv_patched.c"
 if not target.exists() or target.read_text() != patched:
     target.write_text(patched)

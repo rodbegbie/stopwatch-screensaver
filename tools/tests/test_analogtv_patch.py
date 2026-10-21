@@ -133,3 +133,59 @@ def test_the_float_filter_matches_the_double_one_at_every_magnitude(tmp_path):
     assert int(checked) == 30 * 2048
     assert float(worst) < 1e-4
     assert re.fullmatch(r"[0-9.e+-]+", worst)
+
+
+def _draw_lines(source: str) -> str:
+    start = source.index("static void analogtv_thread_draw_lines(")
+    return source[start : source.index("\n}\n", start) + 3]
+
+
+def test_the_line_loop_steps_by_the_wrappers_variable():
+    out = _draw_lines(ap.step_the_line_loop(ANALOGTV.read_text()))
+    assert "lineno += it->threads.count * pong_line_step) {" in out
+    assert "lineno += it->threads.count) {" not in out
+
+
+def test_a_stepped_line_writes_its_colours_into_the_rows_of_the_lines_it_skips():
+    out = _draw_lines(ap.step_the_line_loop(ANALOGTV.read_text()))
+    tail = out.split("for (k = 1; k < pong_line_step")[1]
+    assert "lineno + k < ANALOGTV_BOT" in tail
+    # Each skipped line is drawn at its own height, not as one tall line.
+    assert "analogtv_blast_imagerow(it, raw_rgb_start, raw_rgb_end,\n" in tail
+    assert "ytop2, ybot2" in tail
+
+
+def test_the_first_blast_of_a_line_is_still_its_own_rows():
+    out = _draw_lines(ap.step_the_line_loop(ANALOGTV.read_text()))
+    assert out.index("ytop,ybot);") < out.index("ytop2, ybot2")
+
+
+def test_each_drawn_line_is_counted_for_the_tests():
+    out = _draw_lines(ap.step_the_line_loop(ANALOGTV.read_text()))
+    assert out.count("pong_lines_drawn++;") == 1
+    assert out.index("pong_lines_drawn++;") > out.index("analogtv_get_line(")
+
+
+def test_only_the_line_loop_changes_when_the_step_is_patched():
+    before = ANALOGTV.read_text()
+    after = ap.step_the_line_loop(before)
+    assert after.replace(_draw_lines(after), "") == before.replace(
+        _draw_lines(before), ""
+    )
+
+
+def test_the_two_patches_apply_together_in_either_order():
+    source = ANALOGTV.read_text()
+    a = ap.step_the_line_loop(ap.float_ghost_filter(source))
+    b = ap.float_ghost_filter(ap.step_the_line_loop(source))
+    assert a == b
+
+
+def test_a_changed_line_loop_fails_loudly():
+    with pytest.raises(ValueError, match="has upstream changed"):
+        ap.step_the_line_loop("static void other(void) {}\n")
+
+
+def test_a_second_line_loop_fails_loudly():
+    with pytest.raises(ValueError, match="found 2"):
+        ap.step_the_line_loop(ANALOGTV.read_text() + ANALOGTV.read_text())
