@@ -686,3 +686,32 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   of 16 KB on the board, set by analogtv's 9.3 KB `yiq` array. A test of the
   patch must compare the C result with the real function
   (`test_analogtv_patch.py`).
+- XAnalogTV and FilmLeader (ARS-60) share Pong's analogtv build (`analogtv_tv.c`:
+  ghost filter, line step, view; a hack sets `analogtv_line_step` and
+  `analogtv_view_size` in its init, because the last to start leaves its values).
+  `analogtv_load_ximage` kept 28 KB of colour rows on the stack and boot-looped
+  XAnalogTV on its first picture load (loop stack 16 KB): `tools/analogtv_patch.py`
+  reads each sample where it is used, from a 32-bit picture's rows directly, via
+  the shim's inline `xshim_query_rgb565`; the C test compares it with the real
+  function under AddressSanitizer. That also took FilmLeader's picture read from
+  360 to 250 ms of a 645 ms step; the rest is analogtv's own 111 ms and about
+  150 ms of its drawing (about 2 fps). Moving the rows to the heap instead made
+  no difference to speed (PSRAM) and was dropped. XAnalogTV's upstream loader
+  finishes later and its caller marks the channel "not loaded" after asking: finishing
+  inside the call loaded another channel and left static on the screen, so the
+  wrapper finishes the load from the next draw. It also reads the shim's clock
+  (`gettimeofday` mapped to `double_time`) so a test can drive its 10 second
+  power-up: on the host a frame takes no time, and every dump was black. It frees
+  the three test cards (1.4 MB of 32-bit images) once the channels are set up: the
+  board had 1.4 MB of PSRAM free at start and `XGetImage` returned NULL for the
+  first picture load, which analogtv dereferenced (the patch now returns at once
+  for a missing picture). The cards are made at build time from `vendor/`
+  (`firmware/testcards.py`, 400 pixels, never committed). FilmLeader's source is
+  patched to a square 356 pixel canvas (`tools/filmleader_patch.py`), its fonts
+  asked for at 140, 24 and 20 (the atlas has a digits-only 140 pixel size:
+  `make_font_atlas.py --digits-from`), and its free closes three fonts upstream
+  forgets. AddressSanitizer found a one-byte over-read there: upstream measures
+  `s[0]` with the length of a longer `s[j]`; the patch fixes it. Neither hack is
+  pinned in `test_hacks.c`: their pictures follow the wall clock. Seeding `random()`
+  shows more of XAnalogTV's channels: most are snow, as upstream's weak stations
+  are.
