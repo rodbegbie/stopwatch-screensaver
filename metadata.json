@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.12.0",
+  "checkpoint_id": "01M5GF94DJ6KXP7W6T0F879DEZ",
+  "strategy": "manual-commit",
+  "branch": "feature/ARS-60-xanalogtv-filmleader",
+  "checkpoints_count": 8,
+  "files_touched": [
+    "firmware/font_atlas.py",
+    "firmware/platformio.ini",
+    "firmware/src/hacks/registry.c",
+    "firmware/src/hacks/xanalogtv_tv.c",
+    "firmware/test/test_hacks/test_hacks.c",
+    "firmware/test/test_push_overlap/test_push_overlap.c",
+    "firmware/test/test_xanalogtv_wrapper/test_xanalogtv_wrapper.c",
+    "tools/assessment_measured.md.in",
+    "tools/failed_ports.txt"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 164,
+    "cache_creation_tokens": 212023,
+    "cache_read_tokens": 13823431,
+    "output_tokens": 53683,
+    "api_call_count": 78
+  }
+}
