@@ -3,17 +3,21 @@
 #include <unity.h>
 
 #include "core/canvas.h"
-#include "hacks/pong/analogtv.h"
+#include "hacks/analogtv/analogtv.h"
 #include "runner/hack_entry.h"
 #include "x11shim/xshim.h"
 
-/* Pong is built through hacks/pong_tv.c, which owns the real analogtv_allocate.
- * The test links the registered copy, so it sees what the board runs. */
+/* analogtv is built through hacks/analogtv_tv.c, which owns the real analogtv_allocate,
+ * and Pong through hacks/pong_tv.c. The test links the registered copies, so it sees
+ * what the board runs. */
 extern const HackEntry pong_hack;
 /* The wrapper's two ways of doing less work per frame (see pong_tv.c). */
 extern int pong_line_step;
 extern int pong_view_size;
 extern int pong_ticks;
+/* What analogtv itself reads, set by the hack's init from the two above. */
+extern int analogtv_line_step;
+extern int analogtv_view_size;
 
 static const char *const tv_defaults[] = {ANALOGTV_DEFAULTS 0};
 
@@ -68,9 +72,9 @@ void test_a_frame_is_neutral_grey_and_white_not_tinted(void) {
 static int g_dark_rows;
 
 static int unwritten_pixels(int line_step, int view) {
-  const int was_step = pong_line_step, was_view = pong_view_size;
-  pong_line_step = line_step;
-  pong_view_size = view;
+  const int was_step = analogtv_line_step, was_view = analogtv_view_size;
+  analogtv_line_step = line_step;
+  analogtv_view_size = view;
   analogtv *it = analogtv_allocate(dpy, XSHIM_WINDOW);
   TEST_ASSERT_NOT_NULL(it);
   analogtv_set_defaults(it, "");
@@ -97,8 +101,8 @@ static int unwritten_pixels(int line_step, int view) {
   }
   analogtv_release(it);
   free(inp);
-  pong_line_step = was_step;
-  pong_view_size = was_view;
+  analogtv_line_step = was_step;
+  analogtv_view_size = was_view;
   return left;
 }
 
@@ -139,12 +143,12 @@ void test_a_line_step_leaves_no_dark_rows_a_solid_picture_does_not_have(void) {
 /* The test above cannot tell a step of 2 from a step of 1 if every row is drawn
  * either way, so count the lines that were processed: the work is what we cut. */
 void test_a_line_step_draws_that_fraction_of_the_lines(void) {
-  extern long pong_lines_drawn;
+  extern long analogtv_lines_drawn;
   long drawn[5] = {0};
   for (int step = 1; step <= 4; step++) {
-    pong_lines_drawn = 0;
+    analogtv_lines_drawn = 0;
     unwritten_pixels(step, 0);
-    drawn[step] = pong_lines_drawn;
+    drawn[step] = analogtv_lines_drawn;
   }
   TEST_ASSERT_EQUAL_INT(ANALOGTV_VISLINES, drawn[1]);
   TEST_ASSERT_EQUAL_INT(ANALOGTV_VISLINES / 2, drawn[2]);

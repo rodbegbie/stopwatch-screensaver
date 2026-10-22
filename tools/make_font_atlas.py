@@ -21,20 +21,35 @@ from PIL import Image, ImageDraw, ImageFont
 
 FIRST, LAST = 32, 126
 MIN_SIZE = 4
+MAX_EXTENT = 255
+DIGITS = "0123456789"
 
 
-def build_glyph(font, ch: str, size: int, alpha: bytearray) -> dict:
-    """Render ch tightly cropped, appending its coverage to alpha."""
+def build_glyph(font, ch: str, size: int, alpha: bytearray, ink: bool = True) -> dict:
+    """Render ch tightly cropped, appending its coverage to alpha. Without ink
+    the glyph keeps its advance and draws nothing."""
     advance = round(font.getlength(ch))
+    if not ink:
+        return {"w": 0, "h": 0, "left": 0, "top": 0, "advance": advance, "offset": 0}
     canvas = Image.new("L", (size * 3, size * 3), 0)
     ImageDraw.Draw(canvas).text((size, size * 2), ch, fill=255, font=font, anchor="ls")
     box = canvas.getbbox()
     if box is None:
         return {"w": 0, "h": 0, "left": 0, "top": 0, "advance": advance, "offset": 0}
     left, upper, right, lower = box
-    ink = canvas.crop(box)
+    if right - left > MAX_EXTENT or lower - upper > MAX_EXTENT:
+        raise ValueError(
+            f"{ch!r} at {size} pixels is {right - left} by {lower - upper}: "
+            f"a glyph is at most {MAX_EXTENT} pixels each way (the table holds bytes)"
+        )
+    if not (-128 <= left - size <= 127 and -128 <= size * 2 - upper <= 127):
+        raise ValueError(
+            f"{ch!r} at {size} pixels sits more than 127 pixels from its pen "
+            "(the table holds signed bytes)"
+        )
+    cropped = canvas.crop(box)
     offset = len(alpha)
-    alpha += ink.tobytes()
+    alpha += cropped.tobytes()
     return {
         "w": right - left,
         "h": lower - upper,
@@ -45,7 +60,11 @@ def build_glyph(font, ch: str, size: int, alpha: bytearray) -> dict:
     }
 
 
-def build_font(path: Path, sizes: list[int]) -> list[dict]:
+def build_font(
+    path: Path, sizes: list[int], digits_from: int | None = None
+) -> list[dict]:
+    """Sizes from `digits_from` up draw only the digits: a big size is for a big
+    number, and every other glyph at that size would be flash for nothing."""
     result = []
     for size in sizes:
         if size < MIN_SIZE:
@@ -57,7 +76,14 @@ def build_font(path: Path, sizes: list[int]) -> list[dict]:
         ascent, descent = font.getmetrics()
         alpha = bytearray()
         glyphs = [
-            build_glyph(font, chr(code), size, alpha) for code in range(FIRST, LAST + 1)
+            build_glyph(
+                font,
+                chr(code),
+                size,
+                alpha,
+                ink=digits_from is None or size < digits_from or chr(code) in DIGITS,
+            )
+            for code in range(FIRST, LAST + 1)
         ]
         result.append(
             {
@@ -117,11 +143,16 @@ def main(argv: list[str]) -> int:
     parser.add_argument("ttf", type=Path)
     parser.add_argument("--name", required=True, help="C identifier prefix")
     parser.add_argument("--sizes", required=True, help="comma-separated pixel sizes")
+    parser.add_argument(
+        "--digits-from",
+        type=int,
+        help="sizes at or above this many pixels hold only the digits",
+    )
     parser.add_argument("-o", "--output", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
         sizes = sorted({int(s) for s in args.sizes.split(",")})
-        font = build_font(args.ttf, sizes)
+        font = build_font(args.ttf, sizes, args.digits_from)
     except ValueError as err:
         print(f"make_font_atlas: {err}", file=sys.stderr)
         return 1

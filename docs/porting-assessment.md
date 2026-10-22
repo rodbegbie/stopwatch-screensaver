@@ -33,9 +33,9 @@ it with `uv run tools/score_hacks.py`.
 | --- | --- | --- |
 | S | 2D, and the unmodified source compiles against the shim | 6 |
 | M | 2D, 1-4 shim gaps, no pixmaps or pixel read-back | 1 |
-| L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 35 |
+| L | 2D, 5+ shim gaps, or uses pixmaps or pixel read-back | 34 |
 | XL | GL: runs on the TinyGL layer, each hack needs its own GL calls and helpers checked (see below) | 121 |
-| Ported | Already running on the device, so no rating | 120 |
+| Ported | Already running on the device, so no rating | 121 |
 
 ## Speed
 
@@ -283,6 +283,13 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | XJack | 7.8-15.8 | 0.1-13.8 ms | 0.3-15.0 ms | 46-130 ms | none measurable |
 | Phosphor (scale 3, random poems, scrolling, blinking cursor) | 10.6-17.6 (mean 11.8) | 1.6-39.9 ms | 0.6-10.3 ms | 44.3-55.1 ms | none measurable (free PSRAM 6,213,883 flat over 28 windows) |
 | Phosphor (`-DPHOSPHOR_PAGED`: pages that clear, no cursor blink yet; not the default) | 13.0-17.6 (mean 16.2) | 1.4-21.8 ms | 0.5-3.2 ms | 52.1-55.2 ms | none measurable (free PSRAM 6,214,071-6,214,159 over 22 windows) |
+| XAnalogTV (330 px view, line step 4) | 7.84 | 113.3 ms | 15.1 ms | 0 ms | A/B against the 330 px view at step 3, two rounds each; not registered |
+| XAnalogTV (whole window, line step 3) | 6.60 | 152.4 ms | 0.1 ms (overlapped) | 0 ms | A/B, two rounds; the push hides in the next step |
+| XAnalogTV (whole window, line step 4; registered) | 7.10 | 142.1 ms | 0.1 ms (overlapped) | 0 ms | A/B, two rounds |
+| XAnalogTV (whole window, line step 6) | 7.68 | 131.3 ms | 0.1 ms (overlapped) | 0 ms | A/B, two rounds; each step of 2 buys about 0.5 fps, so most of the step is fixed per frame |
+| XAnalogTV (330 px view, step 3, noise loop removed; not a build option) | 7.95 | 112.7 ms | 15.1 ms | 0 ms | against 122.7 ms with it: the per-sample random numbers are 10 ms of the step; noise level does not change the cost |
+| XAnalogTV (330 px view, line step 3) | 5.8-8.6 (mean about 7.2) | 100.7-156.1 ms | 15.1 ms | 0 ms | none measurable (free PSRAM 3,712,011 flat); stack headroom not measured; 5.8 fps window while the first channels loaded |
+| FilmLeader (not registered: Rod dropped it; 330 px view, line step 3, 356 px canvas) | 1.6-2.0 (2.0 after the picture read was made cheaper) | 515-648 ms | 15.1 ms | 0 ms | none measurable (free PSRAM 4,668,019 flat); 360 ms of the first 645 ms step was `analogtv_load_ximage`, 250 ms after; stack headroom not measured |
 | Pong (registered: 330 px view, line step 3, noise 0.02, 3 game steps a picture) | 22.2 game steps a second (about 7.4 pictures) | 38.6 ms mean per call (about 111 ms a drawn picture, about 2.5 ms a skipped one) | 5.1 ms | 1.2 ms | none measurable; no stack canary |
 | Pong (as copied: whole window, `double` ghost filter, every line; not registered) | 2.8 | 356 ms | 24.8 ms | 0 ms | 2.8 KB of the 16 KB stack left (analogtv's 9.3 KB `yiq` array) |
 | Pong (`float` ghost filter, whole window, every line; not registered) | 4.6 | 194.6 ms | 24.8 ms | 0 ms | 209 of the 356 ms was `double` ghost taps |
@@ -997,7 +1004,7 @@ needing few additions come first.
 | --- | --- | --- |
 | `error: too few arguments to function call, expected 2, have 1` | 4.73 | 7 |
 | `XFree` | 1.61 | 4 |
-| `XDrawString` | 1.4 | 6 |
+| `XDrawString` | 1.41 | 6 |
 | `XListPixmapFormats` | 1.12 | 3 |
 | `XCreateBitmapFromData` | 1.0 | 1 |
 | `XSetTile` | 1.0 | 1 |
@@ -1013,18 +1020,18 @@ needing few additions come first.
 | bumps | 2d | S | crashed on the host | - | - | pixmaps, readback | 705 |
 | distort | 2d | S | crashed on the host | - | - | pixmaps, readback | 894 |
 | droste | 2d | S | crashed on the host | - | - | pixmaps, readback | 686 |
-| flow | 2d | S | high (0.91 ms) | - | - | pixmaps | 1216 |
+| flow | 2d | S | high (0.89 ms) | - | - | pixmaps | 1216 |
 | ripples | 2d | S | crashed on the host | - | - | readback | 1127 |
 | twang | 2d | S | crashed on the host | - | - | pixmaps, readback | 791 |
 | metaballs | 2d | M | - | - | `XFree`, `XListPixmapFormats` | - | 438 |
 | apollonian | 2d | L | - | - | `FcChar8`, `XColor.color`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall` | - | 820 |
 | apple2-main | 2d | L | - | - | `A2CONTROLLER_DONE`, `A2CONTROLLER_FREE`, `A2_GR_FULL`, `A2_GR_HIRES`, `A2_GR_LORES`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `TTY_BLINK`, `TTY_BOLD`, `TTY_INVERSE`, `TTY_SYMBOLS`, `a2_clear_gr`, `a2_clear_hgr`, `a2_cls`, `a2_display_image_loading`, `a2_goto`, `a2_hline`, `a2_hplot`, `a2_invalidate`, `a2_plot`, `a2_printc`, `a2_printc_noscroll`, `a2_prints`, `analogtv_reconfigure`, `ansi-tty.h`, `ansi_tty`, `ansi_tty_free`, `ansi_tty_init`, `ansi_tty_print`, `apple2.h`, `apple2_one_frame`, `apple2_sim_t`, `apple2_start`, `apple2_state_t`, `error: expected expression`, `flag`, `load_image_async`, `sim`, `st`, `tc`, `tty`, `tty_char`, `tty_flag`, `visual_cells` | pixmaps, readback | 1642 |
-| blitspin | 2d | L | - | - | `GXand`, `GXclear`, `GXset`, `XDisplayHeight`, `XDisplayWidth`, `XScreenNumberOfScreen`, `file_to_pixmap`, `images/gen/som_png.h`, `som_png` | pixmaps, readback, clipmask | 467 |
+| blitspin | 2d | L | - | - | `GXand`, `GXclear`, `GXset`, `XDisplayHeight`, `XDisplayWidth`, `XScreenNumberOfScreen`, `images/gen/som_png.h`, `som_png` | pixmaps, readback, clipmask | 467 |
 | bsod | 2d | L | - | - | `A2CONTROLLER_DONE`, `A2CONTROLLER_FREE`, `A2_GR_FULL`, `A2_GR_HIRES`, `A2_GR_LORES`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `XFetchName`, `XSetPlaneMask`, `XStoreName`, `XftTextExtentsUtf8_multi`, `a2_cls`, `a2_goto`, `a2_init_memory_active`, `a2_invalidate`, `a2_poke`, `a2_printc`, `a2_printc_noscroll`, `a2_prints`, `amiga_png`, `android_png`, `apple2.h`, `apple2_one_frame`, `apple2_sim_t`, `apple2_start`, `apple2_state_t`, `apple_png`, `atari_png`, `atm_png`, `dvd_png`, `error: expected expression`, `error: incompatible integer to pointer conversion assigning to 'char *' from 'int' [-Wint-conversion]`, `gnome1_png`, `gnome2_png`, `hmac_png`, `images/gen/amiga_png.h`, `images/gen/android_png.h`, `images/gen/apple_png.h`, `images/gen/atari_png.h`, `images/gen/atm_png.h`, `images/gen/dvd_png.h`, `images/gen/gnome1_png.h`, `images/gen/gnome2_png.h`, `images/gen/hmac_png.h`, `images/gen/mac_png.h`, `images/gen/macbomb_png.h`, `images/gen/osx_10_2_png.h`, `images/gen/osx_10_3_png.h`, `images/gen/ransomware_png.h`, `images/gen/sun_png.h`, `mac_png`, `macbomb_png`, `osx_10_2_png`, `osx_10_3_png`, `ransomware_png`, `sim`, `st`, `sun_png`, `utf8_decode_combining`, `xft_word_wrap`, `xftwrap.h` | pixmaps, readback, clipmask | 7809 |
 | crystal | 2d | L | - | - | `XCreateColormap`, `XFreeColormap`, `XInstallColormap`, `XSetWindowColormap`, `free_colors`, `has_writable_cells`, `make_random_colormap`, `make_smooth_colormap`, `make_uniform_colormap`, `rotate_colors` | xor, float-heavy | 1286 |
 | fiberlamp | 2d | L | - | - | `RootWindow`, `XAllocNamedColor`, `XTranslateCoordinates` | pixmaps | 480 |
-| filmleader | 2d | L | - | - | `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_SIGNAL_LEN`, `FcChar8`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftColorFree`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftTextExtentsUtf8`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_load_ximage`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `error: expected expression`, `extents`, `load_xft_font_retry`, `screen_number`, `xftfont` | pixmaps, readback | 548 |
-| flag | 2d | L | - | - | `GCFont`, `XDrawString`, `XFontStruct`, `XFreeFont`, `XGCValues.font`, `XLoadQueryFont`, `XTextExtents`, `bob_png`, `file_to_pixmap`, `font`, `images/gen/bob_png.h` | pixmaps, readback, text | 570 |
+| filmleader | 2d | L | - | ❌ | `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_SIGNAL_LEN`, `FcChar8`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftColorFree`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftTextExtentsUtf8`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_load_ximage`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `error: expected expression`, `extents`, `load_xft_font_retry`, `screen_number`, `xftfont` | pixmaps, readback | 548 |
+| flag | 2d | L | - | - | `GCFont`, `XDrawString`, `XFontStruct`, `XFreeFont`, `XGCValues.font`, `XLoadQueryFont`, `XTextExtents`, `bob_png`, `font`, `images/gen/bob_png.h` | pixmaps, readback, text | 570 |
 | fluidballs | 2d | L | - | - | `FcChar8`, `RootWindow`, `XTranslateCoordinates`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `error: expected expression`, `error: too few arguments to function call, expected 2, have 1`, `load_xft_font_retry`, `screen_number` | pixmaps | 881 |
 | fontglide | 2d | L | - | - | `FcChar8`, `XDrawString`, `XDrawString16`, `XFreeFont`, `XGetAtomName`, `XGlyphInfo`, `XLoadQueryFont`, `XRenderColor`, `XSetFont`, `XTextExtents`, `XTextExtents16`, `XftColor`, `XftColorAllocValue`, `XftColorFree`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `bg`, `error: Xft is required under X11`, `error: expected expression`, `extents`, `fg`, `load_xft_font_retry`, `screen_number`, `swap`, `utf8_decode_combining`, `xftdraw` | pixmaps, readback, text, clipmask | 2474 |
 | glitchpeg | 2d | L | - | - | `BitmapBitOrder`, `XImage.blue_mask`, `XImage.green_mask`, `XImage.red_mask`, `XtAppAddInput`, `XtInputExceptMask`, `XtInputId`, `XtInputReadMask`, `XtRemoveInput` | readback | 466 |
@@ -1048,7 +1055,6 @@ needing few additions come first.
 | testx11 | 2d | L | - | - | `GCFont`, `XDrawString`, `XGCValues.font`, `XLoadFont`, `colorbars.h`, `draw_colorbars`, `error: expected ')'`, `error: expected function body after function declarator`, `error: expected parameter declarator` | pixmaps, readback, text, clipmask | 968 |
 | vfeedback | 2d | L | - | - | `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_SIGNAL_LEN`, `RANDSIGN`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_input_allocate`, `analogtv_load_ximage`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync` | pixmaps, readback | 592 |
 | whirlygig | 2d | L | - | - | `XDrawString` | pixmaps, text, float-heavy | 741 |
-| xanalogtv | 2d | L | - | - | `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_PIC_LEN`, `ANALOGTV_SCALE`, `ANALOGTV_SIGNAL_LEN`, `ANALOGTV_V`, `ANALOGTV_VIS_LEN`, `ANALOGTV_VIS_START`, `XrmDatabase`, `XrmPutResource`, `XrmValue`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_draw_solid_rel_lcp`, `analogtv_draw_string_centered`, `analogtv_font`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_lcp_to_ntsc`, `analogtv_load_ximage`, `analogtv_make_font`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `analogtv_setup_teletext`, `db`, `file_to_pixmap`, `gethostname`, `images/gen/testcard_bbcf_png.h`, `images/gen/testcard_pm5544_png.h`, `images/gen/testcard_rca_png.h`, `inp`, `input`, `load_image_async`, `rec`, `testcard_bbcf_png`, `testcard_pm5544_png`, `testcard_rca_png`, `value` | pixmaps, readback | 689 |
 | xflame | 2d | L | - | - | `bob_png`, `images/gen/bob_png.h` | readback | 826 |
 | xlyap | 2d | L | - | - | `X11/cursorfont.h`, `XComposeStatus`, `XPending`, `error: expected expression` | pixmaps | 1939 |
 | zoom | 2d | L | - | - | `error: too few arguments to function call, expected 2, have 1` | pixmaps, readback | 290 |
@@ -1272,6 +1278,7 @@ needing few additions come first.
 | phosphor | 2d | - | - | ✅ | `FALSE`, `FcChar8`, `TTY_BOLD`, `TTY_INVERSE`, `TTY_ITALIC`, `TTY_SYMBOLS`, `XColor.color`, `XGlyphInfo`, `XWriteBitmapFile`, `XftColor`, `XftDraw`, `XftDrawCreate`, `XftDrawStringUtf8`, `XftFont`, `XftTextExtentsUtf8`, `ansi-tty.h`, `ansi_graphics_unicode`, `ansi_tty`, `ansi_tty_free`, `ansi_tty_init`, `ansi_tty_print`, `ansi_tty_resize`, `error: expected expression`, `font`, `load_xft_font_retry`, `overall`, `p_cell.flags`, `screen_number`, `tcell`, `tty`, `tty_char`, `xftdraw` | pixmaps, readback, clipmask | 1260 |
 | pong | 2d | - | - | ✅ | `ANALOGTV_BLACK_LEVEL`, `ANALOGTV_BOT`, `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_TOP`, `ANALOGTV_VISLINES`, `ANALOGTV_VIS_END`, `ANALOGTV_VIS_LEN`, `ANALOGTV_VIS_START`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_draw_solid`, `analogtv_draw_string`, `analogtv_font`, `analogtv_font_set_char`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_lcp_to_ntsc`, `analogtv_make_font`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync` | pixmaps | 1109 |
 | shadebobs | 2d | - | 2-2.3 ms measured | ✅ | `XFree`, `XListPixmapFormats` | readback | 474 |
+| xanalogtv | 2d | - | - | ✅ | `ANALOGTV_DEFAULTS`, `ANALOGTV_OPTIONS`, `ANALOGTV_PIC_LEN`, `ANALOGTV_SCALE`, `ANALOGTV_SIGNAL_LEN`, `ANALOGTV_V`, `ANALOGTV_VIS_LEN`, `ANALOGTV_VIS_START`, `XrmDatabase`, `XrmPutResource`, `XrmValue`, `analogtv`, `analogtv.h`, `analogtv_allocate`, `analogtv_draw`, `analogtv_draw_solid_rel_lcp`, `analogtv_draw_string_centered`, `analogtv_font`, `analogtv_input`, `analogtv_input_allocate`, `analogtv_lcp_to_ntsc`, `analogtv_load_ximage`, `analogtv_make_font`, `analogtv_reception`, `analogtv_reception_update`, `analogtv_reconfigure`, `analogtv_release`, `analogtv_set_defaults`, `analogtv_setup_sync`, `analogtv_setup_teletext`, `db`, `gethostname`, `images/gen/testcard_bbcf_png.h`, `images/gen/testcard_pm5544_png.h`, `images/gen/testcard_rca_png.h`, `inp`, `input`, `load_image_async`, `rec`, `testcard_bbcf_png`, `testcard_pm5544_png`, `testcard_rca_png`, `value` | pixmaps, readback | 689 |
 | xjack | 2d | - | 0.1-13.8 ms measured | ✅ | `FcChar8`, `XGlyphInfo`, `XftColor`, `XftColorAllocName`, `XftDraw`, `XftDrawCreate`, `XftDrawDestroy`, `XftDrawStringUtf8`, `XftFont`, `XftFontClose`, `XftTextExtentsUtf8`, `error: expected expression`, `load_xft_font_retry`, `overall`, `screen_number` | pixmaps | 508 |
 | xmatrix | 2d | - | - | ✅ | `images/gen/matrix1_png.h`, `images/gen/matrix1b_png.h`, `images/gen/matrix2_png.h`, `images/gen/matrix2b_png.h`, `matrix1_png`, `matrix1b_png`, `matrix2_png`, `matrix2b_png` | pixmaps, readback | 1915 |
 | b_lockglue | gl | - | 27-101 ms measured | ✅ | - | - | 240 |
@@ -1303,6 +1310,8 @@ needing few additions come first.
 - **companion**: about 71,000 vertices a cube, est. 2-3 fps; Rod dropped it
 - **deepstars**: about three dim stars and no smear (TinyGL has no alpha or
   smooth points); Rod dropped it
+- **filmleader**: 2.0 fps at a 330 px view, line step 3 (515 ms a step, 250 of
+  it loading the picture); Rod dropped it
 - **floppy**: 630 KB model won't fit the 3 MB app partition, est. 5 fps; Rod
   dropped it
 - **flurry**: needs GL TinyGL lacks, est. under 1 fps, issue #70

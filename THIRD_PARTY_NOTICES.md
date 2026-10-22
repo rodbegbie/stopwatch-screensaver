@@ -193,8 +193,10 @@ implied warranty.
 | `firmware/src/hacks/phosphor/ansi-tty.c` | Copyright (c) 2025-2026 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/phosphor/ansi-tty.h` | Copyright (c) 2025 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/hacks/pong/pong.c` | Copyright (c) 2003 Jeremy English | jwz permission notice (above) |
-| `firmware/src/hacks/pong/analogtv.c` | Copyright (c) 2003-2018 Trevor Blackwell | jwz permission notice (above) |
-| `firmware/src/hacks/pong/analogtv.h` | Copyright (c) 2003-2018 Trevor Blackwell | jwz permission notice (above) |
+| `firmware/src/hacks/analogtv/analogtv.c` | Copyright (c) 2003-2018 Trevor Blackwell | jwz permission notice (above) |
+| `firmware/src/hacks/analogtv/analogtv.h` | Copyright (c) 2003-2018 Trevor Blackwell | jwz permission notice (above) |
+| `firmware/src/hacks/xanalogtv/xanalogtv.c` | Copyright (c) 2003-2018 Trevor Blackwell | jwz permission notice (above) |
+| `firmware/src/hacks/filmleader/filmleader.c` | Copyright (c) 2018-2025 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/sphere.c` | Copyright (c) 2002 Paul Bourke, Copyright (c) 2010-2026 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/sphere.h` | Copyright (c) 2001-2014 Jamie Zawinski | jwz permission notice (above) |
 | `firmware/src/xs_support/glx/teapot.c` | Copyright (c) Mark J. Kilgard, 1994; (c) Copyright 1993, Silicon Graphics, Inc. | Silicon Graphics notice (below) |
@@ -388,6 +390,16 @@ strip of 256 glyphs, 7 by 10 pixels each), re-encoded as raw pixels and a
 transparency mask, deflated, without changing a glyph. The PNG has no licence
 text of its own, and `phosphor.c`, which loads it, carries jwz's permission
 notice (above). The blob format is in `ximage-loader.h`.
+
+### The XAnalogTV test cards
+
+XAnalogTV shows three TV test cards, `testcard_rca.png`, `testcard_pm5544.png`
+and `testcard_bbcf.png` from `hacks/images` in xscreensaver 6.17. The PNGs
+carry no licence text, and `xanalogtv.c`, which loads them, carries the
+permission notice of its author, Trevor Blackwell (above). They are not in this
+repository: `firmware/testcards.py` shrinks each to fit 400 pixels and makes a
+deflated raw-pixel blob from `vendor/` into the build directory every build
+(the blob format is in `ximage-loader.h`).
 
 ### The Phosphor poems
 

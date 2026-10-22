@@ -413,3 +413,8 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   `XHeightMMOfScreen` (44), `XQueryColors`, the visual's class and RGB masks
   (`include/visual.h`: RGB565 as TrueColor, 0xF800/0x07E0/0x001F), 1-bit
   `XYPixmap` in `XCreateImage`, and `thread_malloc`/`thread_free`.
+- ARS-60 added `XftColorFree` (nothing held), `file_to_pixmap` (always None: no
+  files) and a table-driven `XQueryColor` (analogtv asks for 250,000 colours a
+  picture; three divides were about 150 ms on the board). `query_color.h` holds
+  the same function inline for `analogtv_tv.c`; a test checks all 65,536 pixels
+  against the formula.

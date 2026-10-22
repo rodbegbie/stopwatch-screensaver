@@ -74,6 +74,13 @@ void XftFontClose(Display *dpy, XftFont *font) {
   free(font);
 }
 
+void XftColorFree(Display *dpy, Visual *visual, Colormap cmap, XftColor *color) {
+  (void)dpy;
+  (void)visual;
+  (void)cmap;
+  (void)color;
+}
+
 Bool XftColorAllocName(Display *dpy, Visual *visual, Colormap cmap,
                        const char *name, XftColor *out) {
   (void)visual;

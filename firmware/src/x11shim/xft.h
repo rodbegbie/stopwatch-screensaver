@@ -52,6 +52,10 @@ void XftFontClose(Display *, XftFont *);
 Bool XftColorAllocName(Display *, Visual *, Colormap, const char *name,
                        XftColor *);
 
+/* Gives a colour back. The shim's colours are plain pixel values, so nothing
+ * is held and this does nothing. */
+void XftColorFree(Display *, Visual *, Colormap, XftColor *);
+
 XftDraw *XftDrawCreate(Display *, Drawable, Visual *, Colormap);
 void XftDrawDestroy(XftDraw *);
 
