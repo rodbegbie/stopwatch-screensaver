@@ -729,3 +729,7 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   analogtv's noise level saves nothing: `analogtv_init_signal` draws a random
   number for every sample whatever the level. Taking the loop out saved 10 ms
   of 123, which is not worth a patch.
+  Stack on the board: 2,804 bytes of the 16 KB loop stack free, the same as
+  Pong, from `uxTaskGetStackHighWaterMark` in the stats line over six minutes
+  of channel changes (it never moved after boot). A temporary probe: it is
+  not in the tree.

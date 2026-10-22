@@ -190,7 +190,7 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | Phosphor (`-DPHOSPHOR_PAGED`: pages that clear, no cursor blink yet; not the default) | 13.0-17.6 (mean 16.2) | 1.4-21.8 ms | 0.5-3.2 ms | 52.1-55.2 ms | none measurable (free PSRAM 6,214,071-6,214,159 over 22 windows) |
 | XAnalogTV (330 px view, line step 4) | 7.84 | 113.3 ms | 15.1 ms | 0 ms | A/B against the 330 px view at step 3, two rounds each; not registered |
 | XAnalogTV (whole window, line step 3) | 6.60 | 152.4 ms | 0.1 ms (overlapped) | 0 ms | A/B, two rounds; the push hides in the next step |
-| XAnalogTV (whole window, line step 4; registered) | 7.10 | 142.1 ms | 0.1 ms (overlapped) | 0 ms | A/B, two rounds |
+| XAnalogTV (whole window, line step 4; registered) | 7.10 | 142.1 ms | 0.1 ms (overlapped) | 0 ms | A/B, two rounds; stack 2.8 KB of 16 KB free (lowest `uxTaskGetStackHighWaterMark` over 70 windows, 6 minutes: 2,804 every window, the same as Pong, so analogtv's `yiq` array sets it); PSRAM free 3,495,499 flat; no reboots |
 | XAnalogTV (whole window, line step 6) | 7.68 | 131.3 ms | 0.1 ms (overlapped) | 0 ms | A/B, two rounds; each step of 2 buys about 0.5 fps, so most of the step is fixed per frame |
 | XAnalogTV (330 px view, step 3, noise loop removed; not a build option) | 7.95 | 112.7 ms | 15.1 ms | 0 ms | against 122.7 ms with it: the per-sample random numbers are 10 ms of the step; noise level does not change the cost |
 | XAnalogTV (330 px view, line step 3) | 5.8-8.6 (mean about 7.2) | 100.7-156.1 ms | 15.1 ms | 0 ms | none measurable (free PSRAM 3,712,011 flat); stack headroom not measured; 5.8 fps window while the first channels loaded |
