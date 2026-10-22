@@ -175,7 +175,6 @@ void test_registry_lists_hacks_in_order(void) {
                                          "Phosphor",
                                          "Pong",
                                          "XAnalogTV",
-                                         "FilmLeader",
 #ifdef HAVE_AFTER_DARK_TOASTERS
                                          "ad-flyingtoasters",
 #endif
@@ -611,7 +610,6 @@ static const uint64_t kBaseline[] = {
     0xa83085c64654adf1ull, /* Phosphor: taken after looking at the frames (scale 3, scrolling poems, blinking cursor, no cache, region reset) */
     0xfb51d3e1832dada4ull, /* Pong: taken after Rod saw it on the board (330 view, line step 3, noise 0.02, 3 ticks a picture) */
     0, /* XAnalogTV: unpinned on purpose, its picture follows the wall clock */
-    0, /* FilmLeader: unpinned on purpose, its picture follows the wall clock */
 #ifdef HAVE_AFTER_DARK_TOASTERS
     0xc8300fca8f7bd151ull, /* ad-flyingtoasters (colour, light): taken after looking at the frames, 2x */
 #endif
@@ -2078,10 +2076,6 @@ void test_xanalogtv_stops_do_not_leak(void) {
   check_restarts_and_stops_do_not_leak("XAnalogTV", 0);
 }
 
-void test_filmleader_stops_do_not_leak(void) {
-  check_restarts_and_stops_do_not_leak("FilmLeader", 0);
-}
-
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_registry_lists_hacks_in_order);
@@ -2234,7 +2228,6 @@ int main(void) {
   RUN_TEST(test_phosphor_stops_do_not_leak);
   RUN_TEST(test_pong_stops_do_not_leak);
   RUN_TEST(test_xanalogtv_stops_do_not_leak);
-  RUN_TEST(test_filmleader_stops_do_not_leak);
   RUN_TEST(test_gears_stack_use_on_the_host_has_not_run_away);
   RUN_TEST(test_fast_sin_and_cos_stay_within_2e6_of_libm);
   RUN_TEST(test_prev_from_first_wraps_to_last_hack);

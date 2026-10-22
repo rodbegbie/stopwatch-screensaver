@@ -61,7 +61,7 @@ void test_the_picture_fills_the_view_once_the_clock_has_run_the_power_up(void) {
   xanalogtv_hack.free(dpy, XSHIM_WINDOW, st);
 }
 
-void test_nothing_is_drawn_outside_the_view(void) {
+void test_the_picture_reaches_the_edge_of_the_window(void) {
   void *st = xanalogtv_hack.init(dpy, XSHIM_WINDOW);
   int inside = 0, outside = 0;
   for (int i = 0; i < 40; i++) {
@@ -69,7 +69,7 @@ void test_nothing_is_drawn_outside_the_view(void) {
     xanalogtv_hack.draw(dpy, XSHIM_WINDOW, st);
   }
   lit_pixels(&inside, &outside);
-  TEST_ASSERT_EQUAL_INT_MESSAGE(0, outside, "the view's edge is the picture's edge");
+  TEST_ASSERT_TRUE_MESSAGE(outside > 20000, "the whole window is the view");
   xanalogtv_hack.free(dpy, XSHIM_WINDOW, st);
 }
 
@@ -125,10 +125,10 @@ void test_picture_loads_finish_from_draws_one_at_a_time_and_then_stop(void) {
 /* analogtv reads these two, and the last hack to start leaves its values behind. */
 void test_init_sets_the_shared_line_step_and_view(void) {
   analogtv_line_step = 1;
-  analogtv_view_size = 0;
+  analogtv_view_size = 330;
   void *st = xanalogtv_hack.init(dpy, XSHIM_WINDOW);
-  TEST_ASSERT_EQUAL_INT(3, analogtv_line_step);
-  TEST_ASSERT_EQUAL_INT(330, analogtv_view_size);
+  TEST_ASSERT_EQUAL_INT(4, analogtv_line_step);
+  TEST_ASSERT_EQUAL_INT(0, analogtv_view_size);
   xanalogtv_hack.free(dpy, XSHIM_WINDOW, st);
 }
 
@@ -160,19 +160,19 @@ void test_the_test_cards_are_not_kept_once_the_channels_are_set_up(void) {
   TEST_ASSERT_TRUE_MESSAGE(held < 4500000, "the test cards are still held");
 }
 
-void test_the_entry_overlaps_its_push_only_with_the_whole_window_view(void) {
-  TEST_ASSERT_EQUAL_INT(0, xanalogtv_hack.repaints_all); /* the default view is smaller than the window */
+void test_the_entry_overlaps_its_push_because_the_view_is_the_whole_window(void) {
+  TEST_ASSERT_EQUAL_INT(1, xanalogtv_hack.repaints_all);
 }
 
 int main(void) {
   UNITY_BEGIN();
   RUN_TEST(test_the_picture_fills_the_view_once_the_clock_has_run_the_power_up);
-  RUN_TEST(test_nothing_is_drawn_outside_the_view);
+  RUN_TEST(test_the_picture_reaches_the_edge_of_the_window);
   RUN_TEST(test_a_run_through_every_channel_keeps_drawing);
   RUN_TEST(test_picture_loads_finish_from_draws_one_at_a_time_and_then_stop);
   RUN_TEST(test_init_sets_the_shared_line_step_and_view);
   RUN_TEST(test_a_hack_stopped_before_its_first_draw_gives_back_its_picture_pixmap);
   RUN_TEST(test_the_test_cards_are_not_kept_once_the_channels_are_set_up);
-  RUN_TEST(test_the_entry_overlaps_its_push_only_with_the_whole_window_view);
+  RUN_TEST(test_the_entry_overlaps_its_push_because_the_view_is_the_whole_window);
   return UNITY_END();
 }

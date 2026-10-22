@@ -11,3 +11,4 @@ blocktube: 8.8-10 fps at 400 blocks, half size; Rod dropped it (slow, little goi
 companion: about 71,000 vertices a cube, est. 2-3 fps; Rod dropped it
 floppy: 630 KB model won't fit the 3 MB app partition, est. 5 fps; Rod dropped it
 deepstars: about three dim stars and no smear (TinyGL has no alpha or smooth points); Rod dropped it
+filmleader: 2.0 fps at a 330 px view, line step 3 (515 ms a step, 250 of it loading the picture); Rod dropped it

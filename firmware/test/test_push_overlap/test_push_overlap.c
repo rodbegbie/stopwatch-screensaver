@@ -7,6 +7,7 @@
 #include <unity.h>
 
 #include "core/canvas.h"
+#include "doubletime.h"
 #include "glshim/glshim.h"
 #include "hacks/registry.h"
 #include "runner/hack_runner.h"
@@ -300,17 +301,29 @@ static void add_noise(void) {
   glshim_canvas_overwritten();
 }
 
+/* A hack that follows the clock (XAnalogTV's warm-up squash) would otherwise draw
+ * a different picture in each of the runs that are compared. */
+static double g_clock_t;
+static double test_clock(void) { return g_clock_t; }
+static void clock_start(void) {
+  g_clock_t = 1000.0;
+  xshim_set_clock(test_clock);
+}
+
 static void run_plain(const HackEntry *e, int frames, bool noise, uint32_t *out) {
   const HackEntry *const hacks[] = {e};
   HackRunner *r = runner_create_with(&big, hacks, 1);
   srandom(1);
+  clock_start();
   runner_start(r, 0);
   for (int f = 0; f < frames; f++) {
     if (noise) add_noise();
+    g_clock_t += 0.02;
     runner_step(r);
     out[f] = disc_hash(big.px);
   }
   runner_destroy(r);
+  xshim_set_clock(NULL);
 }
 
 static int shadow_push(void *ctx, Canvas *view) {
@@ -333,8 +346,10 @@ static void run_swapped(const HackEntry *e, int frames, uint32_t *out) {
   PushOverlap *p = push_overlap_create(&big, spare_px, &kOps, shadow_push, NULL);
   TEST_ASSERT_NOT_NULL(p);
   srandom(1);
+  clock_start();
   runner_start(r, 0);
   for (int f = 0; f < frames; f++) {
+    g_clock_t += 0.02;
     runner_step(r);
     push_overlap_present(p, &big, true);
     push_overlap_wait(p);
@@ -342,6 +357,7 @@ static void run_swapped(const HackEntry *e, int frames, uint32_t *out) {
   }
   push_overlap_destroy(p);
   runner_destroy(r);
+  xshim_set_clock(NULL);
   big.px = big_first_px;
   free(spare_px);
 }

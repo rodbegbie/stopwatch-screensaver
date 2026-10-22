@@ -715,3 +715,17 @@ Moved verbatim from the Gotchas section of AGENTS.md.
   pinned in `test_hacks.c`: their pictures follow the wall clock. Seeding `random()`
   shows more of XAnalogTV's channels: most are snow, as upstream's weak stations
   are.
+  FilmLeader ran at 2 fps and Rod dropped it: its source, notices row,
+  `filmleader_tv.c` (out of the device and dump build filters, still in the
+  native one for its wrapper test), patch tool and `failed_ports.txt` entry
+  stay. To bring it back, re-add its registry entry, expected name, leak test
+  and the 140 pixel digits-only size in `font_atlas.py`
+  (`SIZES = "12,16,20,24,140"` with `--digits-from 100`), and take
+  `filmleader_tv.c` out of the filters again. XAnalogTV is registered at the
+  whole window and line step 4. Board A/B (two rounds of 60 s each): 330 px
+  view at step 3, 7.31 fps; whole window at step 3, 6.60; step 4, 7.10; step 6,
+  7.68. A whole-window hack can overlap its push (`repaints_all`), so the
+  466 px picture costs only 10 percent more than the 330 px one. Lowering
+  analogtv's noise level saves nothing: `analogtv_init_signal` draws a random
+  number for every sample whatever the level. Taking the loop out saved 10 ms
+  of 123, which is not worth a patch.

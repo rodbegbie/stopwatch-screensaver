@@ -15,8 +15,7 @@ project = Path(env["PROJECT_DIR"])  # noqa: F821
 generated = Path(env.subst("$BUILD_DIR")) / "generated"  # noqa: F821
 header = generated / "special_elite.h"
 font = project / "assets" / "fonts" / "SpecialElite-Regular.ttf"
-SIZES = "12,16,20,24,140"
-DIGITS_FROM = "100"  # the 140 pixel size is FilmLeader's countdown: digits only
+SIZES = "12,16,20,24"
 
 uv = shutil.which("uv")
 if not uv:
@@ -33,8 +32,6 @@ subprocess.run(
         "special_elite",
         "--sizes",
         SIZES,
-        "--digits-from",
-        DIGITS_FROM,
         "-o",
         str(fresh),
     ],

@@ -188,8 +188,13 @@ were measured before the cap was raised from 1 second; Helix also asks for
 | XJack | 7.8-15.8 | 0.1-13.8 ms | 0.3-15.0 ms | 46-130 ms | none measurable |
 | Phosphor (scale 3, random poems, scrolling, blinking cursor) | 10.6-17.6 (mean 11.8) | 1.6-39.9 ms | 0.6-10.3 ms | 44.3-55.1 ms | none measurable (free PSRAM 6,213,883 flat over 28 windows) |
 | Phosphor (`-DPHOSPHOR_PAGED`: pages that clear, no cursor blink yet; not the default) | 13.0-17.6 (mean 16.2) | 1.4-21.8 ms | 0.5-3.2 ms | 52.1-55.2 ms | none measurable (free PSRAM 6,214,071-6,214,159 over 22 windows) |
+| XAnalogTV (330 px view, line step 4) | 7.84 | 113.3 ms | 15.1 ms | 0 ms | A/B against the 330 px view at step 3, two rounds each; not registered |
+| XAnalogTV (whole window, line step 3) | 6.60 | 152.4 ms | 0.1 ms (overlapped) | 0 ms | A/B, two rounds; the push hides in the next step |
+| XAnalogTV (whole window, line step 4; registered) | 7.10 | 142.1 ms | 0.1 ms (overlapped) | 0 ms | A/B, two rounds |
+| XAnalogTV (whole window, line step 6) | 7.68 | 131.3 ms | 0.1 ms (overlapped) | 0 ms | A/B, two rounds; each step of 2 buys about 0.5 fps, so most of the step is fixed per frame |
+| XAnalogTV (330 px view, step 3, noise loop removed; not a build option) | 7.95 | 112.7 ms | 15.1 ms | 0 ms | against 122.7 ms with it: the per-sample random numbers are 10 ms of the step; noise level does not change the cost |
 | XAnalogTV (330 px view, line step 3) | 5.8-8.6 (mean about 7.2) | 100.7-156.1 ms | 15.1 ms | 0 ms | none measurable (free PSRAM 3,712,011 flat); stack headroom not measured; 5.8 fps window while the first channels loaded |
-| FilmLeader (330 px view, line step 3, 356 px canvas) | 1.6-2.0 (2.0 after the picture read was made cheaper) | 515-648 ms | 15.1 ms | 0 ms | none measurable (free PSRAM 4,668,019 flat); 360 ms of the first 645 ms step was `analogtv_load_ximage`, 250 ms after; stack headroom not measured |
+| FilmLeader (not registered: Rod dropped it; 330 px view, line step 3, 356 px canvas) | 1.6-2.0 (2.0 after the picture read was made cheaper) | 515-648 ms | 15.1 ms | 0 ms | none measurable (free PSRAM 4,668,019 flat); 360 ms of the first 645 ms step was `analogtv_load_ximage`, 250 ms after; stack headroom not measured |
 | Pong (registered: 330 px view, line step 3, noise 0.02, 3 game steps a picture) | 22.2 game steps a second (about 7.4 pictures) | 38.6 ms mean per call (about 111 ms a drawn picture, about 2.5 ms a skipped one) | 5.1 ms | 1.2 ms | none measurable; no stack canary |
 | Pong (as copied: whole window, `double` ghost filter, every line; not registered) | 2.8 | 356 ms | 24.8 ms | 0 ms | 2.8 KB of the 16 KB stack left (analogtv's 9.3 KB `yiq` array) |
 | Pong (`float` ghost filter, whole window, every line; not registered) | 4.6 | 194.6 ms | 24.8 ms | 0 ms | 209 of the 356 ms was `double` ghost taps |

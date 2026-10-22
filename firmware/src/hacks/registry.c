@@ -313,8 +313,6 @@ extern const HackEntry pong_hack;
 
 extern const HackEntry xanalogtv_hack;
 
-extern const HackEntry filmleader_hack;
-
 const HackEntry *const g_hacks[] = {
     &pyro_hack,     &hypercube_hack, &xspirograph_hack,   &petri_hack,
     &helix_hack,    &rorschach_hack, &pedal_hack,         &coral_hack,
@@ -427,7 +425,6 @@ const HackEntry *const g_hacks[] = {
     &phosphor_hack,
     &pong_hack,
     &xanalogtv_hack,
-    &filmleader_hack,
 #ifdef HAVE_AFTER_DARK_TOASTERS
     &ad_flyingtoasters_hack,
 #endif

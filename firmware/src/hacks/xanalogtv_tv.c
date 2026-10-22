@@ -22,10 +22,10 @@
 #include "grabclient.h"
 
 #ifndef XANALOGTV_LINE_STEP
-#define XANALOGTV_LINE_STEP 3
+#define XANALOGTV_LINE_STEP 4
 #endif
 #ifndef XANALOGTV_VIEW
-#define XANALOGTV_VIEW 330 /* the biggest square inside the round glass; 0: the whole window */
+#define XANALOGTV_VIEW 0 /* 0: the whole window; 330 is the biggest square inside the round glass */
 #endif
 
 /* The colour bars print the machine's name; the board has none worth showing. */

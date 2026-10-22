@@ -85,3 +85,9 @@ Moved verbatim from AGENTS.md.
   a test that fails for another reason (Phosphor's included the paged poem
   header while the wrapper used the scrolling one) makes every mutant look
   killed. Print the baseline's result, not only the mutants'.
+- `test_push_overlap` runs each flagged hack on a fake clock (`0.02` s a
+  frame). XAnalogTV's warm-up squash follows the clock, and on the real clock
+  the plain and noisy runs squashed at different frames, so the "ignores the
+  canvas it started from" check failed on two rows (a diagnostic that
+  printed the differing pixels showed the band; the same frames matched once
+  the clock was fixed, with no change to the hack).
