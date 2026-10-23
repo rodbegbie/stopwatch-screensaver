@@ -25,8 +25,8 @@ jobs:
           enable-cache: true
           cache-python: true
       - run: uv sync --locked
-      - run: uvx ruff@0.17.1 check
-      - run: uvx ruff@0.17.1 format --check
+      - run: uv run --locked ruff check
+      - run: uv run --locked ruff format --check
       - run: uv run --locked ty check
 
   tools-tests:

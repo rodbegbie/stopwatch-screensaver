@@ -10,6 +10,7 @@ dev = [
     "pillow",
     "platformio==6.2.0",
     "pytest",
+    "ruff==0.17.1",
     "ty>=0.0.88",
 ]
 
