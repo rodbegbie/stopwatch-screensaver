@@ -6,5 +6,8 @@
   "github-actions": {
     "managerFilePatterns": ["/(^|/)\\.depot/(?:workflows|actions)/.+\\.ya?ml$/"],
     "extends": ["helpers:pinGitHubActionDigests"]
+  },
+  "pre-commit": {
+    "enabled": true
   }
 }
