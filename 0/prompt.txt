@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bj43bdtrn</task-id>
+<tool-use-id>toolu_0178cc6kBsxLbsPNjfhzqDsz</tool-use-id>
+<output-file>/private/tmp/claude-502/-Users-rod-build-stopwatch-screensaver/13373b81-4279-4c15-b366-5038a6457f1b/tasks/bj43bdtrn.output</output-file>
+<status>completed</status>
+<summary>Background command "NO_COLOR=1 depot ci status h2j93wq058 2&gt;&amp;1 | grep -E "Job:"; NO_COLOR=1 depot ci status h2j93wq058 --wait &gt; /private/tmp/claude-502/-Users-rod-build-stopwatch-screensaver/13373b81-4279-4c15-b366-5038a6457f1b/scratchpad/depot-status12.log 2&gt;&amp;1; echo "exit=$?" &gt;&gt; /private/tmp/claude-502/-Users-rod-build-stopwatch-screensaver/13373b81-4279-4c15-b366-5038a6457f1b/scratchpad/depot-status12.log" completed (exit code 0)</summary>
+</task-notification>
