@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.12.0",
+  "checkpoint_id": "01M5KBRXR64KAXHRZQQ053Q8VG",
+  "strategy": "manual-commit",
+  "branch": "chore/ARS-62-setup-depot-ci",
+  "checkpoints_count": 3,
+  "files_touched": [
+    ".depot/workflows/ci.yml"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 36,
+    "cache_creation_tokens": 15577,
+    "cache_read_tokens": 3478602,
+    "output_tokens": 7851,
+    "api_call_count": 15
+  }
+}
