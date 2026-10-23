@@ -97,6 +97,7 @@ jobs:
         working-directory: firmware
         env:
           PLATFORMIO_BUILD_FLAGS: -lm
+          XS_SKIP_PINNED_FRAMES: "1"
         run: |
           source ../tools/env.sh
           pio test -e native --junit-output-path ../reports/pio.xml

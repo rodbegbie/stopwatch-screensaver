@@ -616,6 +616,8 @@ static const uint64_t kBaseline[] = {
 };
 
 void test_frames_of_every_hack_but_maze_match_main(void) {
+  if (getenv("XS_SKIP_PINNED_FRAMES"))
+    TEST_IGNORE_MESSAGE("the hashes were taken on macOS, where random() differs");
   TEST_ASSERT_EQUAL_INT((int)(sizeof kBaseline / sizeof kBaseline[0]), g_hack_count);
   for (int i = 0; i < g_hack_count; i++) {
     if (kBaseline[i] == 0) continue;
