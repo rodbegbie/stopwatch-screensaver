@@ -30,7 +30,7 @@ jobs:
       - run: uv run --locked ty check
 
   tools-tests:
-    runs-on: depot-ubuntu-24.04
+    runs-on: depot-ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -51,6 +51,13 @@ jobs:
           uv run --locked tools/fetch_xscreensaver.py \
             --version "$XSCREENSAVER_VERSION" \
             --cache-dir .cache/xscreensaver
+      - name: Use clang as cc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang
+          sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
+          sudo update-alternatives --set cc /usr/bin/clang
+          cc --version
       - run: uv run --locked pytest tools/tests --junitxml=reports/pytest.xml
       - uses: depot/test-report-action@2ad5779840a9c63e884fa26f11d019768a27a941 # v1.0.1
         if: ${{ !cancelled() }}
@@ -58,7 +65,7 @@ jobs:
           path: reports/pytest.xml
 
   firmware-tests:
-    runs-on: depot-ubuntu-24.04
+    runs-on: depot-ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
