@@ -1,0 +1,15 @@
+Has the job hung?
+
+---
+
+<task-notification>
+<task-id>bvgti2a3v</task-id>
+<tool-use-id>toolu_01FYTtDhu7Q2STDs1K5aeBhu</tool-use-id>
+<output-file>/private/tmp/claude-502/-Users-rod-build-stopwatch-screensaver/13373b81-4279-4c15-b366-5038a6457f1b/tasks/bvgti2a3v.output</output-file>
+<status>completed</status>
+<summary>Background command "NO_COLOR=1 depot ci status tqrh6j6zrw --wait &gt; /private/tmp/claude-502/-Users-rod-build-stopwatch-screensaver/13373b81-4279-4c15-b366-5038a6457f1b/scratchpad/depot-status4.log 2&gt;&amp;1; echo "exit=$?" &gt;&gt; /private/tmp/claude-502/-Users-rod-build-stopwatch-screensaver/13373b81-4279-4c15-b366-5038a6457f1b/scratchpad/depot-status4.log" completed (exit code 0)</summary>
+</task-notification>
+
+---
+
+can we skip test_frames_of_every_hack_but_maze_match_main on CI?  I think I'd like to dig in about the other failures with the mystery SIGHUPs!
