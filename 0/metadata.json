@@ -1,0 +1,93 @@
+{
+  "cli_version": "0.12.0",
+  "checkpoint_id": "01M5K730NVY9CRNRF5A01TQAFD",
+  "session_id": "13373b81-4279-4c15-b366-5038a6457f1b",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-23T01:47:59.843265Z",
+  "branch": "chore/ARS-62-setup-depot-ci",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "AGENTS.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "5f92e1e7eb44",
+  "checkpoint_transcript_start": 658,
+  "transcript_lines_at_start": 658,
+  "compact_transcript_start": 66,
+  "token_usage": {
+    "input_tokens": 12,
+    "cache_creation_tokens": 11239,
+    "cache_read_tokens": 870621,
+    "output_tokens": 4354,
+    "api_call_count": 6
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01GQ8NLFfVJe1zK21Fd5K2iW",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "depot-ci"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "b40f238e95ac",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 80,
+        "end": 81,
+        "entry_ids": [
+          "3ad369ad-0979-4611-ad0d-10a9346ed75b"
+        ],
+        "tool_use_id": "toolu_01GQ8NLFfVJe1zK21Fd5K2iW"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01GQ8NLFfVJe1zK21Fd5K2iW"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: depot-ci",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01YHssQrGyqsQL341LcJHG7p",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "5f92e1e7eb44",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 670,
+        "end": 671,
+        "entry_ids": [
+          "f6ccd76c-62ff-41d1-ac1f-671713ff34b7"
+        ],
+        "tool_use_id": "toolu_01YHssQrGyqsQL341LcJHG7p"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01YHssQrGyqsQL341LcJHG7p"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 7
+  }
+}
