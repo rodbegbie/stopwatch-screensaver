@@ -116,6 +116,84 @@ def test_main_network_failure_is_clean_error(tmp_path, monkeypatch, capsys):
     assert "network down" in capsys.readouterr().err
 
 
+def _no_network(monkeypatch):
+    def boom(*a, **k):
+        raise AssertionError("must not touch the network")
+
+    monkeypatch.setattr(fx, "fetch_text", boom)
+    monkeypatch.setattr(fx, "download", boom)
+
+
+def test_cache_dir_hit_extracts_without_network(tmp_path, monkeypatch, capsys):
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    make_tar(cache / "xscreensaver-9.9.tar.gz", {"xscreensaver-9.9/a.txt": b"hi"})
+    _no_network(monkeypatch)
+    dest = tmp_path / "vendor"
+    args = ["--version", "9.9", "--dest", str(dest), "--cache-dir", str(cache)]
+    assert fx.main(args) == 0
+    assert (dest / "xscreensaver-9.9" / "a.txt").read_bytes() == b"hi"
+    assert "sha256" in capsys.readouterr().out
+
+
+def test_cache_dir_miss_downloads_into_the_cache(tmp_path, monkeypatch):
+    cache = tmp_path / "cache"
+    monkeypatch.setattr(
+        fx, "fetch_text", lambda url: '<a href="xscreensaver-9.9.tar.gz">'
+    )
+
+    def fake_download(url, target):
+        make_tar(target, {"xscreensaver-9.9/a.txt": b"hi"})
+        return "0" * 64
+
+    monkeypatch.setattr(fx, "download", fake_download)
+    dest = tmp_path / "vendor"
+    args = ["--version", "9.9", "--dest", str(dest), "--cache-dir", str(cache)]
+    assert fx.main(args) == 0
+    assert (dest / "xscreensaver-9.9" / "a.txt").exists()
+    assert [p.name for p in cache.iterdir()] == ["xscreensaver-9.9.tar.gz"]
+
+
+def test_failed_download_leaves_nothing_in_the_cache(tmp_path, monkeypatch):
+    cache = tmp_path / "cache"
+    monkeypatch.setattr(
+        fx, "fetch_text", lambda url: '<a href="xscreensaver-9.9.tar.gz">'
+    )
+
+    def partial_download(url, target):
+        target.write_bytes(b"half a tarball")
+        raise fx.FetchError("connection reset")
+
+    monkeypatch.setattr(fx, "download", partial_download)
+    args = [
+        "--version",
+        "9.9",
+        "--dest",
+        str(tmp_path / "v"),
+        "--cache-dir",
+        str(cache),
+    ]
+    assert fx.main(args) == 1
+    assert list(cache.iterdir()) == []
+
+
+def test_corrupt_cached_tarball_is_clean_error(tmp_path, monkeypatch, capsys):
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    (cache / "xscreensaver-9.9.tar.gz").write_bytes(b"not a tarball")
+    _no_network(monkeypatch)
+    args = [
+        "--version",
+        "9.9",
+        "--dest",
+        str(tmp_path / "v"),
+        "--cache-dir",
+        str(cache),
+    ]
+    assert fx.main(args) == 1
+    assert "xscreensaver-9.9.tar.gz" in capsys.readouterr().err
+
+
 def _serve_recording_user_agent():
     import http.server
     import threading
