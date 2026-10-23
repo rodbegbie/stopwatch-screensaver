@@ -21,8 +21,8 @@
       "enabled": false
     },
     {
-      "description": "Deliberate exact pins: Python 3.13.14 and platformio 6.2.0",
-      "matchDepNames": ["python", "platformio"],
+      "description": "Python is pinned exactly to 3.13.14",
+      "matchDepNames": ["python"],
       "enabled": false
     }
   ]
