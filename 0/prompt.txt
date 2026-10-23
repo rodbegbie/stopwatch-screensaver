@@ -1,0 +1,7 @@
+create the trail.  File the follow-up ticket.
+
+---
+
+Random thought: Would adding mozilla-actions/sccache-action speed things up a smidge? Shaving some time off the build?
+
+Also, address the finding on the trail about the integrity of the xscreensaver tarball

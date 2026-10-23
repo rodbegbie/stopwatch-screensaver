@@ -1,0 +1,155 @@
+{
+  "cli_version": "0.12.0",
+  "checkpoint_id": "01M5KK7V1BCT964H95KG2T8NN1",
+  "session_id": "13373b81-4279-4c15-b366-5038a6457f1b",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-23T05:20:21.090607Z",
+  "branch": "chore/ARS-62-setup-depot-ci",
+  "checkpoints_count": 2,
+  "files_touched": [
+    ".claude/skills/update-xscreensaver/SKILL.md"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "d23bbbb49b0e",
+  "checkpoint_transcript_start": 2008,
+  "transcript_lines_at_start": 2008,
+  "compact_transcript_start": 210,
+  "token_usage": {
+    "input_tokens": 52,
+    "cache_creation_tokens": 42369,
+    "cache_read_tokens": 8094358,
+    "output_tokens": 24027,
+    "api_call_count": 26
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01GQ8NLFfVJe1zK21Fd5K2iW",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "depot-ci"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "b40f238e95ac",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 80,
+        "end": 81,
+        "entry_ids": [
+          "3ad369ad-0979-4611-ad0d-10a9346ed75b"
+        ],
+        "tool_use_id": "toolu_01GQ8NLFfVJe1zK21Fd5K2iW"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01GQ8NLFfVJe1zK21Fd5K2iW"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: depot-ci",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01YHssQrGyqsQL341LcJHG7p",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "markdown"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "5f92e1e7eb44",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 670,
+        "end": 671,
+        "entry_ids": [
+          "f6ccd76c-62ff-41d1-ac1f-671713ff34b7"
+        ],
+        "tool_use_id": "toolu_01YHssQrGyqsQL341LcJHG7p"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01YHssQrGyqsQL341LcJHG7p"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: markdown",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01GoQF13u86UwX4ZgPjHm2pn",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "deliver-branch"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "d23bbbb49b0e",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 2024,
+        "end": 2025,
+        "entry_ids": [
+          "b4957eda-385e-4fd4-a263-7083a2656e5a"
+        ],
+        "tool_use_id": "toolu_01GoQF13u86UwX4ZgPjHm2pn"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01GoQF13u86UwX4ZgPjHm2pn"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: deliver-branch",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01XSjjQT1niAkWPdn42VVGJd",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "linear-tracking"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "d23bbbb49b0e",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 2025,
+        "end": 2026,
+        "entry_ids": [
+          "7b06a2a6-0eca-475b-ae1c-ae1b18edcca8"
+        ],
+        "tool_use_id": "toolu_01XSjjQT1niAkWPdn42VVGJd"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01XSjjQT1niAkWPdn42VVGJd"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: linear-tracking",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 29
+  }
+}
