@@ -38,6 +38,14 @@ embedded-specific choices as you make them. See `README.md` for setup and
   `repaints_all`; see `.claude/rules/device-display.md`.
 - `tools/failed_ports.txt` lists abandoned ports (`name: reason`); the scorer
   marks them ❌, and ✅ comes from `g_hacks[]` in `registry.c`.
+- `.depot/workflows/ci.yml` (Depot CI, on pull requests, about 14 minutes):
+  `lint` (ruff and `ty`), `tools-tests` (pytest) and `firmware-tests`
+  (`pio test -e native`, in three parallel shards) run on Arm Ubuntu runners
+  with clang. Every test job uploads JUnit with `depot/test-report-action`.
+  Actions are pinned by SHA with a `# vX.Y.Z` comment, and checkouts set
+  `persist-credentials: false`. `test_tool_versions.py` keeps the tool pins in
+  step (see Gotchas). Linux differences, shard rules and how to run it:
+  `.claude/rules/testing.md`.
 - `.claude/skills/port-hack/`: the order of work for porting a hack, and a
   recipe per trap (`techniques.md`). Use it when porting or fixing a ported
   hack. `m5stack-stopwatch/` is the board guide. `update-xscreensaver/`
@@ -94,6 +102,12 @@ From the repo root:
 - `uv run tools/vendor_diff.py vendor/xscreensaver-<old>
   vendor/xscreensaver-<new>` lists what a new release changes for us; see the
   `update-xscreensaver` skill.
+- `uv run tools/fetch_xscreensaver.py --version 6.17 [--cache-dir DIR]` fills
+  `vendor/`. Without `--version` it takes the newest release, which may not be
+  the one in `tools/xs_vendor.py`. `--cache-dir` keeps the tarball and reuses
+  it with no network (CI caches that directory). The pinned version's tarball
+  must match `SHA256` in `xs_vendor.py`, cached or downloaded; a bad cached
+  file is fetched again, and other versions run with a warning.
 - `uv run tools/score_hacks.py` regenerates `docs/porting-assessment.md`. It
   also builds each unported S hack with the shim and runs it on the host for the
   Speed column (`tools/probe_hacks.py`, about a minute); `--no-probe` skips it.
@@ -159,7 +173,8 @@ Set `NO_COLOR=1` on `pio` output you parse.
 - Report "compiles", "host tests pass" and "runs on the device" separately.
   Only Rod can confirm what the screen shows: say when you want him to look,
   which hack, and what to check (colours on a picture whose colours you know).
-- Python: 3.13+, `uv`, ruff, pytest. Markdown: invoke the `/markdown` skill.
+- Python: exactly 3.13.14 (`requires-python = "==3.13.14"`), `uv`, ruff,
+  pytest. Markdown: invoke the `/markdown` skill.
 - Commits end with the `Co-Authored-By` trailer from the session reminder.
   Use named paths with `git add`, never `-A`. Never `git commit --no-verify`:
   skip one hook with `SKIP=<hook>` and say so in the PR.
@@ -272,6 +287,21 @@ ones below apply everywhere.
 - Dev tools: `uv add --dev <pkg>`; refresh with `uv lock --upgrade` then
   `uv sync`, and check with `uv run pytest tools/tests`. `platformio` is
   pinned `==6.2.0`, so an upgrade leaves it alone.
+- One tool, several pins, kept equal by `tools/tests/test_tool_versions.py`:
+  ruff in `pyproject.toml` and the pre-commit `rev`/`# frozen:` comment; uv in
+  `UV_VERSION` (`ci.yml`) and the `uv-pre-commit` rev; Python in
+  `requires-python` and `PYTHON_VERSION` (`ci.yml`); xscreensaver in
+  `xs_vendor.py` and `XSCREENSAVER_VERSION` (`ci.yml`). Change them together:
+  `autoupdate --freeze` alone fails the test until `pyproject.toml` follows.
+  Because Python is pinned exactly, uv fetches 3.13.14 on a machine with
+  another 3.13.
+- CI runs only ruff and `ty` from the pre-commit set. markdownlint, gitleaks,
+  `uv-lock` and `validate-pyproject` run on commit, not in CI.
+- A mutation check that edits `pyproject.toml` must run `uv run --locked`:
+  plain `uv run` re-locks `uv.lock` to the mutant, and restoring
+  `pyproject.toml` leaves the lock wrong (`uv lock` repairs it).
+- The host suite needs `vendor/xscreensaver-6.17` (the pre-scripts read its
+  images); without it every `pio test` suite errors at build.
 - `ty` 0.0.24 does not narrow `str | None` after `sys.exit(...)`; write
   `raise SystemExit(...)` for a guard (`shutil.which("uv")` in `firmware/*.py`).
 - When a hack's colours look suspect, dump the same index and frame count

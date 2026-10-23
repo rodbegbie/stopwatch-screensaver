@@ -1,0 +1,122 @@
+name: CI
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  UV_VERSION: "0.13.4"
+  PYTHON_VERSION: "3.13.14"
+  XSCREENSAVER_VERSION: "6.17"
+
+jobs:
+  lint:
+    runs-on: depot-ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+          cache-python: true
+      - run: uv sync --locked
+      - run: uv run --locked ruff check
+      - run: uv run --locked ruff format --check
+      - run: uv run --locked ty check
+
+  tools-tests:
+    runs-on: depot-ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+          cache-python: true
+      - run: uv sync --locked
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/xscreensaver
+          key: xscreensaver-${{ env.XSCREENSAVER_VERSION }}
+      - name: Fetch xscreensaver
+        run: |
+          uv run --locked tools/fetch_xscreensaver.py \
+            --version "$XSCREENSAVER_VERSION" \
+            --cache-dir .cache/xscreensaver
+      - name: Use clang as cc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang
+          sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
+          sudo update-alternatives --set cc /usr/bin/clang
+          cc --version
+      - run: uv run --locked pytest tools/tests --junitxml=reports/pytest.xml
+      - uses: depot/test-report-action@2ad5779840a9c63e884fa26f11d019768a27a941 # v1.0.1
+        if: ${{ !cancelled() }}
+        with:
+          path: reports/pytest.xml
+
+  firmware-tests:
+    name: firmware-tests (${{ matrix.shard }})
+    runs-on: depot-ubuntu-24.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: hacks
+            pio-args: -f test_hacks
+          - shard: push-present
+            pio-args: -f test_push_present
+          - shard: rest
+            pio-args: -i test_hacks -i test_push_present
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+          cache-python: true
+      - run: uv sync --locked
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/xscreensaver
+          key: xscreensaver-${{ env.XSCREENSAVER_VERSION }}
+      - name: Fetch xscreensaver
+        run: |
+          uv run --locked tools/fetch_xscreensaver.py \
+            --version "$XSCREENSAVER_VERSION" \
+            --cache-dir .cache/xscreensaver
+      - name: Use clang as the C and C++ compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang
+          sudo ln -sf /usr/bin/clang /usr/bin/gcc
+          sudo ln -sf /usr/bin/clang++ /usr/bin/g++
+          gcc --version
+      - name: Host tests
+        working-directory: firmware
+        env:
+          PLATFORMIO_BUILD_FLAGS: -lm
+          XS_SKIP_PINNED_FRAMES: "1"
+          ASAN_OPTIONS: detect_leaks=0
+        run: |
+          source ../tools/env.sh
+          mkdir -p ../reports
+          pio test -e native ${{ matrix.pio-args }} \
+            --junit-output-path ../reports/pio-${{ matrix.shard }}.xml
+      - uses: depot/test-report-action@2ad5779840a9c63e884fa26f11d019768a27a941 # v1.0.1
+        if: ${{ !cancelled() }}
+        with:
+          path: reports/pio-${{ matrix.shard }}.xml
+          key: pio-${{ matrix.shard }}

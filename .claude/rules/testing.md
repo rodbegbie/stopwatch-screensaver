@@ -91,3 +91,42 @@ Moved verbatim from AGENTS.md.
   canvas it started from" check failed on two rows (a diagnostic that
   printed the differing pixels showed the band; the same frames matched once
   the clock was fixed, with no change to the hack).
+
+## CI on Depot (Linux)
+
+- The suite is written against macOS. On Depot's Linux runners it needed: an
+  Arm runner (`depot-ubuntu-24.04-arm`; x86_64 gcc fails in the SSE headers
+  that Fireworkx pulls in), `gcc` and `g++` symlinked to clang (the tests
+  include clang's `sanitizer/allocator_interface.h`), `-lm` in
+  `PLATFORMIO_BUILD_FLAGS` (macOS links libm implicitly), and `<time.h>` in the
+  shim's `screenhack.h` (macOS's `<sys/time.h>` declares `time()`, glibc's does
+  not). `tools-tests` aliases `cc` to clang because `score_hacks.py` passes
+  the clang-only `-ferror-limit=0`.
+- "Program received signal SIGHUP (Hangup)" from `pio test` is not a hangup:
+  PlatformIO prints any non-zero exit code as that signal number, and 1 is
+  SIGHUP. On Linux it was LeakSanitizer exiting 1 at the end of a suite (it
+  does not run on macOS), reporting leaks in unmodified hacks such as
+  `gears.c`. CI sets `ASAN_OPTIONS=detect_leaks=0`. Run the binary directly
+  (`.pio/build/native/program`) to see the real report.
+- `test_frames_of_every_hack_but_maze_match_main` is skipped when
+  `XS_SKIP_PINNED_FRAMES` is set, which CI does: the hashes were taken on macOS
+  and `ya_random` is the C library's `random()`, which differs on glibc. A
+  local run still checks them. Do not re-pin them from a Linux run.
+- The stack probe measures an idle thread first and subtracts it, because
+  the painted stack also holds the thread's own data, more of it on Linux
+  (Pacman read 18 KB there against 12 KB on macOS).
+- Shards: `test_hacks` and `test_push_present` take about 12 and 13 minutes
+  each (they run every hack under ASan) and the other 32 suites about 4, so
+  `firmware-tests` is a matrix of three jobs: `-f test_hacks`,
+  `-f test_push_present` and `-i test_hacks -i test_push_present`. A new suite
+  lands in the last one. Keep each shard's JUnit file and report `key`
+  distinct, or Depot drops the later uploads as duplicates. Separate jobs are
+  needed: every suite builds to the same `.pio/build/native/program`, so two
+  `pio test` processes in one checkout overwrite each other's binary.
+- `pio test --junit-output-path` does not create the directory.
+- Running it: `depot ci run` uploads your uncommitted changes as a patch, so
+  run it from a clean `git worktree` of the pushed commit to leave unrelated
+  edits out. `depot ci status <run> --wait` in the background, then
+  `depot ci diagnose --run <run>` and `depot ci logs <attempt>`. Logs from a
+  step's stdout and stderr interleave, so a warning's position says nothing
+  about which suite printed it.

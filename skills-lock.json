@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "depot-ci": {
+      "source": "depot/skills",
+      "sourceType": "github",
+      "skillPath": "skills/depot-ci/SKILL.md",
+      "computedHash": "3ba1ebd8113b43d3d6c10092ecf2f9e0962da85a2b03fdd6b896e30da377c7d1"
+    },
+    "depot-general": {
+      "source": "depot/skills",
+      "sourceType": "github",
+      "skillPath": "skills/depot-general/SKILL.md",
+      "computedHash": "4b0eb9cda3a91bf0e105d2ef861b870de08d202fbd17df4cb6a1b4214d0760f2"
+    }
+  }
+}

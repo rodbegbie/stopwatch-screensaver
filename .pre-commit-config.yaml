@@ -25,7 +25,7 @@ repos:
     rev: 5b5dddc4fb0f83c3ea1fc5616fa63e115dce83e0  # frozen: v0.49.1
     hooks:
       - id: markdownlint-fix
-        exclude: ^(\.claude/skills/m5stack-stopwatch/|\.entire/)
+        exclude: ^\.(claude/skills/m5stack-stopwatch/|agents/skills|entire/)
   - repo: https://github.com/astral-sh/uv-pre-commit
     rev: dd409d04a3fa4a50f918dddb3ad3c6d8f46ab2cd  # frozen: 0.13.4
     hooks:
