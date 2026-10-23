@@ -1,0 +1,7 @@
+<task-notification>
+<task-id>bp5zdc26w</task-id>
+<tool-use-id>toolu_01WQvnBd8VwV6bFEa2WXzwpN</tool-use-id>
+<output-file>/private/tmp/claude-502/-Users-rod-build-stopwatch-screensaver/13373b81-4279-4c15-b366-5038a6457f1b/tasks/bp5zdc26w.output</output-file>
+<status>completed</status>
+<summary>Background command "NO_COLOR=1 depot ci status 8m0z1nvrz2 --wait &gt; /private/tmp/claude-502/-Users-rod-build-stopwatch-screensaver/13373b81-4279-4c15-b366-5038a6457f1b/scratchpad/depot-status10.log 2&gt;&amp;1; echo "exit=$?" &gt;&gt; /private/tmp/claude-502/-Users-rod-build-stopwatch-screensaver/13373b81-4279-4c15-b366-5038a6457f1b/scratchpad/depot-status10.log" completed (exit code 0)</summary>
+</task-notification>
