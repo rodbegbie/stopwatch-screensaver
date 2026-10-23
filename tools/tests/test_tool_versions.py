@@ -33,6 +33,17 @@ def test_ruff_matches_pre_commit():
     assert dev_pin("ruff") == pre_commit_version("astral-sh/ruff-pre-commit")
 
 
+def test_workflow_python_matches_pyproject():
+    requires = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"][
+        "requires-python"
+    ]
+    pinned = re.fullmatch(r"==(\d+\.\d+\.\d+)", requires)
+    assert pinned, f"requires-python is {requires!r}, not an exact ==X.Y.Z pin"
+    workflow = re.search(r'PYTHON_VERSION: "(\S+)"', WORKFLOW)
+    assert workflow, "ci.yml has no PYTHON_VERSION"
+    assert workflow.group(1) == pinned.group(1)
+
+
 def test_workflow_uv_matches_pre_commit():
     pinned = re.search(r'UV_VERSION: "(\S+)"', WORKFLOW)
     assert pinned, "ci.yml has no UV_VERSION"
