@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.12.0",
+  "checkpoint_id": "01M5K44GYPEGQ7WX6KED6NWM4D",
+  "strategy": "manual-commit",
+  "branch": "chore/setup-depot-ci",
+  "checkpoints_count": 5,
+  "files_touched": [
+    ".private-journal/2026-10-14/23-34-09-000000-bb65a6c1.md",
+    ".private-journal/2026-10-15/06-22-12-000000-fa8602f3.md",
+    ".private-journal/2026-10-16/14-26-26-000000-f7d1eeee.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 24,
+    "cache_creation_tokens": 4689,
+    "cache_read_tokens": 1187579,
+    "output_tokens": 3222,
+    "api_call_count": 11
+  }
+}
