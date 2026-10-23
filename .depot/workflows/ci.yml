@@ -101,6 +101,7 @@ jobs:
           ASAN_OPTIONS: detect_leaks=0
         run: |
           source ../tools/env.sh
+          mkdir -p ../reports
           pio test -e native --junit-output-path ../reports/pio.xml
       - uses: depot/test-report-action@2ad5779840a9c63e884fa26f11d019768a27a941 # v1.0.1
         if: ${{ !cancelled() }}
