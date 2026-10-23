@@ -1,0 +1,13 @@
+Address the findings on this branch's trail.
+
+---
+
+change the renovate config from recommended to best-practices
+
+---
+
+remove the helpers:pinGitHubActionDigests stanza.
+
+---
+
+commit and push this
