@@ -86,8 +86,17 @@ jobs:
           uv run --locked tools/fetch_xscreensaver.py \
             --version "$XSCREENSAVER_VERSION" \
             --cache-dir .cache/xscreensaver
+      - name: Use clang as the C and C++ compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang
+          sudo ln -sf /usr/bin/clang /usr/bin/gcc
+          sudo ln -sf /usr/bin/clang++ /usr/bin/g++
+          gcc --version
       - name: Host tests
         working-directory: firmware
+        env:
+          PLATFORMIO_BUILD_FLAGS: -lm
         run: |
           source ../tools/env.sh
           pio test -e native --junit-output-path ../reports/pio.xml
