@@ -1,0 +1,1 @@
+Instead of calling pre-commit to run the linters, run ty and ruff directly.
