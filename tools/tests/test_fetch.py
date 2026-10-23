@@ -1,4 +1,6 @@
+import hashlib
 import io
+import re
 import sys
 import tarfile
 from pathlib import Path
@@ -116,6 +118,84 @@ def test_main_network_failure_is_clean_error(tmp_path, monkeypatch, capsys):
     assert "network down" in capsys.readouterr().err
 
 
+def _no_network(monkeypatch):
+    def boom(*a, **k):
+        raise AssertionError("must not touch the network")
+
+    monkeypatch.setattr(fx, "fetch_text", boom)
+    monkeypatch.setattr(fx, "download", boom)
+
+
+def test_cache_dir_hit_extracts_without_network(tmp_path, monkeypatch, capsys):
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    make_tar(cache / "xscreensaver-9.9.tar.gz", {"xscreensaver-9.9/a.txt": b"hi"})
+    _no_network(monkeypatch)
+    dest = tmp_path / "vendor"
+    args = ["--version", "9.9", "--dest", str(dest), "--cache-dir", str(cache)]
+    assert fx.main(args) == 0
+    assert (dest / "xscreensaver-9.9" / "a.txt").read_bytes() == b"hi"
+    assert "sha256" in capsys.readouterr().out
+
+
+def test_cache_dir_miss_downloads_into_the_cache(tmp_path, monkeypatch):
+    cache = tmp_path / "cache"
+    monkeypatch.setattr(
+        fx, "fetch_text", lambda url: '<a href="xscreensaver-9.9.tar.gz">'
+    )
+
+    def fake_download(url, target):
+        make_tar(target, {"xscreensaver-9.9/a.txt": b"hi"})
+        return "0" * 64
+
+    monkeypatch.setattr(fx, "download", fake_download)
+    dest = tmp_path / "vendor"
+    args = ["--version", "9.9", "--dest", str(dest), "--cache-dir", str(cache)]
+    assert fx.main(args) == 0
+    assert (dest / "xscreensaver-9.9" / "a.txt").exists()
+    assert [p.name for p in cache.iterdir()] == ["xscreensaver-9.9.tar.gz"]
+
+
+def test_failed_download_leaves_nothing_in_the_cache(tmp_path, monkeypatch):
+    cache = tmp_path / "cache"
+    monkeypatch.setattr(
+        fx, "fetch_text", lambda url: '<a href="xscreensaver-9.9.tar.gz">'
+    )
+
+    def partial_download(url, target):
+        target.write_bytes(b"half a tarball")
+        raise fx.FetchError("connection reset")
+
+    monkeypatch.setattr(fx, "download", partial_download)
+    args = [
+        "--version",
+        "9.9",
+        "--dest",
+        str(tmp_path / "v"),
+        "--cache-dir",
+        str(cache),
+    ]
+    assert fx.main(args) == 1
+    assert list(cache.iterdir()) == []
+
+
+def test_corrupt_cached_tarball_is_clean_error(tmp_path, monkeypatch, capsys):
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    (cache / "xscreensaver-9.9.tar.gz").write_bytes(b"not a tarball")
+    _no_network(monkeypatch)
+    args = [
+        "--version",
+        "9.9",
+        "--dest",
+        str(tmp_path / "v"),
+        "--cache-dir",
+        str(cache),
+    ]
+    assert fx.main(args) == 1
+    assert "xscreensaver-9.9.tar.gz" in capsys.readouterr().err
+
+
 def _serve_recording_user_agent():
     import http.server
     import threading
@@ -187,3 +267,90 @@ def test_safe_extract_os_error_is_clean_fetch_error(tmp_path):
     dest.mkdir()
     with pytest.raises(fx.FetchError):
         fx.safe_extract(tar, dest)
+
+
+def _pin_to(monkeypatch, tar_path: Path) -> str:
+    digest = hashlib.sha256(tar_path.read_bytes()).hexdigest()
+    monkeypatch.setattr(fx.xs_vendor, "VERSION", "9.9")
+    monkeypatch.setattr(fx.xs_vendor, "SHA256", digest)
+    return digest
+
+
+def _fake_download(source: Path):
+    def download(url, target):
+        target.write_bytes(source.read_bytes())
+        return hashlib.sha256(target.read_bytes()).hexdigest()
+
+    return download
+
+
+def test_pinned_hash_is_a_sha256():
+    assert re.fullmatch(r"[0-9a-f]{64}", fx.xs_vendor.SHA256)
+
+
+def test_cached_tarball_with_the_pinned_hash_needs_no_network(tmp_path, monkeypatch):
+    good = tmp_path / "good.tar.gz"
+    make_tar(good, {"xscreensaver-9.9/a.txt": b"good"})
+    _pin_to(monkeypatch, good)
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    (cache / "xscreensaver-9.9.tar.gz").write_bytes(good.read_bytes())
+    _no_network(monkeypatch)
+    dest = tmp_path / "vendor"
+    args = ["--version", "9.9", "--dest", str(dest), "--cache-dir", str(cache)]
+    assert fx.main(args) == 0
+    assert (dest / "xscreensaver-9.9" / "a.txt").read_bytes() == b"good"
+
+
+def test_cached_tarball_with_the_wrong_hash_is_downloaded_again(
+    tmp_path, monkeypatch, capsys
+):
+    good = tmp_path / "good.tar.gz"
+    make_tar(good, {"xscreensaver-9.9/a.txt": b"good"})
+    digest = _pin_to(monkeypatch, good)
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    make_tar(cache / "xscreensaver-9.9.tar.gz", {"xscreensaver-9.9/a.txt": b"bad"})
+    monkeypatch.setattr(fx, "download", _fake_download(good))
+    dest = tmp_path / "vendor"
+    args = ["--version", "9.9", "--dest", str(dest), "--cache-dir", str(cache)]
+    assert fx.main(args) == 0
+    assert (dest / "xscreensaver-9.9" / "a.txt").read_bytes() == b"good"
+    kept = cache / "xscreensaver-9.9.tar.gz"
+    assert hashlib.sha256(kept.read_bytes()).hexdigest() == digest
+    assert "downloading it again" in capsys.readouterr().err
+
+
+def test_download_with_the_wrong_hash_is_refused_and_not_cached(
+    tmp_path, monkeypatch, capsys
+):
+    good = tmp_path / "good.tar.gz"
+    make_tar(good, {"xscreensaver-9.9/a.txt": b"good"})
+    _pin_to(monkeypatch, good)
+    other = tmp_path / "other.tar.gz"
+    make_tar(other, {"xscreensaver-9.9/a.txt": b"tampered"})
+    monkeypatch.setattr(fx, "download", _fake_download(other))
+    monkeypatch.setattr(
+        fx, "fetch_text", lambda url: '<a href="xscreensaver-9.9.tar.gz">'
+    )
+    cache = tmp_path / "cache"
+    dest = tmp_path / "vendor"
+    args = ["--version", "9.9", "--dest", str(dest), "--cache-dir", str(cache)]
+    assert fx.main(args) == 1
+    assert "sha256" in capsys.readouterr().err
+    assert list(cache.iterdir()) == []
+    assert not dest.exists()
+
+
+def test_a_version_with_no_pinned_hash_runs_with_a_warning(
+    tmp_path, monkeypatch, capsys
+):
+    tarball = tmp_path / "t.tar.gz"
+    make_tar(tarball, {"xscreensaver-9.9/a.txt": b"hi"})
+    monkeypatch.setattr(
+        fx, "fetch_text", lambda url: '<a href="xscreensaver-9.9.tar.gz">'
+    )
+    monkeypatch.setattr(fx, "download", _fake_download(tarball))
+    dest = tmp_path / "vendor"
+    assert fx.main(["--version", "9.9", "--dest", str(dest)]) == 0
+    assert "no pinned sha256" in capsys.readouterr().err

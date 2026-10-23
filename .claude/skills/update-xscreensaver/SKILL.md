@@ -12,15 +12,20 @@ The firmware's hacks are byte-identical copies from one release, named in
 1. Read the release's entry in
    <https://www.jwz.org/xscreensaver/changelog.html> for new hacks and
    framework changes. Branch `chore/<issue>-xscreensaver-<x-y>`.
-1. `uv run tools/fetch_xscreensaver.py` unpacks it beside the old one in
-   `vendor/` (it warns that the version differs from the surveyed one: that
-   is expected here). Keep the old tree until the end.
+1. `uv run tools/fetch_xscreensaver.py --version <new>` unpacks it beside the
+   old one in `vendor/` (it warns that the version differs from the surveyed
+   one, and that it has no pinned sha256: both are expected here). Keep the
+   old tree until the end. It prints the tarball's `sha256`; note it.
 1. `uv run tools/vendor_diff.py vendor/xscreensaver-<old>
    vendor/xscreensaver-<new>` lists the copied files upstream changed or
    removed, the data the build reads from `vendor/` that changed or went, and
    the new hacks. Read each listed file's `diff -u`.
-1. Set `VERSION` in `tools/xs_vendor.py`. Every script takes the path from
-   it, and `test_xs_vendor.py` fails on a hard-coded `xscreensaver-N.N`.
+1. Set `VERSION` and `SHA256` (the hash from the fetch) in
+   `tools/xs_vendor.py`. Every script takes the path from it, and
+   `test_xs_vendor.py` fails on a hard-coded `xscreensaver-N.N`. From then on
+   the fetch tool refuses a tarball, cached or downloaded, with another hash.
+   Also change `XSCREENSAVER_VERSION` in `.depot/workflows/ci.yml`; its cache
+   key follows it.
 1. Copy each changed file over ours and check it with `cmp`. Make it build
    by extending the shim, never by editing it (see `port-hack`). Upstream
    framework headers (`screenhackI.h`, `xlockmore.h`, `utils/`) are not

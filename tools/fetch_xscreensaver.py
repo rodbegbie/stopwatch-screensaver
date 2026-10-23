@@ -1,6 +1,7 @@
 """Fetch and extract the latest xscreensaver source into vendor/.
 
 Run with: uv run tools/fetch_xscreensaver.py [--version X.YY] [--force]
+[--cache-dir DIR]
 """
 
 import argparse
@@ -51,6 +52,13 @@ def pick_version(html: str, wanted: str | None) -> str:
 
 
 def safe_extract(tar_path: Path, dest: Path) -> Path:
+    try:
+        return _extract(tar_path, dest)
+    except tarfile.ReadError as err:
+        raise FetchError(f"{tar_path.name} is not a readable tarball: {err}") from err
+
+
+def _extract(tar_path: Path, dest: Path) -> Path:
     with tarfile.open(tar_path) as tar:
         tops = set()
         for member in tar.getmembers():
@@ -93,8 +101,46 @@ def download(url: str, target: Path) -> str:
     return sha.hexdigest()
 
 
+def sha256_of(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def obtain_tarball(url: str, tar_path: Path, expected: str | None) -> str:
+    """Return the sha256 of the tarball at tar_path, downloading it if needed.
+
+    With an expected hash, a file already there that differs is replaced, and
+    a download that differs is refused before it reaches tar_path.
+    """
+    if tar_path.is_file():
+        sha256 = sha256_of(tar_path)
+        if expected is None or sha256 == expected:
+            return sha256
+        print(
+            f"warning: {tar_path.name} has sha256 {sha256}, not the pinned "
+            f"{expected}; downloading it again",
+            file=sys.stderr,
+        )
+    part = tar_path.with_name(tar_path.name + ".part")
+    try:
+        sha256 = download(url, part)
+        if expected is not None and sha256 != expected:
+            raise FetchError(f"{url} has sha256 {sha256}, not the pinned {expected}")
+        part.replace(tar_path)
+    finally:
+        part.unlink(missing_ok=True)
+    return sha256
+
+
 def run(args: argparse.Namespace) -> None:
-    version = pick_version(fetch_text(DOWNLOAD_PAGE), args.version)
+    cache = Path(args.cache_dir) if args.cache_dir else None
+    if (
+        args.version
+        and cache
+        and (cache / f"xscreensaver-{args.version}.tar.gz").is_file()
+    ):
+        version = args.version
+    else:
+        version = pick_version(fetch_text(DOWNLOAD_PAGE), args.version)
     if version != SURVEYED_VERSION:
         print(
             f"warning: surveyed against {SURVEYED_VERSION}, fetching {version}; "
@@ -107,9 +153,14 @@ def run(args: argparse.Namespace) -> None:
         print(f"xscreensaver-{version} already present at {target}, skipping")
         return
     url = f"{BASE_URL}xscreensaver-{version}.tar.gz"
+    expected = xs_vendor.SHA256 if version == xs_vendor.VERSION else None
+    if expected is None:
+        print(f"warning: no pinned sha256 for {version}, not verified", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
-        tar_path = Path(tmp) / "xs.tar.gz"
-        sha256 = download(url, tar_path)
+        store = cache or Path(tmp)
+        store.mkdir(parents=True, exist_ok=True)
+        tar_path = store / f"xscreensaver-{version}.tar.gz"
+        sha256 = obtain_tarball(url, tar_path, expected)
         print(f"version {version}\nurl {url}\nsha256 {sha256}")
         extracted = safe_extract(tar_path, Path(tmp) / "x")
         dest.mkdir(parents=True, exist_ok=True)
@@ -124,6 +175,10 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--version", help="specific version, e.g. 6.17")
     parser.add_argument("--force", action="store_true", help="replace existing")
     parser.add_argument("--dest", default="vendor", help="default: vendor")
+    parser.add_argument(
+        "--cache-dir",
+        help="keep the tarball here and reuse it instead of downloading",
+    )
     args = parser.parse_args(argv)
     try:
         run(args)
