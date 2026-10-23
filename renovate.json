@@ -1,0 +1,29 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:best-practices"
+  ],
+  "github-actions": {
+    "managerFilePatterns": ["/(^|/)\\.depot/(?:workflows|actions)/.+\\.ya?ml$/"]
+  },
+  "pre-commit": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "description": "ruff is pinned in pyproject.toml and pre-commit; test_tool_versions.py needs them to move together",
+      "matchDepNames": ["ruff", "astral-sh/ruff-pre-commit"],
+      "groupName": "ruff"
+    },
+    {
+      "description": "uv is also pinned as UV_VERSION in ci.yml, which Renovate cannot update; bump by hand",
+      "matchDepNames": ["astral-sh/uv-pre-commit"],
+      "enabled": false
+    },
+    {
+      "description": "Python is pinned exactly to 3.13.14",
+      "matchDepNames": ["python"],
+      "enabled": false
+    }
+  ]
+}
