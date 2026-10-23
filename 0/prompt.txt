@@ -1,0 +1,19 @@
+Let's work on ticket ARS-62
+
+---
+
+Can you edit the fetch_xscreensaver script and the action so that you can store/fetch the tarball from the cache?
+
+---
+
+Add a `persist-credentials: false` to any actions/checkout step
+
+---
+
+<task-notification>
+<task-id>bmb928udg</task-id>
+<tool-use-id>toolu_014x22Wxzjs4VieuCFU84pCx</tool-use-id>
+<output-file>/private/tmp/claude-502/-Users-rod-build-stopwatch-screensaver/13373b81-4279-4c15-b366-5038a6457f1b/tasks/bmb928udg.output</output-file>
+<status>completed</status>
+<summary>Background command "S=/private/tmp/claude-502/-Users-rod-build-stopwatch-screensaver/13373b81-4279-4c15-b366-5038a6457f1b/scratchpad; rm -f $S/pio.done; cd $S/export &amp;&amp; source tools/env.sh &amp;&amp; cd firmware &amp;&amp; (time NO_COLOR=1 pio test -e native --junit-output-path $S/pio-junit.xml &gt; $S/pio.log 2&gt;&amp;1; echo "exit=$?" &gt; $S/pio.done) 2&gt; $S/pio.time" completed (exit code 0)</summary>
+</task-notification>
