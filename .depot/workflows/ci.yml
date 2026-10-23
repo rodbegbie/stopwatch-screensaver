@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  UV_VERSION: "0.13.4"
+  PYTHON_VERSION: "3.13.14"
+  XSCREENSAVER_VERSION: "6.17"
+
+jobs:
+  lint:
+    runs-on: depot-ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+          cache-python: true
+      - run: uv sync --locked
+      - run: uvx pre-commit@4.6.2 run --all-files --show-diff-on-failure
+
+  tools-tests:
+    runs-on: depot-ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+          cache-python: true
+      - run: uv sync --locked
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/xscreensaver
+          key: xscreensaver-${{ env.XSCREENSAVER_VERSION }}
+      - name: Fetch xscreensaver
+        run: |
+          uv run --locked tools/fetch_xscreensaver.py \
+            --version "$XSCREENSAVER_VERSION" \
+            --cache-dir .cache/xscreensaver
+      - run: uv run --locked pytest tools/tests --junitxml=reports/pytest.xml
+      - uses: depot/test-report-action@2ad5779840a9c63e884fa26f11d019768a27a941 # v1.0.1
+        if: ${{ !cancelled() }}
+        with:
+          path: reports/pytest.xml
+
+  firmware-tests:
+    runs-on: depot-ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+          cache-python: true
+      - run: uv sync --locked
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/xscreensaver
+          key: xscreensaver-${{ env.XSCREENSAVER_VERSION }}
+      - name: Fetch xscreensaver
+        run: |
+          uv run --locked tools/fetch_xscreensaver.py \
+            --version "$XSCREENSAVER_VERSION" \
+            --cache-dir .cache/xscreensaver
+      - name: Host tests
+        working-directory: firmware
+        run: |
+          source ../tools/env.sh
+          pio test -e native --junit-output-path ../reports/pio.xml
+      - uses: depot/test-report-action@2ad5779840a9c63e884fa26f11d019768a27a941 # v1.0.1
+        if: ${{ !cancelled() }}
+        with:
+          path: reports/pio.xml
