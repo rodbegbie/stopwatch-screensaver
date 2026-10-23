@@ -38,12 +38,14 @@ embedded-specific choices as you make them. See `README.md` for setup and
   `repaints_all`; see `.claude/rules/device-display.md`.
 - `tools/failed_ports.txt` lists abandoned ports (`name: reason`); the scorer
   marks them ❌, and ✅ comes from `g_hacks[]` in `registry.c`.
-- `.depot/workflows/ci.yml` (Depot CI, on pull requests): `lint` (ruff and
-  `ty`), `tools-tests` (pytest) and `firmware-tests` (`pio test -e native`) run
-  in parallel. The two test jobs upload JUnit with `depot/test-report-action`.
+- `.depot/workflows/ci.yml` (Depot CI, on pull requests, about 14 minutes):
+  `lint` (ruff and `ty`), `tools-tests` (pytest) and `firmware-tests`
+  (`pio test -e native`, in three parallel shards) run on Arm Ubuntu runners
+  with clang. Every test job uploads JUnit with `depot/test-report-action`.
   Actions are pinned by SHA with a `# vX.Y.Z` comment, and checkouts set
   `persist-credentials: false`. `test_tool_versions.py` keeps the tool pins in
-  step (see Gotchas).
+  step (see Gotchas). Linux differences, shard rules and how to run it:
+  `.claude/rules/testing.md`.
 - `.claude/skills/port-hack/`: the order of work for porting a hack, and a
   recipe per trap (`techniques.md`). Use it when porting or fixing a ported
   hack. `m5stack-stopwatch/` is the board guide. `update-xscreensaver/`
@@ -296,9 +298,7 @@ ones below apply everywhere.
   plain `uv run` re-locks `uv.lock` to the mutant, and restoring
   `pyproject.toml` leaves the lock wrong (`uv lock` repairs it).
 - The host suite needs `vendor/xscreensaver-6.17` (the pre-scripts read its
-  images); without it every `pio test` suite errors at build. From a clean
-  checkout `pio test -e native` took 13m38 on one core, against the roughly
-  5 minutes quoted in `testing.md` for a warm tree.
+  images); without it every `pio test` suite errors at build.
 - `ty` 0.0.24 does not narrow `str | None` after `sys.exit(...)`; write
   `raise SystemExit(...)` for a guard (`shutil.which("uv")` in `firmware/*.py`).
 - When a hack's colours look suspect, dump the same index and frame count
