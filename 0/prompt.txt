@@ -1,0 +1,1 @@
+In that case, let's pin the version of python in pyproject.toml and ensure that it's the same version in the ci workflow too.
