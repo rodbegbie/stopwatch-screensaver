@@ -1,0 +1,13 @@
+Incidentally, why is platformio pinned so specifically to 6.2.0?
+
+---
+
+remove platformio from the disabled rules.  If a PR gets created to bump it, CI will run and alert if anything breaks.
+
+---
+
+How about the python version?  Is there any known risk in bumping it to 3.14 or 3.15?  Or are we just being cautious?
+
+---
+
+commit and push this

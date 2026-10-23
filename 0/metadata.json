@@ -1,0 +1,63 @@
+{
+  "cli_version": "0.12.0",
+  "checkpoint_id": "01M5KQHMF6WHXAZRZXVMXQ6VSY",
+  "session_id": "d65d73b1-f7cb-4556-a24d-8c7b68ff7a28",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-23T06:35:34.760589Z",
+  "branch": "renovate/configure",
+  "checkpoints_count": 4,
+  "save_step_count": 2,
+  "files_touched": [
+    "renovate.json"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "218a12200827",
+  "checkpoint_transcript_start": 180,
+  "transcript_lines_at_start": 180,
+  "compact_transcript_start": 21,
+  "token_usage": {
+    "input_tokens": 18,
+    "cache_creation_tokens": 3341,
+    "cache_read_tokens": 705983,
+    "output_tokens": 2972,
+    "api_call_count": 9
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_01JsNBTQHxzUdrZaUzoh2hCx",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "address-findings"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "2f26a7cce956",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 35,
+        "end": 36,
+        "entry_ids": [
+          "0cf8d0b7-67c6-4872-96fd-ddac861d4380"
+        ],
+        "tool_use_id": "toolu_01JsNBTQHxzUdrZaUzoh2hCx"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01JsNBTQHxzUdrZaUzoh2hCx"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: address-findings",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 7
+  }
+}
