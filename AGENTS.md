@@ -105,7 +105,9 @@ From the repo root:
 - `uv run tools/fetch_xscreensaver.py --version 6.17 [--cache-dir DIR]` fills
   `vendor/`. Without `--version` it takes the newest release, which may not be
   the one in `tools/xs_vendor.py`. `--cache-dir` keeps the tarball and reuses
-  it with no network (CI caches that directory).
+  it with no network (CI caches that directory). The pinned version's tarball
+  must match `SHA256` in `xs_vendor.py`, cached or downloaded; a bad cached
+  file is fetched again, and other versions run with a warning.
 - `uv run tools/score_hacks.py` regenerates `docs/porting-assessment.md`. It
   also builds each unported S hack with the shim and runs it on the host for the
   Speed column (`tools/probe_hacks.py`, about a minute); `--no-probe` skips it.
@@ -288,7 +290,8 @@ ones below apply everywhere.
 - One tool, several pins, kept equal by `tools/tests/test_tool_versions.py`:
   ruff in `pyproject.toml` and the pre-commit `rev`/`# frozen:` comment; uv in
   `UV_VERSION` (`ci.yml`) and the `uv-pre-commit` rev; Python in
-  `requires-python` and `PYTHON_VERSION` (`ci.yml`). Change them together:
+  `requires-python` and `PYTHON_VERSION` (`ci.yml`); xscreensaver in
+  `xs_vendor.py` and `XSCREENSAVER_VERSION` (`ci.yml`). Change them together:
   `autoupdate --freeze` alone fails the test until `pyproject.toml` follows.
   Because Python is pinned exactly, uv fetches 3.13.14 on a machine with
   another 3.13.

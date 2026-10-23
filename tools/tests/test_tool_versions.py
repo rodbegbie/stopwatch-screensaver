@@ -48,3 +48,12 @@ def test_workflow_uv_matches_pre_commit():
     pinned = re.search(r'UV_VERSION: "(\S+)"', WORKFLOW)
     assert pinned, "ci.yml has no UV_VERSION"
     assert pinned.group(1) == pre_commit_version("astral-sh/uv-pre-commit")
+
+
+def test_workflow_xscreensaver_matches_xs_vendor():
+    vendor = (ROOT / "tools/xs_vendor.py").read_text()
+    pinned = re.search(r'^VERSION = "(\S+)"', vendor, re.MULTILINE)
+    assert pinned, "xs_vendor.py has no VERSION"
+    workflow = re.search(r'XSCREENSAVER_VERSION: "(\S+)"', WORKFLOW)
+    assert workflow, "ci.yml has no XSCREENSAVER_VERSION"
+    assert workflow.group(1) == pinned.group(1)

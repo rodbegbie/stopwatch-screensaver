@@ -105,6 +105,32 @@ def sha256_of(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def obtain_tarball(url: str, tar_path: Path, expected: str | None) -> str:
+    """Return the sha256 of the tarball at tar_path, downloading it if needed.
+
+    With an expected hash, a file already there that differs is replaced, and
+    a download that differs is refused before it reaches tar_path.
+    """
+    if tar_path.is_file():
+        sha256 = sha256_of(tar_path)
+        if expected is None or sha256 == expected:
+            return sha256
+        print(
+            f"warning: {tar_path.name} has sha256 {sha256}, not the pinned "
+            f"{expected}; downloading it again",
+            file=sys.stderr,
+        )
+    part = tar_path.with_name(tar_path.name + ".part")
+    try:
+        sha256 = download(url, part)
+        if expected is not None and sha256 != expected:
+            raise FetchError(f"{url} has sha256 {sha256}, not the pinned {expected}")
+        part.replace(tar_path)
+    finally:
+        part.unlink(missing_ok=True)
+    return sha256
+
+
 def run(args: argparse.Namespace) -> None:
     cache = Path(args.cache_dir) if args.cache_dir else None
     if (
@@ -127,19 +153,14 @@ def run(args: argparse.Namespace) -> None:
         print(f"xscreensaver-{version} already present at {target}, skipping")
         return
     url = f"{BASE_URL}xscreensaver-{version}.tar.gz"
+    expected = xs_vendor.SHA256 if version == xs_vendor.VERSION else None
+    if expected is None:
+        print(f"warning: no pinned sha256 for {version}, not verified", file=sys.stderr)
     with tempfile.TemporaryDirectory() as tmp:
         store = cache or Path(tmp)
         store.mkdir(parents=True, exist_ok=True)
         tar_path = store / f"xscreensaver-{version}.tar.gz"
-        if tar_path.is_file():
-            sha256 = sha256_of(tar_path)
-        else:
-            part = tar_path.with_name(tar_path.name + ".part")
-            try:
-                sha256 = download(url, part)
-                part.replace(tar_path)
-            finally:
-                part.unlink(missing_ok=True)
+        sha256 = obtain_tarball(url, tar_path, expected)
         print(f"version {version}\nurl {url}\nsha256 {sha256}")
         extracted = safe_extract(tar_path, Path(tmp) / "x")
         dest.mkdir(parents=True, exist_ok=True)
