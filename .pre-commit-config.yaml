@@ -32,7 +32,7 @@ repos:
       - id: uv-lock
       - id: uv-sync
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: 17e12779811926f000bdfa1795f9e3735dd71ac3  # frozen: 0.26
+    rev: 82d21874c3242e4dc27bb47641c996902ef64eef  # frozen: v0.27
     hooks:
       - id: validate-pyproject
   - repo: https://github.com/gitleaks/gitleaks
