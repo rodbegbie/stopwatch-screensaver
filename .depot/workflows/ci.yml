@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 env:
-  UV_VERSION: "0.13.4"
+  UV_VERSION: "0.13.5"
   PYTHON_VERSION: "3.13.14"
   XSCREENSAVER_VERSION: "6.17"
 
