@@ -1,0 +1,30 @@
+I've approved the trail.  Merge it.
+
+---
+
+OK, next thing to do:
+I want to upgrade the version of Python used in the repo to the latest 3.14 release.
+
+1. Let's do the upgrade and test it locally.
+2. Let's setup the CI job to run the lint & tools tests and only start the expensive firmware tests if they pass.
+3. Can we look into configuring Renovate so that it's capable of updating the PYthon version in the project file and the CI job file to the latest 3.14 release?
+
+File a ticket and create a branch for this.
+
+---
+
+There's a GitHub token in my environment in GH_TOKEN
+
+---
+
+Let's see about adding renovate rules to allow increasing the uv version too.  It would need to tie the version in .pre-commit-config and ci.yml
+
+---
+
+<task-notification>
+<task-id>b64zym73k</task-id>
+<tool-use-id>toolu_01E92a4SZT7NsXT3e7N7Brt6</tool-use-id>
+<output-file>/private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/81647295-f02c-49ec-998d-6337d9b4352f/tasks/b64zym73k.output</output-file>
+<status>completed</status>
+<summary>Background command "bash -c 'source /Users/rod/build/stopwatch-screensaver/tools/env.sh &gt;/dev/null 2&gt;&amp;1; cd /Users/rod/build/stopwatch-screensaver/firmware &amp;&amp; NO_COLOR=1 pio test -e native &gt; /private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/81647295-f02c-49ec-998d-6337d9b4352f/scratchpad/pio-full.log 2&gt;&amp;1; echo "exit=$?" &gt;&gt; /private/tmp/claude-501/-Users-rod-build-stopwatch-screensaver/81647295-f02c-49ec-998d-6337d9b4352f/scratchpad/pio-full.log' &lt;/dev/null" completed (exit code 0)</summary>
+</task-notification>

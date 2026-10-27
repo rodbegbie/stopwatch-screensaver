@@ -1,0 +1,47 @@
+{
+  "cli_version": "0.12.2",
+  "checkpoint_id": "01M5ZFSXA0YNQTRQF8KES35BXY",
+  "strategy": "manual-commit",
+  "branch": "chore/ARS-73-python-3-14",
+  "checkpoints_count": 5,
+  "files_touched": [
+    ".depot/workflows/ci.yml",
+    "AGENTS.md",
+    "pyproject.toml",
+    "renovate.json",
+    "tools/serial_capture.py",
+    "tools/tests/test_gl_budget.py",
+    "tools/tests/test_tinygl_patch.py",
+    "uv.lock"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 90,
+    "cache_creation_tokens": 52377,
+    "cache_read_tokens": 6337192,
+    "output_tokens": 25095,
+    "api_call_count": 44
+  },
+  "redaction": {
+    "replacements": 3,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 3,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  }
+}
