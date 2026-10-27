@@ -17,6 +17,7 @@
     {
       "description": "Automerge minor and patch updates once CI passes; majors still need a human",
       "matchUpdateTypes": ["minor", "patch"],
+      "minimumReleaseAge": "3 days",
       "automerge": true
     },
     {
