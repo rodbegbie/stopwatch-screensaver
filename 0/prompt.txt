@@ -1,0 +1,10 @@
+Yes, open a trail.
+
+---
+
+Address the findings on the trail.  a 3 day minimum release age makes sense to me.
+
+---
+
+1. Keep the pre-commit hooks in automerge -- run the full hook set in CI.
+2. Keep it automerging.
