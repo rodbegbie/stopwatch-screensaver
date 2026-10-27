@@ -59,7 +59,7 @@ def test_every_listed_file_has_literals_upstream(path):
     fl.float_literals(load_sources()[path])
 
 
-def anchor_id(rep: "tp.Replace") -> str:
+def anchor_id(rep: tp.Replace) -> str:
     return f"{rep.path}:{rep.anchor[:24]!r}"
 
 
@@ -179,7 +179,7 @@ def test_filled_triangles_apply_polygon_offset_and_treat_alpha_one_as_opaque(pat
     assert "c->zb->enable_blend = blend;" in wrapper
 
 
-def hot_id(hot: "tp.Hot") -> str:
+def hot_id(hot: tp.Hot) -> str:
     return f"{hot.path}:{hot.definition.split('(')[0].split()[-1]}"
 
 
@@ -221,7 +221,7 @@ def test_the_single_header_brings_in_the_switches(patched):
     assert '#include "glshim/glshim_prof.h"' in patched["src/tinygl_single.h"]
 
 
-def late_id(rep: "tp.Replace") -> str:
+def late_id(rep: tp.Replace) -> str:
     return f"{rep.path}:{rep.anchor[:28]!r}"
 
 

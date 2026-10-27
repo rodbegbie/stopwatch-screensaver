@@ -7,8 +7,10 @@ permissions:
   contents: read
 
 env:
+  # renovate: datasource=github-tags depName=astral-sh/uv-pre-commit
   UV_VERSION: "0.13.5"
-  PYTHON_VERSION: "3.13.14"
+  # renovate: datasource=python-version depName=python
+  PYTHON_VERSION: "3.14.9"
   XSCREENSAVER_VERSION: "6.17"
 
 jobs:
@@ -87,6 +89,7 @@ jobs:
 
   firmware-tests:
     name: firmware-tests (${{ matrix.shard }})
+    needs: [lint, tools-tests]
     runs-on: depot-ubuntu-24.04-arm
     strategy:
       fail-fast: false

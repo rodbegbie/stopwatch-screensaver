@@ -310,7 +310,7 @@ def test_a_hack_can_call_glpixelstorei_for_unpack_alignment():
     assert "error" not in result, result.get("error")
 
 
-def coverage(draw: str, init: str = "") -> "gb.Coverage":
+def coverage(draw: str, init: str = "") -> gb.Coverage:
     return run(init, draw)["coverage"]
 
 
