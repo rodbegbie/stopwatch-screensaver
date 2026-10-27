@@ -1,0 +1,1 @@
+Skip the ruff and ty jobs in the pre-commit test -- we don't need to run them again.
