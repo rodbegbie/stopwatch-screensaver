@@ -33,7 +33,7 @@ def capture(out: str, seconds: float, port: str = DEFAULT_PORT) -> None:
                 while time.time() < end:
                     f.write(s.read(4096))
                     f.flush()
-            except (serial.SerialException, OSError):
+            except serial.SerialException, OSError:
                 time.sleep(0.5)
             finally:
                 s.close()

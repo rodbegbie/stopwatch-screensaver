@@ -159,7 +159,7 @@ Set `NO_COLOR=1` on `pio` output you parse.
 - Report "compiles", "host tests pass" and "runs on the device" separately.
   Only Rod can confirm what the screen shows: say when you want him to look,
   which hack, and what to check (colours on a picture whose colours you know).
-- Python: exactly 3.13.14 (`requires-python = "==3.13.14"`), `uv`, ruff,
+- Python: exactly 3.14.9 (`requires-python = "==3.14.9"`), `uv`, ruff,
   pytest. Markdown: invoke the `/markdown` skill.
 - Commits end with the `Co-Authored-By` trailer from the session reminder.
   Use named paths with `git add`, never `-A`. Never `git commit --no-verify`:
@@ -267,6 +267,12 @@ ones below apply everywhere.
   `requires-python` and `PYTHON_VERSION` (`ci.yml`); xscreensaver in
   `xs_vendor.py` and `XSCREENSAVER_VERSION` (`ci.yml`). Change them together:
   `autoupdate --freeze` alone fails the test until `pyproject.toml` follows.
+  Renovate moves ruff, uv and Python each in one PR (`renovate.json` groups
+  them; `# renovate:` comments above `UV_VERSION` and `PYTHON_VERSION` let it
+  read `ci.yml`). Python stays on its current minor: a new minor is a manual
+  upgrade. uv bundles the list of Python builds it can download, so a new
+  Python patch needs a uv at least as new: if the Python PR fails to set up
+  Python, bump uv first.
 - CI runs the pre-commit set in its `pre-commit` job, so an automerged hook
   bump is exercised before it merges. The job sets `SKIP` for ruff and `ty`
   (the `lint` job already runs them), and `uv-sync` never runs there: it runs

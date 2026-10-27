@@ -9,6 +9,16 @@
   "pre-commit": {
     "enabled": true
   },
+  "customManagers": [
+    {
+      "description": "UV_VERSION and PYTHON_VERSION in the Depot workflows, marked with a renovate comment",
+      "customType": "regex",
+      "managerFilePatterns": ["/(^|/)\\.depot/(?:workflows|actions)/.+\\.ya?ml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+(?:UV|PYTHON)_VERSION: \"(?<currentValue>[^\"]+)\""
+      ]
+    }
+  ],
   "lockFileMaintenance": {
     "enabled": true,
     "automerge": true
@@ -26,13 +36,20 @@
       "groupName": "ruff"
     },
     {
-      "description": "uv is also pinned as UV_VERSION in ci.yml, which Renovate cannot update; bump by hand",
+      "description": "UV_VERSION in ci.yml tracks the same tags as the uv-pre-commit rev; test_tool_versions.py needs them to move together, so one PR bumps both",
       "matchDepNames": ["astral-sh/uv-pre-commit"],
-      "enabled": false
+      "groupName": "uv"
     },
     {
-      "description": "Python is pinned exactly to 3.13.14",
+      "description": "Python is pinned exactly in pyproject.toml and ci.yml; test_tool_versions.py needs them to move together, so one PR bumps both",
       "matchDepNames": ["python"],
+      "groupName": "python",
+      "separateMinorPatch": true
+    },
+    {
+      "description": "Stay on the current Python minor; a new minor is a deliberate upgrade",
+      "matchDepNames": ["python"],
+      "matchUpdateTypes": ["major", "minor"],
       "enabled": false
     }
   ]
