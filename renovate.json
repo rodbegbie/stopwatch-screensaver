@@ -9,7 +9,17 @@
   "pre-commit": {
     "enabled": true
   },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true
+  },
   "packageRules": [
+    {
+      "description": "Automerge minor and patch updates once CI passes; majors still need a human",
+      "matchUpdateTypes": ["minor", "patch"],
+      "minimumReleaseAge": "3 days",
+      "automerge": true
+    },
     {
       "description": "ruff is pinned in pyproject.toml and pre-commit; test_tool_versions.py needs them to move together",
       "matchDepNames": ["ruff", "astral-sh/ruff-pre-commit"],
