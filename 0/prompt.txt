@@ -1,0 +1,5 @@
+Configure renovate so that it automerges minor or patch releases for dependencies, or any lockfile updates.
+
+---
+
+File a ticket and commit it on a branch
