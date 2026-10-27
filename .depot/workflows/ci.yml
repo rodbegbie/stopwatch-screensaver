@@ -47,6 +47,8 @@ jobs:
           path: ~/.cache/pre-commit
           key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
       - run: uv run --locked pre-commit run --all-files --show-diff-on-failure
+        env:
+          SKIP: ruff-check,ruff-format,ty
 
   tools-tests:
     runs-on: depot-ubuntu-24.04-arm

@@ -35,7 +35,7 @@ embedded-specific choices as you make them. See `README.md` for setup and
 - `tools/failed_ports.txt` lists abandoned ports (`name: reason`); the scorer
   marks them ❌, and ✅ comes from `g_hacks[]` in `registry.c`.
 - `.depot/workflows/ci.yml` (Depot CI, on pull requests, about 14 minutes):
-  `lint` (ruff and `ty`), `pre-commit` (every hook), `tools-tests` (pytest)
+  `lint` (ruff and `ty`), `pre-commit` (the other hooks), `tools-tests` (pytest)
   and `firmware-tests`
   (`pio test -e native`, in three parallel shards) run on Arm Ubuntu runners
   with clang. Every test job uploads JUnit with `depot/test-report-action`.
@@ -267,9 +267,10 @@ ones below apply everywhere.
   `requires-python` and `PYTHON_VERSION` (`ci.yml`); xscreensaver in
   `xs_vendor.py` and `XSCREENSAVER_VERSION` (`ci.yml`). Change them together:
   `autoupdate --freeze` alone fails the test until `pyproject.toml` follows.
-- CI runs the whole pre-commit set in its `pre-commit` job, so an automerged
-  hook bump is exercised before it merges (`uv-sync` is the exception: it runs
-  only on the post-checkout stages). `pre-commit` is pinned in the dev group.
+- CI runs the pre-commit set in its `pre-commit` job, so an automerged hook
+  bump is exercised before it merges. The job sets `SKIP` for ruff and `ty`
+  (the `lint` job already runs them), and `uv-sync` never runs there: it runs
+  only on the post-checkout stages. `pre-commit` is pinned in the dev group.
 - A mutation check that edits `pyproject.toml` must run `uv run --locked`:
   plain `uv run` re-locks `uv.lock` to the mutant, and restoring
   `pyproject.toml` leaves the lock wrong (`uv lock` repairs it).
