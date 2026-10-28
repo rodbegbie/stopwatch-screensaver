@@ -1,0 +1,13 @@
+Yes, open a trail for this work.
+
+---
+
+Great.  Trail is approved.  Merge it.
+
+---
+
+end session
+
+---
+
+Configure concurrency on the CI run so that jobs are cancelled if there's a new push to a PR's branch while a CI run is already in progress.

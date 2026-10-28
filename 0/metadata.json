@@ -1,0 +1,169 @@
+{
+  "cli_version": "0.12.2",
+  "checkpoint_id": "01M5ZWY169352H0J9QDZ5HF8AN",
+  "session_id": "81647295-f02c-49ec-998d-6337d9b4352f",
+  "strategy": "manual-commit",
+  "created_at": "2026-10-28T00:00:38.472855Z",
+  "branch": "chore/ARS-74-ci-concurrency",
+  "checkpoints_count": 4,
+  "files_touched": [
+    ".depot/workflows/ci.yml"
+  ],
+  "agent": "Claude Code",
+  "model": "claude-sonnet-5-5",
+  "turn_id": "cd4b73b30422",
+  "checkpoint_transcript_start": 1021,
+  "transcript_lines_at_start": 1021,
+  "compact_transcript_start": 103,
+  "token_usage": {
+    "input_tokens": 40,
+    "cache_creation_tokens": 186227,
+    "cache_read_tokens": 3525353,
+    "output_tokens": 9335,
+    "api_call_count": 20
+  },
+  "redaction": {
+    "replacements": 3,
+    "layers": {
+      "betterleaks": 0,
+      "connection_string": 0,
+      "credential_key": 0,
+      "credential_value": 0,
+      "credentialed_uri": 0,
+      "entropy": 3,
+      "key_context": 0,
+      "provider_token": 0,
+      "shell_stdin": 0
+    }
+  },
+  "skill_events_version": 1,
+  "skill_events": [
+    {
+      "id": "claude-skill-toolu_015zYjPiZk3jLCNFVteaZibk",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "linear-tracking"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "d0071cf20e1e",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 83,
+        "end": 84,
+        "entry_ids": [
+          "305396fd-79dd-4e9f-9b75-cf7f0df0f232"
+        ],
+        "tool_use_id": "toolu_015zYjPiZk3jLCNFVteaZibk"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_015zYjPiZk3jLCNFVteaZibk"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: linear-tracking",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01VAZPBDrXTiiMZTcwY7sinQ",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "deliver-branch"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "7bdd11fd54ba",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 126,
+        "end": 127,
+        "entry_ids": [
+          "23cdc303-6b21-4f63-b8cf-50264a39950b"
+        ],
+        "tool_use_id": "toolu_01VAZPBDrXTiiMZTcwY7sinQ"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01VAZPBDrXTiiMZTcwY7sinQ"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: deliver-branch",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01T1DWbKRK6iLgnKjbWmrgwG",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "address-findings"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "7bdd11fd54ba",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 205,
+        "end": 206,
+        "entry_ids": [
+          "ead661d9-637e-4d66-a221-21d87e758436"
+        ],
+        "tool_use_id": "toolu_01T1DWbKRK6iLgnKjbWmrgwG"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01T1DWbKRK6iLgnKjbWmrgwG"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: address-findings",
+        "default_collapsed": true
+      }
+    },
+    {
+      "id": "claude-skill-toolu_01HnGSFrMrdjLjdLyUcXp48T",
+      "event_type": "tool_invocation",
+      "skill": {
+        "name": "depot-ci"
+      },
+      "source": {
+        "agent": "claude-code",
+        "signal": "skill_tool_use",
+        "confidence": "explicit"
+      },
+      "turn_id": "cd4b73b30422",
+      "transcript_anchor": {
+        "unit": "line",
+        "start": 1168,
+        "end": 1169,
+        "entry_ids": [
+          "4cf425e1-8668-4686-b945-d06c04ed84a8"
+        ],
+        "tool_use_id": "toolu_01HnGSFrMrdjLjdLyUcXp48T"
+      },
+      "native": {
+        "tool_name": "Skill",
+        "tool_use_id": "toolu_01HnGSFrMrdjLjdLyUcXp48T"
+      },
+      "collapse": {
+        "target": "tool_pair",
+        "label": "Skill: depot-ci",
+        "default_collapsed": true
+      }
+    }
+  ],
+  "session_metrics": {
+    "turn_count": 15
+  }
+}
