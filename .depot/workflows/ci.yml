@@ -6,6 +6,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 env:
   # renovate: datasource=github-tags depName=astral-sh/uv-pre-commit
   UV_VERSION: "0.13.5"
