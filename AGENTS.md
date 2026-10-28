@@ -260,7 +260,11 @@ ones below apply everywhere.
 - `uvx pre-commit autoupdate` needs `--freeze` (the config pins SHAs).
 - Dev tools: `uv add --dev <pkg>`; refresh with `uv lock --upgrade` then
   `uv sync`, and check with `uv run pytest tools/tests`. `platformio` is
-  pinned `==6.2.0`, so an upgrade leaves it alone.
+  pinned `==6.2.0`, so an upgrade leaves it alone. `[tool.uv]` sets
+  `exclude-newer = "3 days"`: uv ignores packages published in the last 3
+  days, so a pin to a fresher release (or `uv add` of one) fails to resolve.
+  An `exclude-newer-package` entry exempts one package; remove it once the
+  release is 3 days old.
 - One tool, several pins, kept equal by `tools/tests/test_tool_versions.py`:
   ruff in `pyproject.toml` and the pre-commit `rev`/`# frozen:` comment; uv in
   `UV_VERSION` (`ci.yml`) and the `uv-pre-commit` rev; Python in
