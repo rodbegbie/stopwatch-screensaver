@@ -18,5 +18,3 @@ dev = [
 [tool.uv]
 package = false
 exclude-newer = "3 days"
-# ruff 0.17.3 (27 Oct 2026) is pinned exactly but is under 3 days old; drop this after 30 Oct 2026
-exclude-newer-package = { ruff = "2026-10-28T00:00:00Z" }

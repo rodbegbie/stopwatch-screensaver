@@ -6,9 +6,6 @@ requires-python = "==3.14.10"
 exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
 exclude-newer-span = "P3D"
 
-[options.exclude-newer-package]
-ruff = "2026-10-28T00:00:00Z"
-
 [[package]]
 name = "ajsonrpc"
 version = "1.2.0"
