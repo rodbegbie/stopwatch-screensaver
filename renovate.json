@@ -3,6 +3,8 @@
   "extends": [
     "config:best-practices"
   ],
+  "timezone": "America/Los_Angeles",
+  "schedule": ["before 10am on monday and thursday"],
   "github-actions": {
     "managerFilePatterns": ["/(^|/)\\.depot/(?:workflows|actions)/.+\\.ya?ml$/"]
   },
