@@ -1,0 +1,5 @@
+What docs did you consult to figure out that that format for the schedule woudl work?
+
+---
+
+yes, check the Renovate docs via context7
