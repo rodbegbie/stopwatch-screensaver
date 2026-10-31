@@ -1,0 +1,1 @@
+Quick thing -- can we configure renovate to limit its version checks to a specific time frame?  Maybe Monday and Thursday mornings?  We don't need to be getting frequent urgent branches for every single dependency update.  Once or twice a week is probably plenty.
