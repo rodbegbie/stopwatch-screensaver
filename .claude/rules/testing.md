@@ -123,6 +123,13 @@ Moved verbatim from AGENTS.md.
   distinct, or Depot drops the later uploads as duplicates. Separate jobs are
   needed: every suite builds to the same `.pio/build/native/program`, so two
   `pio test` processes in one checkout overwrite each other's binary.
+- `firmware-tests` runs only when the PR touches `firmware/`, `tools/` (but not
+  `tools/tests/`) or `ci.yml`: the `changes` job pipes `git diff --name-only`
+  through `tools/firmware_changed.py`. A skipped job counts as passing for
+  branch protection, but a skipped matrix job reports one unexpanded
+  `firmware-tests (${{ matrix.shard }})` check, so a required check named
+  `firmware-tests (hacks)` would stay pending. Adding a path that can change
+  the tests' result means editing `firmware_changed.py` and its tests.
 - `pio test --junit-output-path` does not create the directory.
 - Running it: `depot ci run` uploads your uncommitted changes as a patch, so
   run it from a clean `git worktree` of the pushed commit to leave unrelated

@@ -91,9 +91,26 @@ jobs:
         with:
           path: reports/pytest.xml
 
+  changes:
+    runs-on: depot-ubuntu-24.04
+    outputs:
+      firmware: ${{ steps.filter.outputs.firmware }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: filter
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git diff --name-only "origin/$BASE_REF...HEAD" \
+            | python3 tools/firmware_changed.py | tee -a "$GITHUB_OUTPUT"
+
   firmware-tests:
     name: firmware-tests (${{ matrix.shard }})
-    needs: [lint, tools-tests]
+    needs: [lint, tools-tests, changes]
+    if: ${{ needs.changes.outputs.firmware == 'true' }}
     runs-on: depot-ubuntu-24.04-arm
     strategy:
       fail-fast: false
