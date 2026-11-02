@@ -6,13 +6,13 @@ dependencies = []
 
 [dependency-groups]
 dev = [
-    "machfs",
-    "pillow",
+    "machfs==1.3",
+    "pillow==13.0.0",
     "platformio==6.2.0",
-    "pre-commit>=4.7.0",
-    "pytest",
+    "pre-commit==4.7.0",
+    "pytest==9.2.0",
     "ruff==0.17.3",
-    "ty>=0.0.88",
+    "ty==0.0.95",
 ]
 
 [tool.uv]

@@ -104,8 +104,7 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
         run: |
-          git diff --name-only "origin/$BASE_REF...HEAD" \
-            | python3 tools/firmware_changed.py | tee -a "$GITHUB_OUTPUT"
+          python3 tools/firmware_changed.py "origin/$BASE_REF" | tee -a "$GITHUB_OUTPUT"
 
   firmware-tests:
     name: firmware-tests (${{ matrix.shard }})
