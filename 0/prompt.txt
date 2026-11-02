@@ -1,0 +1,15 @@
+Yes, push the branch and open a trail.
+
+---
+
+Great. CI is running now, so you can look at the depot status
+
+---
+
+Keep polling.  It takes about 12-14 minutes for all the shards to finish usually.
+
+---
+
+Take a look at the trail findings.  I definitely don't want firmware tests running for *every* change to pyproject.toml or uv.lock, but they should definitely run if PlatformIO or Pillow is upgraded.  Can we make the firmware script a bit smarter and catch those cases?
+
+Also, let's pin the version of `ty`, `pillow`, `pytest`, 'machfs` and `pre-commit` to the latest versions in pyproject.toml, and let renovate handle updating them explicitly.
