@@ -91,9 +91,25 @@ jobs:
         with:
           path: reports/pytest.xml
 
+  changes:
+    runs-on: depot-ubuntu-24.04
+    outputs:
+      firmware: ${{ steps.filter.outputs.firmware }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: filter
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          python3 tools/firmware_changed.py "origin/$BASE_REF" | tee -a "$GITHUB_OUTPUT"
+
   firmware-tests:
     name: firmware-tests (${{ matrix.shard }})
-    needs: [lint, tools-tests]
+    needs: [lint, tools-tests, changes]
+    if: ${{ needs.changes.outputs.firmware == 'true' }}
     runs-on: depot-ubuntu-24.04-arm
     strategy:
       fail-fast: false
@@ -148,3 +164,22 @@ jobs:
         with:
           path: reports/pio-${{ matrix.shard }}.xml
           key: pio-${{ matrix.shard }}
+
+  firmware-gate:
+    needs: [changes, firmware-tests]
+    if: ${{ always() }}
+    runs-on: depot-ubuntu-24.04
+    steps:
+      - name: Require the firmware tests whenever they were due
+        env:
+          CHANGES: ${{ needs.changes.result }}
+          FIRMWARE_DUE: ${{ needs.changes.outputs.firmware }}
+          TESTS: ${{ needs.firmware-tests.result }}
+        run: |
+          echo "changes=$CHANGES firmware_due=$FIRMWARE_DUE tests=$TESTS"
+          [ "$CHANGES" = success ] || exit 1
+          if [ "$FIRMWARE_DUE" = true ]; then
+            [ "$TESTS" = success ]
+          else
+            [ "$TESTS" = skipped ]
+          fi
