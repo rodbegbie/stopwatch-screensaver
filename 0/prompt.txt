@@ -1,0 +1,1 @@
+I did have the firmware-tests shards set up as required checks.  I could remove them, but I'd rather have something that requires them to pass if they do run.
