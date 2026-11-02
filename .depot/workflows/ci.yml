@@ -165,3 +165,22 @@ jobs:
         with:
           path: reports/pio-${{ matrix.shard }}.xml
           key: pio-${{ matrix.shard }}
+
+  firmware-gate:
+    needs: [changes, firmware-tests]
+    if: ${{ always() }}
+    runs-on: depot-ubuntu-24.04
+    steps:
+      - name: Require the firmware tests whenever they were due
+        env:
+          CHANGES: ${{ needs.changes.result }}
+          FIRMWARE_DUE: ${{ needs.changes.outputs.firmware }}
+          TESTS: ${{ needs.firmware-tests.result }}
+        run: |
+          echo "changes=$CHANGES firmware_due=$FIRMWARE_DUE tests=$TESTS"
+          [ "$CHANGES" = success ] || exit 1
+          if [ "$FIRMWARE_DUE" = true ]; then
+            [ "$TESTS" = success ]
+          else
+            [ "$TESTS" = skipped ]
+          fi
