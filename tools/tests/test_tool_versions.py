@@ -33,6 +33,10 @@ def test_ruff_matches_pre_commit():
     assert dev_pin("ruff") == pre_commit_version("astral-sh/ruff-pre-commit")
 
 
+def test_ty_matches_pre_commit():
+    assert dev_pin("ty") == pre_commit_version("astral-sh/ty-pre-commit")
+
+
 def test_workflow_python_matches_pyproject():
     requires = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"][
         "requires-python"
