@@ -14,7 +14,7 @@ repos:
       # Run the formatter.
       - id: ruff-format
   - repo: https://github.com/astral-sh/ty-pre-commit
-    rev: 3770e13b40bb462aff3ae635783fac7a7cc844bb  # frozen: v0.0.100
+    rev: d598b95ef3cba3cf3a31c40620c3481ae978e4eb  # frozen: v0.0.104
     hooks:
       - id: ty
   - repo: https://github.com/igorshubovych/markdownlint-cli
