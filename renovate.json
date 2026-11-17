@@ -1,8 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:best-practices"
-  ],
+  "extends": ["config:best-practices"],
   "timezone": "America/Los_Angeles",
   "schedule": ["* 0-9 * * 1,4"],
   "github-actions": {
@@ -15,7 +13,9 @@
     {
       "description": "UV_VERSION and PYTHON_VERSION in the Depot workflows, marked with a renovate comment",
       "customType": "regex",
-      "managerFilePatterns": ["/(^|/)\\.depot/(?:workflows|actions)/.+\\.ya?ml$/"],
+      "managerFilePatterns": [
+        "/(^|/)\\.depot/(?:workflows|actions)/.+\\.ya?ml$/"
+      ],
       "matchStrings": [
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+(?:UV|PYTHON)_VERSION: \"(?<currentValue>[^\"]+)\""
       ]
@@ -36,6 +36,11 @@
       "description": "ruff is pinned in pyproject.toml and pre-commit; test_tool_versions.py needs them to move together",
       "matchDepNames": ["ruff", "astral-sh/ruff-pre-commit"],
       "groupName": "ruff"
+    },
+    {
+      "description": "ty is pinned in pyproject.toml and pre-commit; test_tool_versions.py needs them to move together",
+      "matchPackageNames": ["ty", "astral-sh/ty-pre-commit"],
+      "groupName": "ty"
     },
     {
       "description": "UV_VERSION in ci.yml tracks the same tags as the uv-pre-commit rev; test_tool_versions.py needs them to move together, so one PR bumps both",
