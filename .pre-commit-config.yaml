@@ -36,7 +36,7 @@ repos:
     hooks:
       - id: gitleaks
   - repo: https://github.com/renovatebot/pre-commit-hooks
-    rev: aab3b0b567371defc37a281146ef8a49e6af1f8f  # frozen: 44.206.2
+    rev: 07f0d02ea1d32edfbe4cbde9de9e9aa0a90ca711  # frozen: 44.251.0
     hooks:
       - id: renovate-config-validator
         args: [--strict]
