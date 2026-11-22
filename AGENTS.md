@@ -113,8 +113,10 @@ From the repo root:
 - `uv run tools/gl_budget.py cubicgrid morph3d` predicts a GL hack's device
   frame rate from vertex and fill counts taken on the host (`docs/gl-budget.md`
   has the model and its limits). It reads unported hacks from `vendor/`.
-- `markdownlint <files>` (config in `.markdownlint.json`). Run it from here:
-  from `firmware/` it misses the config and reports line-length errors.
+- `markdownlint-cli2 <files>` (config in `.markdownlint-cli2.jsonc`). Run it
+  from here: it reads config only from the current directory down to each
+  file, so from `firmware/` it misses the config and reports line-length
+  errors.
 
 Set `NO_COLOR=1` on `pio` output you parse.
 
@@ -267,13 +269,15 @@ ones below apply everywhere.
   release is 3 days old.
 - One tool, several pins, kept equal by `tools/tests/test_tool_versions.py`:
   ruff in `pyproject.toml` and the pre-commit `rev`/`# frozen:` comment; uv in
-  `UV_VERSION` (`ci.yml`) and the `uv-pre-commit` rev; Python in
+  `UV_VERSION` (`ci.yml`), `mise.toml` and the `uv-pre-commit` rev;
+  markdownlint-cli2 in `mise.toml` and its pre-commit rev; Python in
   `requires-python` and `PYTHON_VERSION` (`ci.yml`); xscreensaver in
   `xs_vendor.py` and `XSCREENSAVER_VERSION` (`ci.yml`). Change them together:
   `autoupdate --freeze` alone fails the test until `pyproject.toml` follows.
-  Renovate moves ruff, uv and Python each in one PR (`renovate.json` groups
-  them; `# renovate:` comments above `UV_VERSION` and `PYTHON_VERSION` let it
-  read `ci.yml`). Python stays on its current minor: a new minor is a manual
+  Renovate moves ruff, uv, markdownlint-cli2 and Python each in one PR
+  (`renovate.json` groups them; `# renovate:` comments above `UV_VERSION` and
+  `PYTHON_VERSION` let it read `ci.yml`, and its mise manager reads
+  `mise.toml`). Python stays on its current minor: a new minor is a manual
   upgrade. uv bundles the list of Python builds it can download, so a new
   Python patch needs a uv at least as new: if the Python PR fails to set up
   Python, bump uv first.

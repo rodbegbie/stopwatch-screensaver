@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 PRE_COMMIT = (ROOT / ".pre-commit-config.yaml").read_text()
 WORKFLOW = (ROOT / ".depot/workflows/ci.yml").read_text()
+MISE = tomllib.loads((ROOT / "mise.toml").read_text())["tools"]
 
 
 def pre_commit_version(repo: str) -> str:
@@ -52,6 +53,16 @@ def test_workflow_uv_matches_pre_commit():
     pinned = re.search(r'UV_VERSION: "(\S+)"', WORKFLOW)
     assert pinned, "ci.yml has no UV_VERSION"
     assert pinned.group(1) == pre_commit_version("astral-sh/uv-pre-commit")
+
+
+def test_mise_uv_matches_pre_commit():
+    assert MISE["uv"] == pre_commit_version("astral-sh/uv-pre-commit")
+
+
+def test_mise_markdownlint_matches_pre_commit():
+    assert MISE["markdownlint-cli2"] == pre_commit_version(
+        "DavidAnson/markdownlint-cli2"
+    )
 
 
 def test_workflow_xscreensaver_matches_xs_vendor():
