@@ -49,7 +49,7 @@
     },
     {
       "description": "markdownlint-cli2 is pinned in mise.toml and pre-commit; test_tool_versions.py needs them to move together",
-      "matchPackageNames": ["DavidAnson/markdownlint-cli2"],
+      "matchPackageNames": ["DavidAnson/markdownlint-cli2", "markdownlint-cli2"],
       "groupName": "markdownlint-cli2"
     },
     {
