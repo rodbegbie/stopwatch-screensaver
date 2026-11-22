@@ -5,128 +5,128 @@
   "hooks": {
     "PostToolUse": [
       {
+        "matcher": "Agent",
         "hooks": [
           {
-            "command": "sh -c 'if ! command -v entire \u003e/dev/null 2\u003e\u00261; then exit 0; fi; exec entire hooks claude-code post-task'",
-            "timeout": 120,
-            "type": "command"
+            "type": "command",
+            "command": "sh -c 'if ! command -v entire >/dev/null 2>&1; then exit 0; fi; exec entire hooks claude-code post-task'",
+            "timeout": 120
           }
-        ],
-        "matcher": "Agent"
+        ]
       },
       {
+        "matcher": "Skill",
         "hooks": [
           {
-            "command": "sh -c 'if ! command -v entire \u003e/dev/null 2\u003e\u00261; then exit 0; fi; exec entire hooks claude-code post-task'",
-            "timeout": 120,
-            "type": "command"
+            "type": "command",
+            "command": "sh -c 'if ! command -v entire >/dev/null 2>&1; then exit 0; fi; exec entire hooks claude-code post-task'",
+            "timeout": 120
           }
-        ],
-        "matcher": "Skill"
+        ]
       }
     ],
     "PreToolUse": [
       {
+        "matcher": "Agent",
         "hooks": [
           {
-            "command": "sh -c 'if ! command -v entire \u003e/dev/null 2\u003e\u00261; then exit 0; fi; exec entire hooks claude-code pre-task'",
-            "timeout": 30,
-            "type": "command"
+            "type": "command",
+            "command": "sh -c 'if ! command -v entire >/dev/null 2>&1; then exit 0; fi; exec entire hooks claude-code pre-task'",
+            "timeout": 30
           }
-        ],
-        "matcher": "Agent"
+        ]
       },
       {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
         "hooks": [
           {
-            "command": "sh -c 'if command -v entire-brain \u003e/dev/null 2\u003e\u00261; then exec entire-brain hook pre-edit --claude-hook; fi; if command -v entire \u003e/dev/null 2\u003e\u00261; then exec entire brain hook pre-edit --claude-hook; fi; exit 0'",
-            "type": "command"
+            "type": "command",
+            "command": "sh -c 'if command -v entire-brain >/dev/null 2>&1; then exec entire-brain hook pre-edit --claude-hook; fi; if command -v entire >/dev/null 2>&1; then exec entire brain hook pre-edit --claude-hook; fi; exit 0'"
           }
-        ],
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit"
+        ]
       }
     ],
     "SessionEnd": [
       {
+        "matcher": "",
         "hooks": [
           {
-            "command": "sh -c 'if ! command -v entire \u003e/dev/null 2\u003e\u00261; then exit 0; fi; exec entire hooks claude-code session-end'",
-            "type": "command"
+            "type": "command",
+            "command": "sh -c 'if ! command -v entire >/dev/null 2>&1; then exit 0; fi; exec entire hooks claude-code session-end'"
           }
-        ],
-        "matcher": ""
+        ]
       }
     ],
     "SessionStart": [
       {
+        "matcher": "",
         "hooks": [
           {
-            "command": "sh -c 'if ! command -v entire \u003e/dev/null 2\u003e\u00261; then printf \"%s\\n\" \"{\\\"systemMessage\\\":\\\"\\\\n\\\\nEntire CLI is enabled but not installed or not on PATH.\\\\nInstallation guide: https://docs.entire.io/cli/installation#installation-methods\\\"}\"; exit 0; fi; exec entire hooks claude-code session-start'",
-            "timeout": 30,
-            "type": "command"
+            "type": "command",
+            "command": "sh -c 'if ! command -v entire >/dev/null 2>&1; then printf \"%s\\n\" \"{\\\"systemMessage\\\":\\\"\\\\n\\\\nEntire CLI is enabled but not installed or not on PATH.\\\\nInstallation guide: https://docs.entire.io/cli/installation#installation-methods\\\"}\"; exit 0; fi; if ! entire --version </dev/null >/dev/null 2>&1; then printf \"%s\\n\" \"{\\\"systemMessage\\\":\\\"\\\\n\\\\nEntire CLI is enabled, but the entire command on PATH failed to run, so this session may not be captured.\\\\nCheck that entire --version works in this shell.\\\\nInstallation guide: https://docs.entire.io/cli/installation#installation-methods\\\"}\"; exit 0; fi; exec entire hooks claude-code session-start'",
+            "timeout": 30
           }
-        ],
-        "matcher": ""
+        ]
       }
     ],
     "Stop": [
       {
+        "matcher": "",
         "hooks": [
           {
-            "command": "sh -c 'if ! command -v entire \u003e/dev/null 2\u003e\u00261; then exit 0; fi; exec entire hooks claude-code stop'",
-            "timeout": 120,
-            "type": "command"
+            "type": "command",
+            "command": "sh -c 'if ! command -v entire >/dev/null 2>&1; then exit 0; fi; exec entire hooks claude-code stop'",
+            "timeout": 120
           }
-        ],
-        "matcher": ""
+        ]
       }
     ],
     "StopFailure": [
       {
+        "matcher": "",
         "hooks": [
           {
-            "command": "sh -c 'if ! command -v entire \u003e/dev/null 2\u003e\u00261; then exit 0; fi; exec entire hooks claude-code stop-failure'",
-            "timeout": 120,
-            "type": "command"
+            "type": "command",
+            "command": "sh -c 'if ! command -v entire >/dev/null 2>&1; then exit 0; fi; exec entire hooks claude-code stop-failure'",
+            "timeout": 120
           }
-        ],
-        "matcher": ""
+        ]
       }
     ],
     "SubagentStart": [
       {
+        "matcher": "workflow-subagent",
         "hooks": [
           {
-            "command": "sh -c 'if ! command -v entire \u003e/dev/null 2\u003e\u00261; then exit 0; fi; exec entire hooks claude-code subagent-start'",
-            "timeout": 30,
-            "type": "command"
+            "type": "command",
+            "command": "sh -c 'if ! command -v entire >/dev/null 2>&1; then exit 0; fi; exec entire hooks claude-code subagent-start'",
+            "timeout": 30
           }
-        ],
-        "matcher": "workflow-subagent"
+        ]
       }
     ],
     "SubagentStop": [
       {
+        "matcher": "",
         "hooks": [
           {
-            "command": "sh -c 'if ! command -v entire \u003e/dev/null 2\u003e\u00261; then exit 0; fi; exec entire hooks claude-code subagent-stop'",
-            "timeout": 120,
-            "type": "command"
+            "type": "command",
+            "command": "sh -c 'if ! command -v entire >/dev/null 2>&1; then exit 0; fi; exec entire hooks claude-code subagent-stop'",
+            "timeout": 120
           }
-        ],
-        "matcher": ""
+        ]
       }
     ],
     "UserPromptSubmit": [
       {
+        "matcher": "",
         "hooks": [
           {
-            "command": "sh -c 'if ! command -v entire \u003e/dev/null 2\u003e\u00261; then exit 0; fi; exec entire hooks claude-code user-prompt-submit'",
-            "timeout": 30,
-            "type": "command"
+            "type": "command",
+            "command": "sh -c 'if ! command -v entire >/dev/null 2>&1; then exit 0; fi; exec entire hooks claude-code user-prompt-submit'",
+            "timeout": 30
           }
-        ],
-        "matcher": ""
+        ]
       }
     ]
   }

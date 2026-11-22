@@ -1,11 +1,15 @@
 {
   "enabled": true,
-  "telemetry": true,
   "strategy_options": {
+    "checkpoint_remote": {
+      "provider": "github",
+      "repo": "rodbegbie/entire-refs"
+    },
     "summarize": {
       "enabled": true
     }
   },
+  "telemetry": true,
   "summary_generation": {
     "provider": "claude-code"
   },
