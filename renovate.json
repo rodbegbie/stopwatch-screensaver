@@ -43,9 +43,14 @@
       "groupName": "ty"
     },
     {
-      "description": "UV_VERSION in ci.yml tracks the same tags as the uv-pre-commit rev; test_tool_versions.py needs them to move together, so one PR bumps both",
-      "matchDepNames": ["astral-sh/uv-pre-commit"],
+      "description": "UV_VERSION in ci.yml and uv in mise.toml track the same tags as the uv-pre-commit rev; test_tool_versions.py needs them to move together, so one PR bumps all three",
+      "matchPackageNames": ["astral-sh/uv-pre-commit", "astral-sh/uv"],
       "groupName": "uv"
+    },
+    {
+      "description": "markdownlint-cli2 is pinned in mise.toml and pre-commit; test_tool_versions.py needs them to move together",
+      "matchPackageNames": ["DavidAnson/markdownlint-cli2"],
+      "groupName": "markdownlint-cli2"
     },
     {
       "description": "Python is pinned exactly in pyproject.toml and ci.yml; test_tool_versions.py needs them to move together, so one PR bumps both",
