@@ -17,10 +17,11 @@ repos:
     rev: d598b95ef3cba3cf3a31c40620c3481ae978e4eb  # frozen: v0.0.104
     hooks:
       - id: ty
-  - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: cbcdc463be5464e25e3e955a511599a67b9b987f  # frozen: v0.50.0
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: d4df4cec471ce155946474590d7b95920f623ccb  # frozen: v0.24.2
     hooks:
-      - id: markdownlint-fix
+      - id: markdownlint-cli2
+        args: [--fix]
         exclude: ^\.(claude/skills/m5stack-stopwatch/|agents/skills|entire/)
   - repo: https://github.com/astral-sh/uv-pre-commit
     rev: b9d5257d60a86c20fd9a3919d548e08ba5ab905b  # frozen: 0.13.8

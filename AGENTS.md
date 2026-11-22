@@ -113,8 +113,8 @@ From the repo root:
 - `uv run tools/gl_budget.py cubicgrid morph3d` predicts a GL hack's device
   frame rate from vertex and fill counts taken on the host (`docs/gl-budget.md`
   has the model and its limits). It reads unported hacks from `vendor/`.
-- `markdownlint <files>` (config in `.markdownlint.json`). Run it from here:
-  from `firmware/` it misses the config and reports line-length errors.
+- `markdownlint-cli2 <files>` (config in `.markdownlint-cli2.jsonc`, which it
+  finds from any directory).
 
 Set `NO_COLOR=1` on `pio` output you parse.
 
